@@ -3696,7 +3696,7 @@ function validateAndScrollToError() {
 
 // ─── Google Apps Script Endpoint ─────────────────────────────────────────────
 // *** วาง URL ที่ได้จาก Deploy ตรงนี้ ***
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoToJkWw-x0YK_cItzfQCEekLrOJS1F4HT4Qs8D8qCVpFIv4KRJesO4hzYydVlt0Q/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3GHTQ6H-0htzKw_pWonyQHi4lVOZJo7fxNAIo21n3b8agj5sGfqt5YIrbPN7tL7k/exec';
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 function handleSubmit(e) {
@@ -4666,80 +4666,4 @@ function closeProgDetailOutside(e) {
 
 
 <!-- ─── Amendment Popup (shown when HN = มี) ─── -->
-<div class="amend-overlay" id="amendOverlay">
-  <div class="amend-box" id="amendBox">
-
-    <!-- ── Step 1: คำถาม ── -->
-    <div id="amendStep1">
-      <div class="amend-icon">📋</div>
-      <div class="amend-title">มีข้อมูลที่ต้องการแก้ไขหรือไม่?</div>
-      <div class="amend-sub">เช่น ชื่อ-นามสกุล, ที่อยู่, ข้อมูลการแพ้ยา<br>หรือข้อมูลส่วนตัวอื่นๆ</div>
-      <div class="amend-btns">
-        <button class="amend-btn-specify" onclick="amendSpecify()">แก้ไขข้อมูล</button>
-        <button class="amend-btn-none"    onclick="amendNone()">ไม่แก้ไข</button>
-      </div>
-    </div>
-
-    <!-- ── Step 2: ฟอร์มแก้ไข (ซ่อนไว้ก่อน) ── -->
-    <div id="amendStep2" style="display:none;text-align:left">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:16px;font-weight:800;color:var(--primary-dark,#001D3D)">📝 ระบุส่วนที่ต้องแก้ไข</div>
-        <button onclick="amendNone()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;line-height:1">✕</button>
-      </div>
-
-      <!-- ชื่อ-นามสกุล -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">คำนำหน้า / ชื่อ / นามสกุล</div>
-        <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:6px">
-          <select id="ap_prefix" style="padding:7px 8px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
-            <option value="">คำนำหน้า</option>
-            <option>นาย</option><option>นาง</option><option>น.ส.</option>
-            <option>Mr.</option><option>Miss</option><option>Mrs.</option>
-          </select>
-          <input type="text" id="ap_firstName" placeholder="ชื่อ" class="amend-input">
-          <input type="text" id="ap_lastName"  placeholder="นามสกุล" class="amend-input">
-        </div>
-      </div>
-
-      <!-- ชื่อเดิม / นามสกุลเดิม -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">ชื่อเดิม / นามสกุลเดิม (กรณีเปลี่ยนชื่อ-สกุล)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <input type="text" id="ap_oldFirst" placeholder="ชื่อเดิม" class="amend-input">
-          <input type="text" id="ap_oldLast"  placeholder="นามสกุลเดิม" class="amend-input">
-        </div>
-        <div style="font-size:11px;color:#E67E22;margin-top:3px">⚠ ถ้ามีเปลี่ยน ชื่อ-สกุล กรุณานำเอกสารมาด้วย</div>
-      </div>
-
-      <!-- โทรศัพท์ -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">เบอร์โทรศัพท์</div>
-        <input type="tel" id="ap_phone" placeholder="08x-xxx-xxxx" maxlength="10"
-          oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"
-          class="amend-input" style="width:100%">
-      </div>
-
-      <!-- ที่อยู่ใหม่ -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">ที่อยู่ใหม่ (ถ้าเปลี่ยน)</div>
-        <input type="text" id="ap_addr" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด"
-          class="amend-input" style="width:100%">
-      </div>
-
-      <!-- หมายเหตุ -->
-      <div style="margin-bottom:16px">
-        <div class="amend-field-label">หมายเหตุ / ส่วนอื่นๆ ที่ต้องแก้ไข</div>
-        <textarea id="ap_note" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."
-          style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
-      </div>
-
-      <button onclick="amendSave()"
-        style="width:100%;padding:11px;background:var(--accent,#E67E22);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
-        ✔ บันทึกและปิด
-      </button>
-    </div>
-
-  </div>
-</div>
-</body>
-</html>
+<div class="amend-overlay" id="amendOve
