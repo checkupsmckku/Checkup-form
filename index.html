@@ -3691,6 +3691,28 @@ function validateAndScrollToError() {
     return false;
   }
 
+  // ตรวจว่าเลือกช่องทางจัดส่งหรือยัง
+  const delChecked = document.querySelector('input[name="deliveryMethod"]:checked');
+  if (!delChecked) {
+    const delSec = document.getElementById('sec4');
+    const top = delSec.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top, behavior: 'smooth' });
+    showToast('⚠ กรุณาเลือกช่องทางการจัดส่งผลตรวจ');
+    return false;
+  }
+
+  // ตรวจว่าติ๊ก checkbox ยืนยันหรือยัง
+  const consent = document.getElementById('consentCheck');
+  if (!consent || !consent.checked) {
+    const consentEl = document.getElementById('sec5') || consent?.closest('section') || consent?.closest('.form-section');
+    if (consentEl) {
+      const top = consentEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณายืนยันข้อตกลงก่อนส่งแบบฟอร์ม');
+    return false;
+  }
+
   return true;
 }
 
