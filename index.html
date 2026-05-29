@@ -3859,7 +3859,8 @@ function handleSubmit(e) {
     addList: addList,
     basePrice: _basePrice,
     addTotal: _addTotal,
-    addListPriced: _addListPriced
+    addListPriced: _addListPriced,
+    serviceDate: document.getElementById('serviceDate')?.value || ''
   });
 }
 
@@ -4302,6 +4303,8 @@ function showSuccessModal(data) {
   } else {
     html += `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
   }
+  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
+  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
