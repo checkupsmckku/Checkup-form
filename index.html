@@ -2228,9 +2228,9 @@
         <div class="sub-section-label">สัญชาติ / เชื้อชาติ / ศาสนา</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
           <div class="field-group">
-            <label>สัญชาติ</label>
+            <label>สัญชาติ <span class="req">*</span></label>
             <div class="chip-radio-group">
-              <label class="chip-radio"><input type="radio" name="nationality" value="ไทย" onchange="toggleNatOther(false)"> ไทย</label>
+              <label class="chip-radio"><input type="radio" name="nationality" value="ไทย" onchange="toggleNatOther(false)" required> ไทย</label>
               <label class="chip-radio"><input type="radio" name="nationality" value="other" onchange="toggleNatOther(true)"> อื่นๆ</label>
             </div>
             <input type="text" id="nationalityOther" class="inline-input full" placeholder="ระบุสัญชาติ" style="display:none;margin-top:6px">
@@ -3701,8 +3701,44 @@ function validateAndScrollToError() {
     return false;
   }
 
+  // ตรวจว่าเลือกสัญชาติหรือยัง
+  const natChecked = document.querySelector('input[name="nationality"]:checked');
+  if (!natChecked) {
+    const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
+    if (natEl) {
+      const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกสัญชาติ');
+    return false;
+  }
+
+  // ตรวจว่าเลือกสัญชาติหรือยัง
+  const natChecked = document.querySelector('input[name="nationality"]:checked');
+  if (!natChecked) {
+    const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
+    if (natEl) {
+      const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกสัญชาติ');
+    return false;
+  }
+
   // ตรวจว่าติ๊ก checkbox ยืนยันหรือยัง
-  const consent = document.getElementById('consentCheck');
+  // ตรวจว่าเลือกสัญชาติหรือยัง
+  const natChecked = document.querySelector('input[name="nationality"]:checked');
+  if (!natChecked) {
+    const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
+    if (natEl) {
+      const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกสัญชาติ');
+    return false;
+  }
+
+    const consent = document.getElementById('consentCheck');
   if (!consent || !consent.checked) {
     const consentEl = document.getElementById('sec5') || consent?.closest('section') || consent?.closest('.form-section');
     if (consentEl) {
@@ -3792,14 +3828,14 @@ function handleSubmit(e) {
     department:    dept,
     paymentRight:  payRight,
     // สถานภาพ / อาชีพ
-    maritalStatus: document.getElementById('maritalStatus')?.value || '',
+    maritalStatus: document.querySelector('input[name="maritalStatus"]:checked')?.value || '',
     education:     document.getElementById('education')?.value || '',
     occupation:    document.getElementById('occupation')?.value || '',
     // สุขภาพ
     bloodGroup:    document.getElementById('bloodGroup')?.value || '',
     allergy:       document.getElementById('allergyDetail')?.value || document.querySelector('input[name="allergy"]:checked')?.value || '',
     // ที่อยู่
-    address:       [document.getElementById('moo')?.value, document.getElementById('street')?.value, document.getElementById('soi')?.value].filter(Boolean).join(' '),
+    address:       [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('street')?.value, document.getElementById('soi')?.value].filter(Boolean).join(' '),
     subdistrict:   document.getElementById('subdistrict')?.value || '',
     district:      document.getElementById('district')?.value || '',
     province:      document.getElementById('province')?.value || '',
