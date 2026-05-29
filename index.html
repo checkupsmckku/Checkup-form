@@ -4297,7 +4297,11 @@ function showSuccessModal(data) {
   }
   if (data.dept) html += `<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">${data.dept}</span></div>`;
   if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${data.payRight}</span></div>`;
-  html += `<div class="sr sr-age-row${hasHNMode ? ' hn-age' : ''}"><span class="sl">อายุ / เพศ</span><span class="sv">${data.age} ปี / ${genderTxt}</span></div>`;
+  if (!hasHNMode) {
+    html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${data.age} ปี / ${genderTxt}</span></div>`;
+  } else {
+    html += `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
+  }
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
