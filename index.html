@@ -3696,7 +3696,7 @@ function validateAndScrollToError() {
 
 // ─── Google Apps Script Endpoint ─────────────────────────────────────────────
 // *** วาง URL ที่ได้จาก Deploy ตรงนี้ ***
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrTyLiB34wb-ugiNGuSoUoMYm4SrMSAD4EbX01FQ8QrDOs2oyQNW-lNPkap4IP6oA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzoToJkWw-x0YK_cItzfQCEekLrOJS1F4HT4Qs8D8qCVpFIv4KRJesO4hzYydVlt0Q/exec';
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 function handleSubmit(e) {
@@ -3753,6 +3753,8 @@ function handleSubmit(e) {
   // ─── รวบรวมข้อมูลทั้งหมดส่ง Google Sheet ───
   const hnStatusEl = document.querySelector('input[name="hnStatus"]:checked');
   const formData = {
+    // วันที่เข้ารับบริการ
+    serviceDate:   document.getElementById('serviceDate')?.value || '',
     // ข้อมูลส่วนตัว
     prefix:        document.getElementById('prefix')?.value || '',
     firstName:     fname,
