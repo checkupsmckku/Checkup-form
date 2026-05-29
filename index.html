@@ -2682,8 +2682,7 @@
           <div class="consent-text">
             1. ข้อมูลทั้งหมดที่กรอกถูกต้องตามความเป็นจริงทุกประการ<br>
             2. ข้าพเจ้าเข้าใจว่าการตรวจสุขภาพประจำปีเป็นการคัดกรองเบื้องต้น ไม่ใช่การรักษาโรค<br>
-            3. ยินยอมให้โรงพยาบาลศรีนครินทร์ใช้ข้อมูลการตรวจเพื่อประโยชน์ทางการแพทย์<br>
-            4. ข้าพเจ้าเข้าใจว่าคลินิกตรวจสุขภาพ สิทธิ์การรักษาเป็นชำระเงินเอง
+            3. ยินยอมให้โรงพยาบาลศรีนครินทร์ใช้ข้อมูลการตรวจเพื่อประโยชน์ทางการแพทย์
           </div>
           <label class="consent-check">
             <input type="checkbox" id="consentCheck" required>
@@ -3794,7 +3793,10 @@ function handleSubmit(e) {
     // โปรแกรม
     program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}` : '',
     total:         totalTxt,
-    additionalItems: addList.map(x => x.th).join(', '),
+    additionalItems: addList.map(x => {
+      const t = TESTS.find(tt => tt.name === x.th);
+      return t ? `${x.th} (${t.price.toLocaleString()} บาท)` : x.th;
+    }).join(', '),
     // จัดส่ง
     deliveryMethod: delTxt,
     postRecipient:     document.getElementById('postRecipient')?.value || '',
@@ -3907,6 +3909,21 @@ function toggleHN(hasHN) {
   // แสดง/ซ่อนปุ่มคัดลอกที่อยู่ — เฉพาะเมื่อ "ไม่มี HN"
   const btnCopy = document.getElementById('btnCopyAddr');
   if (btnCopy) btnCopy.style.display = hasHN ? 'none' : 'block';
+
+  // ซ่อน/แสดง field วันเกิดและอายุ เมื่อเลือก มี HN
+  const dobEl = document.getElementById('dob');
+  const ageEl = document.getElementById('age');
+  const dobGroup = dobEl ? dobEl.closest('.field-group') : null;
+  const ageGroup = ageEl ? ageEl.closest('.field-group') : null;
+  if (dobGroup) dobGroup.style.display = hasHN ? 'none' : '';
+  if (ageGroup) ageGroup.style.display = hasHN ? 'none' : '';
+  if (hasHN) {
+    if (dobEl) { dobEl.removeAttribute('required'); dobEl.value = ''; }
+    if (ageEl) { ageEl.removeAttribute('required'); ageEl.value = ''; }
+  } else {
+    if (dobEl) dobEl.setAttribute('required', '');
+    if (ageEl) ageEl.setAttribute('required', '');
+  }
 
   if (hasHN) {
     // Hide full info section and remove required
@@ -4049,6 +4066,14 @@ function openServiceDatePicker() {
 function syncServiceDate(picker) {
   const val = picker.value; // YYYY-MM-DD
   if (!val) return;
+  const selected = new Date(val);
+  // Block Saturday (6)
+  if (selected.getDay() === 6) {
+    showToast('⚠ ไม่สามารถเลือกวันเสาร์ได้ กรุณาเลือกวันอื่น');
+    picker.value = '';
+    document.getElementById('serviceDate').value = '';
+    return;
+  }
   const [y, m, d] = val.split('-');
   // Convert CE year to BE year for display
   const yBE = parseInt(y) + 543;
