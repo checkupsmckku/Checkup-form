@@ -1889,13 +1889,10 @@
           <label>📅 วันที่เข้ารับบริการ <span class="req">*</span></label>
           <!-- Calendar picker overlay: display DD/MM/YYYY, store YYYY-MM-DD -->
           <div style="position:relative;width:100%">
-            <input type="text" id="serviceDate" placeholder="วว/ดด/ปปปป" required readonly
-              onclick="openServiceDatePicker()"
-              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box">
-            <input type="date" id="serviceDateRaw"
+            <input type="date" id="serviceDateRaw" required
               onchange="syncServiceDate(this)"
-              style="position:absolute;right:0;top:0;width:40px;height:100%;opacity:0;cursor:pointer;padding:0;border:none">
-            <svg onclick="openServiceDatePicker()" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box">
+            <input type="hidden" id="serviceDate">
           </div>
         </div>
 
@@ -4106,28 +4103,31 @@ function formatPatientCard(el) {
 }
 
 function openServiceDatePicker() {
+  setServiceDateMin();
+}
+
+function setServiceDateMin() {
   const picker = document.getElementById('serviceDateRaw');
-  // Block past dates; also block today if current time >= 09:30
+  if (!picker) return;
   const now = new Date();
   const minDate = new Date(now);
   const cutoffHour = 9, cutoffMin = 30;
   if (now.getHours() > cutoffHour || (now.getHours() === cutoffHour && now.getMinutes() >= cutoffMin)) {
-    // After 09:30 — move min to tomorrow
     minDate.setDate(minDate.getDate() + 1);
   }
   const yy = minDate.getFullYear();
   const mm = String(minDate.getMonth()+1).padStart(2,'0');
   const dd = String(minDate.getDate()).padStart(2,'0');
   picker.min = `${yy}-${mm}-${dd}`;
-  if (picker && picker.showPicker) {
-    try { picker.showPicker(); } catch(e) { picker.click(); }
-  } else if (picker) { picker.click(); }
 }
+
+// Set min on page load
+window.addEventListener('DOMContentLoaded', setServiceDateMin);
 
 function syncServiceDate(picker) {
   const val = picker.value; // YYYY-MM-DD
   if (!val) return;
-  const selected = new Date(val);
+  const selected = new Date(val + 'T00:00:00');
   // Block Saturday (6)
   if (selected.getDay() === 6) {
     showToast('⚠ ไม่สามารถเลือกวันเสาร์ได้ กรุณาเลือกวันอื่น');
@@ -4136,7 +4136,6 @@ function syncServiceDate(picker) {
     return;
   }
   const [y, m, d] = val.split('-');
-  // Convert CE year to BE year for display
   const yBE = parseInt(y) + 543;
   document.getElementById('serviceDate').value = d + '/' + m + '/' + yBE;
 }
