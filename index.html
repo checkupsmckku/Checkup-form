@@ -1888,14 +1888,13 @@
         <div class="field-group" style="margin-bottom:16px;max-width:300px">
           <label>📅 วันที่เข้ารับบริการ <span class="req">*</span></label>
           <!-- Calendar picker overlay: display DD/MM/YYYY, store YYYY-MM-DD -->
-          <div style="position:relative;width:100%">
+          <div style="position:relative;width:100%" onclick="openServiceDatePicker()" style="cursor:pointer">
             <input type="text" id="serviceDate" placeholder="วว/ดด/ปปปป" required readonly
-              onclick="openServiceDatePicker()"
-              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box">
+              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box;pointer-events:none">
             <input type="date" id="serviceDateRaw"
               onchange="syncServiceDate(this)"
-              style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;padding:0;border:none">
-            <svg onclick="openServiceDatePicker()" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              style="position:absolute;left:0;top:0;width:0;height:0;opacity:0;pointer-events:none;border:none">
+            <svg style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
         </div>
 
