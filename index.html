@@ -1858,7 +1858,7 @@
     <div class="header-sub">SMC ศูนย์บริการทางการแพทย์ชั้นเลิศ โรงพยาบาลศรีนครินทร์</div>
     <div class="header-meta">
       <span>📅 วันจันทร์ – ศุกร์</span>
-      <span>⏰ 07.30 – 10.00 น.</span>
+      <span>⏰ 7.00 – 9.30 น.</span>
       <span>📞 043-366312 | 043-366865 | 061-4929500</span>
       <span>💬 ID Line: <a href="https://line.me/R/ti/p/%40035ugnpd" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;cursor:pointer">@035ugnpd</a></span>
     </div>
@@ -2557,7 +2557,7 @@
             <input type="radio" name="deliveryMethod" value="pickup" onchange="onDeliveryChange('pickup')" required>
             <div class="del-icon">🏥</div>
             <div class="del-title">รอรับด้วยตนเอง</div>
-            <div class="del-desc">รับผลตรวจที่คลินิกตรวจสุขภาพ<br>ตามวันที่นัดหมาย</div>
+            <div class="del-desc">รับผลวันตรวจ หลังชำระเงิน ~1-2 ชม.<br>หรือนัดรับที่คลินิกตรวจสุขภาพ</div>
             <div class="del-check">✓</div>
           </label>
 
@@ -3727,15 +3727,20 @@ function validateAndScrollToError() {
   }
 
   // ตรวจว่าเลือกสัญชาติหรือยัง
-  const natChecked = document.querySelector('input[name="nationality"]:checked');
-  if (!natChecked) {
-    const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
-    if (natEl) {
-      const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top, behavior: 'smooth' });
+  // ตรวจสัญชาติเฉพาะเมื่อไม่มี HN
+  const hnStatusChecked2 = document.querySelector('input[name="hnStatus"]:checked');
+  const isHNModeCheck = hnStatusChecked2 && hnStatusChecked2.value === 'has';
+  if (!isHNModeCheck) {
+    const natChecked = document.querySelector('input[name="nationality"]:checked');
+    if (!natChecked) {
+      const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
+      if (natEl) {
+        const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+      showToast('⚠ กรุณาเลือกสัญชาติ');
+      return false;
     }
-    showToast('⚠ กรุณาเลือกสัญชาติ');
-    return false;
   }
 
     const consent = document.getElementById('consentCheck');
@@ -4155,8 +4160,8 @@ const THAI_HOLIDAYS = new Set([
 function isBlockedDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDay();
-  // บล็อกวันอาทิตย์ (0) และวันเสาร์ (6)
-  if (day === 0 || day === 6) return { blocked: true, reason: day === 6 ? 'วันเสาร์' : 'วันอาทิตย์' };
+  // บล็อกวันเสาร์ (6) เท่านั้น วันอาทิตย์เลือกได้แต่มี limit
+  if (day === 6) return { blocked: true, reason: 'วันเสาร์' };
   // บล็อกวันหยุดนักขัตฤกษ์
   if (THAI_HOLIDAYS.has(dateStr)) return { blocked: true, reason: 'วันหยุดนักขัตฤกษ์' };
   return { blocked: false };
@@ -4232,13 +4237,22 @@ function syncServiceDate(picker) {
   const displayStr = d + ' ' + thMonths[mIdx] + ' ' + yBE;
   const hiddenStr = d + '/' + m + '/' + yBE;
 
+  // แสดงวันก่อนเลย แล้วค่อย check วันอาทิตย์
+  if (display) display.textContent = displayStr;
+  if (placeholder) placeholder.style.display = 'none';
+  if (hidden) hidden.value = hiddenStr;
+
   // ตรวจจำนวนคนเฉพาะวันอาทิตย์ (max 25 คน)
   const selectedDate = new Date(val + 'T00:00:00');
   const isSunday = selectedDate.getDay() === 0;
   if (isSunday && APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    fetch(`${APPS_SCRIPT_URL}?action=checkDate&date=${encodeURIComponent(hiddenStr)}`)
+    if (display) display.textContent = `${displayStr} (กำลังตรวจสอบ...)`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    fetch(`${APPS_SCRIPT_URL}?action=checkDate&date=${encodeURIComponent(hiddenStr)}`, { signal: controller.signal })
       .then(r => r.json())
       .then(res => {
+        clearTimeout(timeout);
         if (res.count >= 25) {
           showToast(`⚠ วันอาทิตย์ที่ ${displayStr} มีผู้ลงทะเบียนเต็มแล้ว (${res.count}/25) กรุณาเลือกวันอื่น`);
           picker.value = '';
@@ -4247,19 +4261,12 @@ function syncServiceDate(picker) {
           if (hidden) hidden.value = '';
         } else {
           if (display) display.textContent = displayStr;
-          if (placeholder) placeholder.style.display = 'none';
-          if (hidden) hidden.value = hiddenStr;
         }
       })
       .catch(() => {
+        clearTimeout(timeout);
         if (display) display.textContent = displayStr;
-        if (placeholder) placeholder.style.display = 'none';
-        if (hidden) hidden.value = hiddenStr;
       });
-  } else {
-    if (display) display.textContent = displayStr;
-    if (placeholder) placeholder.style.display = 'none';
-    if (hidden) hidden.value = hiddenStr;
   }
 }
 
