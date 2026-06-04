@@ -1711,6 +1711,28 @@
     .hn-age { display: none !important; }
   }
 
+  #serviceDateRaw::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  #serviceDateRaw::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 3;
+  }
+
   /* ─── Add-test Warning Toast ─── */
   .atwarn-popup {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -1888,14 +1910,15 @@
         <div class="field-group" style="margin-bottom:16px;max-width:300px">
           <label>📅 วันที่เข้ารับบริการ <span class="req">*</span></label>
           <!-- Calendar picker overlay: display DD/MM/YYYY, store YYYY-MM-DD -->
-          <div style="position:relative;width:100%;cursor:pointer" 
-               onmousedown="document.getElementById('serviceDateRaw').focus(); document.getElementById('serviceDateRaw').click();">
-            <input type="text" id="serviceDate" placeholder="วว/ดด/ปปปป (พ.ศ.)" required readonly
-              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box;pointer-events:none">
-            <svg style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <input type="date" id="serviceDateRaw"
+          <div style="position:relative;width:100%">
+            <span id="serviceDateDisplay" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-dark);pointer-events:none;z-index:1"></span>
+            <span id="serviceDatePlaceholder" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#9CA3AF;pointer-events:none;z-index:1">วว/ดด/ปปปป (พ.ศ.)</span>
+            <input type="date" id="serviceDateRaw" id2="serviceDate" required
               onchange="syncServiceDate(this)"
-              style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
+              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:transparent;cursor:pointer;box-sizing:border-box;color:transparent;position:relative;z-index:2;-webkit-appearance:none;appearance:none;">
+
+            <svg style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280);z-index:3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <input type="hidden" id="serviceDate">
           </div>
         </div>
 
@@ -2806,9 +2829,11 @@ window.onload = function() {
 // ─── Scroll Spy: อัปเดต active step อัตโนมัติเมื่อ scroll ───────────────────
 function initBackToTop() {
   const btn = document.getElementById('backToTop');
+  if (!btn) return;
   window.addEventListener('scroll', () => {
     btn.classList.toggle('visible', window.scrollY > 300);
   }, { passive: true });
+  btn.classList.toggle('visible', window.scrollY > 300);
 }
 
 function initBackToBottom() {
@@ -3713,31 +3738,6 @@ function validateAndScrollToError() {
     return false;
   }
 
-  // ตรวจว่าเลือกสัญชาติหรือยัง
-  const natChecked = document.querySelector('input[name="nationality"]:checked');
-  if (!natChecked) {
-    const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
-    if (natEl) {
-      const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
-    showToast('⚠ กรุณาเลือกสัญชาติ');
-    return false;
-  }
-
-  // ตรวจว่าติ๊ก checkbox ยืนยันหรือยัง
-  // ตรวจว่าเลือกสัญชาติหรือยัง
-  const natChecked = document.querySelector('input[name="nationality"]:checked');
-  if (!natChecked) {
-    const natEl = document.querySelector('input[name="nationality"]')?.closest('.field-group');
-    if (natEl) {
-      const top = natEl.getBoundingClientRect().top + window.scrollY - 80;
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
-    showToast('⚠ กรุณาเลือกสัญชาติ');
-    return false;
-  }
-
     const consent = document.getElementById('consentCheck');
   if (!consent || !consent.checked) {
     const consentEl = document.getElementById('sec5') || consent?.closest('section') || consent?.closest('.form-section');
@@ -3754,7 +3754,7 @@ function validateAndScrollToError() {
 
 // ─── Google Apps Script Endpoint ─────────────────────────────────────────────
 // *** วาง URL ที่ได้จาก Deploy ตรงนี้ ***
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3GHTQ6H-0htzKw_pWonyQHi4lVOZJo7fxNAIo21n3b8agj5sGfqt5YIrbPN7tL7k/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc5qBcd2UgrxFUPvAo3VQUFjdOIyBmu85ZDv0rY75vpaQYARJer-s/exec';
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 function handleSubmit(e) {
@@ -4133,6 +4133,35 @@ function openServiceDatePicker() {
   }, 500);
 }
 
+// วันหยุดนักขัตฤกษ์ไทย 2025-2027
+const THAI_HOLIDAYS = new Set([
+  // 2025
+  '2025-01-01','2025-02-12','2025-02-26','2025-04-06','2025-04-07','2025-04-08',
+  '2025-04-14','2025-04-15','2025-05-01','2025-05-05','2025-05-12',
+  '2025-06-03','2025-07-10','2025-07-28','2025-08-11','2025-08-12',
+  '2025-10-13','2025-10-23','2025-12-05','2025-12-10','2025-12-31',
+  // 2026
+  '2026-01-01','2026-02-02','2026-03-02','2026-04-06','2026-04-13',
+  '2026-04-14','2026-04-15','2026-05-01','2026-05-04','2026-06-01',
+  '2026-06-03','2026-07-27','2026-07-28','2026-08-12','2026-09-14',
+  '2026-10-13','2026-10-23','2026-12-07','2026-12-10','2026-12-31',
+  // 2027
+  '2027-01-01','2027-02-22','2027-04-06','2027-04-13','2027-04-14',
+  '2027-04-15','2027-05-03','2027-05-10','2027-05-31','2027-06-03',
+  '2027-07-16','2027-07-27','2027-08-12','2027-10-13','2027-10-22',
+  '2027-12-05','2027-12-10','2027-12-31'
+]);
+
+function isBlockedDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  // บล็อกวันอาทิตย์ (0) และวันเสาร์ (6)
+  if (day === 0 || day === 6) return { blocked: true, reason: day === 6 ? 'วันเสาร์' : 'วันอาทิตย์' };
+  // บล็อกวันหยุดนักขัตฤกษ์
+  if (THAI_HOLIDAYS.has(dateStr)) return { blocked: true, reason: 'วันหยุดนักขัตฤกษ์' };
+  return { blocked: false };
+}
+
 function setServiceDateMin() {
   const picker = document.getElementById('serviceDateRaw');
   if (!picker) return;
@@ -4141,6 +4170,17 @@ function setServiceDateMin() {
   const cutoffHour = 9, cutoffMin = 30;
   if (now.getHours() > cutoffHour || (now.getHours() === cutoffHour && now.getMinutes() >= cutoffMin)) {
     minDate.setDate(minDate.getDate() + 1);
+  }
+  // เลื่อน min ถ้าวันที่ min เป็นวันบล็อก
+  let safety = 0;
+  while (safety < 30) {
+    const yy = minDate.getFullYear();
+    const mm = String(minDate.getMonth()+1).padStart(2,'0');
+    const dd = String(minDate.getDate()).padStart(2,'0');
+    const dateStr = `${yy}-${mm}-${dd}`;
+    if (!isBlockedDate(dateStr).blocked) break;
+    minDate.setDate(minDate.getDate() + 1);
+    safety++;
   }
   const yy = minDate.getFullYear();
   const mm = String(minDate.getMonth()+1).padStart(2,'0');
@@ -4152,19 +4192,74 @@ function setServiceDateMin() {
 window.addEventListener('DOMContentLoaded', setServiceDateMin);
 
 function syncServiceDate(picker) {
-  const val = picker.value; // YYYY-MM-DD
-  if (!val) return;
-  const selected = new Date(val + 'T00:00:00');
-  // Block Saturday (6)
-  if (selected.getDay() === 6) {
-    showToast('⚠ ไม่สามารถเลือกวันเสาร์ได้ กรุณาเลือกวันอื่น');
-    picker.value = '';
-    document.getElementById('serviceDate').value = '';
+  const val = picker.value;
+  const display = document.getElementById('serviceDateDisplay');
+  const placeholder = document.getElementById('serviceDatePlaceholder');
+  const hidden = document.getElementById('serviceDate');
+  if (!val) {
+    if (display) display.textContent = '';
+    if (placeholder) placeholder.style.display = '';
+    if (hidden) hidden.value = '';
     return;
   }
+  // ตรวจสอบวันที่ถูกบล็อก
+  const check = isBlockedDate(val);
+  if (check.blocked) {
+    showToast(`⚠ ไม่สามารถเลือก${check.reason}ได้ กรุณาเลือกวันทำการอื่น`);
+    picker.value = '';
+    if (display) display.textContent = '';
+    if (placeholder) placeholder.style.display = '';
+    if (hidden) hidden.value = '';
+    return;
+  }
+  // ตรวจสอบวันนี้หลัง 09:30
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  if (val === today) {
+    if (now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() >= 30)) {
+      showToast('⚠ เลยเวลารับลงทะเบียน (09:30 น.) กรุณาเลือกวันทำการถัดไป');
+      picker.value = '';
+      if (display) display.textContent = '';
+      if (placeholder) placeholder.style.display = '';
+      if (hidden) hidden.value = '';
+      return;
+    }
+  }
   const [y, m, d] = val.split('-');
+  const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const yBE = parseInt(y) + 543;
-  document.getElementById('serviceDate').value = d + '/' + m + '/' + yBE;
+  const mIdx = parseInt(m) - 1;
+  const displayStr = d + ' ' + thMonths[mIdx] + ' ' + yBE;
+  const hiddenStr = d + '/' + m + '/' + yBE;
+
+  // ตรวจจำนวนคนเฉพาะวันอาทิตย์ (max 25 คน)
+  const isSunday = selected.getDay() === 0;
+  if (isSunday && APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
+    fetch(`${APPS_SCRIPT_URL}?action=checkDate&date=${encodeURIComponent(hiddenStr)}`)
+      .then(r => r.json())
+      .then(res => {
+        if (res.count >= 25) {
+          showToast(`⚠ วันอาทิตย์ที่ ${displayStr} มีผู้ลงทะเบียนเต็มแล้ว (${res.count}/25) กรุณาเลือกวันอื่น`);
+          picker.value = '';
+          if (display) display.textContent = '';
+          if (placeholder) placeholder.style.display = '';
+          if (hidden) hidden.value = '';
+        } else {
+          if (display) display.textContent = displayStr;
+          if (placeholder) placeholder.style.display = 'none';
+          if (hidden) hidden.value = hiddenStr;
+        }
+      })
+      .catch(() => {
+        if (display) display.textContent = displayStr;
+        if (placeholder) placeholder.style.display = 'none';
+        if (hidden) hidden.value = hiddenStr;
+      });
+  } else {
+    if (display) display.textContent = displayStr;
+    if (placeholder) placeholder.style.display = 'none';
+    if (hidden) hidden.value = hiddenStr;
+  }
 }
 
 function openDobPicker() {
