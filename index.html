@@ -1888,14 +1888,14 @@
         <div class="field-group" style="margin-bottom:16px;max-width:300px">
           <label>📅 วันที่เข้ารับบริการ <span class="req">*</span></label>
           <!-- Calendar picker overlay: display DD/MM/YYYY, store YYYY-MM-DD -->
-          <div style="position:relative;width:100%">
+          <div style="position:relative;width:100%;cursor:pointer" 
+               onmousedown="document.getElementById('serviceDateRaw').focus(); document.getElementById('serviceDateRaw').click();">
             <input type="text" id="serviceDate" placeholder="วว/ดด/ปปปป (พ.ศ.)" required readonly
-              onclick="openServiceDatePicker()"
-              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box">
+              style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text-dark);background:#fff;cursor:pointer;box-sizing:border-box;pointer-events:none">
+            <svg style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <input type="date" id="serviceDateRaw"
               onchange="syncServiceDate(this)"
-              style="position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0.01;border:none;padding:0;">
-            <svg onclick="openServiceDatePicker()" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;">
           </div>
         </div>
 
@@ -4107,6 +4107,30 @@ function formatPatientCard(el) {
 
 function openServiceDatePicker() {
   setServiceDateMin();
+  const picker = document.getElementById('serviceDateRaw');
+  if (!picker) return;
+  // Make temporarily visible to allow showPicker
+  picker.style.opacity = '1';
+  picker.style.width = '100%';
+  picker.style.height = '100%';
+  picker.style.position = 'fixed';
+  picker.style.top = '0';
+  picker.style.left = '0';
+  picker.style.zIndex = '9999';
+  try {
+    picker.showPicker();
+  } catch(e) {
+    picker.click();
+  }
+  setTimeout(() => {
+    picker.style.opacity = '0.01';
+    picker.style.width = '1px';
+    picker.style.height = '1px';
+    picker.style.position = 'absolute';
+    picker.style.top = '';
+    picker.style.left = '0';
+    picker.style.zIndex = '';
+  }, 500);
 }
 
 function setServiceDateMin() {
