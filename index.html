@@ -621,6 +621,13 @@
     color: var(--text-muted);
     margin-top: 1px;
   }
+  .test-extra-note {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-style: italic;
+    opacity: 0.85;
+  }
   .test-gender-tag {
     font-size: 10px;
     font-weight: 700;
@@ -1136,6 +1143,9 @@
   .del-selected-email { border-color: #8E44AD; box-shadow: 0 0 0 3px rgba(142,68,173,0.2); }
   .del-selected-email .del-check { display: flex; background: #8E44AD; }
   .del-selected-email .del-title { color: #6C3483; }
+  .del-selected-call { border-color: #E67E22; box-shadow: 0 0 0 3px rgba(230,126,34,0.2); }
+  .del-selected-call .del-check { display: flex; background: #E67E22; }
+  .del-selected-call .del-title { color: #B9591A; }
 
   .delivery-detail-box {
     border-radius: var(--radius);
@@ -1193,6 +1203,12 @@
     color: #1A5276;
   }
   .tl-icon { font-size: 16px; flex-shrink: 0; }
+  .pap-combine-note {
+    background: #FEF5E7;
+    border: 1.5px solid #F5CBA7;
+    border-left: 4px solid #E67E22;
+    color: #9C5213;
+  }
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -1882,10 +1898,14 @@
     </div>
     <div class="step" id="step4-tab" onclick="scrollToSection('sec4')">
       <div class="step-num">4</div>
-      <div><div class="step-label" style="font-size:13px">การจัดส่ง</div></div>
+      <div><div class="step-label" style="font-size:13px">เอกสารเพิ่มเติม</div></div>
     </div>
     <div class="step" id="step5-tab" onclick="scrollToSection('sec5')">
       <div class="step-num">5</div>
+      <div><div class="step-label" style="font-size:13px">การจัดส่ง</div></div>
+    </div>
+    <div class="step" id="step6-tab" onclick="scrollToSection('sec6')">
+      <div class="step-num">6</div>
       <div><div class="step-label" style="font-size:13px">ยืนยัน</div></div>
     </div>
   </div>
@@ -2461,11 +2481,11 @@
           </div>
           <div class="pap-options">
             <div class="pap-opt">
-              <input type="radio" name="pap" id="papNo" value="no" checked onchange="calcTotal()">
+              <input type="radio" name="pap" id="papNo" value="no" checked onchange="calcTotal(); papChoice='no'; updatePickupPapDetail();">
               <label for="papNo">ไม่ตรวจภายใน</label>
             </div>
             <div class="pap-opt">
-              <input type="radio" name="pap" id="papYes" value="yes" onchange="calcTotal()">
+              <input type="radio" name="pap" id="papYes" value="yes" onchange="calcTotal(); papChoice='yes'; updatePickupPapDetail();">
               <label for="papYes">ตรวจภายใน (+200 บาท)</label>
             </div>
           </div>
@@ -2538,10 +2558,42 @@
     </div>
 
     
-    <!-- ─── SECTION 4: ช่องทางการจัดส่งผลตรวจ ─── -->
+    <!-- ─── SECTION 4: เอกสารเพิ่มเติม ─── -->
     <div class="form-section" id="sec4">
-      <div class="section-head" style="background: linear-gradient(90deg, #1A6B3A 0%, #27AE60 60%, #2ECC71 100%);">
+      <div class="section-head" style="background: linear-gradient(90deg, #6A4FB6 0%, #9C7BD9 60%, #B79CE8 100%);">
         <div class="sec-num">4</div>
+        <div>
+          <h2>เอกสารเพิ่มเติม</h2>
+          <div class="sec-desc">ระบุจำนวนเอกสารที่ต้องการ (หากไม่ต้องการ ปล่อยว่างไว้)</div>
+        </div>
+      </div>
+      <div class="section-body">
+
+        <div class="field-grid cols-2" style="margin-bottom:6px">
+          <div class="field-group">
+            <label>ขอใบรับรองแพทย์ (แนบเบิกหน่วยงาน)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="medCertCount" min="0" step="1" placeholder="0" style="width:100px">
+              <span>ชุด</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>ขอใบยานอกบัญชี</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="nonFormularyDrugCount" min="0" step="1" placeholder="0" style="width:100px">
+              <span>ชุด</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ─── SECTION 5: ช่องทางการจัดส่งผลตรวจ ─── -->
+    <div class="form-section" id="sec5">
+      <div class="section-head" style="background: linear-gradient(90deg, #1A6B3A 0%, #27AE60 60%, #2ECC71 100%);">
+        <div class="sec-num">5</div>
         <div>
           <h2>ช่องทางการจัดส่งผลตรวจสุขภาพ</h2>
           <div class="sec-desc">เลือกวิธีที่ต้องการรับผลตรวจ — เลือกได้ 1 ช่องทาง</div>
@@ -2581,6 +2633,134 @@
 
         </div>
 
+        <!-- ── รอรับด้วยตนเอง + ตรวจภายใน: ช่องทางรับผลตรวจภายใน ── -->
+        <div id="pickupPapDetail" style="display:none">
+          <div class="delivery-detail-box blue">
+            <div class="dd-title">🔬 ช่องทางรับผลตรวจภายใน</div>
+            <div class="delivery-timeline-note">
+              <span class="tl-icon">🕐</span>
+              <span>ผลตรวจทั่วไปรับได้วันตรวจตามปกติ แต่<strong>ผลตรวจภายในใช้เวลาประมาณ 30–45 วัน</strong> กรุณาเลือกช่องทางรับผลตรวจภายในด้านล่าง</span>
+            </div>
+
+            <!-- เลือกช่องทางรับผลตรวจภายใน -->
+            <div class="delivery-grid" style="margin-top:10px;margin-bottom:10px">
+              <label class="delivery-card" id="papDelCard-email">
+                <input type="radio" name="papDeliveryMethod" value="email" onchange="onPapDeliveryChange('email')">
+                <div class="del-icon">📧</div>
+                <div class="del-title">ส่งทาง E-mail</div>
+                <div class="del-desc">รับไฟล์ PDF ผลตรวจภายใน<br>ทางอีเมล</div>
+                <div class="del-check">✓</div>
+              </label>
+              <label class="delivery-card" id="papDelCard-post">
+                <input type="radio" name="papDeliveryMethod" value="post" onchange="onPapDeliveryChange('post')">
+                <div class="del-icon">📬</div>
+                <div class="del-title">ส่งทางไปรษณีย์</div>
+                <div class="del-desc">จัดส่งผลตรวจภายใน<br>ตามที่อยู่ที่ระบุ</div>
+                <div class="del-check">✓</div>
+              </label>
+              <label class="delivery-card" id="papDelCard-call">
+                <input type="radio" name="papDeliveryMethod" value="call" onchange="onPapDeliveryChange('call')">
+                <div class="del-icon">☎️</div>
+                <div class="del-title">นัดรับผล</div>
+                <div class="del-desc">เจ้าหน้าที่โทรแจ้ง<br>เมื่อผลออกเรียบร้อย</div>
+                <div class="del-check">✓</div>
+              </label>
+            </div>
+
+            <!-- ── ส่งทาง E-mail: Detail ── -->
+            <div id="papEmailDetail" style="display:none">
+              <div class="field-grid cols-2">
+                <div class="field-group">
+                  <label>E-mail สำหรับรับผลตรวจภายใน <span class="req">*</span></label>
+                  <input type="email" id="papResultEmail" placeholder="example@email.com">
+                  <div class="field-hint">ระบบจะส่งไฟล์ PDF ผลตรวจภายในไปยังอีเมลนี้</div>
+                </div>
+                <div class="field-group">
+                  <label>ยืนยัน E-mail อีกครั้ง <span class="req">*</span></label>
+                  <input type="email" id="papResultEmailConfirm" placeholder="example@email.com" oninput="checkPapEmailMatch()">
+                  <div class="field-hint" id="papEmailMatchHint"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── ส่งทางไปรษณีย์: Detail ── -->
+            <div id="papPostDetail" style="display:none">
+              <div class="field-group" style="margin-bottom:12px;margin-top:10px">
+                <label>ที่อยู่สำหรับจัดส่งผลตรวจภายใน <span class="req">*</span></label>
+              </div>
+
+              <div class="field-grid cols-2" style="margin-bottom:10px">
+                <div class="field-group">
+                  <label>ชื่อผู้รับ <span class="req">*</span></label>
+                  <input type="text" id="papRecipient" placeholder="ชื่อผู้รับ">
+                </div>
+                <div class="field-group">
+                  <label>นามสกุลผู้รับ <span class="req">*</span></label>
+                  <input type="text" id="papRecipientLast" placeholder="นามสกุลผู้รับ">
+                </div>
+              </div>
+              <div class="field-grid cols-2" style="margin-bottom:10px">
+                <div class="field-group">
+                  <label>โทรศัพท์ผู้รับ <span class="req">*</span></label>
+                  <input type="tel" id="papPhone" placeholder="0xxxxxxxxx" maxlength="10" inputmode="numeric"
+                    oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
+                  <div class="field-hint" id="papPhoneHint" style="color:#E53935;font-size:12px;display:none">⚠ กรุณากรอกเบอร์โทรศัพท์ 10 หลัก</div>
+                </div>
+              </div>
+              <div class="field-group" style="margin-bottom:10px">
+                <label>บ้านเลขที่ / ถนน / ซอย / หมู่</label>
+                <input type="text" id="papAddr1" placeholder="เลขที่บ้าน ถนน ซอย หมู่">
+              </div>
+
+              <!-- Pap Address Search -->
+              <div class="addr-search-wrap" id="papAddrSearchWrap">
+                <svg class="addr-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="papAddrSearch" class="addr-search-box"
+                  placeholder="ค้นหาตำบล, อำเภอ, จังหวัด หรือรหัสไปรษณีย์..."
+                  autocomplete="off" oninput="papAddrSearchInput(this)" onfocus="papAddrSearchFocus(this)">
+                <button type="button" class="addr-search-clear" id="papAddrClear" onclick="papAddrClear()">×</button>
+                <div class="addr-dropdown" id="papAddrDropdown"></div>
+              </div>
+              <div id="papAddrFilledBadge" style="display:none;margin-bottom:8px" class="addr-filled-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span id="papAddrFilledText"></span>
+                <button type="button" onclick="papAddrClearFields()" style="background:none;border:none;cursor:pointer;color:#C0392B;font-size:12px;font-weight:700;margin-left:4px">แก้ไข</button>
+              </div>
+
+              <div class="field-grid cols-3" style="margin-bottom:0">
+                <div class="field-group">
+                  <label>ตำบล/แขวง</label>
+                  <input type="text" id="papSubdistrict" placeholder="ตำบล / แขวง">
+                </div>
+                <div class="field-group">
+                  <label>อำเภอ/เขต</label>
+                  <input type="text" id="papDistrict" placeholder="อำเภอ / เขต">
+                </div>
+                <div class="field-group">
+                  <label>จังหวัด <span class="req">*</span></label>
+                  <input type="text" id="papProvince" placeholder="จังหวัด">
+                </div>
+              </div>
+              <div class="field-grid cols-3" style="margin-top:10px;margin-bottom:0">
+                <div class="field-group">
+                  <label>รหัสไปรษณีย์ <span class="req">*</span></label>
+                  <input type="text" id="papZip" placeholder="xxxxx" maxlength="5" inputmode="numeric"
+                    oninput="this.value=this.value.replace(/\D/g,'').slice(0,5); if(this.value.length===5) papLookupZip()">
+                  <div class="field-hint" id="papZipHint"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── นัดรับผล: Detail ── -->
+            <div id="papCallDetail" style="display:none">
+              <div class="email-note" style="margin-top:10px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                เจ้าหน้าที่จะโทรแจ้งให้ท่านทราบเมื่อผลตรวจภายในออกเรียบร้อย (ประมาณ 30–45 วัน) เพื่อนัดหมายวันรับผล
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── ส่งไปรษณีย์: Detail ── -->
         <div id="postDetail" style="display:none">
           <div class="delivery-detail-box blue">
@@ -2588,6 +2768,10 @@
             <div class="delivery-timeline-note">
               <span class="tl-icon">🕐</span>
               <span>ระยะเวลาในการจัดส่งผลตรวจ <strong>ประมาณ 30–45 วัน</strong> หลังจากวันตรวจ</span>
+            </div>
+            <div class="delivery-timeline-note pap-combine-note" id="postPapNote" style="display:none">
+              <span class="tl-icon">🔬</span>
+              <span>ท่านเลือก <strong>ตรวจภายใน</strong> — ผลตรวจภายในจะจัดส่งพร้อมกับผลตรวจสุขภาพไปยัง<strong>ที่อยู่เดียวกัน</strong>นี้</span>
             </div>
 
             <div class="field-group" style="margin-bottom:12px">
@@ -2667,6 +2851,10 @@
         <div id="emailDetail" style="display:none">
           <div class="delivery-detail-box green">
             <div class="dd-title">📧 รายละเอียดการส่ง E-mail</div>
+            <div class="delivery-timeline-note pap-combine-note" id="emailPapNote" style="display:none">
+              <span class="tl-icon">🔬</span>
+              <span>ท่านเลือก <strong>ตรวจภายใน</strong> — ผลตรวจภายในจะจัดส่งพร้อมกับผลตรวจสุขภาพไปยัง<strong>อีเมลเดียวกัน</strong>นี้</span>
+            </div>
             <div class="field-grid cols-2">
               <div class="field-group">
                 <label>E-mail สำหรับรับผลตรวจ <span class="req">*</span></label>
@@ -2690,10 +2878,10 @@
     </div>
 
 
-    <!-- ─── SECTION 5: Consent ─── -->
-    <div class="form-section" id="sec5" style="margin-top:20px">
+    <!-- ─── SECTION 6: Consent ─── -->
+    <div class="form-section" id="sec6" style="margin-top:20px">
       <div class="section-head">
-        <div class="sec-num">5</div>
+        <div class="sec-num">6</div>
         <div>
           <h2>ยืนยันและยินยอม</h2>
           <div class="sec-desc">กรุณาอ่านและยืนยันข้อตกลงก่อนส่งแบบฟอร์ม</div>
@@ -2803,18 +2991,21 @@ const TESTS = [
   { id:27, name:'ตรวจฮอร์โมนเพศชาย', eng:'Testosterone (Male)', price:300,  gender:'male', tags:['male'] },
   { id:28, name:'ตรวจภาวะขาดวิตามินดี', eng:'Total Vitamin D level', price:950,  gender:'all', tags:[] },
   { id:29, name:'ตรวจวิตามิน B12', eng:'Vitamin B12', price:260,  gender:'all', tags:[] },
-  { id:30, name:'ตรวจกรดโฟลิก', eng:'Folate (serum)', price:260,  gender:'all', tags:[] },
+  { id:30, name:'ตรวจภาวะขาดวิตามินบี 9 (กรดโฟลิค)', eng:'Folate (serum)', price:260,  gender:'all', tags:[] },
   { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[] },
-  { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[] },
-  { id:33, name:'ตรวจมวลกระดูก BMD', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[] },
+  { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ และลำไส้ส่วนปลาย)', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[], note:'หญิง: มดลูก รังไข่ &nbsp;|&nbsp; ชาย: ต่อมลูกหมาก' },
+  { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[] },
   { id:34, name:'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', eng:'Ultrasound Breast', price:1275, gender:'female', tags:['cancer','female'] },
   { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'] },
+  { id:36, name:'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', eng:'Hemoglobin typing (Thalassemia screening)', price:320, gender:'all', tags:[] },
 ];
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let selectedProgram = null;
 let selectedGender = null;
 let papChoice = 'no';
+let currentDeliveryMethod = '';
+let papDeliveryMethod = '';
 let activeFilter = 'all';
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -2855,6 +3046,7 @@ function initScrollSpy() {
     { id: 'sec3', tab: 'step3-tab' },
     { id: 'sec4', tab: 'step4-tab' },
     { id: 'sec5', tab: 'step5-tab' },
+    { id: 'sec6', tab: 'step6-tab' },
   ];
   window.addEventListener('scroll', () => {
     const offset = 120;
@@ -2884,6 +3076,7 @@ function renderTests() {
         <div class="test-info">
           <div class="test-name">${t.name}</div>
           <div class="test-eng">${t.eng}</div>
+          ${t.note ? `<div class="test-extra-note">${t.note}</div>` : ''}
         </div>
         ${genderTag}
         <div class="test-price" id="price-label-${t.id}">${t.price.toLocaleString()} <span class="baht">บาท</span></div>
@@ -2897,7 +3090,13 @@ function toggleTest(id, el) {
   const chk = document.getElementById('chk-' + id);
   chk.checked = !chk.checked;
   el.classList.toggle('checked-item', chk.checked);
-  if (chk.checked) showAddTestWarn();
+  if (chk.checked) {
+    showAddTestWarn();
+    // แจ้งเตือนพิเศษสำหรับ Mammogram and Ultrasound Breast (id:35) — ตรวจรอบบ่าย 13.00 น.
+    if (id === 35) {
+      showToast('📅 รายการ Mammogram and Ultrasound Breast จะได้ทำการตรวจในรอบบ่าย เวลา 13.00 น.');
+    }
+  }
   calcTotal();
 }
 
@@ -3061,6 +3260,8 @@ function filterTests(tag, btn) {
 // ─── Calculate Total ──────────────────────────────────────────────────────────
 function calcTotal() {
   papChoice = document.querySelector('input[name="pap"]:checked')?.value || 'no';
+  currentDeliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked')?.value || currentDeliveryMethod;
+  updatePickupPapDetail();
   const g = selectedGender;
   let basePrice = 0;
   let baseLabel = 'โปรแกรมที่เลือก';
@@ -3538,6 +3739,168 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ─── ตรวจภายใน + รอรับ: Address Autocomplete (ส่งผลตรวจภายใน) ────────────────
+let _papAddrResults = [];
+let _papAddrTimer = null;
+let _papAddrKbdIdx = -1;
+
+function _positionPapDropdown() {
+  const wrap = document.getElementById('papAddrSearchWrap');
+  const dd   = document.getElementById('papAddrDropdown');
+  if (!wrap || !dd) return;
+  const rect = wrap.getBoundingClientRect();
+  dd.style.top   = (rect.bottom + 4) + 'px';
+  dd.style.left  = rect.left + 'px';
+  dd.style.width = rect.width + 'px';
+}
+
+function papAddrSearchFocus(el) {
+  if (el.value.trim()) papAddrSearchInput(el);
+}
+
+function papAddrSearchInput(el) {
+  const q = el.value.trim();
+  document.getElementById('papAddrClear').classList.toggle('show', q.length > 0);
+  const dd = document.getElementById('papAddrDropdown');
+  if (!q) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+  clearTimeout(_papAddrTimer);
+  _papAddrTimer = setTimeout(() => _runPapSearch(document.getElementById('papAddrSearch').value.trim()), 120);
+}
+
+function _runPapSearch(q) {
+  if (!ADDRDB) return;
+  const dd = document.getElementById('papAddrDropdown');
+  const isNum = /^\d+$/.test(q);
+  let results;
+  if (isNum) {
+    results = q.length === 5
+      ? (ADDRDB.byZip[q] || [])
+      : ADDRDB.entries.filter(e => e.z.startsWith(q)).slice(0, 30);
+  } else {
+    results = ADDRDB.entries.filter(e =>
+      e.t.includes(q) || e.d.includes(q) || e.p.includes(q)
+    ).slice(0, 30);
+  }
+  _papAddrResults = results;
+  _papAddrKbdIdx = -1;
+
+  if (!results.length) {
+    dd.innerHTML = '<div class="addr-dd-msg">ไม่พบข้อมูล — ลองพิมพ์คำอื่น</div>';
+  } else {
+    dd.innerHTML = results.map((r, i) => {
+      const hl  = isNum ? r.t : _hl(r.t, q);
+      const dhl = (!isNum && r.d.includes(q)) ? _hl(r.d, q) : r.d;
+      const phl = (!isNum && r.p.includes(q)) ? _hl(r.p, q) : r.p;
+      return `<div class="addr-dd-item" data-i="${i}" onclick="selectPapAddr(${i})" onmouseenter="_papAddrKbdIdx=${i}">
+        <span class="addr-dd-tambon">${hl}</span>
+        <span class="addr-dd-sep">»</span>
+        <span class="addr-dd-rest">${dhl}</span>
+        <span class="addr-dd-sep">»</span>
+        <span class="addr-dd-rest">${phl}</span>
+        <span class="addr-dd-sep">»</span>
+        <span class="addr-dd-zip">${r.z}</span>
+      </div>`;
+    }).join('');
+  }
+  _positionPapDropdown();
+  dd.classList.add('open');
+}
+
+function selectPapAddr(i) {
+  const r = _papAddrResults[i];
+  if (!r) return;
+  document.getElementById('papSubdistrict').value = r.t;
+  document.getElementById('papDistrict').value    = _distName(r.d);
+  document.getElementById('papProvince').value    = r.p;
+  document.getElementById('papZip').value         = r.z;
+  document.getElementById('papAddrSearch').value  = '';
+  document.getElementById('papAddrClear').classList.remove('show');
+  document.getElementById('papAddrDropdown').classList.remove('open');
+  document.getElementById('papAddrDropdown').innerHTML = '';
+  const badge = document.getElementById('papAddrFilledBadge');
+  document.getElementById('papAddrFilledText').textContent = `${r.t} » ${_distName(r.d)} » ${r.p} » ${r.z}`;
+  badge.style.display = 'inline-flex';
+  document.getElementById('papZipHint').textContent = '';
+}
+
+function papAddrClear() {
+  document.getElementById('papAddrSearch').value = '';
+  document.getElementById('papAddrClear').classList.remove('show');
+  document.getElementById('papAddrDropdown').classList.remove('open');
+  document.getElementById('papAddrDropdown').innerHTML = '';
+}
+
+function papAddrClearFields() {
+  document.getElementById('papAddrFilledBadge').style.display = 'none';
+  document.getElementById('papSubdistrict').value = '';
+  document.getElementById('papDistrict').value    = '';
+  document.getElementById('papProvince').value    = '';
+  document.getElementById('papZip').value         = '';
+  document.getElementById('papAddrSearch').focus();
+}
+
+function papLookupZip() {
+  const zip = document.getElementById('papZip').value.trim();
+  if (zip.length !== 5) return;
+  const results = ADDRDB.byZip[zip];
+  if (!results?.length) {
+    document.getElementById('papZipHint').textContent = '⚠ ไม่พบรหัสนี้ — กรุณากรอกเอง';
+    return;
+  }
+  if (results.length === 1) {
+    selectPapAddr_direct(results[0]);
+  } else {
+    document.getElementById('papAddrSearch').value = zip;
+    document.getElementById('papAddrClear').classList.add('show');
+    _papAddrResults = results; _papAddrKbdIdx = -1;
+    const dd = document.getElementById('papAddrDropdown');
+    dd.innerHTML = results.map((r, i) =>
+      `<div class="addr-dd-item" data-i="${i}" onclick="selectPapAddr(${i})">
+        <span class="addr-dd-tambon">${r.t}</span>
+        <span class="addr-dd-sep">»</span><span class="addr-dd-rest">${_distName(r.d)}</span>
+        <span class="addr-dd-sep">»</span><span class="addr-dd-rest">${r.p}</span>
+        <span class="addr-dd-sep">»</span><span class="addr-dd-zip">${r.z}</span>
+      </div>`
+    ).join('');
+    _positionPapDropdown();
+    dd.classList.add('open');
+  }
+}
+
+function selectPapAddr_direct(r) {
+  document.getElementById('papSubdistrict').value = r.t;
+  document.getElementById('papDistrict').value    = _distName(r.d);
+  document.getElementById('papProvince').value    = r.p;
+  document.getElementById('papZip').value         = r.z;
+  const badge = document.getElementById('papAddrFilledBadge');
+  document.getElementById('papAddrFilledText').textContent = `${r.t} » ${_distName(r.d)} » ${r.p} » ${r.z}`;
+  badge.style.display = 'inline-flex';
+  document.getElementById('papZipHint').textContent = '';
+}
+
+// Keyboard nav for pap (ตรวจภายใน) postal dropdown
+document.addEventListener('keydown', e => {
+  const dd = document.getElementById('papAddrDropdown');
+  if (!dd?.classList.contains('open')) return;
+  const items = dd.querySelectorAll('.addr-dd-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _papAddrKbdIdx = Math.min(_papAddrKbdIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('kbd-focus', i === _papAddrKbdIdx));
+    items[_papAddrKbdIdx]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _papAddrKbdIdx = Math.max(_papAddrKbdIdx - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('kbd-focus', i === _papAddrKbdIdx));
+    items[_papAddrKbdIdx]?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter' && _papAddrKbdIdx >= 0) {
+    e.preventDefault(); selectPapAddr(_papAddrKbdIdx);
+  } else if (e.key === 'Escape') {
+    papAddrClear();
+  }
+});
+
 // ─── Scroll to Section ───────────────────────────────────────────────────────
 function scrollToSection(id) {
   const el = document.getElementById(id);
@@ -3546,7 +3909,7 @@ function scrollToSection(id) {
   const top = el.getBoundingClientRect().top + window.scrollY - offset;
   window.scrollTo({ top, behavior: 'smooth' });
   // อัปเดต active step
-  const secToStep = { sec1:'step1-tab', sec2:'step2-tab', sec3:'step3-tab', sec4:'step4-tab', sec5:'step5-tab' };
+  const secToStep = { sec1:'step1-tab', sec2:'step2-tab', sec3:'step3-tab', sec4:'step4-tab', sec5:'step5-tab', sec6:'step6-tab' };
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   const tab = document.getElementById(secToStep[id]);
   if (tab) tab.classList.add('active');
@@ -3707,6 +4070,72 @@ function validateAndScrollToError() {
     }
   }
 
+  // 5b. ตรวจช่องทางรับผลตรวจภายใน (บังคับเลือกเมื่อ ตรวจภายใน + รอรับด้วยตนเอง)
+  const pickupPapDetail = document.getElementById('pickupPapDetail');
+  if (pickupPapDetail && pickupPapDetail.style.display !== 'none') {
+    const papDelChecked = document.querySelector('input[name="papDeliveryMethod"]:checked');
+    if (!papDelChecked) {
+      const top = pickupPapDetail.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+      showToast('⚠ กรุณาเลือกช่องทางรับผลตรวจภายใน');
+      return false;
+    }
+    const papMethod = papDelChecked.value;
+
+    if (papMethod === 'email') {
+      const papEmail        = document.getElementById('papResultEmail');
+      const papEmailConfirm = document.getElementById('papResultEmailConfirm');
+      if (!papEmail?.value.trim()) {
+        showToast('⚠ กรุณากรอก E-mail สำหรับรับผลตรวจภายใน');
+        papEmail.focus();
+        return false;
+      }
+      if (!papEmailConfirm?.value.trim() || papEmailConfirm.value.trim() !== papEmail.value.trim()) {
+        showToast('⚠ กรุณายืนยัน E-mail สำหรับรับผลตรวจภายในให้ตรงกัน');
+        papEmailConfirm.focus();
+        return false;
+      }
+    }
+
+    if (papMethod === 'post') {
+      const papRecipient     = document.getElementById('papRecipient');
+      const papRecipientLast = document.getElementById('papRecipientLast');
+      const papPhone         = document.getElementById('papPhone');
+      const papPhoneHint     = document.getElementById('papPhoneHint');
+      const papProvince      = document.getElementById('papProvince');
+      const papZip           = document.getElementById('papZip');
+      if (!papRecipient?.value.trim()) {
+        showToast('⚠ กรุณากรอกชื่อผู้รับ (ที่อยู่สำหรับส่งผลตรวจภายใน)');
+        papRecipient.focus();
+        return false;
+      }
+      if (!papRecipientLast?.value.trim()) {
+        showToast('⚠ กรุณากรอกนามสกุลผู้รับ (ที่อยู่สำหรับส่งผลตรวจภายใน)');
+        papRecipientLast.focus();
+        return false;
+      }
+      if (!papPhone?.value.trim() || papPhone.value.trim().length !== 10) {
+        showToast('⚠ กรุณากรอกเบอร์โทรศัพท์ผู้รับ 10 หลัก (ที่อยู่สำหรับส่งผลตรวจภายใน)');
+        if (papPhoneHint) papPhoneHint.style.display = 'block';
+        papPhone.focus();
+        return false;
+      } else {
+        if (papPhoneHint) papPhoneHint.style.display = 'none';
+      }
+      if (!papProvince?.value.trim()) {
+        showToast('⚠ กรุณากรอกจังหวัด (ที่อยู่สำหรับส่งผลตรวจภายใน)');
+        papProvince.focus();
+        return false;
+      }
+      if (!papZip?.value.trim() || papZip.value.trim().length < 5) {
+        showToast('⚠ กรุณากรอกรหัสไปรษณีย์ให้ครบ 5 หลัก (ที่อยู่สำหรับส่งผลตรวจภายใน)');
+        papZip.focus();
+        return false;
+      }
+    }
+    // papMethod === 'call' — ไม่ต้องกรอกข้อมูลเพิ่มเติม
+  }
+
   // 6. ตรวจโปรแกรม
   if (!selectedProgram) {
     const progSec = document.getElementById('sec2');
@@ -3719,7 +4148,7 @@ function validateAndScrollToError() {
   // ตรวจว่าเลือกช่องทางจัดส่งหรือยัง
   const delChecked = document.querySelector('input[name="deliveryMethod"]:checked');
   if (!delChecked) {
-    const delSec = document.getElementById('sec4');
+    const delSec = document.getElementById('sec5');
     const top = delSec.getBoundingClientRect().top + window.scrollY - 80;
     window.scrollTo({ top, behavior: 'smooth' });
     showToast('⚠ กรุณาเลือกช่องทางการจัดส่งผลตรวจ');
@@ -3745,7 +4174,7 @@ function validateAndScrollToError() {
 
     const consent = document.getElementById('consentCheck');
   if (!consent || !consent.checked) {
-    const consentEl = document.getElementById('sec5') || consent?.closest('section') || consent?.closest('.form-section');
+    const consentEl = document.getElementById('sec6') || consent?.closest('section') || consent?.closest('.form-section');
     if (consentEl) {
       const top = consentEl.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top, behavior: 'smooth' });
@@ -3871,6 +4300,24 @@ function handleSubmit(e) {
     postProvince:  document.getElementById('postProvince')?.value || '',
     postZip:       document.getElementById('postZip')?.value || '',
     postEmail:     document.getElementById('emailAddr')?.value || '',
+    // ช่องทางรับผลตรวจภายใน (ตรวจภายใน + รอรับด้วยตนเอง, ใช้เวลา 30-45 วัน)
+    papDeliveryMethod: (() => {
+      const m = document.querySelector('input[name="papDeliveryMethod"]:checked')?.value || '';
+      const map = { email: 'ส่งทาง E-mail', post: 'ส่งทางไปรษณีย์', call: 'นัดรับผล (โทรแจ้ง)' };
+      return map[m] || '';
+    })(),
+    papResultEmail:         document.getElementById('papResultEmail')?.value || '',
+    papResultRecipient:     document.getElementById('papRecipient')?.value || '',
+    papResultRecipientLast: document.getElementById('papRecipientLast')?.value || '',
+    papResultPhone:         document.getElementById('papPhone')?.value || '',
+    papResultAddr:          document.getElementById('papAddr1')?.value || '',
+    papResultSubdistrict:   document.getElementById('papSubdistrict')?.value || '',
+    papResultDistrict:      document.getElementById('papDistrict')?.value || '',
+    papResultProvince:      document.getElementById('papProvince')?.value || '',
+    papResultZip:           document.getElementById('papZip')?.value || '',
+    // เอกสารเพิ่มเติม
+    medCertCount:          document.getElementById('medCertCount')?.value || '',
+    nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
   };
 
   // ส่งข้อมูลไปยัง Google Sheet (ไม่รอผล — แสดง modal ทันที)
@@ -3913,17 +4360,21 @@ function handleSubmit(e) {
     hn: hnNumber,
     amendParts: isHNMode ? [..._amendParts] : [],
     dept: dept,
+    orgStatus: document.getElementById('orgStatus')?.value || '',
     payRight: payRight,
     age: age,
     gender: selectedGender,
     prog: selectedProgram,
     delivery: delTxt,
+    papDelivery: formData.papDeliveryMethod || '',
     total: totalTxt,
     addList: addList,
     basePrice: _basePrice,
     addTotal: _addTotal,
     addListPriced: _addListPriced,
-    serviceDate: document.getElementById('serviceDate')?.value || ''
+    serviceDate: document.getElementById('serviceDate')?.value || '',
+    medCertCount: document.getElementById('medCertCount')?.value || '',
+    nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || ''
   });
 }
 
@@ -3932,11 +4383,29 @@ function resetForm() {
   selectedProgram = null;
   selectedGender = null;
   papChoice = 'no';
+  currentDeliveryMethod = '';
+  papDeliveryMethod = '';
   for (let i = 1; i <= 4; i++) {
     const card = document.getElementById('card-' + i);
     card.classList.remove('selected-1','selected-2','selected-3','selected-4');
   }
   document.getElementById('papToggle').classList.remove('show');
+  // ซ่อนกล่องที่อยู่ทั้งหมด และรีเซ็ตปุ่มจัดส่ง
+  ['pickup','post','email'].forEach(m => {
+    const card = document.getElementById('delCard-' + m);
+    if (card) card.className = 'delivery-card';
+  });
+  document.getElementById('postDetail').style.display = 'none';
+  document.getElementById('emailDetail').style.display = 'none';
+  document.getElementById('pickupPapDetail').style.display = 'none';
+  // รีเซ็ตช่องทางรับผลตรวจภายใน
+  ['email','post','call'].forEach(m => {
+    const card = document.getElementById('papDelCard-' + m);
+    if (card) card.className = 'delivery-card';
+  });
+  document.getElementById('papEmailDetail').style.display = 'none';
+  document.getElementById('papPostDetail').style.display = 'none';
+  document.getElementById('papCallDetail').style.display = 'none';
   renderTests();
   calcTotal();
   document.getElementById('main-form').style.display = 'block';
@@ -4161,7 +4630,7 @@ function isBlockedDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDay();
   // บล็อกวันเสาร์ (6) เท่านั้น วันอาทิตย์เลือกได้แต่มี limit
-  if (day === 6) return { blocked: true, reason: 'วันเสาร์' };
+  if (day === 6) return { blocked: true, reason: 'วันเสาร์', message: '⚠ วันเสาร์คลินิกตรวจสุขภาพปิดทำการ กรุณาเลือกวันทำการอื่น' };
   // บล็อกวันหยุดนักขัตฤกษ์
   if (THAI_HOLIDAYS.has(dateStr)) return { blocked: true, reason: 'วันหยุดนักขัตฤกษ์' };
   return { blocked: false };
@@ -4210,7 +4679,7 @@ function syncServiceDate(picker) {
   // ตรวจสอบวันที่ถูกบล็อก
   const check = isBlockedDate(val);
   if (check.blocked) {
-    showToast(`⚠ ไม่สามารถเลือก${check.reason}ได้ กรุณาเลือกวันทำการอื่น`);
+    showToast(check.message || `⚠ ไม่สามารถเลือก${check.reason}ได้ กรุณาเลือกวันทำการอื่น`);
     picker.value = '';
     if (display) display.textContent = '';
     if (placeholder) placeholder.style.display = '';
@@ -4367,8 +4836,28 @@ function onDeliveryChange(method) {
   document.getElementById('postDetail').style.display = method === 'post' ? 'block' : 'none';
   document.getElementById('emailDetail').style.display = method === 'email' ? 'block' : 'none';
 
+  currentDeliveryMethod = method;
+  updatePickupPapDetail();
+
   // Recalculate total (delivery fee may change)
   calcTotal();
+}
+
+// ── ตรวจภายใน (PAP) + รอรับด้วยตนเอง: แสดง/ซ่อนช่องที่อยู่สำหรับส่งผลตรวจภายใน ──
+function updatePickupPapDetail() {
+  const box = document.getElementById('pickupPapDetail');
+  if (!box) return;
+  const show = (currentDeliveryMethod === 'pickup') && (papChoice === 'yes');
+  box.style.display = show ? 'block' : 'none';
+  updatePapCombineNotes();
+}
+
+// ── ตรวจภายใน (PAP) + ส่งไปรษณีย์/อีเมล: แสดงข้อความแจ้งว่าผลตรวจภายในจะจัดส่งที่เดียวกัน ──
+function updatePapCombineNotes() {
+  const postNote = document.getElementById('postPapNote');
+  const emailNote = document.getElementById('emailPapNote');
+  if (postNote)  postNote.style.display  = (currentDeliveryMethod === 'post'  && papChoice === 'yes') ? 'flex' : 'none';
+  if (emailNote) emailNote.style.display = (currentDeliveryMethod === 'email' && papChoice === 'yes') ? 'flex' : 'none';
 }
 
 function togglePostAddr(type) {
@@ -4420,6 +4909,38 @@ function checkEmailMatch() {
   const e1 = document.getElementById('resultEmail')?.value || '';
   const e2 = document.getElementById('resultEmailConfirm')?.value || '';
   const hint = document.getElementById('emailMatchHint');
+  if (!e2) { hint.textContent = ''; hint.style.color = ''; return; }
+  if (e1 === e2) {
+    hint.textContent = '✓ อีเมลตรงกัน';
+    hint.style.color = 'var(--success)';
+  } else {
+    hint.textContent = '✗ อีเมลไม่ตรงกัน';
+    hint.style.color = 'var(--danger)';
+  }
+}
+
+// ── ช่องทางรับผลตรวจภายใน (email / ไปรษณีย์ / นัดรับผล) ──
+function onPapDeliveryChange(method) {
+  papDeliveryMethod = method;
+  // Reset all card styles
+  ['email','post','call'].forEach(m => {
+    const card = document.getElementById('papDelCard-' + m);
+    if (card) card.className = 'delivery-card';
+  });
+  // Apply selected style
+  const selCard = document.getElementById('papDelCard-' + method);
+  if (selCard) selCard.classList.add('del-selected-' + method);
+
+  // Show/hide details
+  document.getElementById('papEmailDetail').style.display = method === 'email' ? 'block' : 'none';
+  document.getElementById('papPostDetail').style.display  = method === 'post'  ? 'block' : 'none';
+  document.getElementById('papCallDetail').style.display  = method === 'call'  ? 'block' : 'none';
+}
+
+function checkPapEmailMatch() {
+  const e1 = document.getElementById('papResultEmail')?.value || '';
+  const e2 = document.getElementById('papResultEmailConfirm')?.value || '';
+  const hint = document.getElementById('papEmailMatchHint');
   if (!e2) { hint.textContent = ''; hint.style.color = ''; return; }
   if (e1 === e2) {
     hint.textContent = '✓ อีเมลตรงกัน';
@@ -4492,6 +5013,9 @@ function showSuccessModal(data) {
   }
   if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
+  if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${data.papDelivery}</span></div>`;
+  if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์</span><span class="sv">${data.medCertCount} ชุด</span></div>`;
+  if (data.nonFormularyDrugCount) html += `<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">${data.nonFormularyDrugCount} ชุด</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
   html += `<div class="sr-section-title">โปรแกรม ${data.prog} — ${progNames[data.prog]}</div>`;
@@ -4501,29 +5025,39 @@ function showSuccessModal(data) {
   });
   html += `</div>`;
 
+  // ── เช็คกรณี ครอบครัว + ชำระเงินเองทั้งหมด ──
+  const isFamilySelfPay = data.orgStatus === 'ครอบครัว' && data.payRight === 'ชำระเงินเอง';
+
   // ── ราคาโปรแกรม ──
-  if (data.basePrice > 0) {
+  if (data.basePrice > 0 && !isFamilySelfPay) {
     html += `<div class="sr-price-row"><span class="sr-price-label">💊 ราคาโปรแกรมตรวจสุขภาพ</span><span class="sr-price-val">${data.basePrice.toLocaleString()} บาท</span></div>`;
   }
 
   // ── รายการตรวจเพิ่มเติม ──
   if (data.addListPriced && data.addListPriced.length > 0) {
-    html += `<div class="sr-section-title extra">➕ รายการเพิ่มเติมชำระเงินเอง (${data.addListPriced.length} รายการ)</div>`;
+    const addHeaderTxt = isFamilySelfPay ? '➕ รายการตรวจเพิ่มเติม' : '➕ รายการเพิ่มเติมชำระเงินเอง';
+    html += `<div class="sr-section-title extra">${addHeaderTxt} (${data.addListPriced.length} รายการ)</div>`;
     html += `<div class="sr-test-list">`;
     data.addListPriced.forEach(n => {
       html += `<div class="sr-test-item extra" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">${n.th}</span></span><span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">${n.price.toLocaleString()} บาท</span></div>`;
     });
     html += `</div>`;
-    if (data.addTotal > 0) {
+    if (data.addTotal > 0 && !isFamilySelfPay) {
       html += `<div class="sr-price-row" style="border-top:1px solid #FFD0B0;padding-top:6px;margin-top:4px"><span class="sr-price-label" style="color:#E65100">รวมรายการเพิ่มเติม</span><span class="sr-price-val" style="color:#E65100">${data.addTotal.toLocaleString()} บาท</span></div>`;
     }
   } else if (data.addList && data.addList.length > 0) {
-    html += `<div class="sr-section-title extra">➕ รายการเพิ่มเติมชำระเงินเอง (${data.addList.length} รายการ)</div>`;
+    const addHeaderTxt = isFamilySelfPay ? '➕ รายการตรวจเพิ่มเติม' : '➕ รายการเพิ่มเติมชำระเงินเอง';
+    html += `<div class="sr-section-title extra">${addHeaderTxt} (${data.addList.length} รายการ)</div>`;
     html += `<div class="sr-test-list">`;
     data.addList.forEach(n => {
       html += `<div class="sr-test-item extra"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">${n.th}</span><span class="sr-name-eng">${n.eng}</span></div>`;
     });
     html += `</div>`;
+  }
+
+  // ── สรุปกรณี ครอบครัว + ชำระเงินเองทั้งหมด ──
+  if (isFamilySelfPay) {
+    html += `<div class="sr-price-row" style="border-top:1px solid #FFD0B0;padding-top:6px;margin-top:4px"><span class="sr-price-label" style="color:#E65100">ราคาโปรแกรมตรวจ + รายการเพิ่มเติม (ชำระเองทั้งหมด)</span><span class="sr-price-val" style="color:#E65100">${(data.basePrice + (data.addTotal||0)).toLocaleString()} บาท</span></div>`;
   }
 
   // ── ยอดรวม ──
@@ -4728,6 +5262,10 @@ function closeProgDetailOutside(e) {
           </div>
           <div class="prep-card-body">
             <p style="margin:0 0 6px">สามารถเก็บอุจจาระมาก่อนได้ แนะนำใส่<strong>ภาชนะที่สะอาด</strong><br>เมื่อถึงวันเข้ารับบริการ เปลี่ยนใส่ภาชนะของโรงพยาบาล (ที่ห้องเจาะเลือด) และปัสสาวะให้มาเก็บที่โรงพยาบาล</p>
+            <div class="prep-note-box" style="margin-top:10px">
+              <div class="prep-note-title">สำหรับผู้ที่ตรวจอัลตราซาวต์ช่องท้องส่วนล่าง</div>
+              <p style="margin:0">ต้องกลั้นปัสสาวะ: ก่อนตรวจประมาณ 1-2 ชั่วโมง ควรดื่มน้ำเปล่าเยอะๆ (อย่างน้อย 500-1,000 มล.) จนรู้สึกปวดปัสสาวะมาก</p>
+            </div>
           </div>
         </div>
 
@@ -4796,35 +5334,40 @@ function closeProgDetailOutside(e) {
       </div>
 
       <div class="prep-contact">
-        <div class="prep-contact-title" style="font-size:14px;font-weight:800;color:#1A3C34;margin-bottom:10px">หากมีข้อสงสัยเพิ่มเติม กรุณาติดต่อ <span style="font-weight:500;font-size:12px;color:#2E7D60">ในวันและเวลาราชการ</span></div>
-        <div style="display:flex;flex-direction:row;gap:10px;align-items:stretch;justify-content:center;flex-wrap:wrap">
+        <div class="prep-contact-title" style="font-size:15px;font-weight:800;color:#1A3C34;margin-bottom:16px">หากมีข้อสงสัยเพิ่มเติม กรุณาติดต่อ<br><span style="font-weight:500;font-size:13px;color:#2E7D60">ในวันและเวลาราชการ</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch;max-width:280px;margin:0 auto">
           <!-- LINE card -->
-          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #B2DFDB;border-radius:10px;padding:8px 14px;box-shadow:0 2px 6px rgba(6,199,85,0.10);flex:1;min-width:140px">
-            <div style="background:#06C755;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div style="display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #B2DFDB;border-radius:12px;padding:12px 16px;box-shadow:0 2px 6px rgba(6,199,85,0.10)">
+            <!-- Official LINE logo: rounded rect chat bubble with tail -->
+            <div style="background:#06C755;border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(6,199,85,0.35)">
+              <svg width="26" height="26" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer rounded speech bubble -->
                 <rect x="3" y="3" width="34" height="28" rx="9" fill="white"/>
+                <!-- Bubble tail at bottom-right -->
                 <path d="M26 31 L22 38 L30 35 Z" fill="white"/>
+                <!-- LINE text inside bubble -->
                 <text x="20" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" font-weight="900" fill="#06C755" letter-spacing="0.5">LINE</text>
               </svg>
             </div>
             <div>
-              <div style="font-size:10px;color:#888;font-weight:500">LINE Official</div>
-              <div style="font-size:14px;font-weight:700;color:#06C755">@035ugnpd</div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:2px">LINE Official</div>
+              <div style="font-size:16px;font-weight:700;color:#06C755;letter-spacing:0.5px">@035ugnpd</div>
             </div>
           </div>
           <!-- Phone card -->
-          <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #B2DFDB;border-radius:10px;padding:8px 14px;box-shadow:0 2px 6px rgba(45,52,129,0.07);flex:1;min-width:160px">
-            <div style="background:#2D3481;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012.18 1h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 8.09a16 16 0 006 6l.55-.55a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+          <div style="display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #B2DFDB;border-radius:12px;padding:12px 16px;box-shadow:0 2px 6px rgba(45,52,129,0.07)">
+            <div style="background:#2D3481;border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(45,52,129,0.25)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012.18 1h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 8.09a16 16 0 006 6l.55-.55a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
             </div>
             <div>
-              <div style="font-size:10px;color:#888;font-weight:500">โทรศัพท์</div>
-              <div style="font-size:12px;font-weight:700;color:#1A1E40;line-height:1.6">043-366312 | 043-366865 | 061-4929500</div>
+              <div style="font-size:11px;color:#888;font-weight:500;margin-bottom:2px">โทรศัพท์</div>
+              <div style="font-size:14px;font-weight:700;color:#1A1E40;line-height:1.8">043-366312 &nbsp;|&nbsp; 043-366865<br>061-4929500</div>
             </div>
           </div>
         </div>
-        <div class="prep-happiness" style="margin-top:12px;font-size:15px;font-weight:800;color:#1A1E40">
-          Happiness of care &nbsp;<span style="font-size:12px;font-weight:500;color:#666">ความสุขของการได้ดูแล</span>
+        <div class="prep-happiness" style="margin-top:20px;font-size:18px;font-weight:800;color:#1A1E40">
+          Happiness of care<br>
+          <span style="font-size:13px;font-weight:500;color:#666">ความสุขของการได้ดูแล</span>
         </div>
       </div>
     </div>
@@ -4855,4 +5398,80 @@ function closeProgDetailOutside(e) {
 
 
 <!-- ─── Amendment Popup (shown when HN = มี) ─── -->
-<div class="amend-overlay" id="amendOve
+<div class="amend-overlay" id="amendOverlay">
+  <div class="amend-box" id="amendBox">
+
+    <!-- ── Step 1: คำถาม ── -->
+    <div id="amendStep1">
+      <div class="amend-icon">📋</div>
+      <div class="amend-title">มีข้อมูลที่ต้องการแก้ไขหรือไม่?</div>
+      <div class="amend-sub">เช่น ชื่อ-นามสกุล, ที่อยู่, ข้อมูลการแพ้ยา<br>หรือข้อมูลส่วนตัวอื่นๆ</div>
+      <div class="amend-btns">
+        <button class="amend-btn-specify" onclick="amendSpecify()">แก้ไขข้อมูล</button>
+        <button class="amend-btn-none"    onclick="amendNone()">ไม่แก้ไข</button>
+      </div>
+    </div>
+
+    <!-- ── Step 2: ฟอร์มแก้ไข (ซ่อนไว้ก่อน) ── -->
+    <div id="amendStep2" style="display:none;text-align:left">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:16px;font-weight:800;color:var(--primary-dark,#001D3D)">📝 ระบุส่วนที่ต้องแก้ไข</div>
+        <button onclick="amendNone()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;line-height:1">✕</button>
+      </div>
+
+      <!-- ชื่อ-นามสกุล -->
+      <div style="margin-bottom:10px">
+        <div class="amend-field-label">คำนำหน้า / ชื่อ / นามสกุล</div>
+        <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:6px">
+          <select id="ap_prefix" style="padding:7px 8px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+            <option value="">คำนำหน้า</option>
+            <option>นาย</option><option>นาง</option><option>น.ส.</option>
+            <option>Mr.</option><option>Miss</option><option>Mrs.</option>
+          </select>
+          <input type="text" id="ap_firstName" placeholder="ชื่อ" class="amend-input">
+          <input type="text" id="ap_lastName"  placeholder="นามสกุล" class="amend-input">
+        </div>
+      </div>
+
+      <!-- ชื่อเดิม / นามสกุลเดิม -->
+      <div style="margin-bottom:10px">
+        <div class="amend-field-label">ชื่อเดิม / นามสกุลเดิม (กรณีเปลี่ยนชื่อ-สกุล)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <input type="text" id="ap_oldFirst" placeholder="ชื่อเดิม" class="amend-input">
+          <input type="text" id="ap_oldLast"  placeholder="นามสกุลเดิม" class="amend-input">
+        </div>
+        <div style="font-size:11px;color:#E67E22;margin-top:3px">⚠ ถ้ามีเปลี่ยน ชื่อ-สกุล กรุณานำเอกสารมาด้วย</div>
+      </div>
+
+      <!-- โทรศัพท์ -->
+      <div style="margin-bottom:10px">
+        <div class="amend-field-label">เบอร์โทรศัพท์</div>
+        <input type="tel" id="ap_phone" placeholder="08x-xxx-xxxx" maxlength="10"
+          oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"
+          class="amend-input" style="width:100%">
+      </div>
+
+      <!-- ที่อยู่ใหม่ -->
+      <div style="margin-bottom:10px">
+        <div class="amend-field-label">ที่อยู่ใหม่ (ถ้าเปลี่ยน)</div>
+        <input type="text" id="ap_addr" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด"
+          class="amend-input" style="width:100%">
+      </div>
+
+      <!-- หมายเหตุ -->
+      <div style="margin-bottom:16px">
+        <div class="amend-field-label">หมายเหตุ / ส่วนอื่นๆ ที่ต้องแก้ไข</div>
+        <textarea id="ap_note" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."
+          style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
+      </div>
+
+      <button onclick="amendSave()"
+        style="width:100%;padding:11px;background:var(--accent,#E67E22);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+        ✔ บันทึกและปิด
+      </button>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
