@@ -1999,7 +1999,7 @@
             </div>
             <div class="field-group">
               <label>สถานะ <span class="req">*</span></label>
-              <select id="orgStatus" required style="width:100%">
+              <select id="orgStatus" required style="width:100%" onchange="calcTotal()">
                 <option value="">-- เลือก --</option>
                 <option value="พนักงาน">พนักงาน</option>
                 <option value="ครอบครัว">ครอบครัว</option>
@@ -2013,7 +2013,7 @@
           <div class="field-grid cols-3" style="margin-bottom:6px">
             <div class="field-group">
               <label>สิทธิการชำระเงิน <span class="req">*</span></label>
-              <select id="paymentRight" required style="width:100%">
+              <select id="paymentRight" required style="width:100%" onchange="calcTotal()">
                 <option value="">-- เลือก --</option>
                 <option value="เรียกเก็บหน่วยงาน">เรียกเก็บหน่วยงาน</option>
                 <option value="ชำระเงินเอง">ชำระเงินเอง</option>
@@ -2639,7 +2639,7 @@
             <div class="dd-title">🔬 ช่องทางรับผลตรวจภายใน</div>
             <div class="delivery-timeline-note">
               <span class="tl-icon">🕐</span>
-              <span>ผลตรวจทั่วไปรับได้วันตรวจตามปกติ แต่<strong>ผลตรวจภายในใช้เวลาประมาณ 30–45 วัน</strong> กรุณาเลือกช่องทางรับผลตรวจภายในด้านล่าง</span>
+              <span>ผลตรวจสุขภาพจะได้รับในวันตรวจ แต่<strong>ผลตรวจภายในใช้เวลาประมาณ 30–45 วัน</strong> กรุณาเลือกช่องทางรับผลตรวจภายในด้านล่าง</span>
             </div>
 
             <!-- เลือกช่องทางรับผลตรวจภายใน -->
@@ -2851,6 +2851,10 @@
         <div id="emailDetail" style="display:none">
           <div class="delivery-detail-box green">
             <div class="dd-title">📧 รายละเอียดการส่ง E-mail</div>
+            <div class="delivery-timeline-note">
+              <span class="tl-icon">🕐</span>
+              <span>ระยะเวลาในการจัดส่งผลตรวจ <strong>ประมาณ 30–45 วัน</strong> หลังจากวันตรวจ</span>
+            </div>
             <div class="delivery-timeline-note pap-combine-note" id="emailPapNote" style="display:none">
               <span class="tl-icon">🔬</span>
               <span>ท่านเลือก <strong>ตรวจภายใน</strong> — ผลตรวจภายในจะจัดส่งพร้อมกับผลตรวจสุขภาพไปยัง<strong>อีเมลเดียวกัน</strong>นี้</span>
@@ -3096,6 +3100,10 @@ function toggleTest(id, el) {
     if (id === 35) {
       showToast('📅 รายการ Mammogram and Ultrasound Breast จะได้ทำการตรวจในรอบบ่าย เวลา 13.00 น.');
     }
+    // แจ้งเตือนพิเศษสำหรับ อัลตราซาวด์เต้านม (อายุ < 35 ปี) (id:34) — ตรวจรอบบ่าย 13.00 น.
+    if (id === 34) {
+      showToast('📅 รายการ Ultrasound Breast จะได้ทำการตรวจในรอบบ่าย เวลา 13.00 น.');
+    }
   }
   calcTotal();
 }
@@ -3262,6 +3270,9 @@ function calcTotal() {
   papChoice = document.querySelector('input[name="pap"]:checked')?.value || 'no';
   currentDeliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked')?.value || currentDeliveryMethod;
   updatePickupPapDetail();
+  const orgStatus = document.getElementById('orgStatus')?.value || '';
+  const payRight  = document.getElementById('paymentRight')?.value || '';
+  const isFamilySelfPay = orgStatus === 'ครอบครัว' && payRight === 'ชำระเงินเอง';
   const g = selectedGender;
   let basePrice = 0;
   let baseLabel = 'โปรแกรมที่เลือก';
@@ -3297,21 +3308,48 @@ function calcTotal() {
   // Update UI
   const progCard = document.getElementById('progCard');
   const addCard  = document.getElementById('addCard');
+  const progHd   = document.getElementById('progHd');
+  const addHd    = document.getElementById('addHd');
 
-  if (basePrice > 0) {
-    if (progCard) progCard.style.display = 'block';
-    document.getElementById('baseLabel').textContent = baseLabel;
-    document.getElementById('baseAmount').textContent = basePrice.toLocaleString() + ' บาท';
-  } else {
-    if (progCard) progCard.style.display = 'none';
-  }
+  if (isFamilySelfPay) {
+    // ── กรณี ครอบครัว + ชำระเงินเอง: รวมราคาโปรแกรม + รายการเพิ่มเติม เป็นชำระเงินเองทั้งหมด ──
+    if (progHd) progHd.textContent = '💊 ราคาโปรแกรมตรวจสุขภาพ + รายการเพิ่มเติม (ชำระเงินเองทั้งหมด)';
+    if (basePrice > 0 || addCount > 0) {
+      if (progCard) progCard.style.display = 'block';
+      document.getElementById('baseLabel').textContent = baseLabel;
+      document.getElementById('baseAmount').textContent = basePrice.toLocaleString() + ' บาท';
+    } else {
+      if (progCard) progCard.style.display = 'none';
+    }
 
-  if (addCount > 0) {
-    if (addCard) addCard.style.display = 'block';
-    document.getElementById('addCount').textContent = addCount;
-    document.getElementById('addAmount').textContent = addTotal.toLocaleString() + ' บาท';
+    if (addCount > 0) {
+      if (addCard) addCard.style.display = 'block';
+      if (addHd) addHd.textContent = '➕ รายการตรวจเพิ่มเติม';
+      document.getElementById('addCount').textContent = addCount;
+      document.getElementById('addAmount').textContent = addTotal.toLocaleString() + ' บาท';
+    } else {
+      if (addCard) addCard.style.display = 'none';
+    }
   } else {
-    if (addCard) addCard.style.display = 'none';
+    // ── กรณีปกติ (รวมถึง พนักงาน + เรียกเก็บหน่วยงาน) ──
+    if (progHd) progHd.textContent = '💊 ราคาโปรแกรมตรวจสุขภาพ';
+    if (addHd) addHd.textContent = '➕ รายการเพิ่มเติมชำระเงินเอง';
+
+    if (basePrice > 0) {
+      if (progCard) progCard.style.display = 'block';
+      document.getElementById('baseLabel').textContent = baseLabel;
+      document.getElementById('baseAmount').textContent = basePrice.toLocaleString() + ' บาท';
+    } else {
+      if (progCard) progCard.style.display = 'none';
+    }
+
+    if (addCount > 0) {
+      if (addCard) addCard.style.display = 'block';
+      document.getElementById('addCount').textContent = addCount;
+      document.getElementById('addAmount').textContent = addTotal.toLocaleString() + ' บาท';
+    } else {
+      if (addCard) addCard.style.display = 'none';
+    }
   }
 
   document.getElementById('totalAmount').textContent = total.toLocaleString();
