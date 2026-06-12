@@ -471,38 +471,114 @@
   /* PAP Smear toggle */
   .pap-toggle {
     display: none;
+    flex-direction: column;
     background: #EDF7ED;
     border: 1.5px solid #81C784;
     border-radius: var(--radius);
     padding: 14px 18px;
-    gap: 14px;
-    align-items: center;
+    gap: 12px;
     margin-bottom: 20px;
   }
   .pap-toggle.show { display: flex; }
+  .pap-toggle-top { display: flex; align-items: center; gap: 14px; }
   .pap-toggle .pap-text { flex: 1; }
   .pap-toggle .pap-title { font-size: 14px; font-weight: 600; color: #2E7D32; }
   .pap-toggle .pap-desc { font-size: 12.5px; color: #558B2F; margin-top: 2px; }
-  .pap-options { display: flex; gap: 10px; }
-  .pap-opt { position: relative; }
+  .pap-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pap-opt { position: relative; flex: 1 1 auto; }
   .pap-opt input { position: absolute; opacity: 0; }
   .pap-opt label {
-    display: flex; align-items: center; gap: 6px;
-    padding: 8px 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 8px 10px;
     border: 2px solid #A5D6A7;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     color: #2E7D32;
     background: #fff;
+    text-align: center;
     transition: all 0.2s;
+    min-width: 110px;
+    height: 100%;
   }
+  .pap-opt label .pap-opt-price { font-size: 11px; font-weight: 700; opacity: 0.85; }
   .pap-opt input:checked + label {
     background: #2E7D32;
     color: #fff;
     border-color: #2E7D32;
   }
+  @media (max-width: 600px) {
+    .pap-options { flex-wrap: wrap; }
+    .pap-opt { flex: 1 1 calc(50% - 8px); }
+  }
+
+  /* PAP Smear Info Box */
+  .pap-info-box {
+    display: none;
+    background: #F3F9FF;
+    border: 1.5px solid #90CAF9;
+    border-left: 4px solid #1976D2;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #0D47A1;
+    line-height: 1.6;
+  }
+  .pap-info-box .pap-info-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pap-info-box .pap-info-age {
+    margin-bottom: 8px;
+  }
+  .pap-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+    font-size: 12.5px;
+  }
+  .pap-info-table th, .pap-info-table td {
+    border: 1px solid #BBDEFB;
+    padding: 6px 10px;
+    text-align: center;
+  }
+  .pap-info-table th {
+    background: #BBDEFB;
+    color: #0D47A1;
+    font-weight: 700;
+  }
+  .pap-info-table td:first-child {
+    text-align: left;
+    font-weight: 600;
+  }
+  .pap-info-desc {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pap-info-desc-item {
+    padding-left: 14px;
+    position: relative;
+  }
+  .pap-info-desc-item::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #1976D2;
+    font-weight: 700;
+  }
+  .pap-info-desc-item .pap-info-tag {
+    color: #1565C0;
+    font-weight: 400;
+    font-size: 12px;
+  }
+  .pap-info-box.show { display: block; }
 
 
   /* ─── Included Items Banner ─── */
@@ -2474,10 +2550,12 @@
 
         <!-- PAP Smear Toggle (Female only) -->
         <div class="pap-toggle" id="papToggle">
-          <div style="font-size:28px">🔬</div>
-          <div class="pap-text">
-            <div class="pap-title">ตรวจมะเร็งปากมดลูก (PAP Smear)</div>
-            <div class="pap-desc">สำหรับผู้ป่วยหญิง — การตรวจภายในเพิ่มเติม (มีผลต่อราคา)</div>
+          <div class="pap-toggle-top">
+            <div style="font-size:28px">🔬</div>
+            <div class="pap-text">
+              <div class="pap-title">ตรวจมะเร็งปากมดลูก (PAP Smear)</div>
+              <div class="pap-desc">สำหรับผู้ป่วยหญิง — การตรวจภายในเพิ่มเติม (มีผลต่อราคา)</div>
+            </div>
           </div>
           <div class="pap-options">
             <div class="pap-opt">
@@ -2485,10 +2563,57 @@
               <label for="papNo">ไม่ตรวจภายใน</label>
             </div>
             <div class="pap-opt">
-              <input type="radio" name="pap" id="papYes" value="yes" onchange="calcTotal(); papChoice='yes'; updatePickupPapDetail();">
-              <label for="papYes">ตรวจภายใน (+200 บาท)</label>
+              <input type="radio" name="pap" id="papPap" value="pap" onchange="calcTotal(); papChoice='pap'; updatePickupPapDetail();">
+              <label for="papPap"><span>Pap smear</span><span class="pap-opt-price">+200 บาท</span></label>
+            </div>
+            <div class="pap-opt">
+              <input type="radio" name="pap" id="papThinprep" value="thinprep" onchange="calcTotal(); papChoice='thinprep'; updatePickupPapDetail();">
+              <label for="papThinprep"><span>Thinprep</span><span class="pap-opt-price">+700 บาท</span></label>
+            </div>
+            <div class="pap-opt">
+              <input type="radio" name="pap" id="papThinprepHpv" value="thinprep_hpv" onchange="calcTotal(); papChoice='thinprep_hpv'; updatePickupPapDetail();">
+              <label for="papThinprepHpv"><span>Thinprep + HPV</span><span class="pap-opt-price">+2,020 บาท</span></label>
             </div>
           </div>
+        </div>
+
+        <!-- PAP Smear Info Box -->
+        <div class="pap-info-box" id="papInfoBox">
+          <div class="pap-info-title">ℹ️ ข้อมูลการตรวจคัดกรองมะเร็งปากมดลูก</div>
+          <div class="pap-info-age">
+            เกณฑ์อายุที่แนะนำ <strong>25–65 ปี</strong> — กรณีไม่เคยมีเพศสัมพันธ์ แนะนำเริ่มตรวจเมื่อ<strong>อายุ 30 ปีขึ้นไป</strong>
+          </div>
+          <div class="pap-info-desc">
+            <div class="pap-info-desc-item"><strong>Pap smear</strong> <span class="pap-info-tag">(วิธีดั้งเดิม)</span> — ตรวจหาความผิดปกติของเซลล์บริเวณปากมดลูก</div>
+            <div class="pap-info-desc-item"><strong>Thinprep</strong> <span class="pap-info-tag">(วิธีใหม่)</span> — ตรวจหาความผิดปกติของเซลล์ปากมดลูก ด้วยความแม่นยำที่มากขึ้น</div>
+            <div class="pap-info-desc-item"><strong>Thinprep + HPV</strong> <span class="pap-info-tag">(Co-testing)</span> — ตรวจหาเซลล์ผิดปกติ (Thinprep) ร่วมกับตรวจหาเชื้อ HPV</div>
+          </div>
+          <table class="pap-info-table">
+            <thead>
+              <tr>
+                <th>วิธีตรวจ</th>
+                <th>ความแม่นยำ</th>
+                <th>ความถี่ที่แนะนำ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pap smear</td>
+                <td>60%</td>
+                <td>ทุก 2 ปี</td>
+              </tr>
+              <tr>
+                <td>Thinprep</td>
+                <td>80%</td>
+                <td>ทุก 2 ปี</td>
+              </tr>
+              <tr>
+                <td>Thinprep + HPV</td>
+                <td>95%</td>
+                <td>ทุก 5 ปี</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
       </div>
@@ -2988,8 +3113,6 @@ const TESTS = [
   { id:19, name:'ตรวจสารบ่งชี้มะเร็งต่อมลูกหมาก', eng:'PSA for Prostate Cancer (Male)', price:320,  gender:'male', tags:['cancer','male'] },
   { id:20, name:'ตรวจสารบ่งชี้มะเร็งลำไส้', eng:'CEA for GI Cancer', price:320,  gender:'all', tags:['cancer'] },
   { id:21, name:'ตรวจสารบ่งชี้มะเร็งตับ', eng:'AFP for Liver Cancer', price:280,  gender:'all', tags:['cancer','liver'] },
-  { id:23, name:'ตรวจมะเร็งปากมดลูกแบบพิเศษ', eng:'Thinprep (Female)', price:700,  gender:'female', tags:['cancer','female'] },
-  { id:24, name:'ตรวจมะเร็งปากมดลูก + HPV', eng:'Thinprep + HPV (Female)', price:2020, gender:'female', tags:['cancer','female'] },
   { id:25, name:'ตรวจหมู่เลือด', eng:'Blood Group + RH typing', price:328,  gender:'all', tags:['heart'] },
   { id:26, name:'ตรวจการทำงานต่อมไทรอยด์', eng:'Free T3, Free T4, TSH', price:630,  gender:'all', tags:[] },
   { id:27, name:'ตรวจฮอร์โมนเพศชาย', eng:'Testosterone (Male)', price:300,  gender:'male', tags:['male'] },
@@ -3011,6 +3134,14 @@ let papChoice = 'no';
 let currentDeliveryMethod = '';
 let papDeliveryMethod = '';
 let activeFilter = 'all';
+
+// ─── ตรวจภายใน: ตัวเลือกและราคาเพิ่มเติม (บวกจากราคาโปรแกรมหญิง ไม่ตรวจภายใน) ──
+const PAP_EXTRA = { no: 0, pap: 200, thinprep: 700, thinprep_hpv: 2020 };
+const PAP_LABELS = {
+  pap: ' + ตรวจภายใน (Pap smear)',
+  thinprep: ' + ตรวจภายใน (Thinprep)',
+  thinprep_hpv: ' + ตรวจภายใน (Thinprep + HPV)'
+};
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 window.onload = function() {
@@ -3121,10 +3252,13 @@ function onGenderChange() {
   selectedGender = document.querySelector('input[name="gender"]:checked')?.value || null;
   // Show/hide PAP toggle
   const papToggle = document.getElementById('papToggle');
+  const papInfoBox = document.getElementById('papInfoBox');
   if (selectedGender === 'female') {
     papToggle.classList.add('show');
+    if (papInfoBox) papInfoBox.classList.add('show');
   } else {
     papToggle.classList.remove('show');
+    if (papInfoBox) papInfoBox.classList.remove('show');
     document.getElementById('papNo').checked = true;
   }
   // Update program prices
@@ -3136,11 +3270,12 @@ function onGenderChange() {
 
 function updateProgramPrices() {
   const g = selectedGender;
+  const papSub = 'หญิง (ไม่ตรวจภายใน) / +200–2,020 บาท หากตรวจภายใน';
   const prices = {
-    1: { main: g === 'female' ? '1,318' : '1,318', sub: g === 'female' ? 'หญิง (ไม่ตรวจภายใน) / +200 บาท ตรวจภายใน' : 'ชาย' },
-    2: { main: g === 'female' ? '2,298' : '2,298', sub: g === 'female' ? 'หญิง (ไม่ตรวจภายใน) / +200 บาท ตรวจภายใน' : 'ชาย' },
-    3: { main: g === 'female' ? '3,674' : '3,674', sub: g === 'female' ? 'หญิง (ไม่ตรวจภายใน) / +200 บาท ตรวจภายใน' : 'ชาย' },
-    4: { main: g === 'male' ? '5,314' : g === 'female' ? '5,014' : '5,014–5,314', sub: g === 'male' ? 'ชาย' : g === 'female' ? 'หญิง (ไม่ตรวจภายใน) / +200 บาท ตรวจภายใน' : 'ชาย / หญิง' },
+    1: { main: g === 'female' ? '1,318' : '1,318', sub: g === 'female' ? papSub : 'ชาย' },
+    2: { main: g === 'female' ? '2,298' : '2,298', sub: g === 'female' ? papSub : 'ชาย' },
+    3: { main: g === 'female' ? '3,674' : '3,674', sub: g === 'female' ? papSub : 'ชาย' },
+    4: { main: g === 'male' ? '5,314' : g === 'female' ? '5,014' : '5,014–5,314', sub: g === 'male' ? 'ชาย' : g === 'female' ? papSub : 'ชาย / หญิง' },
   };
   for (let i = 1; i <= 4; i++) {
     document.getElementById('price'+i+'-main').innerHTML = prices[i].main + ' <span class="unit">บาท</span>';
@@ -3280,10 +3415,9 @@ function calcTotal() {
   if (selectedProgram && g) {
     const prog = PROGRAMS[selectedProgram];
     if (g === 'male') basePrice = prog.male;
-    else if (papChoice === 'yes') basePrice = prog.femalePap;
-    else basePrice = prog.femaleNo;
+    else basePrice = prog.femaleNo + (PAP_EXTRA[papChoice] || 0);
     const progNames = {1:'Basic',2:'Advanced',3:'Executive',4:'Supreme'};
-    const papSuffix = (g === 'female' && papChoice === 'yes') ? ' + ตรวจภายใน' : '';
+    const papSuffix = (g === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : '';
     baseLabel = `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${papSuffix}`;
   } else if (selectedProgram) {
     const prog = PROGRAMS[selectedProgram];
@@ -4270,7 +4404,7 @@ function handleSubmit(e) {
     <div class="success-row"><span class="slabel">หน่วยงาน</span><span class="sval">${dept}</span></div>
     ${payRight ? `<div class="success-row"><span class="slabel">สิทธิ์ชำระเงิน</span><span class="sval">${payRight}</span></div>` : ''}
     <div class="success-row"><span class="slabel">อายุ / เพศ</span><span class="sval">${age} ปี / ${g}</span></div>
-    <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}</span></div>
+    <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}</span></div>
     ${addList.length ? `<div class="success-row"><span class="slabel">รายการเพิ่มเติม</span><span class="sval" style="text-align:right;max-width:200px">${addList.map(x=>x.th).join(', ')}</span></div>` : ''}
     <div class="success-row" style="margin-top:4px"><span class="slabel" style="font-weight:700;color:#00575E">ยอดรวม</span><span class="sval" style="font-size:20px;color:#00575E">${totalTxt} บาท</span></div>
   `;
@@ -4323,7 +4457,7 @@ function handleSubmit(e) {
     oldFirstName:  document.getElementById('oldFirstName')?.value || '',
     oldLastName:   document.getElementById('oldLastName')?.value || '',
     // โปรแกรม
-    program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}` : '',
+    program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(g === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}` : '',
     total:         totalTxt,
     additionalItems: addList.map(x => {
       const t = TESTS.find(tt => tt.name === x.th);
@@ -4376,10 +4510,9 @@ function handleSubmit(e) {
   let _basePrice = 0;
   if (selectedProgram && PROGRAMS[selectedProgram]) {
     const _prog = PROGRAMS[selectedProgram];
-    const _pap = document.querySelector('input[name="papCheck"]:checked')?.value || 'no';
+    const _pap = document.querySelector('input[name="pap"]:checked')?.value || 'no';
     if (selectedGender === 'male') _basePrice = _prog.male;
-    else if (_pap === 'yes') _basePrice = _prog.femalePap;
-    else _basePrice = _prog.femaleNo;
+    else _basePrice = _prog.femaleNo + (PAP_EXTRA[_pap] || 0);
   }
   let _addTotal = 0;
   const _addListPriced = [];
@@ -4428,6 +4561,7 @@ function resetForm() {
     card.classList.remove('selected-1','selected-2','selected-3','selected-4');
   }
   document.getElementById('papToggle').classList.remove('show');
+  document.getElementById('papInfoBox')?.classList.remove('show');
   // ซ่อนกล่องที่อยู่ทั้งหมด และรีเซ็ตปุ่มจัดส่ง
   ['pickup','post','email'].forEach(m => {
     const card = document.getElementById('delCard-' + m);
@@ -4881,11 +5015,16 @@ function onDeliveryChange(method) {
   calcTotal();
 }
 
+// ── ตรวจภายใน: papChoice ไม่ใช่ 'no' (Pap smear / Thinprep / Thinprep + HPV) ──
+function hasInternalExam() {
+  return papChoice !== 'no';
+}
+
 // ── ตรวจภายใน (PAP) + รอรับด้วยตนเอง: แสดง/ซ่อนช่องที่อยู่สำหรับส่งผลตรวจภายใน ──
 function updatePickupPapDetail() {
   const box = document.getElementById('pickupPapDetail');
   if (!box) return;
-  const show = (currentDeliveryMethod === 'pickup') && (papChoice === 'yes');
+  const show = (currentDeliveryMethod === 'pickup') && hasInternalExam();
   box.style.display = show ? 'block' : 'none';
   updatePapCombineNotes();
 }
@@ -4894,8 +5033,9 @@ function updatePickupPapDetail() {
 function updatePapCombineNotes() {
   const postNote = document.getElementById('postPapNote');
   const emailNote = document.getElementById('emailPapNote');
-  if (postNote)  postNote.style.display  = (currentDeliveryMethod === 'post'  && papChoice === 'yes') ? 'flex' : 'none';
-  if (emailNote) emailNote.style.display = (currentDeliveryMethod === 'email' && papChoice === 'yes') ? 'flex' : 'none';
+  const has = hasInternalExam();
+  if (postNote)  postNote.style.display  = (currentDeliveryMethod === 'post'  && has) ? 'flex' : 'none';
+  if (emailNote) emailNote.style.display = (currentDeliveryMethod === 'email' && has) ? 'flex' : 'none';
 }
 
 function togglePostAddr(type) {
@@ -5056,7 +5196,8 @@ function showSuccessModal(data) {
   if (data.nonFormularyDrugCount) html += `<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">${data.nonFormularyDrugCount} ชุด</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
-  html += `<div class="sr-section-title">โปรแกรม ${data.prog} — ${progNames[data.prog]}</div>`;
+  const progPapSuffix = (data.gender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : '';
+  html += `<div class="sr-section-title">โปรแกรม ${data.prog} — ${progNames[data.prog]}${progPapSuffix}</div>`;
   html += `<div class="sr-test-list">`;
   includedItems.forEach(n => {
     html += `<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">${n.th}</span><span class="sr-name-eng">${n.eng}</span></div>`;
