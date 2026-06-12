@@ -2696,7 +2696,7 @@
 
         <div class="field-grid cols-2" style="margin-bottom:6px">
           <div class="field-group">
-            <label>ขอใบรับรองแพทย์ (แนบเบิกหน่วยงาน)</label>
+            <label>ขอใบรับรองแพทย์แนบเบิก (กรณีเบิกคืนจากหน่วยงาน)</label>
             <div style="display:flex;align-items:center;gap:8px">
               <input type="number" id="medCertCount" min="0" step="1" placeholder="0" style="width:100px">
               <span>ชุด</span>
@@ -2706,6 +2706,20 @@
             <label>ขอใบยานอกบัญชี</label>
             <div style="display:flex;align-items:center;gap:8px">
               <input type="number" id="nonFormularyDrugCount" min="0" step="1" placeholder="0" style="width:100px">
+              <span>ชุด</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>ขอใบรับรองแพทย์ใบขับขี่</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="medCertDriverCount" min="0" step="1" placeholder="0" style="width:100px">
+              <span>ชุด</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>ขอใบรับรองแพทย์สุขภาพดี 5 โรคทั่วไป</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="medCertHealthCount" min="0" step="1" placeholder="0" style="width:100px">
               <span>ชุด</span>
             </div>
           </div>
@@ -4490,6 +4504,8 @@ function handleSubmit(e) {
     // เอกสารเพิ่มเติม
     medCertCount:          document.getElementById('medCertCount')?.value || '',
     nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
+    medCertDriverCount:    document.getElementById('medCertDriverCount')?.value || '',
+    medCertHealthCount:    document.getElementById('medCertHealthCount')?.value || '',
   };
 
   // ส่งข้อมูลไปยัง Google Sheet (ไม่รอผล — แสดง modal ทันที)
@@ -4545,7 +4561,9 @@ function handleSubmit(e) {
     addListPriced: _addListPriced,
     serviceDate: document.getElementById('serviceDate')?.value || '',
     medCertCount: document.getElementById('medCertCount')?.value || '',
-    nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || ''
+    nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
+    medCertDriverCount: document.getElementById('medCertDriverCount')?.value || '',
+    medCertHealthCount: document.getElementById('medCertHealthCount')?.value || ''
   });
 }
 
@@ -5192,8 +5210,10 @@ function showSuccessModal(data) {
   if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
   if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${data.papDelivery}</span></div>`;
-  if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์</span><span class="sv">${data.medCertCount} ชุด</span></div>`;
+  if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">${data.medCertCount} ชุด</span></div>`;
   if (data.nonFormularyDrugCount) html += `<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">${data.nonFormularyDrugCount} ชุด</span></div>`;
+  if (data.medCertDriverCount) html += `<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">${data.medCertDriverCount} ชุด</span></div>`;
+  if (data.medCertHealthCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรคทั่วไป</span><span class="sv">${data.medCertHealthCount} ชุด</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
   const progPapSuffix = (data.gender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : '';
