@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>แบบบันทึกข้อมูลสำหรับหน่วยงานเพื่อตรวจสุขภาพประจำปี — SMC KKU</title>
+<title>แบบบันทึกข้อมูลตรวจสุขภาพประจำปี (สำหรับหน่วยงานเรียกเก็บเท่านั้น) — SMC KKU</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -1946,7 +1946,7 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
       SMC — คลินิกตรวจสุขภาพ
     </div>
-    <h1 class="form-title">แบบบันทึกข้อมูลสำหรับหน่วยงาน<br>เพื่อตรวจสุขภาพประจำปี</h1>
+    <h1 class="form-title">แบบบันทึกข้อมูลตรวจสุขภาพประจำปี<br>(สำหรับหน่วยงานเรียกเก็บเท่านั้น)</h1>
     <div class="header-sub">SMC ศูนย์บริการทางการแพทย์ชั้นเลิศ โรงพยาบาลศรีนครินทร์</div>
     <div class="header-meta">
       <span>📅 วันจันทร์ – ศุกร์</span>
@@ -2078,7 +2078,7 @@
               <select id="orgStatus" required style="width:100%" onchange="calcTotal()">
                 <option value="">-- เลือก --</option>
                 <option value="พนักงาน">พนักงาน</option>
-                <option value="ครอบครัว">ครอบครัว</option>
+                <option value="ครอบครัว">ครอบครัวพนักงาน</option>
               </select>
             </div>
           </div>
@@ -2175,7 +2175,7 @@
             </div>
             <div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#E65100;font-weight:600;margin-top:6px;background:#FFF3E0;border:1px solid #FFCC80;border-radius:7px;padding:7px 12px">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              ถ้ามีเปลี่ยน ชื่อ-สกุล กรุณานำเอกสารมาด้วย
+              กรุณานำสำเนาใบเปลี่ยนชื่อ-นามสกุลมาด้วย
             </div>
           </div>
 
@@ -2581,7 +2581,7 @@
         <div class="pap-info-box" id="papInfoBox">
           <div class="pap-info-title">ℹ️ ข้อมูลการตรวจคัดกรองมะเร็งปากมดลูก</div>
           <div class="pap-info-age">
-            เกณฑ์อายุที่แนะนำ <strong>25–65 ปี</strong> — กรณีไม่เคยมีเพศสัมพันธ์ แนะนำเริ่มตรวจเมื่อ<strong>อายุ 30 ปีขึ้นไป</strong>
+            เกณฑ์อายุที่แนะนำ <strong>25–65 ปี</strong> — เริ่มตรวจเมื่อ<strong>อายุ 25 ปี (กรณีเคยมีเพศสัมพันธ์)</strong> หรือ<strong>อายุ 30 ปี (กรณียังไม่เคยมีเพศสัมพันธ์)</strong> และสามารถหยุดตรวจได้เมื่อ<strong>อายุมากกว่า 65 ปี</strong> หากผลตรวจปกติต่อเนื่องในช่วง 10 ปีที่ผ่านมา
           </div>
           <div class="pap-info-desc">
             <div class="pap-info-desc-item"><strong>Pap smear</strong> <span class="pap-info-tag">(วิธีดั้งเดิม)</span> — ตรวจหาความผิดปกติของเซลล์บริเวณปากมดลูก</div>
@@ -2592,7 +2592,7 @@
             <thead>
               <tr>
                 <th>วิธีตรวจ</th>
-                <th>ความแม่นยำ</th>
+                <th>ความแม่นยำ*</th>
                 <th>ความถี่ที่แนะนำ</th>
               </tr>
             </thead>
@@ -2614,6 +2614,11 @@
               </tr>
             </tbody>
           </table>
+          <div class="pap-info-ref" style="font-size:11px;color:var(--text-muted);margin-top:8px">
+            * ค่าความแม่นยำเป็นความไว (sensitivity) โดยประมาณจากการศึกษาเปรียบเทียบ แยกจากเกณฑ์อายุและความถี่ที่อ้างอิง RTCOG ด้านล่าง<br>
+            อ้างอิง: แนวทางการตรวจคัดกรองมะเร็งปากมดลูก ราชวิทยาลัยสูตินรีแพทย์แห่งประเทศไทย (RTCOG)
+            ร่วมกับสมาคมมะเร็งนรีเวชไทย และชมรมคอลโปสโคปีและพยาธิสภาพปากมดลูกแห่งประเทศไทย ฉบับ ค.ศ. 2020
+          </div>
         </div>
 
       </div>
@@ -3134,7 +3139,7 @@ const TESTS = [
   { id:29, name:'ตรวจวิตามิน B12', eng:'Vitamin B12', price:260,  gender:'all', tags:[] },
   { id:30, name:'ตรวจภาวะขาดวิตามินบี 9 (กรดโฟลิค)', eng:'Folate (serum)', price:260,  gender:'all', tags:[] },
   { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[] },
-  { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ และลำไส้ส่วนปลาย)', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[], note:'หญิง: มดลูก รังไข่ &nbsp;|&nbsp; ชาย: ต่อมลูกหมาก' },
+  { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ)', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[], note:'หญิง: มดลูก รังไข่ &nbsp;|&nbsp; ชาย: ต่อมลูกหมาก<br><span style="color:#E65100">⚠ ผู้หญิงที่เคยผ่าตัดมดลูก กรุณาสอบถามเจ้าหน้าที่ก่อนเลือกรายการนี้</span>' },
   { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[] },
   { id:34, name:'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', eng:'Ultrasound Breast', price:1275, gender:'female', tags:['cancer','female'] },
   { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'] },
@@ -3220,8 +3225,10 @@ function renderTests() {
         ? '<span class="test-gender-tag female">♀ หญิง</span>'
         : '';
     return `
-      <div class="test-item" id="test-${t.id}" data-id="${t.id}" data-price="${t.price}" data-gender="${t.gender}" data-tags="${t.tags.join(',')}" onclick="toggleTest(${t.id}, this)">
-        <input type="checkbox" id="chk-${t.id}" value="${t.id}" onclick="event.stopPropagation(); toggleTest(${t.id}, document.getElementById('test-${t.id}'))">
+      <div class="test-item" id="test-${t.id}" data-id="${t.id}" data-price="${t.price}" data-gender="${t.gender}" data-tags="${t.tags.join(',')}" onclick="toggleTest(${t.id})">
+        <input type="checkbox" id="chk-${t.id}" value="${t.id}"
+               onclick="event.stopPropagation()"
+               onchange="setTest(${t.id}, this.checked)">
         <div class="test-info">
           <div class="test-name">${t.name}</div>
           <div class="test-eng">${t.eng}</div>
@@ -3234,12 +3241,21 @@ function renderTests() {
   }).join('');
 }
 
-function toggleTest(id, el) {
+// คลิกที่แถว: สลับค่าแล้วใช้สถานะ (programmatic .checked ไม่ trigger onchange จึงเรียก setTest เอง)
+function toggleTest(id) {
+  const el = document.getElementById('test-' + id);
   if (el.classList.contains('included')) return;
   const chk = document.getElementById('chk-' + id);
   chk.checked = !chk.checked;
-  el.classList.toggle('checked-item', chk.checked);
-  if (chk.checked) {
+  setTest(id, chk.checked);
+}
+
+// ใช้สถานะ (เรียกจากทั้งแถวและ checkbox): อัปเดต UI + ราคา + แจ้งเตือน
+function setTest(id, checked) {
+  const el = document.getElementById('test-' + id);
+  if (el.classList.contains('included')) return;
+  el.classList.toggle('checked-item', checked);
+  if (checked) {
     showAddTestWarn();
     // แจ้งเตือนพิเศษสำหรับ Mammogram and Ultrasound Breast (id:35) — ตรวจรอบบ่าย 13.00 น.
     if (id === 35) {
@@ -4819,21 +4835,24 @@ const THAI_HOLIDAYS = new Set([
 function isBlockedDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDay();
-  // บล็อกวันเสาร์ (6) เท่านั้น วันอาทิตย์เลือกได้แต่มี limit
-  if (day === 6) return { blocked: true, reason: 'วันเสาร์', message: '⚠ วันเสาร์คลินิกตรวจสุขภาพปิดทำการ กรุณาเลือกวันทำการอื่น' };
+  // บล็อกวันเสาร์ (6) และวันอาทิตย์ (0)
+  if (day === 6) return { blocked: true, reason: 'วันเสาร์', message: '⚠ วันเสาร์–อาทิตย์คลินิกตรวจสุขภาพปิดทำการ กรุณาเลือกวันทำการอื่น' };
+  if (day === 0) return { blocked: true, reason: 'วันอาทิตย์', message: '⚠ วันเสาร์–อาทิตย์คลินิกตรวจสุขภาพปิดทำการ กรุณาเลือกวันทำการอื่น' };
   // บล็อกวันหยุดนักขัตฤกษ์
   if (THAI_HOLIDAYS.has(dateStr)) return { blocked: true, reason: 'วันหยุดนักขัตฤกษ์' };
   return { blocked: false };
 }
 
-function setServiceDateMin() {
-  const picker = document.getElementById('serviceDateRaw');
-  if (!picker) return;
+// คำนวณวันที่ลงทะเบียนได้เร็วสุด (YYYY-MM-DD)
+// เกณฑ์: เลือกได้เร็วสุด = พรุ่งนี้ (ห้ามวันนี้) และถ้าเกิน 14.00 น. แล้ว → เลื่อนเป็นมะรืน
+// แล้ววนข้ามวันบล็อก (เสาร์/อาทิตย์/นักขัตฤกษ์)
+function getMinServiceDate() {
   const now = new Date();
   const minDate = new Date(now);
-  const cutoffHour = 9, cutoffMin = 30;
+  minDate.setDate(minDate.getDate() + 1); // เริ่มที่พรุ่งนี้เสมอ (ห้ามวันนี้)
+  const cutoffHour = 14, cutoffMin = 0;
   if (now.getHours() > cutoffHour || (now.getHours() === cutoffHour && now.getMinutes() >= cutoffMin)) {
-    minDate.setDate(minDate.getDate() + 1);
+    minDate.setDate(minDate.getDate() + 1); // เกิน 14.00 → ขยับเป็นมะรืน
   }
   // เลื่อน min ถ้าวันที่ min เป็นวันบล็อก
   let safety = 0;
@@ -4849,7 +4868,13 @@ function setServiceDateMin() {
   const yy = minDate.getFullYear();
   const mm = String(minDate.getMonth()+1).padStart(2,'0');
   const dd = String(minDate.getDate()).padStart(2,'0');
-  picker.min = `${yy}-${mm}-${dd}`;
+  return `${yy}-${mm}-${dd}`;
+}
+
+function setServiceDateMin() {
+  const picker = document.getElementById('serviceDateRaw');
+  if (!picker) return;
+  picker.min = getMinServiceDate();
 }
 
 // Set min on page load
@@ -4876,57 +4901,27 @@ function syncServiceDate(picker) {
     if (hidden) hidden.value = '';
     return;
   }
-  // ตรวจสอบวันนี้หลัง 09:30
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  if (val === today) {
-    if (now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() >= 30)) {
-      showToast('⚠ เลยเวลารับลงทะเบียน (09:30 น.) กรุณาเลือกวันทำการถัดไป');
-      picker.value = '';
-      if (display) display.textContent = '';
-      if (placeholder) placeholder.style.display = '';
-      if (hidden) hidden.value = '';
-      return;
-    }
+  // ตรวจสอบวันที่ลงทะเบียนล่วงหน้าอย่างน้อย 1 วัน และไม่เกิน 14.00 น. ของวันก่อนหน้า
+  const minStr = getMinServiceDate();
+  if (val < minStr) {
+    showToast('⚠ ต้องลงทะเบียนล่วงหน้าอย่างน้อย 1 วันก่อนวันตรวจ และไม่เกินเวลา 14.00 น. ของวันก่อนหน้า');
+    picker.value = '';
+    if (display) display.textContent = '';
+    if (placeholder) placeholder.style.display = '';
+    if (hidden) hidden.value = '';
+    return;
   }
   const [y, m, d] = val.split('-');
   const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const yBE = parseInt(y) + 543;
   const mIdx = parseInt(m) - 1;
   const displayStr = d + ' ' + thMonths[mIdx] + ' ' + yBE;
-  const hiddenStr = d + '/' + m + '/' + yBE;
+  // รูปแบบที่ส่งเข้า Sheet: วัน + เดือนไทยย่อ + ปี พ.ศ. 2 หลัก เช่น "15 มิ.ย. 69"
+  const hiddenStr = parseInt(d) + ' ' + thMonths[mIdx] + ' ' + (yBE % 100);
 
-  // แสดงวันก่อนเลย แล้วค่อย check วันอาทิตย์
   if (display) display.textContent = displayStr;
   if (placeholder) placeholder.style.display = 'none';
   if (hidden) hidden.value = hiddenStr;
-
-  // ตรวจจำนวนคนเฉพาะวันอาทิตย์ (max 25 คน)
-  const selectedDate = new Date(val + 'T00:00:00');
-  const isSunday = selectedDate.getDay() === 0;
-  if (isSunday && APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    if (display) display.textContent = `${displayStr} (กำลังตรวจสอบ...)`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    fetch(`${APPS_SCRIPT_URL}?action=checkDate&date=${encodeURIComponent(hiddenStr)}`, { signal: controller.signal })
-      .then(r => r.json())
-      .then(res => {
-        clearTimeout(timeout);
-        if (res.count >= 25) {
-          showToast(`⚠ วันอาทิตย์ที่ ${displayStr} มีผู้ลงทะเบียนเต็มแล้ว (${res.count}/25) กรุณาเลือกวันอื่น`);
-          picker.value = '';
-          if (display) display.textContent = '';
-          if (placeholder) placeholder.style.display = '';
-          if (hidden) hidden.value = '';
-        } else {
-          if (display) display.textContent = displayStr;
-        }
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        if (display) display.textContent = displayStr;
-      });
-  }
 }
 
 function openDobPicker() {
@@ -5314,22 +5309,6 @@ const PROG_DETAIL = {
     ]
   },
   3: {
-    name: 'Advanced Check Up', age: 'อายุ 18 ปีขึ้นไป',
-    tests: [
-      { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
-      { th: 'เอกซเรย์ปอดและหัวใจ',                eng: 'Chest X-Ray' },
-      { th: 'ตรวจปัสสาวะ',                         eng: 'Urine Examination' },
-      { th: 'ตรวจอุจจาระ',                          eng: 'Stool simple sedimentation with Occult Blood' },
-      { th: 'ตรวจความสมบูรณ์ของเม็ดเลือด',          eng: 'Complete Blood Count (CBC)' },
-      { th: 'ตรวจน้ำตาลในเลือด',                   eng: 'Fasting Blood Sugar' },
-      { th: 'ตรวจไขมันในเลือด',                    eng: 'Cholesterol, Triglyceride, HDL, LDL' },
-      { th: 'ตรวจการทำงานตับ',                     eng: 'Liver Function Panel (AST, ALT, ALP)' },
-      { th: 'ตรวจการทำงานไต',                      eng: 'Kidney Function Panel (BUN, Creatinine)' },
-      { th: 'ตรวจความเสี่ยงโรคเก๊าท์',              eng: 'Uric Acid' },
-      { th: 'คลื่นไฟฟ้าหัวใจ',                     eng: 'Electrocardiogram (EKG)' }
-    ]
-  },
-  4: {
     name: 'Executive Check Up', age: 'อายุ 18 ปีขึ้นไป',
     tests: [
       { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
@@ -5347,7 +5326,7 @@ const PROG_DETAIL = {
       { th: 'คลื่นไฟฟ้าหัวใจ',                     eng: 'Electrocardiogram (EKG)' }
     ]
   },
-  5: {
+  4: {
     name: 'Supreme Check Up', age: 'อายุ 18 ปีขึ้นไป',
     tests: [
       { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
@@ -5379,7 +5358,7 @@ function showProgDetail(num, e) {
   if (e) e.stopPropagation();
   const d = PROG_DETAIL[num];
   if (!d) return;
-  const colorMap = {1:'var(--prog1)',2:'var(--prog2)',3:'var(--prog3)',4:'var(--prog4)',5:'var(--prog4)'};
+  const colorMap = {1:'var(--prog1)',2:'var(--prog2)',3:'var(--prog3)',4:'var(--prog4)'};
   const color = colorMap[num] || 'var(--primary)';
   document.getElementById('pdBadge').style.background = color;
   document.getElementById('pdBadge').textContent = num;
@@ -5639,7 +5618,7 @@ function closeProgDetailOutside(e) {
           <input type="text" id="ap_oldFirst" placeholder="ชื่อเดิม" class="amend-input">
           <input type="text" id="ap_oldLast"  placeholder="นามสกุลเดิม" class="amend-input">
         </div>
-        <div style="font-size:11px;color:#E67E22;margin-top:3px">⚠ ถ้ามีเปลี่ยน ชื่อ-สกุล กรุณานำเอกสารมาด้วย</div>
+        <div style="font-size:11px;color:#E67E22;margin-top:3px">⚠ กรุณานำสำเนาใบเปลี่ยนชื่อ-นามสกุลมาด้วย</div>
       </div>
 
       <!-- โทรศัพท์ -->
