@@ -2579,45 +2579,73 @@
 
         <!-- PAP Smear Info Box -->
         <div class="pap-info-box" id="papInfoBox">
-          <div class="pap-info-title">ℹ️ ข้อมูลการตรวจคัดกรองมะเร็งปากมดลูก</div>
+          <div class="pap-info-title">ℹ️ เกณฑ์การตรวจคัดกรองมะเร็งปากมดลูก (Papanicolaou smear)</div>
           <div class="pap-info-age">
-            เกณฑ์อายุที่แนะนำ <strong>25–65 ปี</strong> — เริ่มตรวจเมื่อ<strong>อายุ 25 ปี (กรณีเคยมีเพศสัมพันธ์)</strong> หรือ<strong>อายุ 30 ปี (กรณียังไม่เคยมีเพศสัมพันธ์)</strong> และสามารถหยุดตรวจได้เมื่อ<strong>อายุมากกว่า 65 ปี</strong> หากผลตรวจปกติต่อเนื่องในช่วง 10 ปีที่ผ่านมา
+            <div style="color:#C62828;font-weight:600;margin-bottom:3px">** กรณีไม่เคยมีเพศสัมพันธ์มาก่อน แนะนำเริ่มตรวจคัดกรองมะเร็งปากมดลูกอายุ 30 ปี ขึ้นไป **</div>
+            <div style="color:#C62828;font-weight:600">** กรณีเคยมีเพศสัมพันธ์แล้ว แนะนำตรวจที่อายุ 25 ปี **</div>
           </div>
-          <div class="pap-info-desc">
-            <div class="pap-info-desc-item"><strong>Pap smear</strong> <span class="pap-info-tag">(วิธีดั้งเดิม)</span> — ตรวจหาความผิดปกติของเซลล์บริเวณปากมดลูก</div>
-            <div class="pap-info-desc-item"><strong>Thinprep</strong> <span class="pap-info-tag">(วิธีใหม่)</span> — ตรวจหาความผิดปกติของเซลล์ปากมดลูก ด้วยความแม่นยำที่มากขึ้น</div>
-            <div class="pap-info-desc-item"><strong>Thinprep + HPV</strong> <span class="pap-info-tag">(Co-testing)</span> — ตรวจหาเซลล์ผิดปกติ (Thinprep) ร่วมกับตรวจหาเชื้อ HPV</div>
-          </div>
-          <table class="pap-info-table">
+          <table class="pap-info-table" style="margin-top:10px">
             <thead>
               <tr>
-                <th>วิธีตรวจ</th>
-                <th>ความแม่นยำ*</th>
-                <th>ความถี่ที่แนะนำ</th>
+                <th>ชนิดของการตรวจ</th>
+                <th>แบบตรวจ</th>
+                <th>เกณฑ์อายุ</th>
+                <th>Sensitivity</th>
+                <th>ระยะห่างการตรวจ</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Pap smear</td>
-                <td>60%</td>
-                <td>ทุก 2 ปี</td>
+                <td style="background:#BBDEFB">
+                  <strong>PAP SMEAR</strong><br>
+                  <span style="font-weight:400;font-size:11.5px">ตรวจหาเซลล์ผิดปกติ</span>
+                </td>
+                <td>Cytology<br>conventional</td>
+                <td>เริ่ม 25<br>จนถึง 65 ปี</td>
+                <td>56.4%</td>
+                <td>ทุก 1 ปี</td>
               </tr>
               <tr>
-                <td>Thinprep</td>
-                <td>80%</td>
-                <td>ทุก 2 ปี</td>
+                <td style="background:#EDE7F6">
+                  <strong>Thin-Prep</strong><br>
+                  <span style="font-weight:400;font-size:11.5px">น้ำยารักษาสภาพเซลล์</span>
+                </td>
+                <td>cytology ด้วย liquid-based</td>
+                <td>25–65 ปี</td>
+                <td>78%</td>
+                <td>ทุก 2–3 ปี</td>
               </tr>
               <tr>
-                <td>Thinprep + HPV</td>
-                <td>95%</td>
-                <td>ทุก 5 ปี</td>
+                <td style="background:#FCE4EC">
+                  <strong>Thin-Prep+HPV</strong><br>
+                  <span style="font-weight:400;font-size:11.5px">หาเชื้อ HPV</span>
+                </td>
+                <td>(Co-testing)<br>ด้วย liquid-based: HPV+Cytology</td>
+                <td>25–65 ปี</td>
+                <td>97–100%</td>
+                <td>ทุก 3–5 ปี</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:10px;font-weight:700;text-decoration:underline;color:#0D47A1">หากอายุเกิน 65 ปี</div>
+          <table class="pap-info-table" style="margin-top:4px">
+            <tbody>
+              <tr>
+                <td>เคยตรวจคัดกรอง PAP</td>
+                <td>ผลปกติอย่างน้อย 3 ครั้งติดต่อกัน</td>
+                <td>สามารถเว้นการตรวจได้</td>
+              </tr>
+              <tr>
+                <td>เคยตรวจคัดกรอง HPV</td>
+                <td>ผลปกติอย่างน้อย 2 ครั้งติดต่อกัน</td>
+                <td>สามารถเว้นการตรวจได้</td>
               </tr>
             </tbody>
           </table>
           <div class="pap-info-ref" style="font-size:11px;color:var(--text-muted);margin-top:8px">
-            * ค่าความแม่นยำเป็นความไว (sensitivity) โดยประมาณจากการศึกษาเปรียบเทียบ แยกจากเกณฑ์อายุและความถี่ที่อ้างอิง RTCOG ด้านล่าง<br>
-            อ้างอิง: แนวทางการตรวจคัดกรองมะเร็งปากมดลูก ราชวิทยาลัยสูตินรีแพทย์แห่งประเทศไทย (RTCOG)
-            ร่วมกับสมาคมมะเร็งนรีเวชไทย และชมรมคอลโปสโคปีและพยาธิสภาพปากมดลูกแห่งประเทศไทย ฉบับ ค.ศ. 2020
+            อ้างอิง: แนวทางการป้องกัน ตรวจคัดกรอง และรักษามะเร็งปากมดลูก. สถาบันมะเร็งแห่งชาติ กรมการแพทย์ กระทรวงสาธารณสุข, พ.ศ. 2568.
+            ร่วมจัดทำโดย ราชวิทยาลัยสูตินรีแพทย์แห่งประเทศไทย, สมาคมมะเร็งนรีเวชไทย (TGCS) และชมรมคอลโปสโคปและพยาธิสภาพปากมดลูกแห่งประเทศไทย.
+            <a href="https://tgcs.or.th/wp-content/uploads/2025/01/CPG-%E0%B8%A1%E0%B8%B0%E0%B9%80%E0%B8%A3%E0%B9%87%E0%B8%87%E0%B8%9B%E0%B8%B2%E0%B8%81%E0%B8%A1%E0%B8%94%E0%B8%A5%E0%B8%B9%E0%B8%81-%E0%B8%9E.%E0%B8%A8.2568.pdf" target="_blank" style="color:#1976D2">ดาวน์โหลด CPG 2568</a>
           </div>
         </div>
 
@@ -5442,7 +5470,8 @@ function closeProgDetailOutside(e) {
             <p style="margin:0 0 6px">สามารถเก็บอุจจาระมาก่อนได้ แนะนำใส่<strong>ภาชนะที่สะอาด</strong><br>เมื่อถึงวันเข้ารับบริการ เปลี่ยนใส่ภาชนะของโรงพยาบาล (ที่ห้องเจาะเลือด) และปัสสาวะให้มาเก็บที่โรงพยาบาล</p>
             <div class="prep-note-box" style="margin-top:10px">
               <div class="prep-note-title">สำหรับผู้ที่ตรวจอัลตราซาวต์ช่องท้องส่วนล่าง</div>
-              <p style="margin:0">ต้องกลั้นปัสสาวะ: ก่อนตรวจประมาณ 1-2 ชั่วโมง ควรดื่มน้ำเปล่าเยอะๆ (อย่างน้อย 500-1,000 มล.) จนรู้สึกปวดปัสสาวะมาก</p>
+              <p style="margin:0 0 4px"><strong>ดื่มน้ำเปล่า :</strong> ก่อนเข้ารับการตรวจประมาณ 1 ชั่วโมง ควรดื่มน้ำเปล่าประมาณ 500–1,000 มิลลิลิตร (ประมาณ 2–3 แก้วใหญ่)</p>
+              <p style="margin:0"><strong>กลั้นปัสสาวะ :</strong> ห้ามปัสสาวะทิ้งก่อนตรวจ เนื่องจากต้องให้มีปัสสาวะเต็มกระเพาะปัสสาวะ เพื่อช่วยทำให้แพทย์เห็นมดลูก รังไข่ ต่อมลูกหมาก หรือนิ่วในกระเพาะปัสสาวะได้ชัดเจนยิ่งขึ้น</p>
             </div>
           </div>
         </div>
