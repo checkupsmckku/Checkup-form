@@ -2397,13 +2397,13 @@
         <div class="sub-section-label">ผู้ติดต่อในกรณีฉุกเฉิน</div>
         <div class="field-grid cols-2" style="margin-bottom:10px">
           <div class="field-group">
-            <label>ชื่อ-สกุล ผู้ติดต่อฉุกเฉิน <span class="req">*</span></label>
-            <input type="text" id="emergencyName" placeholder="ชื่อ-นามสกุล" required>
+            <label>ชื่อ-สกุล ผู้ติดต่อฉุกเฉิน</label>
+            <input type="text" id="emergencyName" placeholder="ชื่อ-นามสกุล">
           </div>
           <div class="field-group">
-            <label>โทรศัพท์ผู้ติดต่อฉุกเฉิน <span class="req">*</span></label>
+            <label>โทรศัพท์ผู้ติดต่อฉุกเฉิน</label>
             <input type="tel" id="emergencyPhone" placeholder="0xxxxxxxxx" maxlength="10" inputmode="numeric"
-              oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" required>
+              oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)">
           </div>
         </div>
         <div class="field-group" style="margin-bottom:10px">
@@ -4711,7 +4711,7 @@ function toggleHN(hasHN) {
 }
 
 function _setFullInfoRequired(req) {
-  ['prefix','firstName','lastName','emergencyName','emergencyPhone'].forEach(id => {
+  ['prefix','firstName','lastName'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.required = req;
   });
