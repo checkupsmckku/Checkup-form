@@ -1803,28 +1803,6 @@
     .hn-age { display: none !important; }
   }
 
-  #serviceDateRaw::-webkit-calendar-picker-indicator {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 3;
-  }
-
-  #serviceDateRaw::-webkit-calendar-picker-indicator {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 3;
-  }
-
   /* ─── Add-test Warning Toast ─── */
   .atwarn-popup {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -2009,11 +1987,11 @@
           <div style="position:relative;width:100%">
             <span id="serviceDateDisplay" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-dark);pointer-events:none;z-index:1"></span>
             <span id="serviceDatePlaceholder" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#9CA3AF;pointer-events:none;z-index:1">วว/ดด/ปปปป (พ.ศ.)</span>
-            <input type="date" id="serviceDateRaw" id2="serviceDate" required
-              onchange="syncServiceDate(this)"
+            <input type="text" id="serviceDateRaw" required readonly
+              onclick="openThCal('service')"
               style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:transparent;cursor:pointer;box-sizing:border-box;color:transparent;position:relative;z-index:2;-webkit-appearance:none;appearance:none;">
 
-            <svg style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280);z-index:3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <svg onclick="openThCal('service')" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280);z-index:3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <input type="hidden" id="serviceDate">
           </div>
         </div>
@@ -2187,11 +2165,9 @@
             <label>วันเดือนปีเกิด (พ.ศ.) <span class="req">*</span></label>
             <div style="position:relative;width:100%">
               <input type="text" id="dob" placeholder="วว/ดด/ปปปป" maxlength="10" required
-                oninput="formatDobBE(this)" onclick="openDobPicker()"
+                oninput="formatDobBE(this)" onclick="openThCal('dob')"
                 style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);background:#fff;cursor:pointer;box-sizing:border-box">
-              <input type="date" id="dobRaw" onchange="syncDob(this)"
-                style="position:absolute;right:0;top:0;width:40px;height:100%;opacity:0;cursor:pointer;padding:0;border:none">
-              <svg onclick="openDobPicker()" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <svg onclick="openThCal('dob')" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div class="field-hint">เช่น 15/06/2520 (ปี พ.ศ.)</div>
           </div>
@@ -4811,31 +4787,8 @@ function formatPatientCard(el) {
 }
 
 function openServiceDatePicker() {
-  setServiceDateMin();
-  const picker = document.getElementById('serviceDateRaw');
-  if (!picker) return;
-  // Make temporarily visible to allow showPicker
-  picker.style.opacity = '1';
-  picker.style.width = '100%';
-  picker.style.height = '100%';
-  picker.style.position = 'fixed';
-  picker.style.top = '0';
-  picker.style.left = '0';
-  picker.style.zIndex = '9999';
-  try {
-    picker.showPicker();
-  } catch(e) {
-    picker.click();
-  }
-  setTimeout(() => {
-    picker.style.opacity = '0.01';
-    picker.style.width = '1px';
-    picker.style.height = '1px';
-    picker.style.position = 'absolute';
-    picker.style.top = '';
-    picker.style.left = '0';
-    picker.style.zIndex = '';
-  }, 500);
+  // เปลี่ยนมาใช้ custom Thai calendar (เดือนไทย/พ.ศ.) แทน native date picker
+  openThCal('service');
 }
 
 // วันหยุดนักขัตฤกษ์ไทย 2025-2027
@@ -4950,19 +4903,8 @@ function syncServiceDate(picker) {
 }
 
 function openDobPicker() {
-  const picker = document.getElementById('dobRaw');
-  if (picker && picker.showPicker) {
-    try { picker.showPicker(); } catch(e) { picker.click(); }
-  } else if (picker) { picker.click(); }
-}
-
-function syncDob(picker) {
-  const val = picker.value; // YYYY-MM-DD (CE)
-  if (!val) return;
-  const [y, m, d] = val.split('-');
-  const yBE = parseInt(y) + 543; // Convert CE → BE
-  document.getElementById('dob').value = d + '/' + m + '/' + yBE;
-  calcAge();
+  // เปลี่ยนมาใช้ custom Thai calendar (เดือนไทย/พ.ศ.) แทน native date picker
+  openThCal('dob');
 }
 
 function formatDobBE(el) {
@@ -5678,5 +5620,232 @@ function closeProgDetailOutside(e) {
 
   </div>
 </div>
+
+<!-- ── Thai Calendar Popup (เดือนไทย/พ.ศ.) ── -->
+<style>
+  .th-cal-popup {
+    position: fixed; z-index: 10000; width: 280px;
+    background: #fff; border: 1px solid var(--border,#e2e2e2); border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 12px; font-family: inherit;
+    display: none;
+  }
+  .th-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .th-cal-nav {
+    width:28px; height:28px; border:none; background:#F3F4F6; border-radius:7px;
+    cursor:pointer; font-size:16px; color:var(--text-dark,#333); line-height:1;
+  }
+  .th-cal-nav:hover { background:#E5E7EB; }
+  .th-cal-title {
+    border:none; background:transparent; font-size:14px; font-weight:700;
+    color:var(--text-dark,#333); cursor:pointer; padding:4px 8px; border-radius:6px;
+  }
+  .th-cal-title:hover { background:#F3F4F6; }
+  .th-cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
+  .th-cal-weekdays span { font-size:11px; color:#9CA3AF; font-weight:600; }
+  .th-cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .th-cal-day {
+    height:32px; display:flex; align-items:center; justify-content:center;
+    font-size:13px; border-radius:7px; cursor:pointer; border:none; background:transparent;
+    color:var(--text-dark,#333);
+  }
+  .th-cal-day:hover:not(:disabled) { background:#F3F4F6; }
+  .th-cal-day.is-today { border:1.5px solid var(--accent,#E67E22); }
+  .th-cal-day.is-selected { background:var(--accent,#E67E22); color:#fff; font-weight:700; }
+  .th-cal-day:disabled { color:#D1D5DB; cursor:not-allowed; }
+  .th-cal-day.is-empty { visibility:hidden; cursor:default; }
+  .th-cal-yearview { display:none; }
+  .th-cal-yearview.active { display:block; }
+  .th-cal-days.hidden-view { display:none; }
+  .th-cal-year-stepper { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px; }
+  .th-cal-year-input {
+    width:70px; text-align:center; font-size:14px; font-weight:700; padding:5px;
+    border:1.5px solid var(--border,#e2e2e2); border-radius:7px;
+  }
+  .th-cal-months { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .th-cal-month-btn {
+    padding:8px 4px; font-size:12.5px; border:1px solid var(--border,#e2e2e2); border-radius:7px;
+    background:#fff; cursor:pointer; color:var(--text-dark,#333);
+  }
+  .th-cal-month-btn:hover { background:#F3F4F6; }
+  .th-cal-month-btn.is-current-month { border-color:var(--accent,#E67E22); color:var(--accent,#E67E22); font-weight:700; }
+</style>
+<div id="thCalPopup" class="th-cal-popup">
+  <div class="th-cal-header">
+    <button type="button" class="th-cal-nav" onclick="thCalChangeMonth(-1)">‹</button>
+    <button type="button" class="th-cal-title" id="thCalTitle" onclick="thCalToggleYearView()"></button>
+    <button type="button" class="th-cal-nav" onclick="thCalChangeMonth(1)">›</button>
+  </div>
+  <div class="th-cal-weekdays">
+    <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+  </div>
+  <div class="th-cal-days" id="thCalDays"></div>
+  <div class="th-cal-yearview" id="thCalYearView">
+    <div class="th-cal-year-stepper">
+      <button type="button" class="th-cal-nav" onclick="thCalChangeYear(-1)">‹</button>
+      <input type="text" class="th-cal-year-input" id="thCalYearInput" inputmode="numeric"
+        onkeydown="if(event.key==='Enter'){thCalApplyYearInput();}" onblur="thCalApplyYearInput()">
+      <button type="button" class="th-cal-nav" onclick="thCalChangeYear(1)">›</button>
+    </div>
+    <div class="th-cal-months" id="thCalMonths"></div>
+  </div>
+</div>
+<script>
+  const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  let thCalState = { mode: 'service', viewYear: 0, viewMonth: 0, selectedISO: '' };
+
+  function thCalPad(n) { return String(n).padStart(2,'0'); }
+
+  function thCalToISO(y, m, d) { return `${y}-${thCalPad(m)}-${thCalPad(d)}`; }
+
+  function openThCal(mode) {
+    const today = new Date();
+    let initISO = '';
+    if (mode === 'service') {
+      const hidden = document.getElementById('serviceDate');
+      const raw = document.getElementById('serviceDateRaw');
+      initISO = (raw && raw.dataset.iso) || '';
+      if (!initISO) initISO = getMinServiceDate();
+    } else if (mode === 'dob') {
+      const dobVal = (document.getElementById('dob').value || '').trim();
+      const parts = dobVal.split('/');
+      if (parts.length === 3 && parts[2].length === 4) {
+        const yCE = parseInt(parts[2],10) - 543;
+        initISO = thCalToISO(yCE, parseInt(parts[1],10), parseInt(parts[0],10));
+      }
+      if (!initISO) {
+        const d25 = new Date(today.getFullYear()-25, today.getMonth(), today.getDate());
+        initISO = thCalToISO(d25.getFullYear(), d25.getMonth()+1, d25.getDate());
+      }
+    }
+    const [iy, im] = initISO.split('-').map(Number);
+    thCalState.mode = mode;
+    thCalState.viewYear = iy;
+    thCalState.viewMonth = im;
+    thCalState.selectedISO = initISO;
+
+    const popup = document.getElementById('thCalPopup');
+    const anchor = document.getElementById(mode === 'service' ? 'serviceDateRaw' : 'dob');
+    const rect = anchor.getBoundingClientRect();
+    popup.style.display = 'block';
+    document.getElementById('thCalYearView').classList.remove('active');
+    document.getElementById('thCalDays').classList.remove('hidden-view');
+    thCalRender();
+
+    let top = rect.bottom + 6;
+    let left = rect.left;
+    const popupW = 280, popupH = popup.offsetHeight || 320;
+    if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+    if (top + popupH > window.innerHeight - 8) top = rect.top - popupH - 6;
+    popup.style.top = top + 'px';
+    popup.style.left = left + 'px';
+
+    setTimeout(() => { document.addEventListener('mousedown', thCalOutsideClick); }, 0);
+  }
+
+  function thCalOutsideClick(e) {
+    const popup = document.getElementById('thCalPopup');
+    const serviceInput = document.getElementById('serviceDateRaw');
+    const dobInput = document.getElementById('dob');
+    if (popup.contains(e.target) || e.target === serviceInput || e.target === dobInput) return;
+    thCalClose();
+  }
+
+  function thCalClose() {
+    document.getElementById('thCalPopup').style.display = 'none';
+    document.removeEventListener('mousedown', thCalOutsideClick);
+  }
+
+  function thCalChangeMonth(delta) {
+    let m = thCalState.viewMonth + delta;
+    let y = thCalState.viewYear;
+    if (m < 1) { m = 12; y--; }
+    if (m > 12) { m = 1; y++; }
+    thCalState.viewMonth = m;
+    thCalState.viewYear = y;
+    thCalRender();
+  }
+
+  function thCalRender() {
+    const { viewYear, viewMonth, selectedISO, mode } = thCalState;
+    const yBE = viewYear + 543;
+    document.getElementById('thCalTitle').textContent = THAI_MONTHS_FULL[viewMonth-1] + ' ' + yBE;
+    document.getElementById('thCalYearInput').value = yBE;
+
+    const firstDow = new Date(viewYear, viewMonth-1, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+    const todayISO = (() => { const t = new Date(); return thCalToISO(t.getFullYear(), t.getMonth()+1, t.getDate()); })();
+    const minISO = mode === 'service' ? getMinServiceDate() : null;
+
+    let html = '';
+    for (let i = 0; i < firstDow; i++) html += '<div class="th-cal-day is-empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = thCalToISO(viewYear, viewMonth, d);
+      let disabled = false;
+      if (mode === 'service') {
+        if (minISO && iso < minISO) disabled = true;
+        if (!disabled && isBlockedDate(iso).blocked) disabled = true;
+      }
+      const cls = ['th-cal-day'];
+      if (iso === todayISO) cls.push('is-today');
+      if (iso === selectedISO) cls.push('is-selected');
+      html += `<button type="button" class="${cls.join(' ')}" ${disabled ? 'disabled' : ''} onclick="thCalSelectDay('${iso}')">${d}</button>`;
+    }
+    document.getElementById('thCalDays').innerHTML = html;
+
+    // Month grid (year view)
+    let mHtml = '';
+    THAI_MONTHS_FULL.forEach((name, idx) => {
+      const isCur = (idx+1) === viewMonth;
+      mHtml += `<button type="button" class="th-cal-month-btn${isCur ? ' is-current-month' : ''}" onclick="thCalPickMonth(${idx+1})">${name}</button>`;
+    });
+    document.getElementById('thCalMonths').innerHTML = mHtml;
+  }
+
+  function thCalToggleYearView() {
+    const yv = document.getElementById('thCalYearView');
+    const dv = document.getElementById('thCalDays');
+    const wasActive = yv.classList.contains('active');
+    yv.classList.toggle('active', !wasActive);
+    dv.classList.toggle('hidden-view', !wasActive);
+  }
+
+  function thCalChangeYear(delta) {
+    thCalState.viewYear += delta;
+    thCalRender();
+  }
+
+  function thCalApplyYearInput() {
+    const input = document.getElementById('thCalYearInput');
+    const yBE = parseInt(input.value, 10);
+    if (!yBE || yBE < 2400 || yBE > 2700) { input.value = thCalState.viewYear + 543; return; }
+    thCalState.viewYear = yBE - 543;
+    thCalRender();
+  }
+
+  function thCalPickMonth(m) {
+    thCalState.viewMonth = m;
+    thCalToggleYearView();
+    thCalRender();
+  }
+
+  function thCalSelectDay(iso) {
+    thCalState.selectedISO = iso;
+    if (thCalState.mode === 'service') {
+      const raw = document.getElementById('serviceDateRaw');
+      raw.value = iso;
+      syncServiceDate(raw);
+      if (raw.value === iso) {
+        raw.dataset.iso = iso; // จำเฉพาะค่าที่ผ่านการตรวจสอบแล้ว
+        thCalClose();
+      }
+    } else if (thCalState.mode === 'dob') {
+      const [y, m, d] = iso.split('-').map(Number);
+      const yBE = y + 543;
+      document.getElementById('dob').value = thCalPad(d) + '/' + thCalPad(m) + '/' + yBE;
+      calcAge();
+      thCalClose();
+    }
+  }
+</script>
 </body>
 </html>
