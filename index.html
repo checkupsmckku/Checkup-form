@@ -2000,7 +2000,7 @@
 
         <!-- ── 1.0 วันที่เข้ารับบริการ ── -->
         <div class="field-group" style="margin-bottom:16px;max-width:300px">
-          <label>📅 วันที่เข้ารับบริการ <span class="req">*</span></label>
+          <label>📅 วันที่นัดหมายเข้ารับบริการ <span class="req">*</span></label>
           <!-- Calendar picker overlay: display DD/MM/YYYY, store YYYY-MM-DD -->
           <div style="position:relative;width:100%">
             <span id="serviceDateDisplay" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text-dark);pointer-events:none;z-index:1"></span>
@@ -5187,7 +5187,7 @@ function showSuccessModal(data) {
   } else {
     html += `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
   }
-  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
+  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
   if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${data.papDelivery}</span></div>`;
   if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">${data.medCertCount} ชุด</span></div>`;
