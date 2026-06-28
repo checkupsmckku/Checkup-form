@@ -5491,7 +5491,14 @@ function showStaffSummary(idx) {
   if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + r.paymentRight + '</span></div>';
   if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + r.age + ' ปี / ' + genderTxt + '</span></div>';
   if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + r.serviceDate + '</span></div>';
-  if (r.deliveryMethod) html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + r.deliveryMethod + '</span></div>';
+  if (r.deliveryMethod) {
+    html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + r.deliveryMethod + '</span></div>';
+    if (r.postEmail)    html += '<div class="sr"><span class="sl">📧 อีเมลจัดส่ง</span><span class="sv">' + r.postEmail + '</span></div>';
+    if (r.postRecipient) html += '<div class="sr"><span class="sl">ผู้รับ</span><span class="sv">' + r.postRecipient + '</span></div>';
+    if (r.postAddr)     html += '<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">' + r.postAddr + (r.postProvince ? ' ' + r.postProvince : '') + (r.postZip ? ' ' + r.postZip : '') + '</span></div>';
+    if (r.papDeliveryMethod) html += '<div class="sr"><span class="sl">ช่องทางรับผลตรวจภายใน</span><span class="sv">' + r.papDeliveryMethod + '</span></div>';
+    if (r.papResultEmail) html += '<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจภายใน</span><span class="sv">' + r.papResultEmail + '</span></div>';
+  }
   if (r.medCertCount && r.medCertCount !== '0')           html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">' + r.medCertCount + ' ชุด</span></div>';
   if (r.nonFormularyDrugCount && r.nonFormularyDrugCount !== '0') html += '<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">' + r.nonFormularyDrugCount + ' ชุด</span></div>';
   if (r.medCertDriverCount && r.medCertDriverCount !== '0')   html += '<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">' + r.medCertDriverCount + ' ชุด</span></div>';
