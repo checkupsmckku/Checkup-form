@@ -1900,6 +1900,19 @@
   .amend-field-label { font-size: 12px; font-weight: 700; color: var(--text-muted,#6B7280); margin-bottom: 5px; }
   #amendBox { transition: max-width 0.3s; }
   #amendBox.wide { max-width: 560px; }
+
+  /* ── Staff Search Floating Button ── */
+  .staff-fab {
+    position:fixed; bottom:24px; right:24px;
+    background:var(--primary,#001D3D); color:#fff;
+    border:none; border-radius:50px;
+    padding:12px 20px; font-size:14px; font-weight:700;
+    cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,0.28);
+    z-index:900; display:flex; align-items:center; gap:6px;
+    transition:background 0.2s,transform 0.15s; font-family:inherit;
+  }
+  .staff-fab:hover { background:#003366; transform:translateY(-2px); }
+  @media print { .staff-fab { display:none !important; } }
 </style>
 </head>
 <body>
@@ -2132,7 +2145,7 @@
         </div>
 
         <!-- ── 1.3 ชื่อ-นามสกุล ── -->
-        <div id="fullInfoSection">
+        <div id="nameSection">
           <div class="sub-section-label">ชื่อ-นามสกุล</div>
           <div class="field-grid" style="margin-bottom:10px">
             <div class="field-group">
@@ -2174,8 +2187,9 @@
               กรุณานำสำเนาใบเปลี่ยนชื่อ-นามสกุลมาด้วย
             </div>
           </div>
+        </div><!-- /nameSection -->
 
-
+        <div id="fullInfoSection">
         <!-- ── 1.3 วันเกิด / อายุ / บัตรปชช ── -->
         <div class="sub-section-label">วันเกิด / อายุ / เอกสารประจำตัว</div>
         <div class="field-grid cols-2" style="margin-bottom:6px">
@@ -2226,12 +2240,12 @@
         <!-- Row 1: บ้านเลขที่, หมู่ -->
         <div class="field-grid cols-3" style="margin-bottom:10px">
           <div class="field-group field-full" style="grid-column:span 2">
-            <label>บ้านเลขที่</label>
-            <input type="text" id="houseNo" placeholder="บ้านเลขที่">
+            <label>บ้านเลขที่ <span class="req">*</span></label>
+            <input type="text" id="houseNo" placeholder="บ้านเลขที่" required>
           </div>
           <div class="field-group">
-            <label>หมู่</label>
-            <input type="text" id="moo" placeholder="หมู่">
+            <label>หมู่ <span class="req">*</span></label>
+            <input type="text" id="moo" placeholder="หมู่" required>
           </div>
         </div>
         <!-- Row 2: ถนน, ซอย -->
@@ -4665,6 +4679,10 @@ function toggleHN(hasHN) {
   if (hnBlock) hnBlock.style.display = hasHN ? 'block' : 'none';
 
   const fullInfo = document.getElementById('fullInfoSection');
+  const nameSection = document.getElementById('nameSection');
+
+  // แสดงชื่อ-นามสกุลเสมอ ไม่ว่าจะเลือกมีหรือไม่มี HN
+  if (nameSection) nameSection.style.display = 'block';
 
   // แสดง/ซ่อนปุ่มคัดลอกที่อยู่ — เฉพาะเมื่อ "ไม่มี HN"
   const btnCopy = document.getElementById('btnCopyAddr');
@@ -4686,16 +4704,14 @@ function toggleHN(hasHN) {
   }
 
   if (hasHN) {
-    // Hide full info section and remove required
+    // ซ่อน fullInfoSection (วันเกิด, ที่อยู่ ฯลฯ) แต่คงชื่อ-นามสกุลไว้
     if (fullInfo) fullInfo.style.display = 'none';
-    _setFullInfoRequired(false);
     // Show amendment popup
     const ov = document.getElementById('amendOverlay');
     if (ov) ov.classList.add('show');
   } else {
-    // Show full info section and restore required
+    // แสดง fullInfoSection ทั้งหมด
     if (fullInfo) fullInfo.style.display = 'block';
-    _setFullInfoRequired(true);
     // Clear HN
     const cardEl = document.getElementById('patientCardNo');
     const hintEl = document.getElementById('patientCardHint');
@@ -4705,10 +4721,8 @@ function toggleHN(hasHN) {
 }
 
 function _setFullInfoRequired(req) {
-  ['prefix','firstName','lastName'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.required = req;
-  });
+  // nameSection แสดงเสมอในทุกโหมด → prefix/firstName/lastName required ตลอด
+  // ฟังก์ชันนี้คงไว้เพื่อ backward compatibility
 }
 
 function amendSpecify() {
@@ -5371,6 +5385,180 @@ function closeProgDetailOutside(e) {
   if (e.target === document.getElementById('progDetailOverlay')) closeProgDetail();
 }
 
+// ─── Staff Search ──────────────────────────────────────────────────────────────
+function openStaffSearch() {
+  document.getElementById('staffSearchModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('staffSearchInput').focus(), 200);
+}
+function closeStaffSearch() {
+  document.getElementById('staffSearchModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function staffSearchOutside(e) {
+  if (e.target === document.getElementById('staffSearchModal')) closeStaffSearch();
+}
+function closeStaffSummary() {
+  document.getElementById('staffSummaryModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function staffSummaryOutside(e) {
+  if (e.target === document.getElementById('staffSummaryModal')) closeStaffSummary();
+}
+
+async function doStaffSearch() {
+  const q = (document.getElementById('staffSearchInput').value || '').trim();
+  if (!q) { showToast('⚠ กรุณากรอกคำค้นหา'); return; }
+
+  const btn    = document.getElementById('staffSearchBtn');
+  const status = document.getElementById('staffSearchStatus');
+  const results = document.getElementById('staffSearchResults');
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังค้นหา...';
+  status.textContent = ''; results.innerHTML = '';
+
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'search', q: q })
+    });
+    const json = await res.json();
+    btn.disabled = false; btn.textContent = 'ค้นหา';
+
+    if (json.status !== 'ok') {
+      status.textContent = '❌ ' + (json.message || 'เกิดข้อผิดพลาด');
+      return;
+    }
+
+    const items = json.results || [];
+    if (!items.length) {
+      status.textContent = '🔍 ไม่พบผู้ลงทะเบียนที่ตรงกับ "' + q + '"';
+      return;
+    }
+
+    status.textContent = 'พบ ' + items.length + ' รายการ (คลิกเพื่อดูใบสรุป)';
+    results.innerHTML = items.map(function(r, i) {
+      const hnBadge = r.hn ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400"> (HN: ' + r.hn + ')</span>' : '';
+      return '<div onclick="showStaffSummary(' + i + ')"'
+        + ' style="border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s"'
+        + ' onmouseover="this.style.background=\'#F0F7F8\'" onmouseout="this.style.background=\'\'">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">'
+        + '<div style="font-weight:700;font-size:15px;color:var(--primary-dark)">' + r.prefix + r.firstName + ' ' + r.lastName + hnBadge + '</div>'
+        + '<div style="font-size:12px;color:var(--text-muted)">ลงทะเบียน ' + r.regDate + '</div>'
+        + '</div>'
+        + '<div style="font-size:13px;color:var(--text-muted);margin-top:4px">'
+        + (r.program || '—') + ' | นัดหมาย: ' + (r.serviceDate || '—')
+        + '</div></div>';
+    }).join('');
+
+    window._staffSearchResults = items;
+
+  } catch(err) {
+    btn.disabled = false; btn.textContent = 'ค้นหา';
+    status.textContent = '❌ เชื่อมต่อไม่ได้: ' + err.message;
+  }
+}
+
+function showStaffSummary(idx) {
+  const r = window._staffSearchResults[idx];
+  if (!r) return;
+
+  // แยกหมายเลขโปรแกรมจาก "โปรแกรม X — ..."
+  const progMatch = (r.program || '').match(/โปรแกรม\s*(\d+)/);
+  const progNum   = progMatch ? parseInt(progMatch[1]) : 0;
+  const progData  = PROG_DETAIL[progNum];
+  const genderTxt = (r.gender === 'male' || r.gender === 'ชาย') ? 'ชาย' : 'หญิง';
+  const isHN      = r.hnStatus === 'มี HN';
+
+  document.getElementById('staffSummaryTitle').textContent =
+    isHN ? 'ใบสรุปรายการตรวจ (HN: ' + r.hn + ')' : 'ใบสรุปรายการตรวจ — ' + r.prefix + r.firstName + ' ' + r.lastName;
+  document.getElementById('staffSummaryDate').textContent =
+    'ลงทะเบียน ' + r.regDate + (r.serviceDate ? ' | นัดหมาย ' + r.serviceDate : '');
+
+  let html = '';
+
+  // ── ข้อมูลส่วนตัว ──
+  if (isHN) html += '<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">' + r.hn + '</span></div>';
+  html += '<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">' + r.prefix + r.firstName + ' ' + r.lastName + '</span></div>';
+  if (r.department)    html += '<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">' + r.department + '</span></div>';
+  if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + r.paymentRight + '</span></div>';
+  if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + r.age + ' ปี / ' + genderTxt + '</span></div>';
+  if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + r.serviceDate + '</span></div>';
+  if (r.deliveryMethod) html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + r.deliveryMethod + '</span></div>';
+  if (r.medCertCount && r.medCertCount !== '0')           html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">' + r.medCertCount + ' ชุด</span></div>';
+  if (r.nonFormularyDrugCount && r.nonFormularyDrugCount !== '0') html += '<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">' + r.nonFormularyDrugCount + ' ชุด</span></div>';
+  if (r.medCertDriverCount && r.medCertDriverCount !== '0')   html += '<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">' + r.medCertDriverCount + ' ชุด</span></div>';
+  if (r.medCertHealthCount && r.medCertHealthCount !== '0')   html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรค</span><span class="sv">' + r.medCertHealthCount + ' ชุด</span></div>';
+
+  // ── โปรแกรม + รายการในโปรแกรม ──
+  html += '<div class="sr-section-title">' + (r.program || 'ไม่ระบุโปรแกรม') + '</div>';
+  if (progData) {
+    html += '<div class="sr-test-list">';
+    progData.tests.forEach(function(t) {
+      html += '<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + t.th + '</span><span class="sr-name-eng">' + t.eng + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  // ── รายการเพิ่มเติม ──
+  if (r.additionalItems && r.additionalItems.trim()) {
+    const addItems = r.additionalItems.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    html += '<div class="sr-section-title extra">➕ รายการเพิ่มเติม (' + addItems.length + ' รายการ)</div>';
+    html += '<div class="sr-test-list">';
+    addItems.forEach(function(item) {
+      const pm = item.match(/\(([^)]+บาท)\)\s*$/);
+      const name  = pm ? item.slice(0, item.lastIndexOf(pm[0])).trim() : item;
+      const price = pm ? pm[1] : '';
+      html += '<div class="sr-test-item extra" style="justify-content:space-between">'
+        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + name + '</span></span>'
+        + (price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + price + '</span>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // ── ยอดรวม ──
+  html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + r.total + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
+
+  document.getElementById('staffSummaryCard').innerHTML = html;
+  document.getElementById('staffSummaryModal').style.display = 'flex';
+  document.getElementById('staffSearchModal').style.display = 'none';
+  document.body.style.overflow = 'hidden';
+}
+
+function printStaffSummary() {
+  const title   = document.getElementById('staffSummaryTitle').textContent;
+  const dateStr = document.getElementById('staffSummaryDate').textContent;
+  const content = document.getElementById('staffSummaryCard').innerHTML;
+  const w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head>'
+    + '<meta charset="utf-8"><title>' + title + '</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
+    + '<style>'
+    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px;max-width:720px}'
+    + 'h2{font-size:18px;color:#001D3D;margin:0 0 4px}'
+    + '.sub{font-size:12px;color:#666;margin-bottom:16px;border-bottom:2px solid #001D3D;padding-bottom:10px}'
+    + '.sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee}'
+    + '.sl{color:#555}.sv{font-weight:700;text-align:right}'
+    + '.sr-section-title{font-weight:800;font-size:14px;background:#E8F5F7;color:#00575E;padding:7px 12px;border-radius:7px;margin:12px 0 6px;border-left:4px solid #00575E}'
+    + '.sr-section-title.extra{background:#FFF3E0;color:#E65100;border-left:4px solid #E65100}'
+    + '.sr-test-list{padding-left:4px}'
+    + '.sr-test-item{display:flex;align-items:baseline;gap:6px;padding:3px 0;font-size:13px}'
+    + '.sr-dot{font-size:8px}.included-dot{color:#00575E}.extra-dot{color:#E65100}'
+    + '.sr-name-th{font-weight:600;color:#1a1a1a}.sr-name-eng{color:#888;font-size:11.5px;font-style:italic}'
+    + '.sr-total-row{display:flex;justify-content:space-between;align-items:center;background:#E8F5F7;border-radius:9px;padding:10px 14px;margin-top:14px}'
+    + '.sr-total-label{font-weight:800;color:#00575E;font-size:15px}'
+    + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
+    + '@media print{body{margin:0}}'
+    + '</style></head><body>'
+    + '<h2>' + title + '</h2>'
+    + '<div class="sub">' + dateStr + '</div>'
+    + content
+    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '</body></html>');
+  w.document.close();
+}
+
 </script>
 
 <!-- ─── Success Modal ─── -->
@@ -5562,6 +5750,62 @@ function closeProgDetailOutside(e) {
 </div>
 
 
+<!-- ─── Staff Search Floating Button ─── -->
+<button class="staff-fab" onclick="openStaffSearch()" title="ค้นหาใบสรุปผู้ลงทะเบียน">
+  🔍 <span>ค้นหาใบสรุป</span>
+</button>
+
+<!-- ─── Staff Search Modal ─── -->
+<div class="modal-overlay" id="staffSearchModal" style="display:none" onclick="staffSearchOutside(event)">
+  <div class="modal-box" style="max-width:620px;max-height:85vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">🔍 ค้นหาใบสรุปผู้ลงทะเบียน</div>
+        <div class="modal-subtitle">ค้นด้วย ชื่อ, นามสกุล หรือ เลข HN</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeStaffSearch()">✕</button>
+    </div>
+    <div style="padding:16px 20px;flex-shrink:0">
+      <div style="display:flex;gap:8px">
+        <input type="text" id="staffSearchInput"
+          placeholder="เช่น สมชาย, AB1234..."
+          style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit"
+          onkeydown="if(event.key==='Enter') doStaffSearch()">
+        <button onclick="doStaffSearch()" id="staffSearchBtn"
+          style="padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">
+          ค้นหา
+        </button>
+      </div>
+      <div id="staffSearchStatus" style="margin-top:8px;font-size:13px;color:var(--text-muted)"></div>
+    </div>
+    <div id="staffSearchResults" style="overflow-y:auto;padding:0 20px 20px;flex:1"></div>
+  </div>
+</div>
+
+<!-- ─── Staff Summary Modal ─── -->
+<div class="modal-overlay" id="staffSummaryModal" style="display:none" onclick="staffSummaryOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-success-badge" style="background:var(--primary)">
+        <span class="modal-check" style="font-size:20px">📋</span>
+      </div>
+      <div class="modal-header-text">
+        <div class="modal-title" id="staffSummaryTitle">ใบสรุปรายการตรวจ</div>
+        <div class="modal-subtitle" id="staffSummaryDate"></div>
+      </div>
+      <button class="modal-close-btn" onclick="closeStaffSummary()">✕</button>
+    </div>
+    <div class="modal-summary" id="staffSummaryCard"></div>
+    <div style="padding:12px 20px;display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border,#e2e2e2)">
+      <button class="btn-modal-print" onclick="printStaffSummary()">🖨 พิมพ์ใบสรุป</button>
+      <button onclick="closeStaffSummary()"
+        style="padding:9px 20px;border:1.5px solid var(--border);border-radius:9px;background:#fff;cursor:pointer;font-size:14px;font-family:inherit">
+        ปิด
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Amendment Popup (shown when HN = มี) ─── -->
 <div class="amend-overlay" id="amendOverlay">
   <div class="amend-box" id="amendBox">
@@ -5569,6 +5813,7 @@ function closeProgDetailOutside(e) {
     <!-- ── Step 1: คำถาม ── -->
     <div id="amendStep1">
       <div class="amend-icon">📋</div>
+   
       <div class="amend-title">มีข้อมูลที่ต้องการแก้ไขหรือไม่?</div>
       <div class="amend-sub">เช่น ชื่อ-นามสกุล, ที่อยู่, ข้อมูลการแพ้ยา<br>หรือข้อมูลส่วนตัวอื่นๆ</div>
       <div class="amend-btns">
@@ -5583,7 +5828,6 @@ function closeProgDetailOutside(e) {
         <div style="font-size:16px;font-weight:800;color:var(--primary-dark,#001D3D)">📝 ระบุส่วนที่ต้องแก้ไข</div>
         <button onclick="amendNone()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;line-height:1">✕</button>
       </div>
-
       <!-- ชื่อ-นามสกุล -->
       <div style="margin-bottom:10px">
         <div class="amend-field-label">คำนำหน้า / ชื่อ / นามสกุล</div>
@@ -5597,7 +5841,6 @@ function closeProgDetailOutside(e) {
           <input type="text" id="ap_lastName"  placeholder="นามสกุล" class="amend-input">
         </div>
       </div>
-
       <!-- ชื่อเดิม / นามสกุลเดิม -->
       <div style="margin-bottom:10px">
         <div class="amend-field-label">ชื่อเดิม / นามสกุลเดิม (กรณีเปลี่ยนชื่อ-สกุล)</div>
@@ -5607,7 +5850,6 @@ function closeProgDetailOutside(e) {
         </div>
         <div style="font-size:11px;color:#E67E22;margin-top:3px">⚠ กรุณานำสำเนาใบเปลี่ยนชื่อ-นามสกุลมาด้วย</div>
       </div>
-
       <!-- โทรศัพท์ -->
       <div style="margin-bottom:10px">
         <div class="amend-field-label">เบอร์โทรศัพท์</div>
@@ -5615,21 +5857,18 @@ function closeProgDetailOutside(e) {
           oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"
           class="amend-input" style="width:100%">
       </div>
-
       <!-- ที่อยู่ใหม่ -->
       <div style="margin-bottom:10px">
         <div class="amend-field-label">ที่อยู่ใหม่ (ถ้าเปลี่ยน)</div>
         <input type="text" id="ap_addr" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด"
           class="amend-input" style="width:100%">
       </div>
-
       <!-- หมายเหตุ -->
       <div style="margin-bottom:16px">
         <div class="amend-field-label">หมายเหตุ / ส่วนอื่นๆ ที่ต้องแก้ไข</div>
         <textarea id="ap_note" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."
           style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
       </div>
-
       <button onclick="amendSave()"
         style="width:100%;padding:11px;background:var(--accent,#E67E22);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
         ✔ บันทึกและปิด
@@ -5639,231 +5878,283 @@ function closeProgDetailOutside(e) {
   </div>
 </div>
 
-<!-- ── Thai Calendar Popup (เดือนไทย/พ.ศ.) ── -->
+<!-- ─── Thai Buddhist Calendar Popup ─── -->
 <style>
   .th-cal-popup {
-    position: fixed; z-index: 10000; width: 280px;
-    background: #fff; border: 1px solid var(--border,#e2e2e2); border-radius: 12px;
-    box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 12px; font-family: inherit;
-    display: none;
+    display:none; position:fixed; z-index:9999;
+    background:#fff; border-radius:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.22);
+    padding:0; width:300px; overflow:hidden;
+    font-family:inherit;
   }
-  .th-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .th-cal-popup.open { display:block; }
+  .th-cal-header {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--primary,#2D3481); color:#fff; padding:10px 12px;
+  }
   .th-cal-nav {
-    width:28px; height:28px; border:none; background:#F3F4F6; border-radius:7px;
-    cursor:pointer; font-size:16px; color:var(--text-dark,#333); line-height:1;
+    background:none; border:none; color:#fff; font-size:20px;
+    cursor:pointer; padding:2px 8px; border-radius:6px; line-height:1;
   }
-  .th-cal-nav:hover { background:#E5E7EB; }
+  .th-cal-nav:hover { background:rgba(255,255,255,0.15); }
   .th-cal-title {
-    border:none; background:transparent; font-size:14px; font-weight:700;
-    color:var(--text-dark,#333); cursor:pointer; padding:4px 8px; border-radius:6px;
+    background:none; border:none; color:#fff; font-size:14px;
+    font-weight:700; cursor:pointer; font-family:inherit;
+    padding:4px 10px; border-radius:6px;
   }
-  .th-cal-title:hover { background:#F3F4F6; }
-  .th-cal-weekdays { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:4px; }
-  .th-cal-weekdays span { font-size:11px; color:#9CA3AF; font-weight:600; }
-  .th-cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .th-cal-title:hover { background:rgba(255,255,255,0.15); }
+  .th-cal-weekdays {
+    display:grid; grid-template-columns:repeat(7,1fr);
+    background:#F3F4F6; padding:4px 8px 2px;
+  }
+  .th-cal-weekdays span {
+    text-align:center; font-size:11px; font-weight:700;
+    color:var(--text-muted,#6B7280); padding:3px 0;
+  }
+  .th-cal-weekdays span:first-child { color:#E53935; }
+  .th-cal-weekdays span:last-child { color:#1565C0; }
+  .th-cal-grid {
+    display:grid; grid-template-columns:repeat(7,1fr);
+    gap:2px; padding:6px 8px 10px; background:#fff;
+  }
   .th-cal-day {
-    height:32px; display:flex; align-items:center; justify-content:center;
-    font-size:13px; border-radius:7px; cursor:pointer; border:none; background:transparent;
-    color:var(--text-dark,#333);
+    text-align:center; padding:6px 2px; border-radius:7px;
+    font-size:13px; cursor:pointer; border:none; background:none;
+    font-family:inherit; color:var(--text-dark,#1a1a2e);
   }
-  .th-cal-day:hover:not(:disabled) { background:#F3F4F6; }
-  .th-cal-day.is-today { border:1.5px solid var(--accent,#E67E22); }
-  .th-cal-day.is-selected { background:var(--accent,#E67E22); color:#fff; font-weight:700; }
-  .th-cal-day:disabled { color:#D1D5DB; cursor:not-allowed; }
-  .th-cal-day.is-empty { visibility:hidden; cursor:default; }
-  .th-cal-yearview { display:none; }
-  .th-cal-yearview.active { display:block; }
-  .th-cal-days.hidden-view { display:none; }
-  .th-cal-year-stepper { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px; }
+  .th-cal-day:hover { background:var(--teal-pale,#E8F5F7); }
+  .th-cal-day.today { font-weight:800; color:var(--accent,#E67E22); }
+  .th-cal-day.selected { background:var(--primary,#2D3481); color:#fff; font-weight:700; }
+  .th-cal-day.blocked { color:#ccc; cursor:not-allowed; }
+  .th-cal-day.blocked:hover { background:none; }
+  .th-cal-day.empty { cursor:default; }
+  .th-cal-day.sunday { color:#E53935; }
+  .th-cal-day.sunday.blocked { color:#f5c0c0; }
+  .th-cal-year-view {
+    display:none; padding:8px; background:#fff;
+  }
+  .th-cal-year-view.open { display:block; }
+  .th-cal-year-row {
+    display:flex; align-items:center; gap:6px; padding:4px 0;
+  }
   .th-cal-year-input {
-    width:70px; text-align:center; font-size:14px; font-weight:700; padding:5px;
-    border:1.5px solid var(--border,#e2e2e2); border-radius:7px;
+    flex:1; padding:6px 10px; border:1.5px solid var(--border,#e2e2e2);
+    border-radius:7px; font-size:13px; font-family:inherit; text-align:center;
   }
-  .th-cal-months { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .th-cal-year-apply {
+    padding:6px 12px; background:var(--primary,#2D3481); color:#fff;
+    border:none; border-radius:7px; font-size:13px; cursor:pointer; font-family:inherit;
+  }
+  .th-cal-month-grid {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding-top:4px;
+  }
   .th-cal-month-btn {
-    padding:8px 4px; font-size:12.5px; border:1px solid var(--border,#e2e2e2); border-radius:7px;
-    background:#fff; cursor:pointer; color:var(--text-dark,#333);
+    padding:8px 4px; font-size:12.5px; border:1px solid var(--border,#e2e2e2);
+    border-radius:7px; background:#fff; cursor:pointer; color:var(--text-dark,#333);
+    font-family:inherit;
   }
   .th-cal-month-btn:hover { background:#F3F4F6; }
   .th-cal-month-btn.is-current-month { border-color:var(--accent,#E67E22); color:var(--accent,#E67E22); font-weight:700; }
+  .th-cal-overlay { display:none; position:fixed; inset:0; z-index:9998; }
+  .th-cal-overlay.open { display:block; }
 </style>
+
+<div class="th-cal-overlay" id="thCalOverlay" onclick="thCalClose()"></div>
 <div id="thCalPopup" class="th-cal-popup">
   <div class="th-cal-header">
     <button type="button" class="th-cal-nav" onclick="thCalChangeMonth(-1)">‹</button>
     <button type="button" class="th-cal-title" id="thCalTitle" onclick="thCalToggleYearView()"></button>
     <button type="button" class="th-cal-nav" onclick="thCalChangeMonth(1)">›</button>
   </div>
+  <div class="th-cal-year-view" id="thCalYearView">
+    <div class="th-cal-year-row">
+      <input type="number" id="thCalYearInput" class="th-cal-year-input" placeholder="ปี พ.ศ."
+        onkeydown="if(event.key==='Enter') thCalApplyYearInput()">
+      <button type="button" class="th-cal-year-apply" onclick="thCalApplyYearInput()">ตกลง</button>
+    </div>
+    <div class="th-cal-month-grid" id="thCalMonthGrid"></div>
+  </div>
   <div class="th-cal-weekdays">
     <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
   </div>
-  <div class="th-cal-days" id="thCalDays"></div>
-  <div class="th-cal-yearview" id="thCalYearView">
-    <div class="th-cal-year-stepper">
-      <button type="button" class="th-cal-nav" onclick="thCalChangeYear(-1)">‹</button>
-      <input type="text" class="th-cal-year-input" id="thCalYearInput" inputmode="numeric"
-        onkeydown="if(event.key==='Enter'){thCalApplyYearInput();}" onblur="thCalApplyYearInput()">
-      <button type="button" class="th-cal-nav" onclick="thCalChangeYear(1)">›</button>
-    </div>
-    <div class="th-cal-months" id="thCalMonths"></div>
-  </div>
+  <div class="th-cal-grid" id="thCalGrid"></div>
 </div>
+
 <script>
-  const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  let thCalState = { mode: 'service', viewYear: 0, viewMonth: 0, selectedISO: '' };
+// ─── Thai Buddhist Calendar ────────────────────────────────────────────────────
+const thCalState = {
+  viewYear: 0, viewMonth: 0,
+  selectedISO: '', mode: 'service',
+  showingYearView: false
+};
 
-  function thCalPad(n) { return String(n).padStart(2,'0'); }
+const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+                   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+                          'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
-  function thCalToISO(y, m, d) { return `${y}-${thCalPad(m)}-${thCalPad(d)}`; }
-
-  function openThCal(mode) {
-    const today = new Date();
-    let initISO = '';
-    if (mode === 'service') {
-      const hidden = document.getElementById('serviceDate');
-      const raw = document.getElementById('serviceDateRaw');
-      initISO = (raw && raw.dataset.iso) || '';
-      if (!initISO) initISO = getMinServiceDate();
-    } else if (mode === 'dob') {
-      const dobVal = (document.getElementById('dob').value || '').trim();
-      const parts = dobVal.split('/');
-      if (parts.length === 3 && parts[2].length === 4) {
-        const yCE = parseInt(parts[2],10) - 543;
-        initISO = thCalToISO(yCE, parseInt(parts[1],10), parseInt(parts[0],10));
-      }
-      if (!initISO) {
-        const d25 = new Date(today.getFullYear()-25, today.getMonth(), today.getDate());
-        initISO = thCalToISO(d25.getFullYear(), d25.getMonth()+1, d25.getDate());
-      }
+function openThCal(mode) {
+  thCalState.mode = mode;
+  const now = new Date();
+  // กำหนดวันที่เริ่มต้นแสดง
+  if (mode === 'service') {
+    const raw = document.getElementById('serviceDateRaw');
+    if (raw && raw.value) {
+      const [y, m] = raw.value.split('-');
+      thCalState.viewYear = parseInt(y);
+      thCalState.viewMonth = parseInt(m) - 1;
+      thCalState.selectedISO = raw.value;
+    } else {
+      const minISO = getMinServiceDate ? getMinServiceDate() : now.toISOString().slice(0,10);
+      const [y, m] = minISO.split('-');
+      thCalState.viewYear = parseInt(y);
+      thCalState.viewMonth = parseInt(m) - 1;
+      thCalState.selectedISO = '';
     }
-    const [iy, im] = initISO.split('-').map(Number);
-    thCalState.mode = mode;
-    thCalState.viewYear = iy;
-    thCalState.viewMonth = im;
-    thCalState.selectedISO = initISO;
-
-    const popup = document.getElementById('thCalPopup');
-    const anchor = document.getElementById(mode === 'service' ? 'serviceDateRaw' : 'dob');
-    const rect = anchor.getBoundingClientRect();
-    popup.style.display = 'block';
-    document.getElementById('thCalYearView').classList.remove('active');
-    document.getElementById('thCalDays').classList.remove('hidden-view');
-    thCalRender();
-
-    let top = rect.bottom + 6;
-    let left = rect.left;
-    const popupW = 280, popupH = popup.offsetHeight || 320;
-    if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
-    if (top + popupH > window.innerHeight - 8) top = rect.top - popupH - 6;
-    popup.style.top = top + 'px';
-    popup.style.left = left + 'px';
-
-    setTimeout(() => { document.addEventListener('mousedown', thCalOutsideClick); }, 0);
-  }
-
-  function thCalOutsideClick(e) {
-    const popup = document.getElementById('thCalPopup');
-    const serviceInput = document.getElementById('serviceDateRaw');
-    const dobInput = document.getElementById('dob');
-    if (popup.contains(e.target) || e.target === serviceInput || e.target === dobInput) return;
-    thCalClose();
-  }
-
-  function thCalClose() {
-    document.getElementById('thCalPopup').style.display = 'none';
-    document.removeEventListener('mousedown', thCalOutsideClick);
-  }
-
-  function thCalChangeMonth(delta) {
-    let m = thCalState.viewMonth + delta;
-    let y = thCalState.viewYear;
-    if (m < 1) { m = 12; y--; }
-    if (m > 12) { m = 1; y++; }
-    thCalState.viewMonth = m;
-    thCalState.viewYear = y;
-    thCalRender();
-  }
-
-  function thCalRender() {
-    const { viewYear, viewMonth, selectedISO, mode } = thCalState;
-    const yBE = viewYear + 543;
-    document.getElementById('thCalTitle').textContent = THAI_MONTHS_FULL[viewMonth-1] + ' ' + yBE;
-    document.getElementById('thCalYearInput').value = yBE;
-
-    const firstDow = new Date(viewYear, viewMonth-1, 1).getDay();
-    const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
-    const todayISO = (() => { const t = new Date(); return thCalToISO(t.getFullYear(), t.getMonth()+1, t.getDate()); })();
-    const minISO = mode === 'service' ? getMinServiceDate() : null;
-
-    let html = '';
-    for (let i = 0; i < firstDow; i++) html += '<div class="th-cal-day is-empty"></div>';
-    for (let d = 1; d <= daysInMonth; d++) {
-      const iso = thCalToISO(viewYear, viewMonth, d);
-      let disabled = false;
-      if (mode === 'service') {
-        if (minISO && iso < minISO) disabled = true;
-        if (!disabled && isBlockedDate(iso).blocked) disabled = true;
+  } else {
+    const dob = document.getElementById('dob');
+    if (dob && dob.value && dob.value.length === 10) {
+      const parts = dob.value.split('/');
+      if (parts.length === 3) {
+        const beYear = parseInt(parts[2]);
+        const ceYear = beYear > 2300 ? beYear - 543 : beYear;
+        thCalState.viewYear = ceYear;
+        thCalState.viewMonth = parseInt(parts[1]) - 1;
+        thCalState.selectedISO = ceYear + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
       }
-      const cls = ['th-cal-day'];
-      if (iso === todayISO) cls.push('is-today');
-      if (iso === selectedISO) cls.push('is-selected');
-      html += `<button type="button" class="${cls.join(' ')}" ${disabled ? 'disabled' : ''} onclick="thCalSelectDay('${iso}')">${d}</button>`;
+    } else {
+      thCalState.viewYear = now.getFullYear() - 30;
+      thCalState.viewMonth = now.getMonth();
+      thCalState.selectedISO = '';
     }
-    document.getElementById('thCalDays').innerHTML = html;
-
-    // Month grid (year view)
-    let mHtml = '';
-    THAI_MONTHS_FULL.forEach((name, idx) => {
-      const isCur = (idx+1) === viewMonth;
-      mHtml += `<button type="button" class="th-cal-month-btn${isCur ? ' is-current-month' : ''}" onclick="thCalPickMonth(${idx+1})">${name}</button>`;
-    });
-    document.getElementById('thCalMonths').innerHTML = mHtml;
   }
+  thCalState.showingYearView = false;
+  document.getElementById('thCalYearView').classList.remove('open');
+  thCalRender();
+  // Position popup near the clicked element
+  const popup = document.getElementById('thCalPopup');
+  popup.classList.add('open');
+  document.getElementById('thCalOverlay').classList.add('open');
+  // Center on screen
+  popup.style.top = '50%';
+  popup.style.left = '50%';
+  popup.style.transform = 'translate(-50%, -50%)';
+}
 
-  function thCalToggleYearView() {
-    const yv = document.getElementById('thCalYearView');
-    const dv = document.getElementById('thCalDays');
-    const wasActive = yv.classList.contains('active');
-    yv.classList.toggle('active', !wasActive);
-    dv.classList.toggle('hidden-view', !wasActive);
+function thCalClose() {
+  document.getElementById('thCalPopup').classList.remove('open');
+  document.getElementById('thCalOverlay').classList.remove('open');
+}
+
+function thCalRender() {
+  const yr = thCalState.viewYear;
+  const mo = thCalState.viewMonth;
+  const yBE = yr + 543;
+  document.getElementById('thCalTitle').textContent = TH_MONTHS[mo] + ' ' + yBE;
+
+  // Build day grid
+  const firstDay = new Date(yr, mo, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+  const todayISO = new Date().toISOString().slice(0,10);
+  const minISO = (thCalState.mode === 'service' && typeof getMinServiceDate === 'function')
+    ? getMinServiceDate() : '1900-01-01';
+
+  let html = '';
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += '<button type="button" class="th-cal-day empty" disabled></button>';
   }
-
-  function thCalChangeYear(delta) {
-    thCalState.viewYear += delta;
-    thCalRender();
-  }
-
-  function thCalApplyYearInput() {
-    const input = document.getElementById('thCalYearInput');
-    const yBE = parseInt(input.value, 10);
-    if (!yBE || yBE < 2400 || yBE > 2700) { input.value = thCalState.viewYear + 543; return; }
-    thCalState.viewYear = yBE - 543;
-    thCalRender();
-  }
-
-  function thCalPickMonth(m) {
-    thCalState.viewMonth = m;
-    thCalToggleYearView();
-    thCalRender();
-  }
-
-  function thCalSelectDay(iso) {
-    thCalState.selectedISO = iso;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const mo2 = String(mo + 1).padStart(2,'0');
+    const d2  = String(d).padStart(2,'0');
+    const iso = yr + '-' + mo2 + '-' + d2;
+    const dow = new Date(yr, mo, d).getDay();
+    let cls = 'th-cal-day';
+    if (dow === 0) cls += ' sunday';
+    if (iso === todayISO) cls += ' today';
+    if (iso === thCalState.selectedISO) cls += ' selected';
+    // Check if blocked
+    let isBlocked = false;
     if (thCalState.mode === 'service') {
-      const raw = document.getElementById('serviceDateRaw');
-      raw.value = iso;
-      syncServiceDate(raw);
-      if (raw.value === iso) {
-        raw.dataset.iso = iso; // จำเฉพาะค่าที่ผ่านการตรวจสอบแล้ว
-        thCalClose();
+      if (dow === 0 || dow === 6) isBlocked = true; // Sat/Sun
+      if (iso < minISO) isBlocked = true;
+      if (typeof isBlockedDate === 'function') {
+        const chk = isBlockedDate(iso);
+        if (chk && chk.blocked) isBlocked = true;
       }
-    } else if (thCalState.mode === 'dob') {
-      const [y, m, d] = iso.split('-').map(Number);
-      const yBE = y + 543;
-      document.getElementById('dob').value = thCalPad(d) + '/' + thCalPad(m) + '/' + yBE;
-      calcAge();
-      thCalClose();
+    }
+    if (isBlocked) cls += ' blocked';
+    if (isBlocked) {
+      html += '<button type="button" class="' + cls + '" disabled>' + d + '</button>';
+    } else {
+      html += '<button type="button" class="' + cls + '" onclick="thCalSelectDay(\'' + iso + '\')">' + d + '</button>';
     }
   }
+  document.getElementById('thCalGrid').innerHTML = html;
+
+  // Update month grid if year view is open
+  if (thCalState.showingYearView) thCalRenderMonthGrid();
+}
+
+function thCalRenderMonthGrid() {
+  const html = TH_MONTHS_SHORT.map((m, i) =>
+    '<button type="button" class="th-cal-month-btn' + (i === thCalState.viewMonth ? ' is-current-month' : '') + '"'
+    + ' onclick="thCalPickMonth(' + i + ')">' + m + '</button>'
+  ).join('');
+  document.getElementById('thCalMonthGrid').innerHTML = html;
+}
+
+function thCalChangeMonth(delta) {
+  thCalState.viewMonth += delta;
+  if (thCalState.viewMonth < 0) { thCalState.viewMonth = 11; thCalState.viewYear--; }
+  if (thCalState.viewMonth > 11) { thCalState.viewMonth = 0; thCalState.viewYear++; }
+  thCalRender();
+}
+
+function thCalToggleYearView() {
+  thCalState.showingYearView = !thCalState.showingYearView;
+  const yv = document.getElementById('thCalYearView');
+  if (thCalState.showingYearView) {
+    yv.classList.add('open');
+    document.getElementById('thCalYearInput').value = thCalState.viewYear + 543;
+    thCalRenderMonthGrid();
+  } else {
+    yv.classList.remove('open');
+  }
+}
+
+function thCalApplyYearInput() {
+  const input = document.getElementById('thCalYearInput');
+  const yBE = parseInt(input.value, 10);
+  if (!yBE || yBE < 2400 || yBE > 2700) { input.value = thCalState.viewYear + 543; return; }
+  thCalState.viewYear = yBE - 543;
+  thCalRender();
+}
+
+function thCalPickMonth(m) {
+  thCalState.viewMonth = m;
+  thCalToggleYearView();
+  thCalRender();
+}
+
+function thCalSelectDay(iso) {
+  thCalState.selectedISO = iso;
+  if (thCalState.mode === 'service') {
+    const raw = document.getElementById('serviceDateRaw');
+    if (raw) { raw.value = iso; if (typeof syncServiceDate === 'function') syncServiceDate(raw); }
+  } else {
+    // dob mode — set dd/MM/yyyy (BE)
+    const [y, m, d] = iso.split('-');
+    const be = parseInt(y) + 543;
+    const el = document.getElementById('dob');
+    if (el) {
+      el.value = d + '/' + m + '/' + be;
+      if (typeof formatDobBE === 'function') formatDobBE(el);
+    }
+  }
+  thCalClose();
+}
 </script>
+
 </body>
 </html>
