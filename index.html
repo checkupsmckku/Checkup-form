@@ -4534,7 +4534,7 @@ function handleSubmit(e) {
     postAddr:      document.getElementById('postAddr1')?.value || '',
     postProvince:  document.getElementById('postProvince')?.value || '',
     postZip:       document.getElementById('postZip')?.value || '',
-    postEmail:     document.getElementById('emailAddr')?.value || '',
+    postEmail:     document.getElementById('resultEmail')?.value || '',
     // ช่องทางรับผลตรวจภายใน (ตรวจภายใน + รอรับด้วยตนเอง, ใช้เวลา 30-45 วัน)
     papDeliveryMethod: (() => {
       const m = document.querySelector('input[name="papDeliveryMethod"]:checked')?.value || '';
