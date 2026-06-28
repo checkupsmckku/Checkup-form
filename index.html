@@ -5420,10 +5420,17 @@ async function doStaffSearch() {
   try {
     const res  = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify({ action: 'search', q: q })
+      body: JSON.stringify({ action: 'search', q: q }),
+      headers: { 'Content-Type': 'text/plain' }
     });
-    const json = await res.json();
+    const rawText = await res.text();
     btn.disabled = false; btn.textContent = 'ค้นหา';
+    let json;
+    try { json = JSON.parse(rawText); }
+    catch(parseErr) {
+      status.textContent = '❌ Apps Script Error: ' + rawText.substring(0, 300);
+      return;
+    }
 
     if (json.status !== 'ok') {
       status.textContent = '❌ ' + (json.message || 'เกิดข้อผิดพลาด');
