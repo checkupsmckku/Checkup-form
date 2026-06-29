@@ -4458,7 +4458,8 @@ function handleSubmit(e) {
   const hnNumber = (document.getElementById('patientCardNo')?.value || '').trim();
   const isHNMode = hnStatusVal === 'has' && hnNumber.length > 0;
   const nameOrHN = isHNMode
-    ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${hnNumber}</span></div>`
+    ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${hnNumber}</span></div>
+       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${document.getElementById('prefix')?.value || ''} ${fname} ${lname}</span></div>`
     : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${fname} ${lname}</span></div>`;
 
   const card = document.getElementById('summaryCard');
@@ -4602,7 +4603,10 @@ function handleSubmit(e) {
     gender: selectedGender,
     prog: selectedProgram,
     delivery: delTxt,
+    postEmail: formData.postEmail || '',
+    postAddr: formData.postAddr ? (formData.postAddr + (formData.postProvince ? ' ' + formData.postProvince : '') + (formData.postZip ? ' ' + formData.postZip : '')) : '',
     papDelivery: formData.papDeliveryMethod || '',
+    papResultEmail: formData.papResultEmail || '',
     total: totalTxt,
     addList: addList,
     basePrice: _basePrice,
@@ -5203,7 +5207,10 @@ function showSuccessModal(data) {
   }
   if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
+  if (data.postEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจ</span><span class="sv">${data.postEmail}</span></div>`;
+  if (data.postAddr)  html += `<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">${data.postAddr}</span></div>`;
   if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${data.papDelivery}</span></div>`;
+  if (data.papResultEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจภายใน</span><span class="sv">${data.papResultEmail}</span></div>`;
   if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">${data.medCertCount} ชุด</span></div>`;
   if (data.nonFormularyDrugCount) html += `<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">${data.nonFormularyDrugCount} ชุด</span></div>`;
   if (data.medCertDriverCount) html += `<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">${data.medCertDriverCount} ชุด</span></div>`;
