@@ -3940,48 +3940,54 @@ function copyPersonalInfo() {
 }
 
 function copyAllFromSection1() {
+  const hasHN = document.querySelector('input[name="hnStatus"][value="yes"]')?.checked;
   const fn      = document.getElementById('firstName')?.value    || '';
   const ln      = document.getElementById('lastName')?.value     || '';
   const phone   = document.getElementById('phone')?.value        || '';
-  const houseNo = document.getElementById('houseNo')?.value      || '';
-  const moo     = document.getElementById('moo')?.value          || '';
-  const street  = document.getElementById('street')?.value       || '';
-  const soi     = document.getElementById('soi')?.value          || '';
-  const sub     = document.getElementById('subdistrict')?.value  || '';
-  const dist    = document.getElementById('district')?.value     || '';
-  const prov    = document.getElementById('province')?.value     || '';
-  const zip     = document.getElementById('zipcode')?.value      || '';
 
-  if (!fn && !sub && !zip) {
-    showToast('⚠ กรุณากรอกข้อมูลในส่วนที่ 1 ก่อน');
+  if (!fn && !phone) {
+    showToast('⚠ กรุณากรอกชื่อ-นามสกุลในส่วนที่ 1 ก่อน');
     document.getElementById('firstName')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
-  // คัดลอกชื่อ-นามสกุล-เบอร์
+  // คัดลอกชื่อ-นามสกุล-เบอร์ (ทำทุกกรณี)
   if (fn)    document.getElementById('postRecipient').value     = fn;
   if (ln)    document.getElementById('postRecipientLast').value = ln;
   if (phone) document.getElementById('postPhone').value         = phone;
 
-  // คัดลอกที่อยู่
-  if (houseNo) document.getElementById('postHouseNo').value    = houseNo;
-  if (moo)     document.getElementById('postMoo').value        = moo;
-  const roadLine = [street, soi].filter(Boolean).join(' ');
-  if (roadLine) document.getElementById('postAddr1').value     = roadLine;
-  if (sub)     document.getElementById('postSubdistrict').value = sub;
-  if (dist)    document.getElementById('postDistrict').value   = dist;
-  if (prov)    document.getElementById('postProvince').value   = prov;
-  if (zip)     document.getElementById('postZip').value        = zip;
+  if (!hasHN) {
+    // คัดลอกที่อยู่เพิ่มเติม (เฉพาะ ไม่มี HN)
+    const houseNo = document.getElementById('houseNo')?.value      || '';
+    const moo     = document.getElementById('moo')?.value          || '';
+    const street  = document.getElementById('street')?.value       || '';
+    const soi     = document.getElementById('soi')?.value          || '';
+    const sub     = document.getElementById('subdistrict')?.value  || '';
+    const dist    = document.getElementById('district')?.value     || '';
+    const prov    = document.getElementById('province')?.value     || '';
+    const zip     = document.getElementById('zipcode')?.value      || '';
 
-  // อัปเดต badge แสดงที่อยู่
-  if (sub || zip) {
-    const badge = document.getElementById('postAddrFilledBadge');
-    if (badge) {
-      document.getElementById('postAddrFilledText').textContent = `${sub} » ${dist} » ${prov} » ${zip}`;
-      badge.style.display = 'inline-flex';
+    if (houseNo) document.getElementById('postHouseNo').value     = houseNo;
+    if (moo)     document.getElementById('postMoo').value         = moo;
+    const roadLine = [street, soi].filter(Boolean).join(' ');
+    if (roadLine) document.getElementById('postAddr1').value      = roadLine;
+    if (sub)     document.getElementById('postSubdistrict').value = sub;
+    if (dist)    document.getElementById('postDistrict').value    = dist;
+    if (prov)    document.getElementById('postProvince').value    = prov;
+    if (zip)     document.getElementById('postZip').value         = zip;
+
+    // อัปเดต badge แสดงที่อยู่
+    if (sub || zip) {
+      const badge = document.getElementById('postAddrFilledBadge');
+      if (badge) {
+        document.getElementById('postAddrFilledText').textContent = `${sub} » ${dist} » ${prov} » ${zip}`;
+        badge.style.display = 'inline-flex';
+      }
     }
+    showToast('✅ คัดลอกข้อมูลทั้งหมดเรียบร้อยแล้ว');
+  } else {
+    showToast('✅ คัดลอกชื่อ-สกุล และเบอร์โทรเรียบร้อยแล้ว');
   }
-  showToast('✅ คัดลอกข้อมูลทั้งหมดเรียบร้อยแล้ว');
 }
 
 function copyMainAddr() {
@@ -4885,9 +4891,14 @@ function toggleHN(hasHN) {
   // แสดงชื่อ-นามสกุลเสมอ ไม่ว่าจะเลือกมีหรือไม่มี HN
   if (nameSection) nameSection.style.display = 'block';
 
-  // แสดง/ซ่อนปุ่มคัดลอกที่อยู่ — เฉพาะเมื่อ "ไม่มี HN"
+  // แสดงปุ่มคัดลอกเสมอ (ทั้ง มี/ไม่มี HN) — label เปลี่ยนตามสถานะ
   const btnCopy = document.getElementById('btnCopyAddr');
-  if (btnCopy) btnCopy.style.display = hasHN ? 'none' : 'block';
+  if (btnCopy) {
+    btnCopy.style.display = 'block';
+    btnCopy.textContent = hasHN
+      ? '📋 คัดลอกชื่อ-สกุล และเบอร์โทรจากส่วนที่ 1'
+      : '📋 คัดลอกข้อมูลทั้งหมดจากส่วนที่ 1';
+  }
 
   // ซ่อน/แสดง field วันเกิดและอายุ เมื่อเลือก มี HN
   const dobEl = document.getElementById('dob');
