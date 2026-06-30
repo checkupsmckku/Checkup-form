@@ -1088,6 +1088,43 @@
     .org-select { width: 100%; }
   }
 
+  /* ── Searchable org combobox ── */
+  .org-combo { position: relative; width: 100%; }
+  .org-combo input[type="text"] {
+    width: 100%;
+    padding: 11px 36px 11px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .org-combo input[type="text"]:focus { border-color: var(--primary); }
+  .org-combo-icon {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--gray); pointer-events: none; font-size: 16px;
+  }
+  .org-dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: #fff; border: 1.5px solid var(--border);
+    border-radius: var(--radius); max-height: 230px; overflow-y: auto;
+    z-index: 200; display: none;
+    box-shadow: 0 6px 20px rgba(45,52,129,0.12);
+  }
+  .org-option {
+    padding: 9px 12px; cursor: pointer; font-size: 13.5px;
+    color: var(--text); border-bottom: 1px solid #f0f0f4;
+    transition: background 0.1s;
+  }
+  .org-option:last-child { border-bottom: none; }
+  .org-option:hover, .org-option.active { background: var(--teal-pale); color: var(--primary); }
+  .org-option-other { font-style: italic; color: var(--accent); }
+  .org-no-result { padding: 9px 12px; font-size: 13px; color: var(--gray); }
+  .field-error .org-combo input[type="text"] { border-color: var(--danger); }
+
   /* ─── Sub-section labels ─── */
   .sub-section-label {
     font-size: 12px;
@@ -2036,51 +2073,13 @@
           <div class="field-grid cols-3" style="margin-bottom:10px">
             <div class="field-group" style="grid-column:span 2">
               <label>ชื่อหน่วยงาน <span class="req">*</span></label>
-              <select id="orgName" class="org-select" required onchange="onOrgNameChange(this.value)" style="width:100%">
-                <option value="">-- เลือกหน่วยงาน --</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอพล</option>
-                <option>การไฟฟ้าส่วนภูมิภาคจังหวัดขอนแก่น 2 (มะลิวัลย์)</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอน้ำพอง</option>
-                <option>การไฟฟ้าส่วนภูมิภาคจังหวัดร้อยเอ็ด</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอมัญจาคิรี</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอบ้านไผ่</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอหนองสองห้อง</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอบ้านฝาง</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอกระนวน</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอสมเด็จ</option>
-                <option>การไฟฟ้าส่วนภูมิภาคจังหวัดขอนแก่น</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอภูเวียง</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอเกษตรวิสัย</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอเสลภูมิ</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอยางตลาด</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอบรบือ</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาพยัคฆภูมิพิสัย</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอโพนทอง</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอบัวใหญ่</option>
-                <option>การไฟฟ้าส่วนภูมิภาคจังหวัดกาฬสินธุ์</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอหนองกุงศรี</option>
-                <option>การไฟฟ้าส่วนภูมิภาคจังหวัดมหาสารคาม</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอเชียงยืน</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอกันทรวิชัย</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอวาปีปทุม</option>
-                <option>ไฟฟ้าส่วนภูมิภาค กองปฏิบัติการ เขต 1 ภาค 2 (อุดรธานี)</option>
-                <option>ไฟฟ้าส่วนภูมิภาคส่วนภูมิภาคจังหวัดอุดธานี</option>
-                <option>วิทยาลัยการปกครองท้องถิ่น มข.</option>
-                <option>กรมอุสาหกรรมป่าไม้ จ.ขอนแก่น</option>
-                <option>การไฟฟ้าส่วนภูมิภาคอำเภอเกษตรสมบูรณ์</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอกุฉินาราย</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภอหนองเรือ</option>
-                <option>การไฟฟ้าส่วนภูมิภาคสาขาอำเภออาจสามารถ</option>
-                <option>สำนักงานเขตพื้นที่การศึกษาประถมศึกษากาฬสินธุ์เขต1</option>
-                <option>วิทยาลัยเทคนิกกาฬสินธ์</option>
-                <option>สำนักงานหอสมุด มข.</option>
-                <option>สำนักงานสหกรณ์ มข.</option>
-                <option>คณะพยาบาล มข.</option>
-                <option>หน่วยงานทรัพย์สิน มข.</option>
-                <option>คณะเศรษฐศาตร์ มข.</option>
-                <option>โรงงานพลังงานไฟฟ้า มข.</option>
-                <option value="__other__">อื่นๆ (ระบุ)</option>
-              </select>
+              <div class="org-combo" id="orgCombo">
+                <input type="text" id="orgNameSearch" placeholder="พิมพ์เพื่อค้นหาหน่วยงาน..." autocomplete="off"
+                  oninput="filterOrg(this.value)" onfocus="showOrgDropdown()" onblur="hideOrgDropdown()">
+                <span class="org-combo-icon">▾</span>
+                <input type="hidden" id="orgName" value="">
+                <div id="orgDropdown" class="org-dropdown"></div>
+              </div>
             </div>
             <div class="field-group">
               <label>สถานะ <span class="req">*</span></label>
@@ -4227,8 +4226,15 @@ function validateAndScrollToError() {
     }
   }
 
-  // 3b. ตรวจ orgNameOther ถ้าเลือก "อื่นๆ"
+  // 3b. ตรวจหน่วยงาน
   const orgSel = document.getElementById('orgName');
+  if (!orgSel?.value) {
+    const orgCombo = document.getElementById('orgCombo');
+    orgCombo?.classList.add('field-error');
+    showToast('⚠ กรุณาเลือกหน่วยงาน');
+    document.getElementById('orgNameSearch')?.focus();
+    return false;
+  }
   if (orgSel?.value === '__other__') {
     const otherInp = document.getElementById('orgNameOther');
     if (!otherInp?.value.trim()) {
@@ -4675,6 +4681,92 @@ function syncOrgToDept(val) {
   // placeholder — orgName is read directly in handleSubmit
 }
 function onOrgTypeChange(val) { /* legacy stub */ }
+
+// ─── Searchable Org Combobox ────────────────────────────────────────────────
+const ORG_OPTIONS = [
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอพล',
+  'การไฟฟ้าส่วนภูมิภาคจังหวัดขอนแก่น 2 (มะลิวัลย์)',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอน้ำพอง',
+  'การไฟฟ้าส่วนภูมิภาคจังหวัดร้อยเอ็ด',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอมัญจาคิรี',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอบ้านไผ่',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอหนองสองห้อง',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอบ้านฝาง',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอกระนวน',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอสมเด็จ',
+  'การไฟฟ้าส่วนภูมิภาคจังหวัดขอนแก่น',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอภูเวียง',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอเกษตรวิสัย',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอเสลภูมิ',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอยางตลาด',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอบรบือ',
+  'การไฟฟ้าส่วนภูมิภาคสาขาพยัคฆภูมิพิสัย',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอโพนทอง',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอบัวใหญ่',
+  'การไฟฟ้าส่วนภูมิภาคจังหวัดกาฬสินธุ์',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอหนองกุงศรี',
+  'การไฟฟ้าส่วนภูมิภาคจังหวัดมหาสารคาม',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอเชียงยืน',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอกันทรวิชัย',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอวาปีปทุม',
+  'ไฟฟ้าส่วนภูมิภาค กองปฏิบัติการ เขต 1 ภาค 2 (อุดรธานี)',
+  'ไฟฟ้าส่วนภูมิภาคส่วนภูมิภาคจังหวัดอุดธานี',
+  'วิทยาลัยการปกครองท้องถิ่น มข.',
+  'กรมอุสาหกรรมป่าไม้ จ.ขอนแก่น',
+  'การไฟฟ้าส่วนภูมิภาคอำเภอเกษตรสมบูรณ์',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอกุฉินาราย',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภอหนองเรือ',
+  'การไฟฟ้าส่วนภูมิภาคสาขาอำเภออาจสามารถ',
+  'สำนักงานเขตพื้นที่การศึกษาประถมศึกษากาฬสินธุ์เขต1',
+  'วิทยาลัยเทคนิกกาฬสินธ์',
+  'สำนักงานหอสมุด มข.',
+  'สำนักงานสหกรณ์ มข.',
+  'คณะพยาบาล มข.',
+  'หน่วยงานทรัพย์สิน มข.',
+  'คณะเศรษฐศาตร์ มข.',
+  'โรงงานพลังงานไฟฟ้า มข.'
+];
+
+function renderOrgDropdown(list) {
+  const dd = document.getElementById('orgDropdown');
+  if (!list.length) {
+    dd.innerHTML = '<div class="org-no-result">ไม่พบหน่วยงาน</div>';
+  } else {
+    dd.innerHTML = list.map(name => {
+      const safe = name.replace(/'/g, '&#39;');
+      return `<div class="org-option" onmousedown="selectOrg('${safe}')">${name}</div>`;
+    }).join('') + `<div class="org-option org-option-other" onmousedown="selectOrg('__other__')">อื่นๆ (ระบุ)</div>`;
+  }
+  dd.style.display = 'block';
+}
+
+function filterOrg(query) {
+  document.getElementById('orgName').value = '';
+  onOrgNameChange('');
+  const q = query.trim().toLowerCase();
+  const filtered = q === '' ? ORG_OPTIONS : ORG_OPTIONS.filter(n => n.toLowerCase().includes(q));
+  renderOrgDropdown(filtered);
+}
+
+function showOrgDropdown() {
+  const q = document.getElementById('orgNameSearch').value.trim().toLowerCase();
+  const filtered = q === '' ? ORG_OPTIONS : ORG_OPTIONS.filter(n => n.toLowerCase().includes(q));
+  renderOrgDropdown(filtered);
+}
+
+function hideOrgDropdown() {
+  setTimeout(() => { document.getElementById('orgDropdown').style.display = 'none'; }, 160);
+}
+
+function selectOrg(value) {
+  const label = value === '__other__' ? 'อื่นๆ (ระบุ)' : value;
+  document.getElementById('orgName').value = value;
+  document.getElementById('orgNameSearch').value = label;
+  document.getElementById('orgDropdown').style.display = 'none';
+  document.getElementById('orgCombo').classList.remove('field-error');
+  onOrgNameChange(value);
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function onOrgNameChange(val) {
   const wrap = document.getElementById('orgOtherWrap');
