@@ -166,7 +166,8 @@
       <div class="summary-card-title">🗒 ใบสรุปการลงทะเบียน</div>
       <div id="summaryContent"></div>
     </div>
-    <button class="done-btn" onclick="window.location.href='index.html'">กลับหน้าหลัก</button>
+    <button class="done-btn" onclick="window.print()" style="background:#1D9E75;margin-top:12px">🖨️ พิมพ์ใบสรุป</button>
+    <button class="done-btn" onclick="window.location.href='index.html'" style="margin-top:8px">กลับหน้าหลัก</button>
   </div>
 </div>
 
@@ -191,6 +192,8 @@ async function submitSurvey() {
       method: 'POST',
       body: JSON.stringify({
         action: 'survey',
+        firstName: sessionStorage.getItem('regFirstName') || '',
+        lastName:  sessionStorage.getItem('regLastName')  || '',
         q1: answers['q1'] || '',
         q2: answers['q2'] || '',
         q3: answers['q3'] || '',
