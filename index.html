@@ -2970,6 +2970,9 @@
 
             <!-- Address form (always shown for everyone) -->
             <div id="postCustomAddr">
+              <button type="button" id="btnCopyAddr" class="btn-copy-addr" onclick="copyAllFromSection1()" style="margin-bottom:12px;display:none">
+                📋 คัดลอกข้อมูลทั้งหมดจากส่วนที่ 1
+              </button>
               <div class="field-grid cols-2" style="margin-bottom:10px">
                 <div class="field-group">
                   <label>ชื่อผู้รับ <span class="req">*</span></label>
@@ -3017,10 +3020,6 @@
                 <span id="postAddrFilledText"></span>
                 <button type="button" onclick="postAddrClearFields()" style="background:none;border:none;cursor:pointer;color:#C0392B;font-size:12px;font-weight:700;margin-left:4px">แก้ไข</button>
               </div>
-              <button type="button" id="btnCopyAddr" class="btn-copy-addr" onclick="copyMainAddr()" style="margin-bottom:10px;display:none">
-                📋 คัดลอกที่อยู่จากข้อมูลส่วนที่ 1
-              </button>
-
               <div class="field-grid cols-3" style="margin-bottom:0">
                 <div class="field-group">
                   <label>ตำบล/แขวง</label>
@@ -3925,6 +3924,66 @@ function selectPostAddr_direct(r) {
   document.getElementById('postZipHint').textContent = '';
 }
 
+function copyPersonalInfo() {
+  const fn    = document.getElementById('firstName')?.value || '';
+  const ln    = document.getElementById('lastName')?.value  || '';
+  const phone = document.getElementById('phone')?.value     || '';
+  if (!fn && !ln && !phone) {
+    showToast('⚠ กรุณากรอกชื่อ-นามสกุล และเบอร์โทรในส่วนที่ 1 ก่อน');
+    document.getElementById('firstName')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (fn) document.getElementById('postRecipient').value     = fn;
+  if (ln) document.getElementById('postRecipientLast').value = ln;
+  if (phone) document.getElementById('postPhone').value      = phone;
+  showToast('✅ คัดลอกข้อมูลเรียบร้อยแล้ว');
+}
+
+function copyAllFromSection1() {
+  const fn      = document.getElementById('firstName')?.value    || '';
+  const ln      = document.getElementById('lastName')?.value     || '';
+  const phone   = document.getElementById('phone')?.value        || '';
+  const houseNo = document.getElementById('houseNo')?.value      || '';
+  const moo     = document.getElementById('moo')?.value          || '';
+  const street  = document.getElementById('street')?.value       || '';
+  const soi     = document.getElementById('soi')?.value          || '';
+  const sub     = document.getElementById('subdistrict')?.value  || '';
+  const dist    = document.getElementById('district')?.value     || '';
+  const prov    = document.getElementById('province')?.value     || '';
+  const zip     = document.getElementById('zipcode')?.value      || '';
+
+  if (!fn && !sub && !zip) {
+    showToast('⚠ กรุณากรอกข้อมูลในส่วนที่ 1 ก่อน');
+    document.getElementById('firstName')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  // คัดลอกชื่อ-นามสกุล-เบอร์
+  if (fn)    document.getElementById('postRecipient').value     = fn;
+  if (ln)    document.getElementById('postRecipientLast').value = ln;
+  if (phone) document.getElementById('postPhone').value         = phone;
+
+  // คัดลอกที่อยู่
+  if (houseNo) document.getElementById('postHouseNo').value    = houseNo;
+  if (moo)     document.getElementById('postMoo').value        = moo;
+  const roadLine = [street, soi].filter(Boolean).join(' ');
+  if (roadLine) document.getElementById('postAddr1').value     = roadLine;
+  if (sub)     document.getElementById('postSubdistrict').value = sub;
+  if (dist)    document.getElementById('postDistrict').value   = dist;
+  if (prov)    document.getElementById('postProvince').value   = prov;
+  if (zip)     document.getElementById('postZip').value        = zip;
+
+  // อัปเดต badge แสดงที่อยู่
+  if (sub || zip) {
+    const badge = document.getElementById('postAddrFilledBadge');
+    if (badge) {
+      document.getElementById('postAddrFilledText').textContent = `${sub} » ${dist} » ${prov} » ${zip}`;
+      badge.style.display = 'inline-flex';
+    }
+  }
+  showToast('✅ คัดลอกข้อมูลทั้งหมดเรียบร้อยแล้ว');
+}
+
 function copyMainAddr() {
   const sub  = document.getElementById('subdistrict')?.value || '';
   const dist = document.getElementById('district')?.value || '';
@@ -3961,7 +4020,11 @@ function copyMainAddr() {
     }
     return;
   }
-  if (addr) document.getElementById('postAddr1').value = addr;
+  const houseNo = document.getElementById('houseNo')?.value || '';
+  const moo     = document.getElementById('moo')?.value || '';
+  if (houseNo) document.getElementById('postHouseNo').value = houseNo;
+  if (moo)     document.getElementById('postMoo').value     = moo;
+  if (addr)    document.getElementById('postAddr1').value   = addr;
   document.getElementById('postSubdistrict').value = sub;
   document.getElementById('postDistrict').value    = dist;
   document.getElementById('postProvince').value    = prov;
@@ -4541,9 +4604,9 @@ function handleSubmit(e) {
     province:      document.getElementById('province')?.value || '',
     zipcode:       document.getElementById('zipcode')?.value || '',
     // สัญชาติ
-    nationality:   document.getElementById('nationality')?.value || '',
-    ethnicity:     document.getElementById('ethnicity')?.value || '',
-    religion:      document.getElementById('religion')?.value || '',
+    nationality: (() => { const v = document.querySelector('input[name="nationality"]:checked')?.value || ''; return v === 'other' ? (document.getElementById('nationalityOther')?.value.trim() || '') : v; })(),
+    ethnicity:   (() => { const v = document.querySelector('input[name="ethnicity"]:checked')?.value || '';   return v === 'other' ? (document.getElementById('ethnicityOther')?.value.trim() || '') : v; })(),
+    religion:    (() => { const v = document.querySelector('input[name="religion"]:checked')?.value || '';    return v === 'other' ? (document.getElementById('religionOther')?.value.trim() || '') : v; })(),
     // ผู้ติดต่อฉุกเฉิน
     emergencyName:  document.getElementById('emergencyName')?.value || '',
     emergencyPhone: document.getElementById('emergencyPhone')?.value || '',
