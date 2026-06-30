@@ -4645,21 +4645,39 @@ function handleSubmit(e) {
     papDeliveryMethod: (() => {
       const m = document.querySelector('input[name="papDeliveryMethod"]:checked')?.value || '';
       const map = { email: 'ส่งทาง E-mail', post: 'ส่งทางไปรษณีย์', call: 'นัดรับผล (โทรแจ้ง)' };
-      return map[m] || '';
+      if (m) return map[m] || '';
+      // ถ้าไม่มี pap delivery แยก → ใช้ช่องทาง main delivery
+      const mainDel = document.querySelector('input[name="deliveryMethod"]:checked')?.value || '';
+      return { post: 'ส่งทางไปรษณีย์', email: 'ส่งทาง E-mail', pickup: 'รอรับด้วยตนเอง' }[mainDel] || '';
     })(),
-    papResultEmail:         document.getElementById('papResultEmail')?.value || '',
-    papResultRecipient:     document.getElementById('papRecipient')?.value || '',
-    papResultRecipientLast: document.getElementById('papRecipientLast')?.value || '',
-    papResultPhone:         document.getElementById('papPhone')?.value || '',
-    papResultAddr:          [
-      (document.getElementById('papHouseNo')?.value || ''),
-      (document.getElementById('papMoo')?.value ? 'หมู่' + document.getElementById('papMoo').value : ''),
-      (document.getElementById('papAddr1')?.value || '')
-    ].filter(Boolean).join(' '),
-    papResultSubdistrict:   document.getElementById('papSubdistrict')?.value || '',
-    papResultDistrict:      document.getElementById('papDistrict')?.value || '',
-    papResultProvince:      document.getElementById('papProvince')?.value || '',
-    papResultZip:           document.getElementById('papZip')?.value || '',
+    papResultEmail: (() => {
+      const papEmail = document.getElementById('papResultEmail')?.value || '';
+      if (papEmail) return papEmail;
+      // ถ้าไม่มี pap email แยก → ใช้ email main delivery
+      const mainDel = document.querySelector('input[name="deliveryMethod"]:checked')?.value || '';
+      return mainDel === 'email' ? (document.getElementById('resultEmail')?.value || '') : '';
+    })(),
+    papResultRecipient:     document.getElementById('papRecipient')?.value || document.getElementById('postRecipient')?.value || '',
+    papResultRecipientLast: document.getElementById('papRecipientLast')?.value || document.getElementById('postRecipientLast')?.value || '',
+    papResultPhone:         document.getElementById('papPhone')?.value || document.getElementById('postPhone')?.value || '',
+    papResultAddr: (() => {
+      const papAddr = [
+        (document.getElementById('papHouseNo')?.value || ''),
+        (document.getElementById('papMoo')?.value ? 'หมู่' + document.getElementById('papMoo').value : ''),
+        (document.getElementById('papAddr1')?.value || '')
+      ].filter(Boolean).join(' ');
+      if (papAddr) return papAddr;
+      // ถ้าไม่มี pap addr แยก → ใช้ที่อยู่จัดส่งหลัก
+      return [
+        (document.getElementById('postHouseNo')?.value || ''),
+        (document.getElementById('postMoo')?.value ? 'หมู่' + document.getElementById('postMoo').value : ''),
+        (document.getElementById('postAddr1')?.value || '')
+      ].filter(Boolean).join(' ');
+    })(),
+    papResultSubdistrict:   document.getElementById('papSubdistrict')?.value || document.getElementById('postSubdistrict')?.value || '',
+    papResultDistrict:      document.getElementById('papDistrict')?.value    || document.getElementById('postDistrict')?.value    || '',
+    papResultProvince:      document.getElementById('papProvince')?.value    || document.getElementById('postProvince')?.value    || '',
+    papResultZip:           document.getElementById('papZip')?.value         || document.getElementById('postZip')?.value         || '',
     // เอกสารเพิ่มเติม
     medCertCount:          document.getElementById('medCertCount')?.value || '',
     nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
