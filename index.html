@@ -5496,6 +5496,8 @@ function showSuccessModal(data) {
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
   sessionStorage.setItem('regSummaryHtml', html);
   sessionStorage.setItem('regSummaryTitle', modalTitle);
+  sessionStorage.setItem('regFirstName', document.getElementById('firstName')?.value || '');
+  sessionStorage.setItem('regLastName',  document.getElementById('lastName')?.value  || '');
   window.location.href = 'survey.html';
 }
 
