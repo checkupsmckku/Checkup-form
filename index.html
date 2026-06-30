@@ -2887,9 +2887,19 @@
                   <div class="field-hint" id="papPhoneHint" style="color:#E53935;font-size:12px;display:none">⚠ กรุณากรอกเบอร์โทรศัพท์ 10 หลัก</div>
                 </div>
               </div>
-              <div class="field-group" style="margin-bottom:10px">
-                <label>บ้านเลขที่ / ถนน / ซอย / หมู่</label>
-                <input type="text" id="papAddr1" placeholder="เลขที่บ้าน ถนน ซอย หมู่">
+              <div class="field-grid cols-3" style="margin-bottom:8px">
+                <div class="field-group">
+                  <label>บ้านเลขที่ <span class="req">*</span></label>
+                  <input type="text" id="papHouseNo" placeholder="282" required>
+                </div>
+                <div class="field-group">
+                  <label>หมู่ <span class="req">*</span></label>
+                  <input type="text" id="papMoo" placeholder="หมู่ที่" required>
+                </div>
+                <div class="field-group">
+                  <label>ถนน / ซอย</label>
+                  <input type="text" id="papAddr1" placeholder="ถนน ซอย (ถ้ามี)">
+                </div>
               </div>
 
               <!-- Pap Address Search -->
@@ -2978,9 +2988,19 @@
                   <div class="field-hint" id="postPhoneHint" style="color:#E53935;font-size:12px;display:none">⚠ กรุณากรอกเบอร์โทรศัพท์ 10 หลัก</div>
                 </div>
               </div>
-              <div class="field-group" style="margin-bottom:10px">
-                <label>บ้านเลขที่ / ถนน / ซอย / หมู่</label>
-                <input type="text" id="postAddr1" placeholder="เลขที่บ้าน ถนน ซอย หมู่">
+              <div class="field-grid cols-3" style="margin-bottom:8px">
+                <div class="field-group">
+                  <label>บ้านเลขที่ <span class="req">*</span></label>
+                  <input type="text" id="postHouseNo" placeholder="282" required>
+                </div>
+                <div class="field-group">
+                  <label>หมู่ <span class="req">*</span></label>
+                  <input type="text" id="postMoo" placeholder="หมู่ที่" required>
+                </div>
+                <div class="field-group">
+                  <label>ถนน / ซอย</label>
+                  <input type="text" id="postAddr1" placeholder="ถนน ซอย (ถ้ามี)">
+                </div>
               </div>
 
               <!-- Post Address Search -->
@@ -4542,7 +4562,11 @@ function handleSubmit(e) {
     postRecipient:     document.getElementById('postRecipient')?.value || '',
     postRecipientLast: document.getElementById('postRecipientLast')?.value || '',
     postPhone:     document.getElementById('postPhone')?.value || '',
-    postAddr:        document.getElementById('postAddr1')?.value || '',
+    postAddr:        [
+      (document.getElementById('postHouseNo')?.value || ''),
+      (document.getElementById('postMoo')?.value ? 'หมู่' + document.getElementById('postMoo').value : ''),
+      (document.getElementById('postAddr1')?.value || '')
+    ].filter(Boolean).join(' '),
     postSubdistrict: document.getElementById('postSubdistrict')?.value || '',
     postDistrict:    document.getElementById('postDistrict')?.value || '',
     postProvince:    document.getElementById('postProvince')?.value || '',
@@ -4558,7 +4582,11 @@ function handleSubmit(e) {
     papResultRecipient:     document.getElementById('papRecipient')?.value || '',
     papResultRecipientLast: document.getElementById('papRecipientLast')?.value || '',
     papResultPhone:         document.getElementById('papPhone')?.value || '',
-    papResultAddr:          document.getElementById('papAddr1')?.value || '',
+    papResultAddr:          [
+      (document.getElementById('papHouseNo')?.value || ''),
+      (document.getElementById('papMoo')?.value ? 'หมู่' + document.getElementById('papMoo').value : ''),
+      (document.getElementById('papAddr1')?.value || '')
+    ].filter(Boolean).join(' '),
     papResultSubdistrict:   document.getElementById('papSubdistrict')?.value || '',
     papResultDistrict:      document.getElementById('papDistrict')?.value || '',
     papResultProvince:      document.getElementById('papProvince')?.value || '',
