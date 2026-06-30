@@ -5280,12 +5280,11 @@ function showSuccessModal(data) {
   // ── ยอดรวม ──
   html += `<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">${data.total} <span style="font-size:13px;font-weight:500">บาท</span></span></div>`;
 
-  document.getElementById('modalSummaryCard').innerHTML = html;
-
-  // Show modal
-  const modal = document.getElementById('successModal');
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  // บันทึก summary HTML ไว้ใน sessionStorage แล้ว redirect ไป survey
+  const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
+  sessionStorage.setItem('regSummaryHtml', html);
+  sessionStorage.setItem('regSummaryTitle', modalTitle);
+  window.location.href = 'survey.html';
 }
 
 function closeModal() {
