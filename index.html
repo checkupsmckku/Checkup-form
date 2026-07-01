@@ -5494,8 +5494,10 @@ function showSuccessModal(data) {
 
   // บันทึก summary HTML ไว้ใน sessionStorage แล้ว redirect ไป survey
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
+  const prepEl = document.querySelector('.prep-section');
   sessionStorage.setItem('regSummaryHtml', html);
   sessionStorage.setItem('regSummaryTitle', modalTitle);
+  sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : '');
   sessionStorage.setItem('regFirstName', document.getElementById('firstName')?.value || '');
   sessionStorage.setItem('regLastName',  document.getElementById('lastName')?.value  || '');
   window.location.href = 'survey.html';
