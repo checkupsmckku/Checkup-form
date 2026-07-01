@@ -65,6 +65,19 @@
   .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
   .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1D9E75;border-radius:50%;animation:spin 0.8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media print {
+    body { background: #fff !important; padding: 0 !important; }
+    .wrap { max-width: 100% !important; }
+    #surveyScreen, .done-btn, .loading-overlay { display: none !important; }
+    #summaryScreen { display: block !important; }
+    .summary-header .check { background: #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .summary-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+    .summary-card-title { color: #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sv { color: #000 !important; }
+    .sr-total-amount { color: #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sr-test-bullet { color: #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
 </style>
 </head>
 <body>
