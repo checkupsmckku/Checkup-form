@@ -2998,7 +2998,7 @@
                 </div>
                 <div class="field-group">
                   <label>หมู่ <span class="req">*</span></label>
-                  <input type="text" id="postMoo" placeholder="หมู่ที่" required>
+                  <input type="text" id="postMoo" placeholder="หมู่ที่ (ถ้ามี)">
                 </div>
                 <div class="field-group">
                   <label>ถนน / ซอย</label>
@@ -3940,7 +3940,7 @@ function copyPersonalInfo() {
 }
 
 function copyAllFromSection1() {
-  const hasHN = document.querySelector('input[name="hnStatus"][value="yes"]')?.checked;
+  const hasHN = document.querySelector('input[name="hnStatus"][value="has"]')?.checked;
   const fn      = document.getElementById('firstName')?.value    || '';
   const ln      = document.getElementById('lastName')?.value     || '';
   const phone   = document.getElementById('phone')?.value        || '';
@@ -4392,17 +4392,21 @@ function validateAndScrollToError() {
     } else {
       if (postPhoneHint) postPhoneHint.style.display = 'none';
     }
+    const postCustomAddrEl = document.getElementById('postCustomAddr');
+    const addrVisible = !postCustomAddrEl || postCustomAddrEl.style.display !== 'none';
     const subdistrict = document.getElementById('postSubdistrict');
     const district    = document.getElementById('postDistrict');
-    if (!subdistrict?.value.trim()) {
-      showToast('⚠ กรุณากรอกตำบล/แขวง (ที่อยู่จัดส่ง)');
-      subdistrict.focus();
-      return false;
-    }
-    if (!district?.value.trim()) {
-      showToast('⚠ กรุณากรอกอำเภอ/เขต (ที่อยู่จัดส่ง)');
-      district.focus();
-      return false;
+    if (addrVisible) {
+      if (!subdistrict?.value?.trim()) {
+        showToast('⚠ กรุณากรอกตำบล/แขวง (ที่อยู่จัดส่ง)');
+        subdistrict?.focus();
+        return false;
+      }
+      if (!district?.value?.trim()) {
+        showToast('⚠ กรุณากรอกอำเภอ/เขต (ที่อยู่จัดส่ง)');
+        district?.focus();
+        return false;
+      }
     }
     if (!province?.value.trim()) {
       showToast('⚠ กรุณากรอกจังหวัด (ที่อยู่จัดส่ง)');
@@ -6413,15 +6417,16 @@ function thCalSelectDay(iso) {
     // dob mode — set dd/MM/yyyy (BE)
     const [y, m, d] = iso.split('-');
     const be = parseInt(y) + 543;
-    const el = document.getElementById('dob');
-    if (el) {
-      el.value = d + '/' + m + '/' + be;
-      if (typeof formatDobBE === 'function') formatDobBE(el);
+    const mm = m.padStart(2,'0');
+    const dd = d.padStart(2,'0');
+    const dob = document.getElementById('dob');
+    if (dob) {
+      dob.value = dd + '/' + mm + '/' + be;
+      calcAge();
     }
   }
   thCalClose();
 }
 </script>
-
 </body>
 </html>
