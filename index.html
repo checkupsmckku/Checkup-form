@@ -2890,11 +2890,11 @@
               <div class="field-grid cols-3" style="margin-bottom:8px">
                 <div class="field-group">
                   <label>บ้านเลขที่ <span class="req">*</span></label>
-                  <input type="text" id="papHouseNo" placeholder="282" required>
+                  <input type="text" id="papHouseNo" placeholder="282">
                 </div>
                 <div class="field-group">
-                  <label>หมู่ <span class="req">*</span></label>
-                  <input type="text" id="papMoo" placeholder="หมู่ที่" required>
+                  <label>หมู่ (ถ้ามี)</label>
+                  <input type="text" id="papMoo" placeholder="หมู่ (ถ้ามี)">
                 </div>
                 <div class="field-group">
                   <label>ถนน / ซอย</label>
@@ -2994,7 +2994,7 @@
               <div class="field-grid cols-3" style="margin-bottom:8px">
                 <div class="field-group">
                   <label>บ้านเลขที่ <span class="req">*</span></label>
-                  <input type="text" id="postHouseNo" placeholder="282" required>
+                  <input type="text" id="postHouseNo" placeholder="282">
                 </div>
                 <div class="field-group">
                   <label>หมู่ <span class="req">*</span></label>
@@ -4740,41 +4740,48 @@ function handleSubmit(e) {
     }
   });
 
-  showSuccessModal({
-    name: (fname + ' ' + lname).trim(),
-    hnMode: isHNMode,
-    hn: hnNumber,
-    amendParts: isHNMode ? [..._amendParts] : [],
-    dept: dept,
-    orgStatus: document.getElementById('orgStatus')?.value || '',
-    payRight: payRight,
-    phone: document.getElementById('phone')?.value || '',
-    idCard: document.getElementById('idCard')?.value || '',
-    age: age,
-    gender: selectedGender,
-    prog: selectedProgram,
-    delivery: delTxt,
-    postEmail: formData.postEmail || '',
-    postAddr: [
-      formData.postAddr,
-      formData.postSubdistrict ? 'ต.' + formData.postSubdistrict : '',
-      formData.postDistrict    ? 'อ.' + formData.postDistrict    : '',
-      formData.postProvince    ? 'จ.' + formData.postProvince    : '',
-      formData.postZip || ''
-    ].filter(Boolean).join(' '),
-    papDelivery: formData.papDeliveryMethod || '',
-    papResultEmail: formData.papResultEmail || '',
-    total: totalTxt,
-    addList: addList,
-    basePrice: _basePrice,
-    addTotal: _addTotal,
-    addListPriced: _addListPriced,
-    serviceDate: document.getElementById('serviceDate')?.value || '',
-    medCertCount: document.getElementById('medCertCount')?.value || '',
-    nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
-    medCertDriverCount: document.getElementById('medCertDriverCount')?.value || '',
-    medCertHealthCount: document.getElementById('medCertHealthCount')?.value || ''
-  });
+  try {
+    showSuccessModal({
+      name: (fname + ' ' + lname).trim(),
+      hnMode: isHNMode,
+      hn: hnNumber,
+      amendParts: isHNMode ? [..._amendParts] : [],
+      dept: dept,
+      orgStatus: document.getElementById('orgStatus')?.value || '',
+      payRight: payRight,
+      phone: document.getElementById('phone')?.value || '',
+      idCard: document.getElementById('idCard')?.value || '',
+      age: age,
+      gender: selectedGender,
+      prog: selectedProgram,
+      delivery: delTxt,
+      postEmail: formData.postEmail || '',
+      postAddr: [
+        formData.postAddr,
+        formData.postSubdistrict ? 'ต.' + formData.postSubdistrict : '',
+        formData.postDistrict    ? 'อ.' + formData.postDistrict    : '',
+        formData.postProvince    ? 'จ.' + formData.postProvince    : '',
+        formData.postZip || ''
+      ].filter(Boolean).join(' '),
+      papDelivery: formData.papDeliveryMethod || '',
+      papResultEmail: formData.papResultEmail || '',
+      total: totalTxt,
+      addList: addList,
+      basePrice: _basePrice,
+      addTotal: _addTotal,
+      addListPriced: _addListPriced,
+      serviceDate: document.getElementById('serviceDate')?.value || '',
+      medCertCount: document.getElementById('medCertCount')?.value || '',
+      nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
+      medCertDriverCount: document.getElementById('medCertDriverCount')?.value || '',
+      medCertHealthCount: document.getElementById('medCertHealthCount')?.value || ''
+    });
+  } catch(err) {
+    console.error('[SUBMIT] showSuccessModal error:', err);
+  }
+  // Fallback: ถ้า showSuccessModal ไม่ redirect (crash หรือ error) → redirect ที่นี่แทน
+  console.log('[SUBMIT] handleSubmit redirecting to survey.html');
+  window.location.href = 'survey.html';
 }
 
 function resetForm() {
