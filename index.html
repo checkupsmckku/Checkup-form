@@ -3022,11 +3022,11 @@
               </div>
               <div class="field-grid cols-3" style="margin-bottom:0">
                 <div class="field-group">
-                  <label>ตำบล/แขวง</label>
+                  <label>ตำบล/แขวง <span class="req">*</span></label>
                   <input type="text" id="postSubdistrict" placeholder="ตำบล / แขวง">
                 </div>
                 <div class="field-group">
-                  <label>อำเภอ/เขต</label>
+                  <label>อำเภอ/เขต <span class="req">*</span></label>
                   <input type="text" id="postDistrict" placeholder="อำเภอ / เขต">
                 </div>
                 <div class="field-group">
@@ -4392,8 +4392,20 @@ function validateAndScrollToError() {
     } else {
       if (postPhoneHint) postPhoneHint.style.display = 'none';
     }
+    const subdistrict = document.getElementById('postSubdistrict');
+    const district    = document.getElementById('postDistrict');
+    if (!subdistrict?.value.trim()) {
+      showToast('⚠ กรุณากรอกตำบล/แขวง (ที่อยู่จัดส่ง)');
+      subdistrict.focus();
+      return false;
+    }
+    if (!district?.value.trim()) {
+      showToast('⚠ กรุณากรอกอำเภอ/เขต (ที่อยู่จัดส่ง)');
+      district.focus();
+      return false;
+    }
     if (!province?.value.trim()) {
-      showToast('⚠ กรุณากรอกจังหวัด');
+      showToast('⚠ กรุณากรอกจังหวัด (ที่อยู่จัดส่ง)');
       province.focus();
       return false;
     }
