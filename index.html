@@ -2893,8 +2893,8 @@
                   <input type="text" id="papHouseNo" placeholder="282">
                 </div>
                 <div class="field-group">
-                  <label>หมู่ (ถ้ามี)</label>
-                  <input type="text" id="papMoo" placeholder="หมู่ (ถ้ามี)">
+                  <label>หมู่ <span class="req">*</span></label>
+                  <input type="text" id="papMoo" placeholder="หมู่" required>
                 </div>
                 <div class="field-group">
                   <label>ถนน / ซอย</label>
@@ -4734,7 +4734,7 @@ function handleSubmit(e) {
   TESTS.forEach(t => {
     const chk = document.getElementById('chk-' + t.id);
     const el = document.getElementById('test-' + t.id);
-    if (chk && chk.checked && !el.classList.contains('included')) {
+    if (chk && chk.checked && el && !el.classList.contains('included')) {
       _addTotal += t.price;
       _addListPriced.push({ th: t.name, eng: t.eng, price: t.price });
     }
@@ -4781,7 +4781,7 @@ function handleSubmit(e) {
   }
   // Fallback: ถ้า showSuccessModal ไม่ redirect (crash หรือ error) → redirect ที่นี่แทน
   console.log('[SUBMIT] handleSubmit redirecting to survey.html');
-  window.location.href = 'survey.html';
+  window.location.replace('survey.html');
 }
 
 function resetForm() {
@@ -5524,13 +5524,13 @@ function showSuccessModal(data) {
   // บันทึก summary HTML ไว้ใน sessionStorage แล้ว redirect ไป survey
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
   const prepEl = document.querySelector('.prep-section');
-  sessionStorage.setItem('regSummaryHtml', html);
-  sessionStorage.setItem('regSummaryTitle', modalTitle);
-  sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : '');
-  sessionStorage.setItem('regFirstName', document.getElementById('firstName')?.value || '');
-  sessionStorage.setItem('regLastName',  document.getElementById('lastName')?.value  || '');
+  try { sessionStorage.setItem('regSummaryHtml', html); } catch(e) {}
+  try { sessionStorage.setItem('regSummaryTitle', modalTitle); } catch(e) {}
+  try { sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : ''); } catch(e) {}
+  try { sessionStorage.setItem('regFirstName', document.getElementById('firstName')?.value || ''); } catch(e) {}
+  try { sessionStorage.setItem('regLastName',  document.getElementById('lastName')?.value  || ''); } catch(e) {}
   console.log('[SUBMIT] redirecting to survey.html...');
-  window.location.href = 'survey.html';
+  window.location.replace('survey.html');
 }
 
 function closeModal() {
