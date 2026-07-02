@@ -11,7 +11,7 @@
     --primary: #2D3481;
     --primary-dark: #1A2060;
     --primary-light: #4050B5;
-    --accent: #F47920;                
+    --accent: #F47920;
     --accent-light: #FF9840;
     --teal-pale: #EEEFFE;
     --teal-mid: #C5C9F0;
@@ -5084,15 +5084,15 @@ function isBlockedDate(dateStr) {
 }
 
 // คำนวณวันที่ลงทะเบียนได้เร็วสุด (YYYY-MM-DD)
-// เกณฑ์: เลือกได้เร็วสุด = พรุ่งนี้ (ห้ามวันนี้) และถ้าเกิน 14.00 น. แล้ว → เลื่อนเป็นมะรืน
+// เกณฑ์: เลือกได้เร็วสุด = พรุ่งนี้ (ห้ามวันนี้) และถ้าเกิน 12.00 น. แล้ว → เลื่อนเป็นมะรืน
 // แล้ววนข้ามวันบล็อก (เสาร์/อาทิตย์/นักขัตฤกษ์)
 function getMinServiceDate() {
   const now = new Date();
   const minDate = new Date(now);
   minDate.setDate(minDate.getDate() + 1); // เริ่มที่พรุ่งนี้เสมอ (ห้ามวันนี้)
-  const cutoffHour = 14, cutoffMin = 0;
+  const cutoffHour = 12, cutoffMin = 0;
   if (now.getHours() > cutoffHour || (now.getHours() === cutoffHour && now.getMinutes() >= cutoffMin)) {
-    minDate.setDate(minDate.getDate() + 1); // เกิน 14.00 → ขยับเป็นมะรืน
+    minDate.setDate(minDate.getDate() + 1); // เกิน 12.00 → ขยับเป็นมะรืน
   }
   // เลื่อน min ถ้าวันที่ min เป็นวันบล็อก
   let safety = 0;
@@ -5141,10 +5141,10 @@ function syncServiceDate(picker) {
     if (hidden) hidden.value = '';
     return;
   }
-  // ตรวจสอบวันที่ลงทะเบียนล่วงหน้าอย่างน้อย 1 วัน และไม่เกิน 14.00 น. ของวันก่อนหน้า
+  // ตรวจสอบวันที่ลงทะเบียนล่วงหน้าอย่างน้อย 1 วัน และไม่เกิน 12.00 น. ของวันก่อนหน้า
   const minStr = getMinServiceDate();
   if (val < minStr) {
-    showToast('⚠ ต้องลงทะเบียนล่วงหน้าอย่างน้อย 1 วันก่อนวันตรวจ และไม่เกินเวลา 14.00 น. ของวันก่อนหน้า');
+    showToast('⚠ ต้องลงทะเบียนล่วงหน้าอย่างน้อย 1 วันก่อนวันตรวจ และไม่เกินเวลา 12.00 น. ของวันก่อนหน้า');
     picker.value = '';
     if (display) display.textContent = '';
     if (placeholder) placeholder.style.display = '';
