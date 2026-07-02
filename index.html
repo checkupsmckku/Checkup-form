@@ -2251,8 +2251,8 @@
             <input type="text" id="houseNo" placeholder="บ้านเลขที่" required>
           </div>
           <div class="field-group">
-            <label>หมู่ <span class="req">*</span></label>
-            <input type="text" id="moo" placeholder="หมู่" required>
+            <label>หมู่ (ถ้ามี)</label>
+            <input type="text" id="moo" placeholder="หมู่ (ถ้ามี)">
           </div>
         </div>
         <!-- Row 2: ถนน, ซอย -->
@@ -4543,7 +4543,12 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc
 // ─── Form Submit ─────────────────────────────────────────────────────────────
 function handleSubmit(e) {
   e.preventDefault();
-  if (!validateAndScrollToError()) return;
+  console.log('[SUBMIT] handleSubmit called');
+  if (!validateAndScrollToError()) {
+    console.log('[SUBMIT] validation FAILED — ดู toast/highlight ที่หน้าจอ');
+    return;
+  }
+  console.log('[SUBMIT] validation PASSED');
 
   // Collect data for summary
   const fname = document.getElementById('firstName').value;
@@ -5517,6 +5522,7 @@ function showSuccessModal(data) {
   sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : '');
   sessionStorage.setItem('regFirstName', document.getElementById('firstName')?.value || '');
   sessionStorage.setItem('regLastName',  document.getElementById('lastName')?.value  || '');
+  console.log('[SUBMIT] redirecting to survey.html...');
   window.location.href = 'survey.html';
 }
 
