@@ -2894,7 +2894,7 @@
                 </div>
                 <div class="field-group">
                   <label>หมู่ <span class="req">*</span></label>
-                  <input type="text" id="papMoo" placeholder="กรอกหมู่บ้าน" required>
+                  <input type="text" id="papMoo" placeholder="หมู่" required>
                 </div>
                 <div class="field-group">
                   <label>ถนน / ซอย</label>
@@ -2998,11 +2998,11 @@
                 </div>
                 <div class="field-group">
                   <label>หมู่ <span class="req">*</span></label>
-                  <input type="text" id="postMoo" placeholder="หมู่ที่">
+                  <input type="text" id="postMoo" placeholder="หมู่ที่ (ถ้ามี)">
                 </div>
                 <div class="field-group">
                   <label>ถนน / ซอย</label>
-                  <input type="text" id="postAddr1" placeholder="ถนน ซอย">
+                  <input type="text" id="postAddr1" placeholder="ถนน ซอย (ถ้ามี)">
                 </div>
               </div>
 
@@ -3196,8 +3196,8 @@ const TESTS = [
   { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[] },
   { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ)', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[], note:'หญิง: มดลูก รังไข่ &nbsp;|&nbsp; ชาย: ต่อมลูกหมาก<br><span style="color:#E65100">⚠ ผู้หญิงที่เคยผ่าตัดมดลูก กรุณาสอบถามเจ้าหน้าที่ก่อนเลือกรายการนี้</span>' },
   { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[] },
-  { id:34, name:'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', eng:'Ultrasound Breast', price:1275, gender:'female', tags:['cancer','female'] },
-  { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'] },
+  { id:34, name:'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', eng:'Ultrasound Breast', price:1275, gender:'female', tags:['cancer','female'], note:'แนะนำสำหรับอายุ <strong>น้อยกว่า 35 ปี</strong> หรือ ติดตามอาการผิดปกติ<br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม Mammogram ได้ (รวมกันอยู่แล้ว)</span>' },
+  { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'], note:'รวม Ultrasound Breast อยู่แล้ว — แนะนำสำหรับอายุ <strong>35 ปีขึ้นไป</strong><br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม U/S Breast ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:36, name:'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', eng:'Hemoglobin typing (Thalassemia screening)', price:320, gender:'all', tags:[] },
 ];
 
@@ -3312,13 +3312,43 @@ function setTest(id, checked) {
   el.classList.toggle('checked-item', checked);
   if (checked) {
     showAddTestWarn();
-    // แจ้งเตือนพิเศษสำหรับ Mammogram and Ultrasound Breast (id:35) — ตรวจรอบบ่าย 13.00 น.
+    const age = parseInt(document.getElementById('age')?.value) || 0;
+
+    // ── Mammogram (id:35) กับ U/S Breast (id:34) ห้ามเลือกพร้อมกัน ──
     if (id === 35) {
-      showToast('📅 รายการ Mammogram and Ultrasound Breast จะได้ทำการตรวจในรอบบ่าย เวลา 13.00 น.');
+      // ถ้า U/S breast เลือกอยู่แล้ว → ยกเลิกให้อัตโนมัติ
+      const chk34 = document.getElementById('chk-34');
+      const el34  = document.getElementById('test-34');
+      if (chk34 && chk34.checked) {
+        chk34.checked = false;
+        if (el34) el34.classList.remove('checked-item');
+        showToast('ℹ️ Mammogram รวม Ultrasound Breast อยู่แล้ว — ยกเลิก U/S Breast ให้อัตโนมัติ');
+      } else {
+        showToast('📅 Mammogram จะตรวจในรอบบ่าย เวลา 13.00 น.');
+      }
+      // แนะนำตามอายุ
+      if (age > 0 && age < 35) {
+        setTimeout(() => showToast('💡 อายุต่ำกว่า 35 ปี แนะนำ U/S Breast แทน Mammogram'), 2000);
+      }
     }
-    // แจ้งเตือนพิเศษสำหรับ อัลตราซาวด์เต้านม (อายุ < 35 ปี) (id:34) — ตรวจรอบบ่าย 13.00 น.
+
     if (id === 34) {
-      showToast('📅 รายการ Ultrasound Breast จะได้ทำการตรวจในรอบบ่าย เวลา 13.00 น.');
+      // ถ้า Mammogram เลือกอยู่แล้ว → block และแจ้ง
+      const chk35 = document.getElementById('chk-35');
+      if (chk35 && chk35.checked) {
+        const chk34 = document.getElementById('chk-34');
+        const el34  = document.getElementById('test-34');
+        if (chk34) chk34.checked = false;
+        if (el34)  el34.classList.remove('checked-item');
+        showToast('⚠️ Mammogram รวม U/S Breast อยู่แล้ว ไม่จำเป็นต้องเลือก U/S Breast เพิ่ม');
+        calcTotal();
+        return;
+      }
+      showToast('📅 Ultrasound Breast จะตรวจในรอบบ่าย เวลา 13.00 น.');
+      // แนะนำตามอายุ
+      if (age > 0 && age >= 35) {
+        setTimeout(() => showToast('💡 อายุ 35 ปีขึ้นไป แนะนำ Mammogram (รวม U/S Breast) แทน'), 2000);
+      }
     }
   }
   calcTotal();
@@ -3407,7 +3437,9 @@ function updateIncludedTests() {
     const chk = document.getElementById('chk-' + t.id);
     if (!el) return;
 
-    if (prog && prog.included.includes(t.id)) {
+    // male-only test ไม่ควร include สำหรับ female (เช่น PSA ใน โปรแกรม 4)
+    const testGenderMatch = t.gender === 'all' || t.gender === selectedGender || !selectedGender;
+    if (prog && prog.included.includes(t.id) && testGenderMatch) {
       // ซ่อนรายการที่อยู่ในโปรแกรมแล้ว
       el.style.display = 'none';
       el.classList.add('included');
@@ -5419,11 +5451,14 @@ function showSuccessModal(data) {
     11: { th: 'ตรวจอัลตราซาวด์ช่องท้องส่วนบน',       eng: 'Ultrasound Upper Abdomen' }
   };
   const includedIds = PROGRAMS[data.prog]?.included || [];
-  // Build {th, eng} objects for included tests
+  // Build {th, eng} objects for included tests — กรอง gender-specific tests ออก
   const includedItems = includedIds.map(id => {
     if (baseTestNames[id]) return baseTestNames[id];
     const t = TESTS.find(x => x.id === id);
-    return t ? { th: t.name, eng: t.eng } : null;
+    if (!t) return null;
+    // ข้ามรายการที่ไม่ match gender (เช่น PSA ใน prog4 สำหรับหญิง)
+    if (t.gender !== 'all' && t.gender !== data.gender) return null;
+    return { th: t.name, eng: t.eng };
   }).filter(Boolean);
 
   // ── อัปเดตหัวข้อ modal และบรรทัดแรก ตามสถานะ HN ──
@@ -5481,6 +5516,18 @@ function showSuccessModal(data) {
   includedItems.forEach(n => {
     html += `<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">${n.th}</span><span class="sr-name-eng">${n.eng}</span></div>`;
   });
+  // ── ตรวจภายใน (Pap smear): แสดงเป็น line item พร้อมราคาเพิ่ม ──
+  if (data.gender === 'female' && papChoice && papChoice !== 'no') {
+    const papItemMap = {
+      pap:          { th: 'ตรวจภายใน (Pap smear)',        eng: 'Pap Smear',               price: 200  },
+      thinprep:     { th: 'ตรวจภายใน (Thinprep)',          eng: 'ThinPrep Pap Test',        price: 700  },
+      thinprep_hpv: { th: 'ตรวจภายใน (Thinprep + HPV)',    eng: 'ThinPrep + HPV Test',      price: 2020 }
+    };
+    const papItem = papItemMap[papChoice];
+    if (papItem) {
+      html += `<div class="sr-test-item included" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot included-dot">●</span><span class="sr-name-th">${papItem.th}</span></span><span style="font-weight:600;color:#9D174D;white-space:nowrap;margin-left:8px">+${papItem.price.toLocaleString()} บาท</span></div>`;
+    }
+  }
   html += `</div>`;
 
   // ── เช็คกรณี ครอบครัว + ชำระเงินเองทั้งหมด ──
