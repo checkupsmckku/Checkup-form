@@ -2284,8 +2284,8 @@
             <input type="text" id="province" placeholder="จังหวัด" required>
           </div>
           <div class="field-group">
-            <label>รหัสไปรษณีย์</label>
-            <input type="text" id="zipcode" placeholder="xxxxx" maxlength="5" inputmode="numeric"
+            <label>รหัสไปรษณีย์ <span class="req">*</span></label>
+            <input type="text" id="zipcode" placeholder="xxxxx" maxlength="5" inputmode="numeric" required
               oninput="this.value=this.value.replace(/\D/g,'').slice(0,5); if(this.value.length===5) lookupZip()">
             <div class="field-hint" id="zipHint"></div>
           </div>
@@ -2366,9 +2366,9 @@
             <input type="text" id="nationalityOther" class="inline-input full" placeholder="ระบุสัญชาติ" style="display:none;margin-top:6px">
           </div>
           <div class="field-group">
-            <label>เชื้อชาติ</label>
+            <label>เชื้อชาติ <span class="req">*</span></label>
             <div class="chip-radio-group">
-              <label class="chip-radio"><input type="radio" name="ethnicity" value="ไทย" onchange="toggleEthOther(false)"> ไทย</label>
+              <label class="chip-radio"><input type="radio" name="ethnicity" value="ไทย" onchange="toggleEthOther(false)" required> ไทย</label>
               <label class="chip-radio"><input type="radio" name="ethnicity" value="other" onchange="toggleEthOther(true)"> อื่นๆ</label>
             </div>
             <input type="text" id="ethnicityOther" class="inline-input full" placeholder="ระบุเชื้อชาติ" style="display:none;margin-top:6px">
@@ -3401,11 +3401,14 @@ function updateProgramPrices() {
 function updateTestGenderFilter() {
   TESTS.forEach(t => {
     const el = document.getElementById('test-' + t.id);
+    const chk = document.getElementById('chk-' + t.id);
     if (!el) return;
-    if (selectedGender === 'male' && t.gender === 'female') {
+    const mismatched = (selectedGender === 'male' && t.gender === 'female')
+      || (selectedGender === 'female' && t.gender === 'male');
+    if (mismatched) {
       el.classList.add('hidden-gender');
-    } else if (selectedGender === 'female' && t.gender === 'male') {
-      el.classList.add('hidden-gender');
+      // ป้องกันรายการที่เลือกไว้ก่อนเปลี่ยนเพศ ถูกนับราคา/ส่งข้อมูลทั้งที่มองไม่เห็นแล้ว
+      if (chk && chk.checked) chk.checked = false;
     } else {
       el.classList.remove('hidden-gender');
     }
@@ -4554,6 +4557,20 @@ function validateAndScrollToError() {
     }
   }
 
+  // ตรวจว่าเลือกเชื้อชาติหรือยัง (เฉพาะเมื่อไม่มี HN)
+  if (!isHNModeCheck) {
+    const ethChecked = document.querySelector('input[name="ethnicity"]:checked');
+    if (!ethChecked) {
+      const ethEl = document.querySelector('input[name="ethnicity"]')?.closest('.field-group');
+      if (ethEl) {
+        const top = ethEl.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+      showToast('⚠ กรุณาเลือกเชื้อชาติ');
+      return false;
+    }
+  }
+
     const consent = document.getElementById('consentCheck');
   if (!consent || !consent.checked) {
     const consentEl = document.getElementById('sec6') || consent?.closest('section') || consent?.closest('.form-section');
@@ -4582,6 +4599,7 @@ function handleSubmit(e) {
   }
   console.log('[SUBMIT] validation PASSED');
 
+  try {
   // Collect data for summary
   const fname = document.getElementById('firstName').value;
   const lname = document.getElementById('lastName').value;
@@ -4600,7 +4618,7 @@ function handleSubmit(e) {
   TESTS.forEach(t => {
     const chk = document.getElementById('chk-' + t.id);
     const el = document.getElementById('test-' + t.id);
-    if (chk && chk.checked && !el.classList.contains('included')) {
+    if (chk && chk.checked && el && !el.classList.contains('included')) {
       addList.push({ th: t.name, eng: t.eng });
     }
   });
@@ -4772,7 +4790,6 @@ function handleSubmit(e) {
     }
   });
 
-  try {
     showSuccessModal({
       name: (fname + ' ' + lname).trim(),
       hnMode: isHNMode,
@@ -4809,11 +4826,12 @@ function handleSubmit(e) {
       medCertHealthCount: document.getElementById('medCertHealthCount')?.value || ''
     });
   } catch(err) {
-    console.error('[SUBMIT] showSuccessModal error:', err);
+    // ป้องกัน error ที่จุดใดก็ตามในขั้นตอนนี้ทำให้ไม่ redirect ไปหน้าแบบประเมิน
+    console.error('[SUBMIT] handleSubmit error:', err);
+  } finally {
+    console.log('[SUBMIT] handleSubmit redirecting to survey.html');
+    window.location.replace('survey.html');
   }
-  // Fallback: ถ้า showSuccessModal ไม่ redirect (crash หรือ error) → redirect ที่นี่แทน
-  console.log('[SUBMIT] handleSubmit redirecting to survey.html');
-  window.location.replace('survey.html');
 }
 
 function resetForm() {
