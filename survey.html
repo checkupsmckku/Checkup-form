@@ -4525,9 +4525,14 @@ function validateAndScrollToError() {
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc5qBcd2UgrxFUPvAo3VQUFjdOIyBmu85ZDv0rY75vpaQYARJer-s/exec';
 
 // ─── Form Submit ─────────────────────────────────────────────────────────────
-function handleSubmit(e) {
+async function handleSubmit(e) {
   e.preventDefault();
   if (!validateAndScrollToError()) return;
+
+  const submitBtn = document.getElementById('submitBtn');
+  const submitBtnOriginalHTML = submitBtn.innerHTML;
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '⏳ กำลังบันทึกข้อมูล...';
 
   // Collect data for summary
   const fname = document.getElementById('firstName').value;
@@ -4685,18 +4690,36 @@ function handleSubmit(e) {
     medCertHealthCount:    document.getElementById('medCertHealthCount')?.value || '',
   };
 
-  // ส่งข้อมูลไปยัง Google Sheet (ไม่รอผล — แสดง modal ทันที)
+  // ส่งข้อมูลไปยัง Google Sheet (รอผลลัพธ์จริงก่อนแสดง success modal)
   if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(formData),
-      headers: { 'Content-Type': 'text/plain' } // Apps Script ต้องการ text/plain เพื่อหลีกเลี่ยง CORS preflight
-    })
-    .then(r => r.json())
-    .then(res => {
-      if (res.status !== 'ok') console.warn('Google Sheet error:', res.message);
-    })
-    .catch(err => console.warn('Google Sheet fetch error:', err));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'text/plain' }, // Apps Script ต้องการ text/plain เพื่อหลีกเลี่ยง CORS preflight
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      const json = await res.json();
+      if (json.status !== 'ok') {
+        console.warn('Google Sheet error:', json.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = submitBtnOriginalHTML;
+        showToast('❌ บันทึกข้อมูลไม่สำเร็จ: ' + (json.message || 'กรุณาลองส่งใหม่อีกครั้ง'));
+        return;
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn('Google Sheet fetch error:', err);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = submitBtnOriginalHTML;
+      showToast(err.name === 'AbortError'
+        ? '❌ การเชื่อมต่อล่าช้าเกินไป กรุณาลองส่งใหม่อีกครั้ง'
+        : '❌ ส่งข้อมูลไม่สำเร็จ เครือข่ายมีปัญหา กรุณาลองส่งใหม่อีกครั้ง');
+      return;
+    }
   }
 
   // คำนวณราคาโปรแกรมและรายการเพิ่มเติม
