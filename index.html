@@ -1850,6 +1850,9 @@
     .contact-mini-card > div:last-child > div:last-child { font-size: 10px !important; line-height: 1.3 !important; }
   }
 
+  /* รายการโปรแกรมหลัก: เต็มบนจอ, ย่อเหลือบรรทัดเดียวตอนพิมพ์ (ถ้ามีรายการเพิ่มเติมเยอะ) */
+  .sr-test-list-condensed { display: none; }
+
   @media print {
     .btn-submit, .price-box, .filter-bar { display: none; }
     .back-to-top, .back-to-bottom, .val-toast, #valToast,
@@ -1859,6 +1862,9 @@
     /* ยอดรวมต้องอยู่หน้าเดียวกับรายการที่เลือก ไม่ตกไปหน้าถัดไป */
     .sr-total-row { page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; break-before: avoid; }
     .sr-test-item, .sr-section-title { page-break-inside: avoid; break-inside: avoid; }
+    /* รายการเพิ่มเติมเยอะ → ย่อรายการโปรแกรมหลักตอนพิมพ์ เพื่อให้รายการเพิ่มเติม+ยอดรวมอยู่หน้าเดียวกัน */
+    .sr-test-list-full { display: none !important; }
+    .sr-test-list-condensed { display: flex !important; }
   }
 
   /* ─── Add-test Warning Toast ─── */
@@ -5557,23 +5563,33 @@ function showSuccessModal(data) {
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
   const progPapSuffix = (data.gender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : '';
   html += `<div class="sr-section-title">โปรแกรม ${data.prog} — ${progNames[data.prog]}${progPapSuffix}</div>`;
-  html += `<div class="sr-test-list">`;
+
+  const hasPapLineItem = data.gender === 'female' && papChoice && papChoice !== 'no';
+  const papItemMap = {
+    pap:          { th: 'ตรวจภายใน (Pap smear)',        eng: 'Pap Smear',               price: 200  },
+    thinprep:     { th: 'ตรวจภายใน (Thinprep)',          eng: 'ThinPrep Pap Test',        price: 700  },
+    thinprep_hpv: { th: 'ตรวจภายใน (Thinprep + HPV)',    eng: 'ThinPrep + HPV Test',      price: 2020 }
+  };
+  // รายการเพิ่มเติมเยอะ → พิมพ์ตอนพิมพ์ใบสรุปจะย่อรายการโปรแกรมหลักให้เหลือบรรทัดเดียว กันยอดรวมตกไปหลายหน้า
+  const ADD_ITEMS_CONDENSE_THRESHOLD = 5;
+  const addCount = (data.addListPriced && data.addListPriced.length) || (data.addList && data.addList.length) || 0;
+  const condenseForPrint = addCount >= ADD_ITEMS_CONDENSE_THRESHOLD;
+
+  html += `<div class="sr-test-list${condenseForPrint ? ' sr-test-list-full' : ''}">`;
   includedItems.forEach(n => {
     html += `<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">${n.th}</span><span class="sr-name-eng">${n.eng}</span></div>`;
   });
   // ── ตรวจภายใน (Pap smear): แสดงเป็น line item พร้อมราคาเพิ่ม ──
-  if (data.gender === 'female' && papChoice && papChoice !== 'no') {
-    const papItemMap = {
-      pap:          { th: 'ตรวจภายใน (Pap smear)',        eng: 'Pap Smear',               price: 200  },
-      thinprep:     { th: 'ตรวจภายใน (Thinprep)',          eng: 'ThinPrep Pap Test',        price: 700  },
-      thinprep_hpv: { th: 'ตรวจภายใน (Thinprep + HPV)',    eng: 'ThinPrep + HPV Test',      price: 2020 }
-    };
+  if (hasPapLineItem && papItemMap[papChoice]) {
     const papItem = papItemMap[papChoice];
-    if (papItem) {
-      html += `<div class="sr-test-item included" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot included-dot">●</span><span class="sr-name-th">${papItem.th}</span></span><span style="font-weight:600;color:#9D174D;white-space:nowrap;margin-left:8px">+${papItem.price.toLocaleString()} บาท</span></div>`;
-    }
+    html += `<div class="sr-test-item included" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot included-dot">●</span><span class="sr-name-th">${papItem.th}</span></span><span style="font-weight:600;color:#9D174D;white-space:nowrap;margin-left:8px">+${papItem.price.toLocaleString()} บาท</span></div>`;
   }
   html += `</div>`;
+
+  if (condenseForPrint) {
+    const condensedCount = includedItems.length + (hasPapLineItem ? 1 : 0);
+    html += `<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ${condensedCount} รายการตรวจตามโปรแกรม</div></div>`;
+  }
 
   // ── เช็คกรณี ครอบครัว + ชำระเงินเองทั้งหมด ──
   const isFamilySelfPay = data.orgStatus === 'ครอบครัว' && data.payRight === 'ชำระเงินเอง';
@@ -5881,17 +5897,24 @@ function showStaffSummary(idx) {
 
   // ── โปรแกรม + รายการในโปรแกรม ──
   html += '<div class="sr-section-title">' + (r.program || 'ไม่ระบุโปรแกรม') + '</div>';
+  const addItemsForCondense = (r.additionalItems && r.additionalItems.trim())
+    ? r.additionalItems.split(',').map(function(s){ return s.trim(); }).filter(Boolean)
+    : [];
+  const condenseStaffPrint = addItemsForCondense.length >= 5;
   if (progData) {
-    html += '<div class="sr-test-list">';
+    html += '<div class="sr-test-list' + (condenseStaffPrint ? ' sr-test-list-full' : '') + '">';
     progData.tests.forEach(function(t) {
       html += '<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + t.th + '</span><span class="sr-name-eng">' + t.eng + '</span></div>';
     });
     html += '</div>';
+    if (condenseStaffPrint) {
+      html += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + progData.tests.length + ' รายการตรวจตามโปรแกรม</div></div>';
+    }
   }
 
   // ── รายการเพิ่มเติม ──
   if (r.additionalItems && r.additionalItems.trim()) {
-    const addItems = r.additionalItems.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    const addItems = addItemsForCondense;
     html += '<div class="sr-section-title extra">➕ รายการเพิ่มเติม (' + addItems.length + ' รายการ)</div>';
     html += '<div class="sr-test-list">';
     addItems.forEach(function(item) {
@@ -5932,6 +5955,7 @@ function printStaffSummary() {
     + '.sr-section-title{font-weight:800;font-size:14px;background:#E8F5F7;color:#00575E;padding:7px 12px;border-radius:7px;margin:12px 0 6px;border-left:4px solid #00575E}'
     + '.sr-section-title.extra{background:#FFF3E0;color:#E65100;border-left:4px solid #E65100}'
     + '.sr-test-list{padding-left:4px}'
+    + '.sr-test-list-condensed{display:none}'
     + '.sr-test-item{display:flex;align-items:baseline;gap:6px;padding:3px 0;font-size:13px}'
     + '.sr-dot{font-size:8px}.included-dot{color:#00575E}.extra-dot{color:#E65100}'
     + '.sr-name-th{font-weight:600;color:#1a1a1a}.sr-name-eng{color:#888;font-size:11.5px;font-style:italic}'
@@ -5940,7 +5964,8 @@ function printStaffSummary() {
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
     + '@media print{body{margin:0}'
     + '.sr-total-row{page-break-inside:avoid;break-inside:avoid;page-break-before:avoid;break-before:avoid}'
-    + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}}'
+    + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}'
+    + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}}'
     + '</style></head><body>'
     + '<h2>' + title + '</h2>'
     + '<div class="sub">' + dateStr + '</div>'
