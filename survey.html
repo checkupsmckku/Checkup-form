@@ -126,6 +126,9 @@
     .sr-test-bullet { color: #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .prep-section { -webkit-print-color-adjust: exact; print-color-adjust: exact; page-break-before: always; break-before: page; }
     .prep-card-header, .prep-main-title, .prep-contact, .prep-note-box, .prep-highlight, .prep-info-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* ยอดรวมต้องอยู่หน้าเดียวกับรายการที่เลือก ไม่ตกไปหน้าถัดไป */
+    .sr-total-row { page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; break-before: avoid; }
+    .sr-test-item, .sr-section-title { page-break-inside: avoid; break-inside: avoid; }
   }
 </style>
 </head>

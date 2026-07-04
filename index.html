@@ -1856,6 +1856,9 @@
     .atwarn-popup, .amend-overlay { display: none !important; }
     /* HN mode: hide age row when printing */
     .hn-age { display: none !important; }
+    /* ยอดรวมต้องอยู่หน้าเดียวกับรายการที่เลือก ไม่ตกไปหน้าถัดไป */
+    .sr-total-row { page-break-inside: avoid; break-inside: avoid; page-break-before: avoid; break-before: avoid; }
+    .sr-test-item, .sr-section-title { page-break-inside: avoid; break-inside: avoid; }
   }
 
   /* ─── Add-test Warning Toast ─── */
@@ -5935,7 +5938,9 @@ function printStaffSummary() {
     + '.sr-total-row{display:flex;justify-content:space-between;align-items:center;background:#E8F5F7;border-radius:9px;padding:10px 14px;margin-top:14px}'
     + '.sr-total-label{font-weight:800;color:#00575E;font-size:15px}'
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
-    + '@media print{body{margin:0}}'
+    + '@media print{body{margin:0}'
+    + '.sr-total-row{page-break-inside:avoid;break-inside:avoid;page-break-before:avoid;break-before:avoid}'
+    + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}}'
     + '</style></head><body>'
     + '<h2>' + title + '</h2>'
     + '<div class="sub">' + dateStr + '</div>'
