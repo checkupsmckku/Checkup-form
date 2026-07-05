@@ -4729,7 +4729,7 @@ function handleSubmit(e) {
     additionalItems: addList.map(x => {
       const t = TESTS.find(tt => tt.name === x.th);
       return t ? `${x.th} (${t.price.toLocaleString()} บาท)` : x.th;
-    }).join(', '),
+    }).join(' | '),
     // จัดส่ง
     deliveryMethod: delTxt,
     postRecipient:     document.getElementById('postRecipient')?.value || '',
@@ -5855,6 +5855,25 @@ async function doStaffSearch() {
   }
 }
 
+// รายการเพิ่มเติมถูกเก็บคั่นด้วย " | "; ข้อมูลเก่าคั่นด้วย ", " ซึ่งอาจถูกตัดผิดตรงเลขราคาที่มีจุลภาค (เช่น "1,275 บาท")
+// จึงต้องเชื่อมชิ้นที่ถูกตัดผิดกลับเข้าด้วยกันสำหรับข้อมูลรูปแบบเก่า
+function parseAdditionalItems(str) {
+  if (str.indexOf('|') !== -1) {
+    return str.split('|').map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+  const parts = str.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  const merged = [];
+  for (let i = 0; i < parts.length; i++) {
+    const prev = merged[merged.length - 1];
+    if (prev && !/บาท\)\s*$/.test(prev) && /^\d/.test(parts[i])) {
+      merged[merged.length - 1] = prev + ',' + parts[i];
+    } else {
+      merged.push(parts[i]);
+    }
+  }
+  return merged;
+}
+
 function showStaffSummary(idx) {
   const r = window._staffSearchResults[idx];
   if (!r) return;
@@ -5898,7 +5917,7 @@ function showStaffSummary(idx) {
   // ── โปรแกรม + รายการในโปรแกรม ──
   html += '<div class="sr-section-title">' + (r.program || 'ไม่ระบุโปรแกรม') + '</div>';
   const addItemsForCondense = (r.additionalItems && r.additionalItems.trim())
-    ? r.additionalItems.split(',').map(function(s){ return s.trim(); }).filter(Boolean)
+    ? parseAdditionalItems(r.additionalItems)
     : [];
   const condenseStaffPrint = addItemsForCondense.length >= 1;
   if (progData) {
