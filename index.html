@@ -5885,6 +5885,18 @@ function showStaffSummary(idx) {
   const genderTxt = (r.gender === 'male' || r.gender === 'ชาย') ? 'ชาย' : 'หญิง';
   const isHN      = r.hnStatus === 'มี HN';
 
+  // ── ราคาโปรแกรมหลัก: คำนวณย้อนหลังจากตารางราคา + เพศ + ตัวเลือกตรวจภายใน (ไม่ได้เก็บแยกไว้ในชีต) ──
+  const staffProg = PROGRAMS[progNum];
+  let staffBasePrice = 0;
+  if (staffProg) {
+    if (genderTxt === 'ชาย') {
+      staffBasePrice = staffProg.male;
+    } else {
+      const papKey = Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; });
+      staffBasePrice = staffProg.femaleNo + (papKey ? PAP_EXTRA[papKey] : 0);
+    }
+  }
+
   document.getElementById('staffSummaryTitle').textContent =
     isHN ? 'ใบสรุปรายการตรวจ (HN: ' + r.hn + ')' : 'ใบสรุปรายการตรวจ — ' + r.prefix + r.firstName + ' ' + r.lastName;
   document.getElementById('staffSummaryDate').textContent =
@@ -5929,6 +5941,11 @@ function showStaffSummary(idx) {
     if (condenseStaffPrint) {
       html += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + progData.tests.length + ' รายการตรวจตามโปรแกรม</div></div>';
     }
+  }
+
+  // ── ราคาโปรแกรม ──
+  if (staffBasePrice > 0) {
+    html += '<div class="sr-price-row"><span class="sr-price-label">💊 ราคาโปรแกรมตรวจสุขภาพ</span><span class="sr-price-val">' + staffBasePrice.toLocaleString() + ' บาท</span></div>';
   }
 
   // ── รายการเพิ่มเติม ──
@@ -5978,6 +5995,8 @@ function printStaffSummary() {
     + '.sr-test-item{display:flex;align-items:baseline;gap:6px;padding:3px 0;font-size:13px}'
     + '.sr-dot{font-size:8px}.included-dot{color:#00575E}.extra-dot{color:#E65100}'
     + '.sr-name-th{font-weight:600;color:#1a1a1a}.sr-name-eng{color:#888;font-size:11.5px;font-style:italic}'
+    + '.sr-price-row{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:#F0F4FF;border-radius:8px;margin:4px 0}'
+    + '.sr-price-label{font-size:12px;font-weight:600;color:#1565C0}.sr-price-val{font-size:14px;font-weight:700;color:#1565C0;white-space:nowrap}'
     + '.sr-total-row{display:flex;justify-content:space-between;align-items:center;background:#E8F5F7;border-radius:9px;padding:10px 14px;margin-top:14px}'
     + '.sr-total-label{font-weight:800;color:#00575E;font-size:15px}'
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
