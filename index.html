@@ -579,6 +579,11 @@
     font-size: 12px;
   }
   .pap-info-box.show { display: block; }
+  .pap-info-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pap-info-table-scroll .pap-info-table { min-width: 480px; }
 
 
   /* ─── Included Items Banner ─── */
@@ -2205,10 +2210,8 @@
           </div>
         </div>
 
-        <div id="fullInfoSection">
-        <!-- ── 1.3 วันเกิด / อายุ / บัตรปชช ── -->
-        <div class="sub-section-label">วันเกิด / อายุ / เอกสารประจำตัว</div>
-        <div class="field-grid cols-2" style="margin-bottom:6px">
+        <!-- ── วันเดือนปีเกิด (แสดงเสมอ ทั้งโหมด HN และไม่มี HN เนื่องจากบังคับกรอกทุกโหมด) ── -->
+        <div id="dobSection" class="field-grid" style="margin-bottom:10px">
           <div class="field-group">
             <label>วันเดือนปีเกิด (พ.ศ.) <span class="req">*</span></label>
             <div style="position:relative;width:100%">
@@ -2219,6 +2222,12 @@
             </div>
             <div class="field-hint">เช่น 15/06/2520 (ปี พ.ศ.)</div>
           </div>
+        </div>
+
+        <div id="fullInfoSection">
+        <!-- ── 1.3 อายุ / บัตรปชช ── -->
+        <div class="sub-section-label">อายุ / เอกสารประจำตัว</div>
+        <div class="field-grid" style="margin-bottom:6px">
           <div class="field-group">
             <label>อายุ (ปี) <span class="req">*</span></label>
             <input type="number" id="age" placeholder="อายุ" min="0" max="120" required onchange="suggestProgram()">
@@ -2600,7 +2609,8 @@
         <!-- PAP Smear Info Box -->
         <div class="pap-info-box" id="papInfoBox">
           <div class="pap-info-title">ℹ️ เกณฑ์การตรวจคัดกรองมะเร็งปากมดลูก (Papanicolaou smear)</div>
-          <table class="pap-info-table" style="margin-top:10px">
+          <div class="pap-info-table-scroll" style="margin-top:10px">
+          <table class="pap-info-table">
             <thead>
               <tr>
                 <th>ชนิดของการตรวจ</th>
@@ -2643,8 +2653,10 @@
               </tr>
             </tbody>
           </table>
+          </div>
           <div style="margin-top:10px;font-weight:700;text-decoration:underline;color:#0D47A1">หากอายุเกิน 65 ปี</div>
-          <table class="pap-info-table" style="margin-top:4px">
+          <div class="pap-info-table-scroll" style="margin-top:4px">
+          <table class="pap-info-table">
             <tbody>
               <tr>
                 <td>เคยตรวจคัดกรอง PAP</td>
@@ -2658,6 +2670,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
           <div style="margin-top:10px;font-weight:600;color:#C62828">หมายเหตุ: กรณีมีประวัติตัดมดลูก และไม่แน่ใจเรื่องของการตรวจ สามารถปรึกษาเจ้าหน้าที่ได้ในวันเข้ารับบริการ</div>
           <div class="pap-info-ref" style="font-size:11px;color:var(--text-muted);margin-top:8px">
             อ้างอิง: แนวทางการป้องกัน ตรวจคัดกรอง และรักษามะเร็งปากมดลูก. สถาบันมะเร็งแห่งชาติ กรมการแพทย์ กระทรวงสาธารณสุข, พ.ศ. 2568.
@@ -3224,6 +3237,11 @@ const PAP_LABELS = {
   pap: ' + ตรวจภายใน (Pap smear)',
   thinprep: ' + ตรวจภายใน (Thinprep)',
   thinprep_hpv: ' + ตรวจภายใน (Thinprep + HPV)'
+};
+const PAP_ITEM_MAP = {
+  pap:          { th: 'ตรวจภายใน (Pap smear)',        eng: 'Pap Smear',               price: 200  },
+  thinprep:     { th: 'ตรวจภายใน (Thinprep)',          eng: 'ThinPrep Pap Test',        price: 700  },
+  thinprep_hpv: { th: 'ตรวจภายใน (Thinprep + HPV)',    eng: 'ThinPrep + HPV Test',      price: 2020 }
 };
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -5030,18 +5048,14 @@ function toggleHN(hasHN) {
       : '📋 คัดลอกข้อมูลทั้งหมดจากส่วนที่ 1';
   }
 
-  // ซ่อน/แสดง field วันเกิดและอายุ เมื่อเลือก มี HN
-  const dobEl = document.getElementById('dob');
+  // วันเดือนปีเกิด: บังคับกรอกเสมอทั้งสองโหมด (อยู่นอก fullInfoSection) จึงไม่ต้องซ่อน/ล้างค่า
+  // ซ่อน/แสดง field อายุ เมื่อเลือก มี HN (คำนวณอัตโนมัติจากวันเกิดอยู่แล้ว)
   const ageEl = document.getElementById('age');
-  const dobGroup = dobEl ? dobEl.closest('.field-group') : null;
   const ageGroup = ageEl ? ageEl.closest('.field-group') : null;
-  if (dobGroup) dobGroup.style.display = hasHN ? 'none' : '';
   if (ageGroup) ageGroup.style.display = hasHN ? 'none' : '';
   if (hasHN) {
-    if (dobEl) { dobEl.removeAttribute('required'); dobEl.value = ''; }
-    if (ageEl) { ageEl.removeAttribute('required'); ageEl.value = ''; }
+    if (ageEl) ageEl.removeAttribute('required');
   } else {
-    if (dobEl) dobEl.setAttribute('required', '');
     if (ageEl) ageEl.setAttribute('required', '');
   }
 
@@ -5565,11 +5579,7 @@ function showSuccessModal(data) {
   html += `<div class="sr-section-title">โปรแกรม ${data.prog} — ${progNames[data.prog]}${progPapSuffix}</div>`;
 
   const hasPapLineItem = data.gender === 'female' && papChoice && papChoice !== 'no';
-  const papItemMap = {
-    pap:          { th: 'ตรวจภายใน (Pap smear)',        eng: 'Pap Smear',               price: 200  },
-    thinprep:     { th: 'ตรวจภายใน (Thinprep)',          eng: 'ThinPrep Pap Test',        price: 700  },
-    thinprep_hpv: { th: 'ตรวจภายใน (Thinprep + HPV)',    eng: 'ThinPrep + HPV Test',      price: 2020 }
-  };
+  const papItemMap = PAP_ITEM_MAP;
   // มีรายการเพิ่มเติม (ไม่ว่าน้อยแค่ไหน) → พิมพ์ตอนพิมพ์ใบสรุปจะย่อรายการโปรแกรมหลักให้เหลือบรรทัดเดียว
   // เพราะรายการในโปรแกรมหลักเองมักจะยาวอยู่แล้ว รวมกับรายการเพิ่มเติมจะดันยอดรวมตกไปหลายหน้า
   const addCount = (data.addListPriced && data.addListPriced.length) || (data.addList && data.addList.length) || 0;
@@ -5887,12 +5897,14 @@ function showStaffSummary(idx) {
 
   // ── ราคาโปรแกรมหลัก: คำนวณย้อนหลังจากตารางราคา + เพศ + ตัวเลือกตรวจภายใน (ไม่ได้เก็บแยกไว้ในชีต) ──
   const staffProg = PROGRAMS[progNum];
+  const papKey = genderTxt === 'หญิง'
+    ? Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; })
+    : undefined;
   let staffBasePrice = 0;
   if (staffProg) {
     if (genderTxt === 'ชาย') {
       staffBasePrice = staffProg.male;
     } else {
-      const papKey = Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; });
       staffBasePrice = staffProg.femaleNo + (papKey ? PAP_EXTRA[papKey] : 0);
     }
   }
@@ -5937,9 +5949,15 @@ function showStaffSummary(idx) {
     progData.tests.forEach(function(t) {
       html += '<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + t.th + '</span><span class="sr-name-eng">' + t.eng + '</span></div>';
     });
+    // ── ตรวจภายใน (Pap smear): แสดงเป็น line item พร้อมราคาเพิ่ม ──
+    if (papKey && PAP_ITEM_MAP[papKey]) {
+      const papItem = PAP_ITEM_MAP[papKey];
+      html += '<div class="sr-test-item included" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + papItem.th + '</span></span><span style="font-weight:600;color:#9D174D;white-space:nowrap;margin-left:8px">+' + papItem.price.toLocaleString() + ' บาท</span></div>';
+    }
     html += '</div>';
     if (condenseStaffPrint) {
-      html += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + progData.tests.length + ' รายการตรวจตามโปรแกรม</div></div>';
+      const condensedStaffCount = progData.tests.length + (papKey ? 1 : 0);
+      html += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + condensedStaffCount + ' รายการตรวจตามโปรแกรม</div></div>';
     }
   }
 
