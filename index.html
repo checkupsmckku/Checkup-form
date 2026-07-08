@@ -2176,11 +2176,11 @@
             </div>
             <div class="field-group">
               <label>ชื่อ <span class="req">*</span></label>
-              <input type="text" id="firstName" placeholder="ชื่อ" required oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+              <input type="text" id="firstName" placeholder="ชื่อ" required oninput="thaiNameInput(this)">
             </div>
             <div class="field-group">
               <label>นามสกุล <span class="req">*</span></label>
-              <input type="text" id="lastName" placeholder="นามสกุล" required oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+              <input type="text" id="lastName" placeholder="นามสกุล" required oninput="thaiNameInput(this)">
             </div>
           </div>
           <!-- Old name block -->
@@ -2188,11 +2188,11 @@
             <div class="field-grid cols-2" style="margin-bottom:4px">
               <div class="field-group">
                 <label>ชื่อเดิม</label>
-                <input type="text" id="oldFirstName" placeholder="ชื่อเดิม" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+                <input type="text" id="oldFirstName" placeholder="ชื่อเดิม" oninput="thaiNameInput(this)">
               </div>
               <div class="field-group">
                 <label>นามสกุลเดิม</label>
-                <input type="text" id="oldLastName" placeholder="นามสกุลเดิม" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+                <input type="text" id="oldLastName" placeholder="นามสกุลเดิม" oninput="thaiNameInput(this)">
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:#E65100;font-weight:600;margin-top:6px;background:#FFF3E0;border:1px solid #FFCC80;border-radius:7px;padding:7px 12px">
@@ -2427,7 +2427,7 @@
         <div class="field-grid cols-2" style="margin-bottom:10px">
           <div class="field-group">
             <label>ชื่อ-สกุล ผู้ติดต่อฉุกเฉิน</label>
-            <input type="text" id="emergencyName" placeholder="ชื่อ-นามสกุล" oninput="this.value=this.value.replace(/[^ก-๏\s-]/g,'')">
+            <input type="text" id="emergencyName" placeholder="ชื่อ-นามสกุล" oninput="thaiNameInput(this, '-')">
           </div>
           <div class="field-group">
             <label>โทรศัพท์ผู้ติดต่อฉุกเฉิน</label>
@@ -2894,11 +2894,11 @@
               <div class="field-grid cols-2" style="margin-bottom:10px">
                 <div class="field-group">
                   <label>ชื่อผู้รับ <span class="req">*</span></label>
-                  <input type="text" id="papRecipient" placeholder="ชื่อผู้รับ" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+                  <input type="text" id="papRecipient" placeholder="ชื่อผู้รับ" oninput="thaiNameInput(this)">
                 </div>
                 <div class="field-group">
                   <label>นามสกุลผู้รับ <span class="req">*</span></label>
-                  <input type="text" id="papRecipientLast" placeholder="นามสกุลผู้รับ" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+                  <input type="text" id="papRecipientLast" placeholder="นามสกุลผู้รับ" oninput="thaiNameInput(this)">
                 </div>
               </div>
               <div class="field-grid cols-2" style="margin-bottom:10px">
@@ -2998,11 +2998,11 @@
               <div class="field-grid cols-2" style="margin-bottom:10px">
                 <div class="field-group">
                   <label>ชื่อผู้รับ <span class="req">*</span></label>
-                  <input type="text" id="postRecipient" placeholder="ชื่อผู้รับ" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+                  <input type="text" id="postRecipient" placeholder="ชื่อผู้รับ" oninput="thaiNameInput(this)">
                 </div>
                 <div class="field-group">
                   <label>นามสกุลผู้รับ <span class="req">*</span></label>
-                  <input type="text" id="postRecipientLast" placeholder="นามสกุลผู้รับ" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+                  <input type="text" id="postRecipientLast" placeholder="นามสกุลผู้รับ" oninput="thaiNameInput(this)">
                 </div>
               </div>
               <div class="field-grid cols-2" style="margin-bottom:10px">
@@ -4335,6 +4335,15 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
+// ช่องชื่อ-นามสกุล: รับเฉพาะภาษาไทย — ถ้าพิมพ์แล้วโดนตัดออก (ลืมเปลี่ยนภาษาแป้นพิมพ์) ให้แจ้งเตือน
+function thaiNameInput(el, extraChars) {
+  const before = el.value;
+  const pattern = new RegExp('[^ก-๏\\s' + (extraChars || '') + ']', 'g');
+  const after = before.replace(pattern, '');
+  if (after !== before) showToast('⚠ กรุณากรอกเป็นภาษาไทยเท่านั้น (ระบบไม่รับอักษรภาษาอังกฤษ/อื่นๆ)');
+  el.value = after;
+}
+
 // ─── Validation ──────────────────────────────────────────────────────────────
 function validateAndScrollToError() {
   // ล้าง error เดิม
@@ -4851,6 +4860,7 @@ function handleSubmit(e) {
       payRight: payRight,
       phone: document.getElementById('phone')?.value || '',
       idCard: document.getElementById('idCard')?.value || '',
+      dob: document.getElementById('dob')?.value || '',
       age: age,
       gender: selectedGender,
       prog: selectedProgram,
@@ -5562,6 +5572,7 @@ function showSuccessModal(data) {
     html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${data.age} ปี / ${genderTxt}</span></div>`;
   } else {
     html += `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
+    if (data.dob) html += `<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">${data.dob}</span></div>`;
   }
   if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
   if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
@@ -5940,6 +5951,7 @@ function showStaffSummary(idx) {
   if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + r.phone + '</span></div>';
   if (!isHN && r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + r.idCard + '</span></div>';
   if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + r.age + ' ปี / ' + genderTxt + '</span></div>';
+  if (isHN && r.dob)   html += '<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">' + r.dob + '</span></div>';
   if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + r.serviceDate + '</span></div>';
   if (r.deliveryMethod) {
     html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + r.deliveryMethod + '</span></div>';
@@ -6329,8 +6341,8 @@ function printStaffSummary() {
             <option>นาย</option><option>นาง</option><option>น.ส.</option>
             <option>Mr.</option><option>Miss</option><option>Mrs.</option>
           </select>
-          <input type="text" id="ap_firstName" placeholder="ชื่อ" class="amend-input" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
-          <input type="text" id="ap_lastName"  placeholder="นามสกุล" class="amend-input" oninput="this.value=this.value.replace(/[^ก-๏\s]/g,'')">
+          <input type="text" id="ap_firstName" placeholder="ชื่อ" class="amend-input" oninput="thaiNameInput(this)">
+          <input type="text" id="ap_lastName"  placeholder="นามสกุล" class="amend-input" oninput="thaiNameInput(this)">
         </div>
       </div>
       <!-- ชื่อเดิม / นามสกุลเดิม -->
