@@ -5895,16 +5895,32 @@ function showStaffSummary(idx) {
   const genderTxt = (r.gender === 'male' || r.gender === 'ชาย') ? 'ชาย' : 'หญิง';
   const isHN      = r.hnStatus === 'มี HN';
 
-  // ── ราคาโปรแกรมหลัก: คำนวณย้อนหลังจากตารางราคา + เพศ + ตัวเลือกตรวจภายใน (ไม่ได้เก็บแยกไว้ในชีต) ──
+  const addItemsForCondense = (r.additionalItems && r.additionalItems.trim())
+    ? parseAdditionalItems(r.additionalItems)
+    : [];
+  const addItemsSum = addItemsForCondense.reduce(function(sum, item) {
+    const m = item.match(/\(([\d,]+(?:\.\d+)?)\s*บาท\)\s*$/);
+    return sum + (m ? parseFloat(m[1].replace(/,/g, '')) : 0);
+  }, 0);
+
+  // ── ราคาโปรแกรมหลัก: คำนวณย้อนหลังจาก "ยอดรวม" หักรายการเพิ่มเติม ──
+  // (แม่นยำกว่าการเดาตัวเลือกตรวจภายในจากข้อความในชื่อโปรแกรม เพราะข้อมูลเก่าบางเคส (ก่อน 12 มิ.ย. 2569)
+  //  ไม่มีข้อความต่อท้ายระบุตัวเลือกตรวจภายใน ทำให้การจับคู่ข้อความล้มเหลวและราคา/ตัวเลือกไม่ขึ้นย้อนหลัง)
   const staffProg = PROGRAMS[progNum];
-  const papKey = genderTxt === 'หญิง'
-    ? Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; })
-    : undefined;
+  const totalNum = parseFloat((r.total || '').toString().replace(/,/g, ''));
   let staffBasePrice = 0;
+  let papKey;
   if (staffProg) {
     if (genderTxt === 'ชาย') {
       staffBasePrice = staffProg.male;
+    } else if (!isNaN(totalNum)) {
+      staffBasePrice = Math.round((totalNum - addItemsSum) * 100) / 100;
+      const extra = Math.round((staffBasePrice - staffProg.femaleNo) * 100) / 100;
+      papKey = Object.keys(PAP_EXTRA).find(function(k) { return PAP_EXTRA[k] === extra; });
+      if (papKey === 'no') papKey = undefined;
     } else {
+      // fallback สำหรับกรณีไม่มียอดรวม (ไม่ควรเกิดกับข้อมูลจริง): เดาจากข้อความในชื่อโปรแกรม
+      papKey = Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; });
       staffBasePrice = staffProg.femaleNo + (papKey ? PAP_EXTRA[papKey] : 0);
     }
   }
@@ -5940,9 +5956,6 @@ function showStaffSummary(idx) {
 
   // ── โปรแกรม + รายการในโปรแกรม ──
   html += '<div class="sr-section-title">' + (r.program || 'ไม่ระบุโปรแกรม') + '</div>';
-  const addItemsForCondense = (r.additionalItems && r.additionalItems.trim())
-    ? parseAdditionalItems(r.additionalItems)
-    : [];
   const condenseStaffPrint = addItemsForCondense.length >= 1;
   if (progData) {
     html += '<div class="sr-test-list' + (condenseStaffPrint ? ' sr-test-list-full' : '') + '">';
