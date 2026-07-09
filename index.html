@@ -4867,7 +4867,13 @@ function handleSubmit(e) {
       payRight: payRight,
       phone: document.getElementById('phone')?.value || '',
       idCard: document.getElementById('idCard')?.value || '',
-      streetSoi: [document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
+      homeAddr: [
+        formData.address,
+        formData.subdistrict ? 'ต.' + formData.subdistrict : '',
+        formData.district    ? 'อ.' + formData.district    : '',
+        formData.province    ? 'จ.' + formData.province    : '',
+        formData.zipcode || ''
+      ].filter(Boolean).join(' '),
       dob: document.getElementById('dob')?.value || '',
       age: age,
       gender: selectedGender,
@@ -5581,7 +5587,7 @@ function showSuccessModal(data) {
   if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${data.payRight}</span></div>`;
   if (data.phone) html += `<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">${data.phone}</span></div>`;
   if (data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${data.idCard}</span></div>`;
-  if (data.streetSoi) html += `<div class="sr"><span class="sl">🏠 ถนน/ซอย</span><span class="sv">${data.streetSoi}</span></div>`;
+  if (data.homeAddr) html += `<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">${data.homeAddr}</span></div>`;
   if (!hasHNMode) {
     html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${data.age} ปี / ${genderTxt}</span></div>`;
   } else {
