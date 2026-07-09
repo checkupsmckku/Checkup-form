@@ -5614,7 +5614,10 @@ function showSuccessModal(data) {
   // มีรายการเพิ่มเติม (ไม่ว่าน้อยแค่ไหน) → พิมพ์ตอนพิมพ์ใบสรุปจะย่อรายการโปรแกรมหลักให้เหลือบรรทัดเดียว
   // เพราะรายการในโปรแกรมหลักเองมักจะยาวอยู่แล้ว รวมกับรายการเพิ่มเติมจะดันยอดรวมตกไปหลายหน้า
   const addCount = (data.addListPriced && data.addListPriced.length) || (data.addList && data.addList.length) || 0;
-  const condenseForPrint = addCount >= 1;
+  // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือเมื่อรายการรวมทั้งหมดยาวพอที่จะดันยอดรวมตกไปหน้าถัดไป
+  // (เช่นโปรแกรม 4 ที่มีรายการตรวจในตัวมากอยู่แล้วแม้ไม่มีรายการเพิ่มเติมก็ตาม)
+  const totalItemCountForPrint = includedItems.length + (hasPapLineItem ? 1 : 0) + addCount;
+  const condenseForPrint = addCount >= 1 || totalItemCountForPrint >= 14;
 
   html += `<div class="sr-test-list${condenseForPrint ? ' sr-test-list-full' : ''}">`;
   includedItems.forEach(n => {
@@ -5989,7 +5992,10 @@ function showStaffSummary(idx) {
 
   // ── โปรแกรม + รายการในโปรแกรม ──
   html += '<div class="sr-section-title">' + (r.program || 'ไม่ระบุโปรแกรม') + '</div>';
-  const condenseStaffPrint = addItemsForCondense.length >= 1;
+  // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือเมื่อรายการรวมทั้งหมดยาวพอที่จะดันยอดรวมตกไปหน้าถัดไป
+  // (เช่นโปรแกรม 4 ที่มีรายการตรวจในตัวมากอยู่แล้วแม้ไม่มีรายการเพิ่มเติมก็ตาม)
+  const totalStaffItemCount = (progData ? progData.tests.length : 0) + (papKey ? 1 : 0) + addItemsForCondense.length;
+  const condenseStaffPrint = addItemsForCondense.length >= 1 || totalStaffItemCount >= 14;
   if (progData) {
     html += '<div class="sr-test-list' + (condenseStaffPrint ? ' sr-test-list-full' : '') + '">';
     progData.tests.forEach(function(t) {
