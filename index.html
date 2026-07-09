@@ -2163,7 +2163,7 @@
           <div class="field-grid" style="margin-bottom:10px">
             <div class="field-group">
               <label>คำนำหน้าชื่อ <span class="req">*</span></label>
-              <select id="prefix" required>
+              <select id="prefix" required onchange="togglePrefixOther(this.value==='อื่นๆ')">
                 <option value="">-- เลือก --</option>
                 <option>นาย</option>
                 <option>นาง</option>
@@ -2173,6 +2173,7 @@
                 <option>Mrs.</option>
                 <option>อื่นๆ</option>
               </select>
+              <input type="text" id="prefixOther" class="inline-input full" placeholder="ระบุคำนำหน้า" style="display:none;margin-top:6px">
             </div>
             <div class="field-group">
               <label>ชื่อ <span class="req">*</span></label>
@@ -2224,8 +2225,17 @@
           </div>
         </div>
 
+        <!-- ── บัตรประชาชน (แสดงเสมอ ทั้งโหมด HN และไม่มี HN เนื่องจากบังคับกรอกทุกโหมด) ── -->
+        <div id="idCardSection" class="field-grid" style="margin-bottom:10px">
+          <div class="field-group">
+            <label>เลขที่บัตรประชาชน (13 หลัก) <span class="req">*</span></label>
+            <input type="text" id="idCard" placeholder="1234567890123" maxlength="13" inputmode="numeric" pattern="\d{13}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,13)" required>
+            <div class="field-hint">กรอกตัวเลข 13 หลัก (ตัวเลขเท่านั้น)</div>
+          </div>
+        </div>
+
         <div id="fullInfoSection">
-        <!-- ── 1.3 อายุ / บัตรปชช ── -->
+        <!-- ── 1.3 อายุ / หนังสือเดินทาง ── -->
         <div class="sub-section-label">อายุ / เอกสารประจำตัว</div>
         <div class="field-grid" style="margin-bottom:6px">
           <div class="field-group">
@@ -2233,12 +2243,7 @@
             <input type="number" id="age" placeholder="อายุ" min="0" max="120" required onchange="suggestProgram()">
           </div>
         </div>
-        <div class="field-grid cols-2" style="margin-bottom:14px">
-          <div class="field-group">
-            <label>เลขที่บัตรประชาชน (13 หลัก) <span class="req">*</span></label>
-            <input type="text" id="idCard" placeholder="1234567890123" maxlength="13" inputmode="numeric" pattern="\d{13}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,13)" required>
-            <div class="field-hint">กรอกตัวเลข 13 หลัก (ตัวเลขเท่านั้น)</div>
-          </div>
+        <div class="field-grid" style="margin-bottom:14px">
           <div class="field-group">
             <label>เลขหนังสือเดินทาง (Passport)</label>
             <input type="text" id="passport" placeholder="สำหรับชาวต่างชาติ">
@@ -4663,6 +4668,8 @@ function handleSubmit(e) {
   // Collect data for summary
   const fname = document.getElementById('firstName').value;
   const lname = document.getElementById('lastName').value;
+  const prefixSelVal = document.getElementById('prefix')?.value || '';
+  const prefixVal = prefixSelVal === 'อื่นๆ' ? (document.getElementById('prefixOther')?.value.trim() || '') : prefixSelVal;
   const orgVal = document.getElementById('orgName')?.value || '';
   const dept = orgVal === '__other__'
     ? (document.getElementById('orgNameOther')?.value || '')
@@ -4689,7 +4696,7 @@ function handleSubmit(e) {
   const isHNMode = hnStatusVal === 'has' && hnNumber.length > 0;
   const nameOrHN = isHNMode
     ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${hnNumber}</span></div>
-       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${document.getElementById('prefix')?.value || ''} ${fname} ${lname}</span></div>`
+       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${prefixVal} ${fname} ${lname}</span></div>`
     : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${fname} ${lname}</span></div>`;
 
   const card = document.getElementById('summaryCard');
@@ -4714,7 +4721,7 @@ function handleSubmit(e) {
     // วันที่เข้ารับบริการ
     serviceDate:   document.getElementById('serviceDate')?.value || '',
     // ข้อมูลส่วนตัว
-    prefix:        document.getElementById('prefix')?.value || '',
+    prefix:        prefixVal,
     firstName:     fname,
     lastName:      lname,
     hnStatus:      hnStatusEl ? (hnStatusEl.value === 'has' ? 'มี HN' : 'ไม่มี HN') : '',
@@ -4735,7 +4742,7 @@ function handleSubmit(e) {
     bloodGroup:    document.getElementById('bloodGroup')?.value || '',
     allergy:       document.getElementById('allergyDetail')?.value || document.querySelector('input[name="allergy"]:checked')?.value || '',
     // ที่อยู่
-    address:       [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('street')?.value, document.getElementById('soi')?.value].filter(Boolean).join(' '),
+    address:       [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
     subdistrict:   document.getElementById('subdistrict')?.value || '',
     district:      document.getElementById('district')?.value || '',
     province:      document.getElementById('province')?.value || '',
@@ -4860,6 +4867,7 @@ function handleSubmit(e) {
       payRight: payRight,
       phone: document.getElementById('phone')?.value || '',
       idCard: document.getElementById('idCard')?.value || '',
+      streetSoi: [document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
       dob: document.getElementById('dob')?.value || '',
       age: age,
       gender: selectedGender,
@@ -5353,6 +5361,11 @@ function toggleDrugOther(val) {
   if (!show) document.getElementById('drugAllergyName').value = '';
 }
 
+function togglePrefixOther(show) {
+  const el = document.getElementById('prefixOther');
+  el.style.display = show ? 'block' : 'none';
+  if (show) { el.setAttribute('required', ''); } else { el.removeAttribute('required'); el.value = ''; }
+}
 function toggleNatOther(show) {
   document.getElementById('nationalityOther').style.display = show ? 'block' : 'none';
 }
@@ -5567,7 +5580,8 @@ function showSuccessModal(data) {
   if (data.dept) html += `<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">${data.dept}</span></div>`;
   if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${data.payRight}</span></div>`;
   if (data.phone) html += `<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">${data.phone}</span></div>`;
-  if (!hasHNMode && data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${data.idCard}</span></div>`;
+  if (data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${data.idCard}</span></div>`;
+  if (data.streetSoi) html += `<div class="sr"><span class="sl">🏠 ถนน/ซอย</span><span class="sv">${data.streetSoi}</span></div>`;
   if (!hasHNMode) {
     html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${data.age} ปี / ${genderTxt}</span></div>`;
   } else {
@@ -5949,7 +5963,8 @@ function showStaffSummary(idx) {
   if (r.department)    html += '<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">' + r.department + '</span></div>';
   if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + r.paymentRight + '</span></div>';
   if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + r.phone + '</span></div>';
-  if (!isHN && r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + r.idCard + '</span></div>';
+  if (r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + r.idCard + '</span></div>';
+  if (r.address) html += '<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">' + r.address + '</span></div>';
   if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + r.age + ' ปี / ' + genderTxt + '</span></div>';
   if (isHN && r.dob)   html += '<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">' + r.dob + '</span></div>';
   if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + r.serviceDate + '</span></div>';
