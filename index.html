@@ -3207,8 +3207,8 @@
 </div>
 
 <footer class="site-footer">
-  <div>ศูนย์บริการทางการแพทย์ชั้นเลิศ (SMC) • โรงพยาบาลศรีนครินทร์ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น • ระบบนี้ใช้งานภายในเครือข่ายโรงพยาบาลเท่านั้น</div>
-  <div class="site-footer-author">จัดทำโดย ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล หน่วยคลินิกตรวจสุขภาพ ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>
+  <div class="site-footer-author">จัดทำโดย ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล</div>
+  <div>หน่วยคลินิกตรวจสุขภาพ ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>
 </footer>
 
 <script>
@@ -4440,6 +4440,16 @@ function showToast(msg) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
+// แปลงข้อความให้ปลอดภัยก่อนต่อเข้า HTML string (innerHTML / หน้าต่างพิมพ์)
+// ใบสรุปทั้งหมดถูกสร้างด้วยการต่อ string แล้วยัดเข้า innerHTML — ถ้าค่าที่ผู้ป่วยพิมพ์เอง
+// (หน่วยงาน "อื่นๆ", ข้อความแจ้งแก้ไข, ชื่อ ฯลฯ) มี < > อยู่ เบราว์เซอร์จะอ่านเป็นแท็กแทนตัวอักษร
+// ทำให้ใบสรุปเพี้ยนหรือรันสคริปต์แปลกปลอมได้ → ต้องผ่านฟังก์ชันนี้ทุกค่าที่มาจากผู้ใช้/ชีต
+// (ค่าที่โค้ดสร้างเองล้วนๆ เช่นตัวเลขราคา ไม่ต้องผ่านก็ได้ แต่ผ่านแล้วก็ไม่เสียหาย)
+function escHtml(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // ช่องชื่อ-นามสกุล: รับเฉพาะภาษาไทย — ถ้าพิมพ์แล้วโดนตัดออก (ลืมเปลี่ยนภาษาแป้นพิมพ์) ให้แจ้งเตือน
 function thaiNameInput(el, extraChars) {
   const before = el.value;
@@ -4807,16 +4817,16 @@ function handleSubmit(e) {
   const subPhone     = _am('ap_phone')     || (document.getElementById('phone')?.value || '');
 
   const nameOrHN = isHNMode
-    ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${hnNumber}</span></div>
-       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${subPrefix} ${subFirstName} ${subLastName}</span></div>`
-    : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${fname} ${lname}</span></div>`;
+    ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${escHtml(hnNumber)}</span></div>
+       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(subPrefix + ' ' + subFirstName + ' ' + subLastName)}</span></div>`
+    : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(fname + ' ' + lname)}</span></div>`;
 
   const card = document.getElementById('summaryCard');
   card.innerHTML = `
     ${nameOrHN}
-    <div class="success-row"><span class="slabel">หน่วยงาน</span><span class="sval">${dept}</span></div>
-    ${payRight ? `<div class="success-row"><span class="slabel">สิทธิ์ชำระเงิน</span><span class="sval">${payRight}</span></div>` : ''}
-    <div class="success-row"><span class="slabel">อายุ / เพศ</span><span class="sval">${age} ปี / ${g}</span></div>
+    <div class="success-row"><span class="slabel">หน่วยงาน</span><span class="sval">${escHtml(dept)}</span></div>
+    ${payRight ? `<div class="success-row"><span class="slabel">สิทธิ์ชำระเงิน</span><span class="sval">${escHtml(payRight)}</span></div>` : ''}
+    <div class="success-row"><span class="slabel">อายุ / เพศ</span><span class="sval">${escHtml(age)} ปี / ${g}</span></div>
     <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}</span></div>
     ${addList.length ? `<div class="success-row"><span class="slabel">รายการเพิ่มเติม</span><span class="sval" style="text-align:right;max-width:200px">${addList.map(x=>x.th).join(', ')}</span></div>` : ''}
     <div class="success-row" style="margin-top:4px"><span class="slabel" style="font-weight:700;color:#00575E">ยอดรวม</span><span class="sval" style="font-size:20px;color:#00575E">${totalTxt} บาท</span></div>
@@ -5259,7 +5269,7 @@ function amendSave() {
   const badge = document.getElementById('amendSummaryBadge');
   if (badge && parts.length) {
     badge.innerHTML = '<div style="display:flex;align-items:center;gap:6px;font-weight:700;color:#856404;margin-bottom:6px">📝 ข้อมูลที่แก้ไข</div>' +
-      parts.map(p => '<div style="display:flex;gap:6px;align-items:baseline"><span style="color:#B8860B">•</span><span>' + p + '</span></div>').join('') +
+      parts.map(p => '<div style="display:flex;gap:6px;align-items:baseline"><span style="color:#B8860B">•</span><span>' + escHtml(p) + '</span></div>').join('') +
       '<div style="margin-top:8px;border-top:1px solid #F0D060;padding-top:8px">' +
       '<button onclick="reopenAmend()" style="width:100%;padding:7px 12px;background:#E67E22;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✏ แก้ไขข้อมูล</button>' +
       '</div>';
@@ -5587,11 +5597,11 @@ function autoFillPostAddr() {
   }
 
   let addrParts = [];
-  if (fname || lname) addrParts.push('<strong>ผู้รับ: ' + [fname, lname].filter(Boolean).join(' ') + '</strong>');
+  if (fname || lname) addrParts.push('<strong>ผู้รับ: ' + escHtml([fname, lname].filter(Boolean).join(' ')) + '</strong>');
   let line2 = [street, soi ? 'ซอย '+soi : '', moo ? 'หมู่ '+moo : ''].filter(Boolean).join(' ');
-  if (line2) addrParts.push(line2);
+  if (line2) addrParts.push(escHtml(line2));
   let line3 = ['ต.' + sub, 'อ.' + dist, 'จ.' + prov, zip].filter(Boolean).join(' ');
-  if (line3) addrParts.push(line3);
+  if (line3) addrParts.push(escHtml(line3));
 
   if (addrParts.length <= 1) {
     box.innerHTML = '<span class="addr-preview-empty">ยังไม่พบข้อมูลที่อยู่ — กรุณากรอกส่วนที่ 1 ให้ครบก่อน</span>';
@@ -5689,42 +5699,42 @@ function showSuccessModal(data) {
   let html = '';
   // ── ข้อมูลส่วนตัว ──
   if (hasHNMode) {
-    html += `<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">${data.hn}</span></div>`;
-    if (data.name) html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${data.name}</span></div>`;
+    html += `<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">${escHtml(data.hn)}</span></div>`;
+    if (data.name) html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${escHtml(data.name)}</span></div>`;
     // แสดงข้อมูลที่แก้ไข (ถ้ามี)
     if (data.amendParts && data.amendParts.length > 0) {
       html += `<div style="background:#FFFBEA;border:1.5px solid #F6C90E;border-radius:9px;padding:10px 14px;margin:8px 0;font-size:13px;color:#5A4000;line-height:1.8">`;
       html += `<div style="font-weight:700;color:#856404;margin-bottom:4px">📝 ข้อมูลที่แก้ไข</div>`;
       data.amendParts.forEach(p => {
-        html += `<div>• ${p}</div>`;
+        html += `<div>• ${escHtml(p)}</div>`;
       });
       html += `</div>`;
     }
   } else {
-    html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${data.name}</span></div>`;
+    html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${escHtml(data.name)}</span></div>`;
   }
-  if (data.dept) html += `<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">${data.dept}</span></div>`;
-  if (data.orgStatus) html += `<div class="sr"><span class="sl">สถานะ</span><span class="sv">${data.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : data.orgStatus}</span></div>`;
-  if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${data.payRight}</span></div>`;
-  if (data.phone) html += `<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">${data.phone}</span></div>`;
-  if (data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${data.idCard}</span></div>`;
-  if (data.homeAddr) html += `<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">${data.homeAddr}</span></div>`;
+  if (data.dept) html += `<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">${escHtml(data.dept)}</span></div>`;
+  if (data.orgStatus) html += `<div class="sr"><span class="sl">สถานะ</span><span class="sv">${escHtml(data.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : data.orgStatus)}</span></div>`;
+  if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${escHtml(data.payRight)}</span></div>`;
+  if (data.phone) html += `<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">${escHtml(data.phone)}</span></div>`;
+  if (data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${escHtml(data.idCard)}</span></div>`;
+  if (data.homeAddr) html += `<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">${escHtml(data.homeAddr)}</span></div>`;
   if (!hasHNMode) {
-    html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${data.age} ปี / ${genderTxt}</span></div>`;
+    html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${escHtml(data.age)} ปี / ${genderTxt}</span></div>`;
   } else {
     html += `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
-    if (data.dob) html += `<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">${data.dob}</span></div>`;
+    if (data.dob) html += `<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">${escHtml(data.dob)}</span></div>`;
   }
-  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">${data.serviceDate}</span></div>`;
-  if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${data.delivery}</span></div>`;
-  if (data.postEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจ</span><span class="sv">${data.postEmail}</span></div>`;
-  if (data.postAddr)  html += `<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">${data.postAddr}</span></div>`;
-  if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${data.papDelivery}</span></div>`;
-  if (data.papResultEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจภายใน</span><span class="sv">${data.papResultEmail}</span></div>`;
-  if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">${data.medCertCount} ชุด</span></div>`;
-  if (data.nonFormularyDrugCount) html += `<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">${data.nonFormularyDrugCount} ชุด</span></div>`;
-  if (data.medCertDriverCount) html += `<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">${data.medCertDriverCount} ชุด</span></div>`;
-  if (data.medCertHealthCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรคทั่วไป</span><span class="sv">${data.medCertHealthCount} ชุด</span></div>`;
+  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">${escHtml(data.serviceDate)}</span></div>`;
+  if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${escHtml(data.delivery)}</span></div>`;
+  if (data.postEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจ</span><span class="sv">${escHtml(data.postEmail)}</span></div>`;
+  if (data.postAddr)  html += `<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">${escHtml(data.postAddr)}</span></div>`;
+  if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${escHtml(data.papDelivery)}</span></div>`;
+  if (data.papResultEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจภายใน</span><span class="sv">${escHtml(data.papResultEmail)}</span></div>`;
+  if (data.medCertCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">${escHtml(data.medCertCount)} ชุด</span></div>`;
+  if (data.nonFormularyDrugCount) html += `<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">${escHtml(data.nonFormularyDrugCount)} ชุด</span></div>`;
+  if (data.medCertDriverCount) html += `<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">${escHtml(data.medCertDriverCount)} ชุด</span></div>`;
+  if (data.medCertHealthCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรคทั่วไป</span><span class="sv">${escHtml(data.medCertHealthCount)} ชุด</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
   const progPapSuffix = (data.gender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : '';
@@ -6000,16 +6010,16 @@ async function doStaffSearch() {
 
     status.textContent = 'พบ ' + items.length + ' รายการ (คลิกเพื่อดูใบสรุป)';
     results.innerHTML = items.map(function(r, i) {
-      const hnBadge = r.hn ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400"> (HN: ' + r.hn + ')</span>' : '';
+      const hnBadge = r.hn ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400"> (HN: ' + escHtml(r.hn) + ')</span>' : '';
       return '<div onclick="showStaffSummary(' + i + ')"'
         + ' style="border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background 0.15s"'
         + ' onmouseover="this.style.background=\'#F0F7F8\'" onmouseout="this.style.background=\'\'">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">'
-        + '<div style="font-weight:700;font-size:15px;color:var(--primary-dark)">' + r.prefix + r.firstName + ' ' + r.lastName + hnBadge + '</div>'
-        + '<div style="font-size:12px;color:var(--text-muted)">ลงทะเบียน ' + r.regDate + '</div>'
+        + '<div style="font-weight:700;font-size:15px;color:var(--primary-dark)">' + escHtml(r.prefix + r.firstName + ' ' + r.lastName) + hnBadge + '</div>'
+        + '<div style="font-size:12px;color:var(--text-muted)">ลงทะเบียน ' + escHtml(r.regDate) + '</div>'
         + '</div>'
         + '<div style="font-size:13px;color:var(--text-muted);margin-top:4px">'
-        + (r.program || '—') + ' | นัดหมาย: ' + (r.serviceDate || '—')
+        + escHtml(r.program || '—') + ' | นัดหมาย: ' + escHtml(r.serviceDate || '—')
         + '</div></div>';
     }).join('');
 
@@ -6089,43 +6099,40 @@ function showStaffSummary(idx) {
   let html = '';
 
   // ── ข้อมูลส่วนตัว ──
-  if (isHN) html += '<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">' + r.hn + '</span></div>';
-  html += '<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">' + r.prefix + r.firstName + ' ' + r.lastName + '</span></div>';
-  // ข้อมูลที่ผู้ป่วยแจ้งแก้ตอนลงทะเบียนแบบมี HN — escape ไว้เพราะเป็นข้อความอิสระที่ผู้ป่วยพิมพ์เอง
+  if (isHN) html += '<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">' + escHtml(r.hn) + '</span></div>';
+  html += '<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">' + escHtml(r.prefix + r.firstName + ' ' + r.lastName) + '</span></div>';
+  // ข้อมูลที่ผู้ป่วยแจ้งแก้ตอนลงทะเบียนแบบมี HN — เป็นข้อความอิสระที่ผู้ป่วยพิมพ์เอง
   if (r.amendNote && r.amendNote.trim()) {
-    const escAmend = function(s) {
-      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    };
     html += '<div style="background:#FFFBEA;border:1.5px solid #F6C90E;border-radius:9px;padding:10px 14px;margin:8px 0;font-size:13px;color:#5A4000;line-height:1.7">'
       + '<div style="font-weight:700;margin-bottom:4px">📝 ข้อมูลที่ผู้ป่วยแจ้งแก้ไข</div>'
       + r.amendNote.split(' | ').map(function(p) { return p.trim(); }).filter(Boolean)
-          .map(function(p) { return '<div>• ' + escAmend(p) + '</div>'; }).join('')
+          .map(function(p) { return '<div>• ' + escHtml(p) + '</div>'; }).join('')
       + '</div>';
   }
-  if (r.department)    html += '<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">' + r.department + '</span></div>';
-  if (r.orgStatus)     html += '<div class="sr"><span class="sl">สถานะ</span><span class="sv">' + (r.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : r.orgStatus) + '</span></div>';
-  if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + r.paymentRight + '</span></div>';
-  if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + r.phone + '</span></div>';
-  if (r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + r.idCard + '</span></div>';
-  if (r.address) html += '<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">' + r.address + '</span></div>';
-  if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + r.age + ' ปี / ' + genderTxt + '</span></div>';
-  if (isHN && r.dob)   html += '<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">' + r.dob + '</span></div>';
-  if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + r.serviceDate + '</span></div>';
+  if (r.department)    html += '<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">' + escHtml(r.department) + '</span></div>';
+  if (r.orgStatus)     html += '<div class="sr"><span class="sl">สถานะ</span><span class="sv">' + escHtml(r.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : r.orgStatus) + '</span></div>';
+  if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + escHtml(r.paymentRight) + '</span></div>';
+  if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + escHtml(r.phone) + '</span></div>';
+  if (r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + escHtml(r.idCard) + '</span></div>';
+  if (r.address) html += '<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">' + escHtml(r.address) + '</span></div>';
+  if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + escHtml(r.age) + ' ปี / ' + genderTxt + '</span></div>';
+  if (isHN && r.dob)   html += '<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">' + escHtml(r.dob) + '</span></div>';
+  if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + escHtml(r.serviceDate) + '</span></div>';
   if (r.deliveryMethod) {
-    html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + r.deliveryMethod + '</span></div>';
-    if (r.postEmail)    html += '<div class="sr"><span class="sl">📧 อีเมลจัดส่ง</span><span class="sv">' + r.postEmail + '</span></div>';
-    if (r.postRecipient) html += '<div class="sr"><span class="sl">ผู้รับ</span><span class="sv">' + r.postRecipient + '</span></div>';
-    if (r.postAddr)     html += '<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">' + r.postAddr + (r.postProvince ? ' ' + r.postProvince : '') + (r.postZip ? ' ' + r.postZip : '') + '</span></div>';
-    if (r.papDeliveryMethod) html += '<div class="sr"><span class="sl">ช่องทางรับผลตรวจภายใน</span><span class="sv">' + r.papDeliveryMethod + '</span></div>';
-    if (r.papResultEmail) html += '<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจภายใน</span><span class="sv">' + r.papResultEmail + '</span></div>';
+    html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + escHtml(r.deliveryMethod) + '</span></div>';
+    if (r.postEmail)    html += '<div class="sr"><span class="sl">📧 อีเมลจัดส่ง</span><span class="sv">' + escHtml(r.postEmail) + '</span></div>';
+    if (r.postRecipient) html += '<div class="sr"><span class="sl">ผู้รับ</span><span class="sv">' + escHtml(r.postRecipient) + '</span></div>';
+    if (r.postAddr)     html += '<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">' + escHtml(r.postAddr + (r.postProvince ? ' ' + r.postProvince : '') + (r.postZip ? ' ' + r.postZip : '')) + '</span></div>';
+    if (r.papDeliveryMethod) html += '<div class="sr"><span class="sl">ช่องทางรับผลตรวจภายใน</span><span class="sv">' + escHtml(r.papDeliveryMethod) + '</span></div>';
+    if (r.papResultEmail) html += '<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจภายใน</span><span class="sv">' + escHtml(r.papResultEmail) + '</span></div>';
   }
-  if (r.medCertCount && r.medCertCount !== '0')           html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">' + r.medCertCount + ' ชุด</span></div>';
-  if (r.nonFormularyDrugCount && r.nonFormularyDrugCount !== '0') html += '<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">' + r.nonFormularyDrugCount + ' ชุด</span></div>';
-  if (r.medCertDriverCount && r.medCertDriverCount !== '0')   html += '<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">' + r.medCertDriverCount + ' ชุด</span></div>';
-  if (r.medCertHealthCount && r.medCertHealthCount !== '0')   html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรค</span><span class="sv">' + r.medCertHealthCount + ' ชุด</span></div>';
+  if (r.medCertCount && r.medCertCount !== '0')           html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์แนบเบิก</span><span class="sv">' + escHtml(r.medCertCount) + ' ชุด</span></div>';
+  if (r.nonFormularyDrugCount && r.nonFormularyDrugCount !== '0') html += '<div class="sr"><span class="sl">💊 ใบยานอกบัญชี</span><span class="sv">' + escHtml(r.nonFormularyDrugCount) + ' ชุด</span></div>';
+  if (r.medCertDriverCount && r.medCertDriverCount !== '0')   html += '<div class="sr"><span class="sl">🚗 ใบรับรองแพทย์ใบขับขี่</span><span class="sv">' + escHtml(r.medCertDriverCount) + ' ชุด</span></div>';
+  if (r.medCertHealthCount && r.medCertHealthCount !== '0')   html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรค</span><span class="sv">' + escHtml(r.medCertHealthCount) + ' ชุด</span></div>';
 
   // ── โปรแกรม + รายการในโปรแกรม ──
-  html += '<div class="sr-section-title">' + (r.program || 'ไม่ระบุโปรแกรม') + '</div>';
+  html += '<div class="sr-section-title">' + escHtml(r.program || 'ไม่ระบุโปรแกรม') + '</div>';
   // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือเมื่อรายการรวมทั้งหมดยาวพอที่จะดันยอดรวมตกไปหน้าถัดไป
   // (เช่นโปรแกรม 4 ที่มีรายการตรวจในตัวมากอยู่แล้วแม้ไม่มีรายการเพิ่มเติมก็ตาม)
   const totalStaffItemCount = (progData ? progData.tests.length : 0) + (papKey ? 1 : 0) + addItemsForCondense.length;
@@ -6162,15 +6169,15 @@ function showStaffSummary(idx) {
       const name  = pm ? item.slice(0, item.lastIndexOf(pm[0])).trim() : item;
       const price = pm ? pm[1] : '';
       html += '<div class="sr-test-item extra" style="justify-content:space-between">'
-        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + name + '</span></span>'
-        + (price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + price + '</span>' : '')
+        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(name) + '</span></span>'
+        + (price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + escHtml(price) + '</span>' : '')
         + '</div>';
     });
     html += '</div>';
   }
 
   // ── ยอดรวม ──
-  html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + r.total + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
+  html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(r.total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
 
   document.getElementById('staffSummaryCard').innerHTML = html;
   document.getElementById('staffSummaryModal').style.display = 'flex';
@@ -6184,7 +6191,7 @@ function printStaffSummary() {
   const content = document.getElementById('staffSummaryCard').innerHTML;
   const w = window.open('', '_blank');
   w.document.write('<!DOCTYPE html><html><head>'
-    + '<meta charset="utf-8"><title>' + title + '</title>'
+    + '<meta charset="utf-8"><title>' + escHtml(title) + '</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>'
     + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px;max-width:720px}'
@@ -6209,8 +6216,10 @@ function printStaffSummary() {
     + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}'
     + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}}'
     + '</style></head><body>'
-    + '<h2>' + title + '</h2>'
-    + '<div class="sub">' + dateStr + '</div>'
+    // title/dateStr อ่านมาจาก textContent (ดิบ) แต่ที่นี่ต่อเข้า HTML → ต้อง escape
+    // ส่วน content เป็น innerHTML ที่ escape มาแล้วตอนสร้างใบสรุป ห้าม escape ซ้ำ
+    + '<h2>' + escHtml(title) + '</h2>'
+    + '<div class="sub">' + escHtml(dateStr) + '</div>'
     + content
     + '<script>window.onload=function(){window.print();}<\/script>'
     + '</body></html>');
