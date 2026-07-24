@@ -785,6 +785,19 @@
   }
   .price-row .label { color: #444; }
   .price-row .amount { font-weight: 700; color: #1A1E40; }
+  /* รายชื่อรายการตรวจเพิ่มเติมที่เลือก (แสดงใต้บรรทัดสรุปจำนวนรายการ) */
+  .price-add-items { margin-top: 6px; padding-left: 2px; }
+  .price-add-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #6B5030;
+    padding: 2px 0;
+  }
+  .price-add-item .pai-name { flex: 1; }
+  .price-add-item .pai-price { white-space: nowrap; font-weight: 600; }
   .price-row.highlight .label { font-weight: 700; color: #1A1E40; }
   .price-divider {
     height: 1px;
@@ -2634,7 +2647,7 @@
                 <td>Cytology<br>conventional</td>
                 <td>เริ่ม 25<br>จนถึง 65 ปี</td>
                 <td>56.4%</td>
-                <td>ทุก 1 ปี</td>
+                <td>ทุก 2 ปี</td>
               </tr>
               <tr>
                 <td style="background:#EDE7F6">
@@ -2644,7 +2657,7 @@
                 <td>cytology ด้วย liquid-based</td>
                 <td>25–65 ปี</td>
                 <td>78%</td>
-                <td>ทุก 2–3 ปี</td>
+                <td>ทุก 2 ปี</td>
               </tr>
               <tr>
                 <td style="background:#FCE4EC">
@@ -2654,7 +2667,7 @@
                 <td>(Co-testing)<br>ด้วย liquid-based: HPV+Cytology</td>
                 <td>25–65 ปี</td>
                 <td>97–100%</td>
-                <td>ทุก 3–5 ปี</td>
+                <td>ทุก 5 ปี</td>
               </tr>
             </tbody>
           </table>
@@ -2736,6 +2749,8 @@
           <span class="label">รายการตรวจเพิ่มเติม (<span id="addCount">0</span> รายการ)</span>
           <span class="amount" id="addAmount">—</span>
         </div>
+        <!-- รายชื่อรายการที่เลือก — เติมจาก calcTotal() -->
+        <div class="price-add-items" id="addItemsList"></div>
       </div>
       <!-- Card C: ยอดรวม -->
       <div class="price-card price-card-total">
@@ -2895,6 +2910,10 @@
               <div class="field-group" style="margin-bottom:12px;margin-top:10px">
                 <label>ที่อยู่สำหรับจัดส่งผลตรวจภายใน <span class="req">*</span></label>
               </div>
+
+              <button type="button" id="btnCopyPapAddr" class="btn-copy-addr" onclick="copyAllFromSection1ToPap()" style="margin-bottom:12px">
+                📋 คัดลอกข้อมูลทั้งหมดจากส่วนที่ 1
+              </button>
 
               <div class="field-grid cols-2" style="margin-bottom:10px">
                 <div class="field-group">
@@ -3191,11 +3210,14 @@
 
 <script>
 // ─── Data ───────────────────────────────────────────────────────────────────
+// ── แหล่งข้อมูลกลางของโปรแกรมตรวจ (ราคา + ช่วงอายุ) ──────────────────────────────
+// ราคาและช่วงอายุที่แสดงบนการ์ด และในป็อปอัป "ดูรายละเอียด" ถูกเขียนทับจากตรงนี้ทั้งหมด
+// (ข้อความในการ์ด HTML เป็นแค่ค่าตั้งต้นกรณี JS ไม่ทำงาน) → แก้ราคา/ช่วงอายุ ให้แก้ที่นี่ที่เดียว
 const PROGRAMS = {
-  1: { male: 1318, femaleNo: 1318, femalePap: 1518, included: [1,2,3,4,5] },
-  2: { male: 2298, femaleNo: 2298, femalePap: 2498, included: [1,2,3,4,5,6,7,8,9,10,13] },
-  3: { male: 3674, femaleNo: 3674, femalePap: 3874, included: [1,2,3,4,5,6,7,8,9,10,11,12,13] },
-  4: { male: 5314, femaleNo: 5014, femalePap: 5214, included: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21] }
+  1: { male: 1318, femaleNo: 1318, femalePap: 1518, age: '18 ปีขึ้นไป', included: [1,2,3,4,5] },
+  2: { male: 2298, femaleNo: 2298, femalePap: 2498, age: '25–35 ปี',    included: [1,2,3,4,5,6,7,8,9,10,13] },
+  3: { male: 3674, femaleNo: 3674, femalePap: 3874, age: '35–45 ปี',    included: [1,2,3,4,5,6,7,8,9,10,11,12,13] },
+  4: { male: 5314, femaleNo: 5014, femalePap: 5214, age: '45 ปีขึ้นไป', included: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21] }
 };
 
 const TESTS = [
@@ -3436,18 +3458,29 @@ function updatePrefixOptionsForGender() {
   if (currentInvalid) prefixEl.value = '';
 }
 
+// ราคา/ช่วงอายุบนการ์ด อ่านจาก PROGRAMS ที่เดียว (อย่าฮาร์ดโค้ดตัวเลขซ้ำในนี้อีก)
 function updateProgramPrices() {
   const g = selectedGender;
   const papSub = 'หญิง (ไม่ตรวจภายใน) / +200–2,020 บาท หากตรวจภายใน';
-  const prices = {
-    1: { main: g === 'female' ? '1,318' : '1,318', sub: g === 'female' ? papSub : 'ชาย' },
-    2: { main: g === 'female' ? '2,298' : '2,298', sub: g === 'female' ? papSub : 'ชาย' },
-    3: { main: g === 'female' ? '3,674' : '3,674', sub: g === 'female' ? papSub : 'ชาย' },
-    4: { main: g === 'male' ? '5,314' : g === 'female' ? '5,014' : '5,014–5,314', sub: g === 'male' ? 'ชาย' : g === 'female' ? papSub : 'ชาย / หญิง' },
-  };
+  const fmt = n => n.toLocaleString();
   for (let i = 1; i <= 4; i++) {
-    document.getElementById('price'+i+'-main').innerHTML = prices[i].main + ' <span class="unit">บาท</span>';
-    document.getElementById('price'+i+'-sub').textContent = prices[i].sub;
+    const p = PROGRAMS[i];
+    let main, sub;
+    if (g === 'male') {
+      main = fmt(p.male);            sub = 'ชาย';
+    } else if (g === 'female') {
+      main = fmt(p.femaleNo);        sub = papSub;
+    } else if (p.male === p.femaleNo) {
+      main = fmt(p.male);            sub = 'ชาย';
+    } else {
+      main = fmt(Math.min(p.male, p.femaleNo)) + '–' + fmt(Math.max(p.male, p.femaleNo));
+      sub  = 'ชาย / หญิง';
+    }
+    document.getElementById('price'+i+'-main').innerHTML = main + ' <span class="unit">บาท</span>';
+    document.getElementById('price'+i+'-sub').textContent = sub;
+
+    const ageEl = document.querySelector('#card-' + i + ' .prog-age');
+    if (ageEl) ageEl.textContent = p.age;
   }
 }
 
@@ -3602,11 +3635,13 @@ function calcTotal() {
   // Additional tests
   let addTotal = 0;
   let addCount = 0;
+  const addItems = [];   // เก็บชื่อ+ราคาไว้แสดงเป็นรายการใต้ยอดรวมย่อย
   TESTS.forEach(t => {
     const chk = document.getElementById('chk-' + t.id);
     if (chk && chk.checked && !document.getElementById('test-'+t.id).classList.contains('included')) {
       addTotal += t.price;
       addCount++;
+      addItems.push({ name: t.name, price: t.price });
     }
   });
 
@@ -3657,6 +3692,15 @@ function calcTotal() {
     } else {
       if (addCard) addCard.style.display = 'none';
     }
+  }
+
+  // รายชื่อรายการตรวจเพิ่มเติมที่เลือก (ทั้งสองกรณีข้างบนใช้ร่วมกัน)
+  const addItemsEl = document.getElementById('addItemsList');
+  if (addItemsEl) {
+    addItemsEl.innerHTML = addCount > 0
+      ? addItems.map(it => '<div class="price-add-item"><span class="pai-name">• ' + it.name + '</span>'
+          + '<span class="pai-price">' + it.price.toLocaleString() + ' บาท</span></div>').join('')
+      : '';
   }
 
   document.getElementById('totalAmount').textContent = total.toLocaleString();
@@ -4069,6 +4113,59 @@ function copyAllFromSection1() {
       const badge = document.getElementById('postAddrFilledBadge');
       if (badge) {
         document.getElementById('postAddrFilledText').textContent = `${sub} » ${dist} » ${prov} » ${zip}`;
+        badge.style.display = 'inline-flex';
+      }
+    }
+    showToast('✅ คัดลอกข้อมูลทั้งหมดเรียบร้อยแล้ว');
+  } else {
+    showToast('✅ คัดลอกชื่อ-สกุล และเบอร์โทรเรียบร้อยแล้ว');
+  }
+}
+
+// เหมือน copyAllFromSection1() แต่เติมลงบล็อก "ที่อยู่สำหรับจัดส่งผลตรวจภายใน" (papPostDetail)
+// จำเป็นแยกฟังก์ชันเพราะผู้ป่วยอาจเลือกรับผลสุขภาพแบบ "รอรับด้วยตนเอง" (ไม่มีบล็อกที่อยู่จัดส่งหลัก)
+// แต่ยังเลือกให้ส่งผลตรวจภายในทางไปรษณีย์ได้ → บล็อกนี้ต้องมีปุ่มคัดลอกของตัวเอง
+function copyAllFromSection1ToPap() {
+  const hasHN = document.querySelector('input[name="hnStatus"][value="has"]')?.checked;
+  const fn    = document.getElementById('firstName')?.value || '';
+  const ln    = document.getElementById('lastName')?.value  || '';
+  const phone = document.getElementById('phone')?.value     || '';
+
+  if (!fn && !phone) {
+    showToast('⚠ กรุณากรอกชื่อ-นามสกุลในส่วนที่ 1 ก่อน');
+    document.getElementById('firstName')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+
+  set('papRecipient', fn);
+  set('papRecipientLast', ln);
+  set('papPhone', phone);
+
+  if (!hasHN) {
+    const houseNo = document.getElementById('houseNo')?.value     || '';
+    const moo     = document.getElementById('moo')?.value         || '';
+    const street  = document.getElementById('street')?.value      || '';
+    const soi     = document.getElementById('soi')?.value         || '';
+    const sub     = document.getElementById('subdistrict')?.value || '';
+    const dist    = document.getElementById('district')?.value    || '';
+    const prov    = document.getElementById('province')?.value    || '';
+    const zip     = document.getElementById('zipcode')?.value     || '';
+
+    set('papHouseNo', houseNo);
+    set('papMoo', moo);
+    set('papAddr1', [street, soi].filter(Boolean).join(' '));
+    set('papSubdistrict', sub);
+    set('papDistrict', dist);
+    set('papProvince', prov);
+    set('papZip', zip);
+
+    if (sub || zip) {
+      const badge = document.getElementById('papAddrFilledBadge');
+      const txt   = document.getElementById('papAddrFilledText');
+      if (badge && txt) {
+        txt.textContent = `${sub} » ${dist} » ${prov} » ${zip}`;
         badge.style.display = 'inline-flex';
       }
     }
@@ -4694,9 +4791,21 @@ function handleSubmit(e) {
   const hnStatusVal = document.querySelector('input[name="hnStatus"]:checked')?.value;
   const hnNumber = (document.getElementById('patientCardNo')?.value || '').trim();
   const isHNMode = hnStatusVal === 'has' && hnNumber.length > 0;
+
+  // ── โหมด "มี HN": ค่าที่กรอกในป็อปอัปแก้ไขข้อมูล ให้ทับค่าเดิมในคอลัมน์เดียวกันของชีต ──
+  // (ค่าที่ผู้ป่วยแจ้งแก้ = ค่าที่ถูกต้องกว่า) ช่องไหนไม่ได้กรอกก็ใช้ค่าจากฟอร์มส่วนที่ 1 ตามเดิม
+  // ตัวข้อความสรุปยังถูกเก็บใน amendNote อีกทางเพื่อให้เจ้าหน้าที่ตรวจสอบย้อนหลังได้ว่าแก้อะไรบ้าง
+  const _am = id => (isHNMode ? (document.getElementById(id)?.value || '').trim() : '');
+  const subPrefix    = _am('ap_prefix')    || prefixVal;
+  const subFirstName = _am('ap_firstName') || fname;
+  const subLastName  = _am('ap_lastName')  || lname;
+  const subOldFirst  = _am('ap_oldFirst')  || (document.getElementById('oldFirstName')?.value || '');
+  const subOldLast   = _am('ap_oldLast')   || (document.getElementById('oldLastName')?.value || '');
+  const subPhone     = _am('ap_phone')     || (document.getElementById('phone')?.value || '');
+
   const nameOrHN = isHNMode
     ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${hnNumber}</span></div>
-       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${prefixVal} ${fname} ${lname}</span></div>`
+       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${subPrefix} ${subFirstName} ${subLastName}</span></div>`
     : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${fname} ${lname}</span></div>`;
 
   const card = document.getElementById('summaryCard');
@@ -4721,18 +4830,21 @@ function handleSubmit(e) {
     // วันที่เข้ารับบริการ
     serviceDate:   document.getElementById('serviceDate')?.value || '',
     // ข้อมูลส่วนตัว
-    prefix:        prefixVal,
-    firstName:     fname,
-    lastName:      lname,
+    prefix:        subPrefix,
+    firstName:     subFirstName,
+    lastName:      subLastName,
     hnStatus:      hnStatusEl ? (hnStatusEl.value === 'has' ? 'มี HN' : 'ไม่มี HN') : '',
     hn:            document.getElementById('patientCardNo')?.value || '',
+    // ข้อมูลที่ผู้ป่วยแจ้งแก้ในป็อปอัปโหมด "มี HN" (เก็บเป็นข้อความบรรทัดเดียว คั่นด้วย |)
+    amendNote:     isHNMode ? _amendParts.join(' | ') : '',
     dob:           document.getElementById('dob')?.value || '',
     age:           age,
     gender:        g,
-    phone:         document.getElementById('phone')?.value || '',
+    phone:         subPhone,
     idCard:        document.getElementById('idCard')?.value || '',
     // หน่วยงาน
     department:    dept,
+    orgStatus:     document.getElementById('orgStatus')?.value || '',
     paymentRight:  payRight,
     // สถานภาพ / อาชีพ
     maritalStatus: document.querySelector('input[name="maritalStatus"]:checked')?.value || '',
@@ -4742,7 +4854,8 @@ function handleSubmit(e) {
     bloodGroup:    document.getElementById('bloodGroup')?.value || '',
     allergy:       document.getElementById('allergyDetail')?.value || document.querySelector('input[name="allergy"]:checked')?.value || '',
     // ที่อยู่
-    address:       [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
+    // โหมด HN: ช่องที่อยู่ในส่วนที่ 1 ถูกซ่อนไว้ ถ้าผู้ป่วยแจ้งที่อยู่ใหม่ในป็อปอัปให้ใช้ค่านั้นแทน
+    address:       _am('ap_addr') || [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
     subdistrict:   document.getElementById('subdistrict')?.value || '',
     district:      document.getElementById('district')?.value || '',
     province:      document.getElementById('province')?.value || '',
@@ -4755,8 +4868,8 @@ function handleSubmit(e) {
     emergencyName:  document.getElementById('emergencyName')?.value || '',
     emergencyPhone: document.getElementById('emergencyPhone')?.value || '',
     // ชื่อเดิม
-    oldFirstName:  document.getElementById('oldFirstName')?.value || '',
-    oldLastName:   document.getElementById('oldLastName')?.value || '',
+    oldFirstName:  subOldFirst,
+    oldLastName:   subOldLast,
     // โปรแกรม
     program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(g === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}` : '',
     total:         totalTxt,
@@ -4858,14 +4971,16 @@ function handleSubmit(e) {
   });
 
     showSuccessModal({
-      name: (fname + ' ' + lname).trim(),
+      name: (subFirstName + ' ' + subLastName).trim(),
+      firstName: subFirstName,
+      lastName: subLastName,
       hnMode: isHNMode,
       hn: hnNumber,
       amendParts: isHNMode ? [..._amendParts] : [],
       dept: dept,
       orgStatus: document.getElementById('orgStatus')?.value || '',
       payRight: payRight,
-      phone: document.getElementById('phone')?.value || '',
+      phone: subPhone,
       idCard: document.getElementById('idCard')?.value || '',
       homeAddr: [
         formData.address,
@@ -5065,12 +5180,14 @@ function toggleHN(hasHN) {
 
   // แสดงปุ่มคัดลอกเสมอ (ทั้ง มี/ไม่มี HN) — label เปลี่ยนตามสถานะ
   const btnCopy = document.getElementById('btnCopyAddr');
-  if (btnCopy) {
-    btnCopy.style.display = 'block';
-    btnCopy.textContent = hasHN
+  const btnCopyPap = document.getElementById('btnCopyPapAddr');
+  [btnCopy, btnCopyPap].forEach(b => {
+    if (!b) return;
+    b.style.display = 'block';
+    b.textContent = hasHN
       ? '📋 คัดลอกชื่อ-สกุล และเบอร์โทรจากส่วนที่ 1'
       : '📋 คัดลอกข้อมูลทั้งหมดจากส่วนที่ 1';
-  }
+  });
 
   // วันเดือนปีเกิด: บังคับกรอกเสมอทั้งสองโหมด (อยู่นอก fullInfoSection) จึงไม่ต้องซ่อน/ล้างค่า
   // ซ่อน/แสดง field อายุ เมื่อเลือก มี HN (คำนวณอัตโนมัติจากวันเกิดอยู่แล้ว)
@@ -5584,6 +5701,7 @@ function showSuccessModal(data) {
     html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${data.name}</span></div>`;
   }
   if (data.dept) html += `<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">${data.dept}</span></div>`;
+  if (data.orgStatus) html += `<div class="sr"><span class="sl">สถานะ</span><span class="sv">${data.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : data.orgStatus}</span></div>`;
   if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${data.payRight}</span></div>`;
   if (data.phone) html += `<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">${data.phone}</span></div>`;
   if (data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${data.idCard}</span></div>`;
@@ -5679,8 +5797,9 @@ function showSuccessModal(data) {
   try { sessionStorage.setItem('regSummaryHtml', html); } catch(e) {}
   try { sessionStorage.setItem('regSummaryTitle', modalTitle); } catch(e) {}
   try { sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : ''); } catch(e) {}
-  try { sessionStorage.setItem('regFirstName', document.getElementById('firstName')?.value || ''); } catch(e) {}
-  try { sessionStorage.setItem('regLastName',  document.getElementById('lastName')?.value  || ''); } catch(e) {}
+  // ใช้ชื่อหลังแก้ไข (โหมด HN) ถ้ามี — ให้หน้าแบบประเมินแสดงชื่อตรงกับที่บันทึกลงชีตจริง
+  try { sessionStorage.setItem('regFirstName', data.firstName || document.getElementById('firstName')?.value || ''); } catch(e) {}
+  try { sessionStorage.setItem('regLastName',  data.lastName  || document.getElementById('lastName')?.value  || ''); } catch(e) {}
   console.log('[SUBMIT] redirecting to survey.html...');
   window.location.replace('survey.html');
 }
@@ -5703,7 +5822,7 @@ function closeModalAndReset() {
 // ─── Program Detail Modal ────────────────────────────────────────────────────
 const PROG_DETAIL = {
   1: {
-    name: 'Basic Check Up', age: 'อายุ 18 ปีขึ้นไป',
+    name: 'Basic Check Up',
     tests: [
       { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
       { th: 'เอกซเรย์ปอดและหัวใจ',                eng: 'Chest X-Ray' },
@@ -5713,7 +5832,7 @@ const PROG_DETAIL = {
     ]
   },
   2: {
-    name: 'Advanced Check Up', age: 'อายุ 18 ปีขึ้นไป',
+    name: 'Advanced Check Up',
     tests: [
       { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
       { th: 'เอกซเรย์ปอดและหัวใจ',                eng: 'Chest X-Ray' },
@@ -5729,7 +5848,7 @@ const PROG_DETAIL = {
     ]
   },
   3: {
-    name: 'Executive Check Up', age: 'อายุ 18 ปีขึ้นไป',
+    name: 'Executive Check Up',
     tests: [
       { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
       { th: 'เอกซเรย์ปอดและหัวใจ',                eng: 'Chest X-Ray' },
@@ -5747,7 +5866,7 @@ const PROG_DETAIL = {
     ]
   },
   4: {
-    name: 'Supreme Check Up', age: 'อายุ 18 ปีขึ้นไป',
+    name: 'Supreme Check Up',
     tests: [
       { th: 'รับการตรวจร่างกายจากแพทย์',         eng: 'Vital Signs and Physical Examination' },
       { th: 'เอกซเรย์ปอดและหัวใจ',                eng: 'Chest X-Ray' },
@@ -5785,7 +5904,7 @@ function showProgDetail(num, e) {
   document.getElementById('pdBadge').className = 'pd-badge pd-badge-' + Math.min(num,4);
   document.getElementById('pdProgNum').textContent = 'โปรแกรม ' + num;
   document.getElementById('pdProgName').textContent = d.name;
-  document.getElementById('pdProgAge').textContent = d.age;
+  document.getElementById('pdProgAge').textContent = 'อายุ ' + (PROGRAMS[num] ? PROGRAMS[num].age : '');
   document.getElementById('pdTestList').innerHTML = d.tests.map(t =>
     `<div class="pd-test-item">
       <span class="pd-dot pd-dot-${Math.min(num,4)}">●</span>
@@ -5969,7 +6088,19 @@ function showStaffSummary(idx) {
   // ── ข้อมูลส่วนตัว ──
   if (isHN) html += '<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">' + r.hn + '</span></div>';
   html += '<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">' + r.prefix + r.firstName + ' ' + r.lastName + '</span></div>';
+  // ข้อมูลที่ผู้ป่วยแจ้งแก้ตอนลงทะเบียนแบบมี HN — escape ไว้เพราะเป็นข้อความอิสระที่ผู้ป่วยพิมพ์เอง
+  if (r.amendNote && r.amendNote.trim()) {
+    const escAmend = function(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    };
+    html += '<div style="background:#FFFBEA;border:1.5px solid #F6C90E;border-radius:9px;padding:10px 14px;margin:8px 0;font-size:13px;color:#5A4000;line-height:1.7">'
+      + '<div style="font-weight:700;margin-bottom:4px">📝 ข้อมูลที่ผู้ป่วยแจ้งแก้ไข</div>'
+      + r.amendNote.split(' | ').map(function(p) { return p.trim(); }).filter(Boolean)
+          .map(function(p) { return '<div>• ' + escAmend(p) + '</div>'; }).join('')
+      + '</div>';
+  }
   if (r.department)    html += '<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">' + r.department + '</span></div>';
+  if (r.orgStatus)     html += '<div class="sr"><span class="sl">สถานะ</span><span class="sv">' + (r.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : r.orgStatus) + '</span></div>';
   if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + r.paymentRight + '</span></div>';
   if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + r.phone + '</span></div>';
   if (r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + r.idCard + '</span></div>';
