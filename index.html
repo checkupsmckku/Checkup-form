@@ -5991,7 +5991,11 @@ async function doStaffSearch() {
     let json;
     try { json = JSON.parse(rawText); }
     catch(parseErr) {
-      status.textContent = '❌ Apps Script Error: ' + rawText.substring(0, 300);
+      // Apps Script ตอบเป็นหน้า HTML แจ้ง error แทน JSON (เกิดเมื่อสคริปต์ throw ออกมาโดยไม่ถูกดัก
+      // เช่นตอนจองล็อกไม่ได้) — เอาโค้ด HTML ดิบมาโชว์ไม่ช่วยอะไรเจ้าหน้าที่ ให้ข้อความที่ทำตามได้แทน
+      // แล้วเก็บของดิบไว้ใน console เผื่อต้องดีบักทีหลัง
+      console.error('staff search: non-JSON response', rawText.substring(0, 1000));
+      status.textContent = '❌ ระบบไม่ว่างชั่วคราว (อาจมีผู้ใช้งานพร้อมกันหลายคน) กรุณารอสักครู่แล้วกดค้นหาอีกครั้ง';
       return;
     }
 
