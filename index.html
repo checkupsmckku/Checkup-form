@@ -5981,20 +5981,29 @@ async function doStaffSearch() {
   status.textContent = ''; results.innerHTML = '';
 
   try {
-    const res  = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'search', q: q, staffKey: staffKey }),
-      headers: { 'Content-Type': 'text/plain' }
-    });
-    const rawText = await res.text();
+    // บางครั้ง Google ตอบกลับเป็นหน้า HTML ("ไม่พบเพจ") พร้อม HTTP 200 แทน JSON เมื่อมีคำขอเข้ามา
+    // พร้อมกันหลายอัน — เป็นพฤติกรรมฝั่ง Google เอง ไม่ใช่ error ในสคริปต์เรา จึงแก้ที่ Apps Script ไม่ได้
+    // (วัดจริง 2026-08-05: ยิงเรียงทีละอัน 10 ครั้งผ่านหมด, ยิงพร้อมกัน 10 อันพลาดราว 1 อัน)
+    // การค้นหาเป็นการอ่านอย่างเดียว ไม่ได้เขียนอะไรลงชีต จึงยิงซ้ำได้ปลอดภัยไม่มีผลข้างเคียง
+    let json = null, lastRaw = '';
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      if (attempt > 1) {
+        btn.textContent = '⏳ กำลังลองใหม่ (' + attempt + '/3)...';
+        await new Promise(function(r) { setTimeout(r, attempt * 700); });
+      }
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'search', q: q, staffKey: staffKey }),
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      lastRaw = await res.text();
+      try { json = JSON.parse(lastRaw); break; } catch(parseErr) { json = null; }
+    }
     btn.disabled = false; btn.textContent = 'ค้นหา';
-    let json;
-    try { json = JSON.parse(rawText); }
-    catch(parseErr) {
-      // Apps Script ตอบเป็นหน้า HTML แจ้ง error แทน JSON (เกิดเมื่อสคริปต์ throw ออกมาโดยไม่ถูกดัก
-      // เช่นตอนจองล็อกไม่ได้) — เอาโค้ด HTML ดิบมาโชว์ไม่ช่วยอะไรเจ้าหน้าที่ ให้ข้อความที่ทำตามได้แทน
-      // แล้วเก็บของดิบไว้ใน console เผื่อต้องดีบักทีหลัง
-      console.error('staff search: non-JSON response', rawText.substring(0, 1000));
+    if (!json) {
+      // ยังไม่ได้ JSON หลังลอง 3 ครั้ง — เอาโค้ด HTML ดิบมาโชว์ไม่ช่วยอะไรเจ้าหน้าที่
+      // ให้ข้อความที่ทำตามได้แทน แล้วเก็บของดิบไว้ใน console เผื่อต้องดีบักทีหลัง
+      console.error('staff search: non-JSON response after 3 attempts', lastRaw.substring(0, 1000));
       status.textContent = '❌ ระบบไม่ว่างชั่วคราว (อาจมีผู้ใช้งานพร้อมกันหลายคน) กรุณารอสักครู่แล้วกดค้นหาอีกครั้ง';
       return;
     }
