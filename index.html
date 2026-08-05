@@ -5962,9 +5962,6 @@ function staffSummaryOutside(e) {
   if (e.target === document.getElementById('staffSummaryModal')) closeStaffSummary();
 }
 
-// จำนวนผลลัพธ์สูงสุดที่ backend คืนให้ (ต้องตรงกับ slice(0, 30) ใน sortForStaffView() ของ ลงทะเบียน.js เสมอ
-// เพราะฝั่ง backend ไม่ได้บอกว่าผลลัพธ์ถูกตัดหรือไม่ ฝั่งนี้เลยต้องเดาจากจำนวนที่เท่ากับ cap พอดี)
-const STAFF_SEARCH_RESULT_LIMIT = 30;
 async function doStaffSearch() {
   const q = (document.getElementById('staffSearchInput').value || '').trim();
   const staffKey = (document.getElementById('staffSearchKey').value || '').trim();
@@ -6025,8 +6022,7 @@ async function doStaffSearch() {
       return;
     }
 
-    status.textContent = 'พบ ' + items.length + ' รายการ (คลิกเพื่อดูใบสรุป)'
-      + (items.length >= STAFF_SEARCH_RESULT_LIMIT ? ' — อาจมีรายการที่ตกหล่น เนื่องจากระบบแสดงผลเฉพาะ ' + STAFF_SEARCH_RESULT_LIMIT + ' รายการล่าสุดเท่านั้น กรุณาค้นหาให้เจาะจงขึ้น เช่น เพิ่มชื่อจริงหรือระบุ HN' : '');
+    status.textContent = 'พบ ' + items.length + ' รายการ (คลิกเพื่อดูใบสรุป)';
     results.innerHTML = items.map(function(r, i) {
       const hnBadge = r.hn ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400"> (HN: ' + escHtml(r.hn) + ')</span>' : '';
       return '<div onclick="showStaffSummary(' + i + ')"'
@@ -6473,7 +6469,7 @@ function printStaffSummary() {
       </div>
       <div style="display:flex;gap:8px">
         <input type="text" id="staffSearchInput"
-          placeholder="เช่น สมชาย, AB1234..."
+          placeholder="ค้นด้วย ชื่อ / นามสกุล / HN / เลขบัตรประชาชน"
           style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit"
           onkeydown="if(event.key==='Enter') doStaffSearch()">
         <button onclick="doStaffSearch()" id="staffSearchBtn"
