@@ -4884,7 +4884,8 @@ function handleSubmit(e) {
     oldFirstName:  subOldFirst,
     oldLastName:   subOldLast,
     // โปรแกรม
-    program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(g === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}` : '',
+    // หมายเหตุ: ต้องเทียบ selectedGender ('male'/'female') ไม่ใช่ g เพราะ g ถูกแปลงเป็นภาษาไทย ('ชาย'/'หญิง') ไปแล้วที่บรรทัดด้านบน
+    program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}` : '',
     total:         totalTxt,
     additionalItems: addList.map(x => {
       const t = TESTS.find(tt => tt.name === x.th);
@@ -5961,6 +5962,9 @@ function staffSummaryOutside(e) {
   if (e.target === document.getElementById('staffSummaryModal')) closeStaffSummary();
 }
 
+// จำนวนผลลัพธ์สูงสุดที่ backend คืนให้ (ต้องตรงกับ slice(0, 30) ใน sortForStaffView() ของ ลงทะเบียน.js เสมอ
+// เพราะฝั่ง backend ไม่ได้บอกว่าผลลัพธ์ถูกตัดหรือไม่ ฝั่งนี้เลยต้องเดาจากจำนวนที่เท่ากับ cap พอดี)
+const STAFF_SEARCH_RESULT_LIMIT = 30;
 async function doStaffSearch() {
   const q = (document.getElementById('staffSearchInput').value || '').trim();
   const staffKey = (document.getElementById('staffSearchKey').value || '').trim();
@@ -6021,7 +6025,8 @@ async function doStaffSearch() {
       return;
     }
 
-    status.textContent = 'พบ ' + items.length + ' รายการ (คลิกเพื่อดูใบสรุป)';
+    status.textContent = 'พบ ' + items.length + ' รายการ (คลิกเพื่อดูใบสรุป)'
+      + (items.length >= STAFF_SEARCH_RESULT_LIMIT ? ' — อาจมีรายการที่ตกหล่น เนื่องจากระบบแสดงผลเฉพาะ ' + STAFF_SEARCH_RESULT_LIMIT + ' รายการล่าสุดเท่านั้น กรุณาค้นหาให้เจาะจงขึ้น เช่น เพิ่มชื่อจริงหรือระบุ HN' : '');
     results.innerHTML = items.map(function(r, i) {
       const hnBadge = r.hn ? '<span style="font-size:12px;color:var(--text-muted);font-weight:400"> (HN: ' + escHtml(r.hn) + ')</span>' : '';
       return '<div onclick="showStaffSummary(' + i + ')"'
@@ -6091,12 +6096,20 @@ function showStaffSummary(idx) {
   let papKey;
   if (staffProg) {
     if (genderTxt === 'ชาย') {
-      staffBasePrice = staffProg.male;
+      // เช่นเดียวกับฝั่งหญิง: คำนวณย้อนหลังจากยอดรวมที่บันทึกไว้ในชีต แทนการอ่านราคาจากตาราง PROGRAMS
+      // ปัจจุบัน เพราะ PROGRAMS แก้ไขได้ (ราคาไหลลื่นตามเวลา) ส่วนยอดรวมในชีตคือค่าประวัติศาสตร์ ณ วันลงทะเบียนจริง
+      const staffBaseFromTotal = !isNaN(totalNum) ? Math.round((totalNum - addItemsSum) * 100) / 100 : NaN;
+      staffBasePrice = (!isNaN(staffBaseFromTotal) && staffBaseFromTotal > 0) ? staffBaseFromTotal : staffProg.male;
     } else if (!isNaN(totalNum)) {
       staffBasePrice = Math.round((totalNum - addItemsSum) * 100) / 100;
       const extra = Math.round((staffBasePrice - staffProg.femaleNo) * 100) / 100;
       papKey = Object.keys(PAP_EXTRA).find(function(k) { return PAP_EXTRA[k] === extra; });
       if (papKey === 'no') papKey = undefined;
+      // ถ้าจับคู่ตัวเลขไม่ได้ (เช่น PROGRAMS ถูกแก้ราคาไปหลังจากบันทึกแถวนี้) ให้เดาจากข้อความในชื่อโปรแกรมแทน
+      // ซึ่งเป็นข้อมูลประวัติศาสตร์ที่บันทึกไว้ในชีต ณ วันลงทะเบียนจริง
+      if (!papKey) {
+        papKey = Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; });
+      }
     } else {
       // fallback สำหรับกรณีไม่มียอดรวม (ไม่ควรเกิดกับข้อมูลจริง): เดาจากข้อความในชื่อโปรแกรม
       papKey = Object.keys(PAP_LABELS).find(function(k) { return (r.program || '').indexOf(PAP_LABELS[k]) !== -1; });
@@ -6203,6 +6216,11 @@ function printStaffSummary() {
   const dateStr = document.getElementById('staffSummaryDate').textContent;
   const content = document.getElementById('staffSummaryCard').innerHTML;
   const w = window.open('', '_blank');
+  // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
+    return;
+  }
   w.document.write('<!DOCTYPE html><html><head>'
     + '<meta charset="utf-8"><title>' + escHtml(title) + '</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
