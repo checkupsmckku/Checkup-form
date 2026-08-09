@@ -6221,7 +6221,7 @@ function printStaffSummary() {
     + '<meta charset="utf-8"><title>' + escHtml(title) + '</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>'
-    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px;max-width:720px}'
+    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px auto;max-width:720px}'
     + 'h2{font-size:18px;color:#001D3D;margin:0 0 4px}'
     + '.sub{font-size:12px;color:#666;margin-bottom:16px;border-bottom:2px solid #001D3D;padding-bottom:10px}'
     + '.sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee}'
@@ -6238,7 +6238,11 @@ function printStaffSummary() {
     + '.sr-total-row{display:flex;justify-content:space-between;align-items:center;background:#E8F5F7;border-radius:9px;padding:10px 14px;margin-top:14px}'
     + '.sr-total-label{font-weight:800;color:#00575E;font-size:15px}'
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
-    + '@media print{body{margin:0}'
+    // ขอบกระดาษเท่ากันทุกด้านตอนพิมพ์ (ใช้เมื่อผู้ใช้เลือก margin "Default" ในกล่องพิมพ์)
+    + '@page{margin:12mm}'
+    // margin:0 auto = จัดกึ่งกลาง ห้ามใช้ margin:0 เฉยๆ ไม่งั้นถ้าผู้ใช้ตั้ง margin เป็น "None"
+    // เนื้อหากว้าง 720px จะไปกองชิดซ้ายแล้วเหลือช่องว่าง ~74px ที่ขวาข้างเดียว (เจอจริง 2026-08-09)
+    + '@media print{body{margin:0 auto}'
     + '.sr-total-row{page-break-inside:avoid;break-inside:avoid;page-break-before:avoid;break-before:avoid}'
     + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}'
     + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}}'
