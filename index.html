@@ -1809,6 +1809,11 @@
     .modal-footer { justify-content: center; }
   }
 
+  /* ล็อกขอบกระดาษไว้ 10mm (≈ ค่า default ของ Chrome อยู่แล้ว จึงไม่เปลี่ยนหน้าตาหน้าแรก)
+     เพื่อให้พื้นที่พิมพ์แน่นอน ≈ 718×1047 px — ถ้าปล่อยให้ margin ในกล่องพิมพ์กว้างกว่านี้
+     หน้ากระดาษจะเตี้ยลงจนกล่องติดต่อหลุดไปหน้าถัดไป (วัดจริง: prep-section สูง 875 px) */
+  @page { margin: 10mm; }
+
   @media print {
     /* ── Layout reset ── */
     .modal-overlay { position: static; background: none; backdrop-filter: none; padding: 0; }
@@ -1831,7 +1836,10 @@
 
     /* ── Keep prep cards together ── */
     .prep-card, .prep-info-card { page-break-inside: avoid; break-inside: avoid; }
-    .prep-contact { page-break-inside: avoid; break-inside: avoid; }
+    /* กล่องติดต่อห้ามถูกตัดกลางหน้า — กันทั้งตัวกล่องและทุกชิ้นข้างใน */
+    .prep-contact, .prep-contact-cards, .contact-mini-card, .prep-happiness {
+      page-break-inside: avoid; break-inside: avoid;
+    }
 
     /* ── Compact prep section to fit contact on page 2 ── */
     .prep-section { padding: 10px 16px; font-size: 11px; }
@@ -1851,10 +1859,11 @@
     .prep-contact-title { font-size: 12.5px !important; margin-bottom: 6px !important; }
     .prep-happiness { font-size: 13px !important; margin-top: 6px !important; }
 
-    /* ── ย่อการ์ดติดต่อให้เรียงแนวนอน ลดความสูงรวม เพื่อให้ติดหน้าเดียวกับ prep-section ── */
+    /* ── ย่อการ์ดติดต่อ ลดความสูงรวม เพื่อให้ติดหน้าเดียวกับ prep-section ──
+       การเรียงแนวนอนอยู่ที่ inline style ของ markup แล้ว ที่นี่แค่ห้ามตกบรรทัดตอนพิมพ์ ── */
     .prep-contact-cards {
-      flex-direction: row !important;
-      max-width: 460px !important;
+      flex-wrap: nowrap !important;
+      max-width: 560px !important;
       gap: 8px !important;
     }
     .contact-mini-card {
@@ -6386,9 +6395,12 @@ function printStaffSummary() {
 
       <div class="prep-contact">
         <div class="prep-contact-title" style="font-size:15px;font-weight:800;color:#1A3C34;margin-bottom:16px">หากมีข้อสงสัยเพิ่มเติม กรุณาติดต่อ<br><span style="font-weight:500;font-size:13px;color:#2E7D60">ในวันและเวลาราชการ</span></div>
-        <div class="prep-contact-cards" style="display:flex;flex-direction:column;gap:12px;align-items:stretch;max-width:280px;margin:0 auto">
+        <!-- LINE ซ้าย / โทรศัพท์ ขวา — เรียงแนวนอนใน markup เลย เดิมเป็น column แล้วพึ่ง @media print
+             สั่ง row ทับ ซึ่งผลที่ผู้ใช้พิมพ์ออกมาจริงยังเป็นแนวตั้ง (หาสาเหตุไม่ได้) กล่องเลยสูงจนหลุดไปหน้าถัดไป
+             — จอแคบ flex-wrap จะซ้อนเองอัตโนมัติ -->
+        <div class="prep-contact-cards" style="display:flex;flex-direction:row;flex-wrap:wrap;gap:12px;align-items:stretch;justify-content:center;max-width:600px;margin:0 auto">
           <!-- LINE card -->
-          <div class="contact-mini-card" style="display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #B2DFDB;border-radius:12px;padding:12px 16px;box-shadow:0 2px 6px rgba(6,199,85,0.10)">
+          <div class="contact-mini-card" style="flex:1 1 270px;min-width:0;display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #B2DFDB;border-radius:12px;padding:12px 16px;box-shadow:0 2px 6px rgba(6,199,85,0.10)">
             <!-- Official LINE logo: rounded rect chat bubble with tail -->
             <div style="background:#06C755;border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(6,199,85,0.35)">
               <svg width="26" height="26" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -6406,7 +6418,7 @@ function printStaffSummary() {
             </div>
           </div>
           <!-- Phone card -->
-          <div class="contact-mini-card" style="display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #B2DFDB;border-radius:12px;padding:12px 16px;box-shadow:0 2px 6px rgba(45,52,129,0.07)">
+          <div class="contact-mini-card" style="flex:1 1 270px;min-width:0;display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #B2DFDB;border-radius:12px;padding:12px 16px;box-shadow:0 2px 6px rgba(45,52,129,0.07)">
             <div style="background:#2D3481;border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(45,52,129,0.25)">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.72A2 2 0 012.18 1h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 8.09a16 16 0 006 6l.55-.55a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
             </div>
