@@ -1988,6 +1988,25 @@
   }
   .staff-fab:hover { background:#003366; transform:translateY(-2px); }
   @media print { .staff-fab { display:none !important; } }
+
+  /* ── Prep Instructions Floating Button (ผู้รับบริการ) ── */
+  /* เลียนแบบ .staff-fab แต่ใช้สีต่างกันเพื่อแยกว่าเป็นปุ่มสำหรับผู้รับบริการ ไม่ใช่เจ้าหน้าที่
+     ⚠ มุมขวาล่างมีปุ่มลอยอยู่แล้ว 2 ตัว ต้องเรียงต่อกันไม่ให้ทับ (วัดกับหน้า live จริงแล้ว):
+       .staff-fab      bottom:24px  สูง 42px → กิน 24–66
+       .back-to-bottom bottom:82px  สูง 44px → กิน 82–126  (z-index 999 ทับทุกอย่าง)
+       .prep-fab       bottom:142px สูง 42px → กิน 142–184 (ห่างกันช่องละ 16px เท่ากัน)
+     ถ้าเพิ่มปุ่มลอยตัวใหม่อีก ต้องวัดต่อจาก 184px ขึ้นไป */
+  .prep-fab {
+    position:fixed; bottom:142px; right:24px;
+    background:#00575E; color:#fff;
+    border:none; border-radius:50px;
+    padding:12px 20px; font-size:14px; font-weight:700;
+    cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,0.28);
+    z-index:900; display:flex; align-items:center; gap:6px;
+    transition:background 0.2s,transform 0.15s; font-family:inherit;
+  }
+  .prep-fab:hover { background:#00787f; transform:translateY(-2px); }
+  @media print { .prep-fab { display:none !important; } }
 </style>
 </head>
 <body>
@@ -6003,7 +6022,9 @@ function showSuccessModal(data) {
 
   // บันทึก summary HTML ไว้ใน sessionStorage แล้ว redirect ไป survey
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
-  const prepEl = document.querySelector('.prep-section');
+  // ระบุ #successModal ให้ชัด — หลัง 2026-08-18 มี .prep-section สำเนาอยู่ในใบสรุปเจ้าหน้าที่
+  // และป็อปอัปคำแนะนำของผู้ป่วยด้วย ถ้าใช้ selector กว้างๆ อาจหยิบสำเนาแทนตัวต้นฉบับ
+  const prepEl = document.querySelector('#successModal .prep-section');
   try { sessionStorage.setItem('regSummaryHtml', html); } catch(e) {}
   try { sessionStorage.setItem('regSummaryTitle', modalTitle); } catch(e) {}
   try { sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : ''); } catch(e) {}
@@ -6133,6 +6154,53 @@ function closeProgDetail() {
 
 function closeProgDetailOutside(e) {
   if (e.target === document.getElementById('progDetailOverlay')) closeProgDetail();
+}
+
+// ─── ป็อปอัปคำแนะนำก่อนตรวจ สำหรับผู้รับบริการ ────────────────────────────────
+// เนื้อหายกมาจากบล็อกต้นฉบับใน #successModal ตอนเปิด (ไม่ก๊อปข้อความมาเขียนซ้ำ)
+function openPrepModal() {
+  const src = document.querySelector('#successModal .prep-section');
+  const body = document.getElementById('prepModalBody');
+  if (!src || !body) return;
+  body.innerHTML = src.outerHTML;
+  document.getElementById('prepModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePrepModal() {
+  document.getElementById('prepModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// คลิกพื้นที่นอกกล่องเพื่อปิด (ให้ตรงกับพฤติกรรมของ modal อื่นในหน้านี้)
+function closePrepOutside(e) {
+  if (e.target && e.target.id === 'prepModal') closePrepModal();
+}
+
+// พิมพ์เฉพาะคำแนะนำ — เปิดหน้าต่างใหม่แล้วยัด CSS ของบล็อกนี้เข้าไป
+// (ใช้ window.print() ตรงๆ ไม่ได้ เพราะจะพิมพ์ทั้งหน้าฟอร์มออกมาด้วย)
+// วิธีปิดเอกสาร/สั่งพิมพ์ให้ตรงกับ printStaffSummary() เป๊ะ (ผ่านการทดสอบพิมพ์จริงกับผู้ใช้มาแล้ว)
+function printPrepOnly() {
+  const src = document.querySelector('#successModal .prep-section');
+  if (!src) return;
+  const w = window.open('', '_blank');
+  // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
+    return;
+  }
+  w.document.write('<!DOCTYPE html><html><head>'
+    + '<meta charset="utf-8"><title>การเตรียมตัวก่อนตรวจสุขภาพ</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
+    + '<style>'
+    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px auto;max-width:720px}'
+    + collectPrepCss()
+    + '@page{margin:12mm}'
+    + '</style></head><body>'
+    + src.outerHTML
+    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '</body></html>');
+  w.document.close();
 }
 
 // ─── Staff Search ──────────────────────────────────────────────────────────────
@@ -6411,10 +6479,42 @@ function showStaffSummary(idx) {
   // ── ยอดรวม ──
   html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(r.total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
 
+  // ── คำแนะนำก่อนตรวจ ── ยกบล็อกเดียวกับใบสรุปผู้ป่วยมาต่อท้าย เพื่อให้เจ้าหน้าที่พิมพ์แจกได้ในใบเดียว
+  // ใช้ outerHTML ของตัวต้นฉบับ ไม่ก๊อปข้อความมาเขียนซ้ำ (แก้ที่เดียวแล้วเปลี่ยนทุกที่)
+  const prepSrc = document.querySelector('#successModal .prep-section');
+  if (prepSrc) html += '<div class="sr-prep-wrap">' + prepSrc.outerHTML + '</div>';
+
   document.getElementById('staffSummaryCard').innerHTML = html;
   document.getElementById('staffSummaryModal').style.display = 'flex';
   document.getElementById('staffSearchModal').style.display = 'none';
   document.body.style.overflow = 'hidden';
+}
+
+// ดึงกฎ CSS ที่เกี่ยวกับบล็อกคำแนะนำก่อนตรวจ จากสไตล์ชีตของหน้าเว็บเอง
+// เพื่อยัดเข้าไปในหน้าต่างพิมพ์ (window.open ได้เอกสารเปล่า ไม่มี CSS ของหน้าหลักติดไปด้วย)
+// ทำแบบนี้แทนการก๊อป CSS ไปแปะ เพราะกฎชุดนี้มี 50+ ข้อและถูกแก้บ่อย — ดึงสดจึงไม่มีวันตกรุ่น
+function collectPrepCss() {
+  var out = '';
+  var wanted = /\.prep-|\.contact-mini-card|\.female-only-card|\.sr-prep-wrap/;
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    var rules;
+    try { rules = sheets[i].cssRules; } catch (e) { continue; }   // สไตล์ชีตข้ามโดเมนอ่านไม่ได้ ข้ามไป
+    if (!rules) continue;
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      if (rule.selectorText && wanted.test(rule.selectorText)) {
+        out += rule.cssText + '\n';
+      } else if (rule.cssRules) {
+        // กฎที่อยู่ใน @media (โดยเฉพาะ @media print ที่มีการจัดหน้าของบล็อกนี้อยู่)
+        for (var k = 0; k < rule.cssRules.length; k++) {
+          var inner = rule.cssRules[k];
+          if (inner.selectorText && wanted.test(inner.selectorText)) out += inner.cssText + '\n';
+        }
+      }
+    }
+  }
+  return out;
 }
 
 function printStaffSummary() {
@@ -6448,6 +6548,9 @@ function printStaffSummary() {
     + '.sr-total-row{display:flex;justify-content:space-between;align-items:center;background:#E8F5F7;border-radius:9px;padding:10px 14px;margin-top:14px}'
     + '.sr-total-label{font-weight:800;color:#00575E;font-size:15px}'
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
+    // คำแนะนำก่อนตรวจขึ้นหน้าใหม่เสมอ ไม่ให้ไปแทรกกลางรายการตรวจ (พฤติกรรมเดียวกับใบสรุปผู้ป่วย)
+    + '.sr-prep-wrap{page-break-before:always;break-before:page;margin-top:0}'
+    + collectPrepCss()
     // ขอบกระดาษเท่ากันทุกด้านตอนพิมพ์ (ใช้เมื่อผู้ใช้เลือก margin "Default" ในกล่องพิมพ์)
     + '@page{margin:12mm}'
     // margin:0 auto = จัดกึ่งกลาง ห้ามใช้ margin:0 เฉยๆ ไม่งั้นถ้าผู้ใช้ตั้ง margin เป็น "None"
@@ -6661,10 +6764,33 @@ function printStaffSummary() {
 </div>
 
 
+<!-- ─── Prep Instructions Floating Button (ผู้รับบริการ) ─── -->
+<button class="prep-fab" onclick="openPrepModal()" title="ดูคำแนะนำการเตรียมตัวก่อนตรวจสุขภาพ">
+  📋 <span>คำแนะนำก่อนตรวจ</span>
+</button>
+
 <!-- ─── Staff Search Floating Button ─── -->
 <button class="staff-fab" onclick="openStaffSearch()" title="ค้นหาใบสรุปผู้ลงทะเบียน">
   🔍 <span>ค้นหาใบสรุป</span>
 </button>
+
+<!-- ─── ป็อปอัปคำแนะนำก่อนตรวจ (ผู้รับบริการเปิดดูเองได้ตลอด ไม่ต้องลงทะเบียนก่อน) ─── -->
+<div class="modal-overlay" id="prepModal" style="display:none" onclick="closePrepOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">📋 การเตรียมตัวก่อนตรวจสุขภาพ</div>
+        <div class="modal-subtitle">อ่านก่อนวันเข้ารับบริการ</div>
+      </div>
+      <button class="modal-close-btn" onclick="closePrepModal()" title="ปิด">✕</button>
+    </div>
+    <div id="prepModalBody"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn-modal-print" onclick="printPrepOnly()">🖨 พิมพ์คำแนะนำ</button>
+      <button type="button" class="btn-modal-close" onclick="closePrepModal()">ปิด</button>
+    </div>
+  </div>
+</div>
 
 <!-- ─── Staff Search Modal ─── -->
 <div class="modal-overlay" id="staffSearchModal" style="display:none" onclick="staffSearchOutside(event)">
