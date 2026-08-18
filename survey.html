@@ -291,6 +291,9 @@ async function submitSurvey() {
         action: 'survey',
         firstName: sessionStorage.getItem('regFirstName') || '',
         lastName:  sessionStorage.getItem('regLastName')  || '',
+        // วันที่นัดหมายเข้ารับบริการ ส่งต่อมาจาก index.html เพื่อบันทึกลงชีต 'แบบประเมิน'
+        // (ถ้าเปิดหน้านี้ตรงๆ โดยไม่ผ่านการลงทะเบียน จะเป็นค่าว่าง — ยอมรับได้)
+        serviceDate: sessionStorage.getItem('regServiceDate') || '',
         q1: answers['q1'] || '',
         q2: answers['q2'] || '',
         q3: answers['q3'] || '',

@@ -1991,13 +1991,12 @@
 
   /* ── Prep Instructions Floating Button (ผู้รับบริการ) ── */
   /* เลียนแบบ .staff-fab แต่ใช้สีต่างกันเพื่อแยกว่าเป็นปุ่มสำหรับผู้รับบริการ ไม่ใช่เจ้าหน้าที่
-     ⚠ มุมขวาล่างมีปุ่มลอยอยู่แล้ว 2 ตัว ต้องเรียงต่อกันไม่ให้ทับ (วัดกับหน้า live จริงแล้ว):
-       .staff-fab      bottom:24px  สูง 42px → กิน 24–66
-       .back-to-bottom bottom:82px  สูง 44px → กิน 82–126  (z-index 999 ทับทุกอย่าง)
-       .prep-fab       bottom:142px สูง 42px → กิน 142–184 (ห่างกันช่องละ 16px เท่ากัน)
-     ถ้าเพิ่มปุ่มลอยตัวใหม่อีก ต้องวัดต่อจาก 184px ขึ้นไป */
+     ⚠ วางไว้ "มุมซ้ายล่าง" โดยตั้งใจ เพราะมุมขวาล่างมีปุ่มลอยของระบบอยู่แล้ว 2 ตัว
+       (.staff-fab bottom:24px และ .back-to-bottom bottom:82px ซึ่ง z-index 999)
+     เคยลองวางซ้อนชั้นที่ bottom:142px ฝั่งขวา — ไม่ทับกันตามการวัด แต่ผู้ใช้เห็นแล้วรู้สึกว่าเบียดกัน
+     ย้ายมาคนละมุมจึงชัดเจนกว่า และไม่ต้องคอยคำนวณตำแหน่งใหม่ทุกครั้งที่ระบบเพิ่มปุ่มลอยฝั่งขวา */
   .prep-fab {
-    position:fixed; bottom:142px; right:24px;
+    position:fixed; bottom:24px; left:24px;
     background:#00575E; color:#fff;
     border:none; border-radius:50px;
     padding:12px 20px; font-size:14px; font-weight:700;
@@ -2482,7 +2481,9 @@
              "มี HN" และ "ไม่มี HN" — ข้อมูลชุดนี้เปลี่ยนได้ทุกปี ต่างจากสัญชาติ/เชื้อชาติที่ถามครั้งเดียวพอ
              ถ้าย้ายกลับเข้าไปใน fullInfoSection เมื่อไร ผู้ป่วยที่มี HN จะไม่ถูกถามอีกและคอลัมน์ในชีตจะว่าง -->
 
-        <!-- ── หมู่เลือด ── -->
+        <!-- ── หมู่เลือด ── ซ่อนในโหมด "มี HN" (โรงพยาบาลมีข้อมูลหมู่เลือดของผู้ป่วยอยู่แล้ว)
+             ต่างจากโรคประจำตัว/ประวัติแพ้ยา ที่ยังต้องถามทุกครั้งเพราะเปลี่ยนได้ทุกปี — ซ่อน/แสดงที่ toggleHN() -->
+        <div id="bloodGroupBlock">
         <div class="sub-section-label">หมู่เลือด</div>
         <div class="field-group" style="margin-bottom:10px">
           <label>หมู่เลือด</label>
@@ -2496,6 +2497,18 @@
             <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="toggleBloodOther(false)"> ไม่เคยตรวจ</label>
           </div>
           <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
+        </div>
+        </div><!-- /bloodGroupBlock -->
+
+        <!-- ── โรคประจำตัว ── -->
+        <div class="sub-section-label">โรคประจำตัว</div>
+        <div class="field-group" style="margin-bottom:14px">
+          <label>โรคประจำตัว <span class="req">*</span></label>
+          <div class="chip-radio-group">
+            <label class="chip-radio safe"><input type="radio" name="chronicDisease" value="none" onchange="toggleChronicDisease(false)"> ไม่มี</label>
+            <label class="chip-radio allergy"><input type="radio" name="chronicDisease" value="yes" onchange="toggleChronicDisease(true)"> มี (ระบุ)</label>
+          </div>
+          <input type="text" id="chronicDiseaseDetail" class="inline-input full" placeholder="ระบุโรคประจำตัว เช่น เบาหวาน ความดันโลหิตสูง" style="display:none;margin-top:6px">
         </div>
 
         <!-- ── ประวัติการแพ้ยาและอาหาร ── -->
@@ -2515,17 +2528,6 @@
         <div class="field-group" style="margin-bottom:14px">
           <label>ประวัติการแพ้อาหาร</label>
           <input type="text" id="foodAllergy" placeholder="ระบุอาหารที่แพ้ (ถ้าไม่มี เว้นว่างได้)">
-        </div>
-
-        <!-- ── โรคประจำตัว ── -->
-        <div class="sub-section-label">โรคประจำตัว</div>
-        <div class="field-group" style="margin-bottom:14px">
-          <label>โรคประจำตัว <span class="req">*</span></label>
-          <div class="chip-radio-group">
-            <label class="chip-radio safe"><input type="radio" name="chronicDisease" value="none" onchange="toggleChronicDisease(false)"> ไม่มี</label>
-            <label class="chip-radio allergy"><input type="radio" name="chronicDisease" value="yes" onchange="toggleChronicDisease(true)"> มี (ระบุ)</label>
-          </div>
-          <input type="text" id="chronicDiseaseDetail" class="inline-input full" placeholder="ระบุโรคประจำตัว เช่น เบาหวาน ความดันโลหิตสูง" style="display:none;margin-top:6px">
         </div>
 
       </div>
@@ -5408,6 +5410,12 @@ function toggleHN(hasHN) {
     if (ageEl) ageEl.setAttribute('required', '');
   }
 
+  // หมู่เลือด: ซ่อนในโหมด "มี HN" เพราะโรงพยาบาลมีข้อมูลอยู่แล้ว
+  // ไม่ล้างค่าที่ผู้ป่วยเผลอเลือกไว้ก่อนสลับโหมด (เป็นข้อมูลจริง เก็บลงชีตได้ ไม่เสียหาย)
+  // — พฤติกรรมเดียวกับช่องอื่นใน fullInfoSection ที่ถูกซ่อนแต่ยังส่งค่าเดิม
+  const bloodBlock = document.getElementById('bloodGroupBlock');
+  if (bloodBlock) bloodBlock.style.display = hasHN ? 'none' : 'block';
+
   if (hasHN) {
     // ซ่อน fullInfoSection (วันเกิด, ที่อยู่ ฯลฯ) แต่คงชื่อ-นามสกุลไว้
     if (fullInfo) fullInfo.style.display = 'none';
@@ -6029,6 +6037,8 @@ function showSuccessModal(data) {
   try { sessionStorage.setItem('regSummaryTitle', modalTitle); } catch(e) {}
   try { sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : ''); } catch(e) {}
   // ใช้ชื่อหลังแก้ไข (โหมด HN) ถ้ามี — ให้หน้าแบบประเมินแสดงชื่อตรงกับที่บันทึกลงชีตจริง
+  // ส่งวันที่นัดหมายต่อให้ survey.html ด้วย เพื่อบันทึกลงชีต 'แบบประเมิน' (เพิ่ม 2026-08-18)
+  try { sessionStorage.setItem('regServiceDate', data.serviceDate || document.getElementById('serviceDate')?.value || ''); } catch(e) {}
   try { sessionStorage.setItem('regFirstName', data.firstName || document.getElementById('firstName')?.value || ''); } catch(e) {}
   try { sessionStorage.setItem('regLastName',  data.lastName  || document.getElementById('lastName')?.value  || ''); } catch(e) {}
   console.log('[SUBMIT] redirecting to survey.html...');
@@ -6193,8 +6203,12 @@ function printPrepOnly() {
     + '<meta charset="utf-8"><title>การเตรียมตัวก่อนตรวจสุขภาพ</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>'
-    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px auto;max-width:720px}'
+    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:0 auto;max-width:720px}'
     + collectPrepCss()
+    // หน้าต่างนี้มี "บล็อกคำแนะนำ" อยู่อย่างเดียว จึงต้องล้างกฎขึ้นหน้าใหม่ที่ยกมาจาก @media print
+    // ของหน้าเว็บ (ที่นั่นหน้าแรกเป็นใบสรุป คำแนะนำจึงต้องขึ้นหน้าใหม่) ถ้าไม่ล้าง จะได้หน้าเปล่านำ 1 หน้า
+    // → รวมเป็น 2 หน้าทั้งที่เนื้อหาพอดีหน้าเดียว
+    + '.prep-section{page-break-before:auto!important;break-before:auto!important;margin:0!important}'
     + '@page{margin:12mm}'
     + '</style></head><body>'
     + src.outerHTML
@@ -6479,10 +6493,9 @@ function showStaffSummary(idx) {
   // ── ยอดรวม ──
   html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(r.total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
 
-  // ── คำแนะนำก่อนตรวจ ── ยกบล็อกเดียวกับใบสรุปผู้ป่วยมาต่อท้าย เพื่อให้เจ้าหน้าที่พิมพ์แจกได้ในใบเดียว
-  // ใช้ outerHTML ของตัวต้นฉบับ ไม่ก๊อปข้อความมาเขียนซ้ำ (แก้ที่เดียวแล้วเปลี่ยนทุกที่)
-  const prepSrc = document.querySelector('#successModal .prep-section');
-  if (prepSrc) html += '<div class="sr-prep-wrap">' + prepSrc.outerHTML + '</div>';
+  // หมายเหตุ: เคยต่อบล็อก "คำแนะนำก่อนตรวจ" ท้ายใบสรุปเจ้าหน้าที่ แต่ user สั่งยกเลิกเมื่อ 2026-08-18
+  // ใบสรุปเจ้าหน้าที่จึงมีแค่ข้อมูลผู้ป่วย/รายการตรวจ/ยอดรวมเหมือนเดิม
+  // ผู้รับบริการยังเปิดอ่าน/พิมพ์คำแนะนำเองได้จากปุ่มลอย "คำแนะนำก่อนตรวจ" (openPrepModal)
 
   document.getElementById('staffSummaryCard').innerHTML = html;
   document.getElementById('staffSummaryModal').style.display = 'flex';
@@ -6506,7 +6519,13 @@ function collectPrepCss() {
       if (rule.selectorText && wanted.test(rule.selectorText)) {
         out += rule.cssText + '\n';
       } else if (rule.cssRules) {
-        // กฎที่อยู่ใน @media (โดยเฉพาะ @media print ที่มีการจัดหน้าของบล็อกนี้อยู่)
+        // กฎที่อยู่ใน @media — เก็บเฉพาะกลุ่มที่ใช้กับ "การพิมพ์" เท่านั้น
+        // ⚠ ห้ามเหมาทุกกลุ่ม: @media (max-width:650px) มี `.prep-grid{grid-template-columns:1fr}`
+        //   ถ้าเก็บมาด้วย มันจะกลายเป็นกฎไม่มีเงื่อนไขในหน้าต่างพิมพ์ (ซึ่งกว้าง 700+ px)
+        //   ทำให้การ์ดคำแนะนำเรียงเหลือคอลัมน์เดียว ความสูงเกือบเท่าตัว จนล้นไปหน้าที่ 2
+        //   (เจอจริงจากที่ผู้ใช้ส่งภาพหน้าพิมพ์มาให้ดู 2026-08-18)
+        var cond = (rule.conditionText || (rule.media && rule.media.mediaText) || '').toString();
+        if (/width|screen/i.test(cond) && !/print/i.test(cond)) continue;
         for (var k = 0; k < rule.cssRules.length; k++) {
           var inner = rule.cssRules[k];
           if (inner.selectorText && wanted.test(inner.selectorText)) out += inner.cssText + '\n';
@@ -6548,9 +6567,8 @@ function printStaffSummary() {
     + '.sr-total-row{display:flex;justify-content:space-between;align-items:center;background:#E8F5F7;border-radius:9px;padding:10px 14px;margin-top:14px}'
     + '.sr-total-label{font-weight:800;color:#00575E;font-size:15px}'
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
-    // คำแนะนำก่อนตรวจขึ้นหน้าใหม่เสมอ ไม่ให้ไปแทรกกลางรายการตรวจ (พฤติกรรมเดียวกับใบสรุปผู้ป่วย)
-    + '.sr-prep-wrap{page-break-before:always;break-before:page;margin-top:0}'
-    + collectPrepCss()
+    // (เคยยัด CSS ของบล็อกคำแนะนำก่อนตรวจไว้ตรงนี้ — ถอดออกแล้วเมื่อ user สั่งยกเลิก 2026-08-18
+    //  ใบสรุปเจ้าหน้าที่ไม่มีบล็อกนั้นแล้ว จึงไม่ต้องแบก CSS 50+ กฎไปกับทุกครั้งที่พิมพ์)
     // ขอบกระดาษเท่ากันทุกด้านตอนพิมพ์ (ใช้เมื่อผู้ใช้เลือก margin "Default" ในกล่องพิมพ์)
     + '@page{margin:12mm}'
     // margin:0 auto = จัดกึ่งกลาง ห้ามใช้ margin:0 เฉยๆ ไม่งั้นถ้าผู้ใช้ตั้ง margin เป็น "None"
