@@ -2366,41 +2366,6 @@
           </div>
         </div>
 
-        <!-- ── 1.6 หมู่เลือด ── -->
-        <div class="sub-section-label">หมู่เลือด</div>
-        <div class="field-group" style="margin-bottom:10px">
-          <label>หมู่เลือด</label>
-          <div class="chip-radio-group">
-            <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A"> A</label>
-            <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B"> B</label>
-            <label class="chip-radio blood ab"><input type="radio" name="bloodType" value="AB"> AB</label>
-            <label class="chip-radio blood o"><input type="radio" name="bloodType" value="O"> O</label>
-            <label class="chip-radio"><input type="radio" name="bloodType" value="other" onchange="toggleBloodOther(true)"> อื่นๆ</label>
-            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="toggleBloodOther(false)"> ไม่ทราบ</label>
-            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="toggleBloodOther(false)"> ไม่เคยตรวจ</label>
-          </div>
-          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
-        </div>
-
-        <!-- ── 1.7 ประวัติการแพ้ยา ── -->
-        <div class="sub-section-label">ประวัติการแพ้ยาและอาหาร</div>
-        <div class="field-group" style="margin-bottom:10px">
-          <label>ประวัติการแพ้ยา <span class="req">*</span></label>
-          <div class="chip-radio-group">
-            <label class="chip-radio allergy"><input type="radio" name="drugAllergy" value="yes" required onchange="toggleDrugOther(this.value)"> แพ้ยา</label>
-            <label class="chip-radio neutral"><input type="radio" name="drugAllergy" value="unknown" onchange="toggleDrugOther(this.value)"> ไม่ทราบ</label>
-            <label class="chip-radio safe"><input type="radio" name="drugAllergy" value="none" onchange="toggleDrugOther(this.value)"> ไม่มีประวัติการแพ้</label>
-            <label class="chip-radio allergy"><input type="radio" name="drugAllergy" value="other" onchange="toggleDrugOther(this.value)"> แพ้อื่นๆ</label>
-          </div>
-          <div id="drugAllergyDetail" style="display:none;margin-top:8px">
-            <input type="text" id="drugAllergyName" class="inline-input full" placeholder="ระบุชื่อยาที่แพ้ / สิ่งที่แพ้">
-          </div>
-        </div>
-        <div class="field-group" style="margin-bottom:14px">
-          <label>ประวัติการแพ้อาหาร</label>
-          <input type="text" id="foodAllergy" placeholder="ระบุอาหารที่แพ้ (ถ้าไม่มี เว้นว่างได้)">
-        </div>
-
         <!-- ── 1.8 สัญชาติ / เชื้อชาติ / ศาสนา ── -->
         <div class="sub-section-label">สัญชาติ / เชื้อชาติ / ศาสนา</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
@@ -2482,6 +2447,57 @@
         </div>
 
         </div><!-- /fullInfoSection -->
+
+        <!-- ── 1.11 ข้อมูลสุขภาพ ── -->
+        <!-- ⚠ บล็อกนี้อยู่ "นอก" fullInfoSection โดยตั้งใจ (ย้ายออกมา 2026-08-18) เพื่อให้ถามทั้งโหมด
+             "มี HN" และ "ไม่มี HN" — ข้อมูลชุดนี้เปลี่ยนได้ทุกปี ต่างจากสัญชาติ/เชื้อชาติที่ถามครั้งเดียวพอ
+             ถ้าย้ายกลับเข้าไปใน fullInfoSection เมื่อไร ผู้ป่วยที่มี HN จะไม่ถูกถามอีกและคอลัมน์ในชีตจะว่าง -->
+
+        <!-- ── หมู่เลือด ── -->
+        <div class="sub-section-label">หมู่เลือด</div>
+        <div class="field-group" style="margin-bottom:10px">
+          <label>หมู่เลือด</label>
+          <div class="chip-radio-group">
+            <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A"> A</label>
+            <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B"> B</label>
+            <label class="chip-radio blood ab"><input type="radio" name="bloodType" value="AB"> AB</label>
+            <label class="chip-radio blood o"><input type="radio" name="bloodType" value="O"> O</label>
+            <label class="chip-radio"><input type="radio" name="bloodType" value="other" onchange="toggleBloodOther(true)"> อื่นๆ</label>
+            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="toggleBloodOther(false)"> ไม่ทราบ</label>
+            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="toggleBloodOther(false)"> ไม่เคยตรวจ</label>
+          </div>
+          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
+        </div>
+
+        <!-- ── ประวัติการแพ้ยาและอาหาร ── -->
+        <div class="sub-section-label">ประวัติการแพ้ยาและอาหาร</div>
+        <div class="field-group" style="margin-bottom:10px">
+          <label>ประวัติการแพ้ยา <span class="req">*</span></label>
+          <div class="chip-radio-group">
+            <label class="chip-radio allergy"><input type="radio" name="drugAllergy" value="yes" required onchange="toggleDrugOther(this.value)"> แพ้ยา</label>
+            <label class="chip-radio neutral"><input type="radio" name="drugAllergy" value="unknown" onchange="toggleDrugOther(this.value)"> ไม่ทราบ</label>
+            <label class="chip-radio safe"><input type="radio" name="drugAllergy" value="none" onchange="toggleDrugOther(this.value)"> ไม่มีประวัติการแพ้</label>
+            <label class="chip-radio allergy"><input type="radio" name="drugAllergy" value="other" onchange="toggleDrugOther(this.value)"> แพ้อื่นๆ</label>
+          </div>
+          <div id="drugAllergyDetail" style="display:none;margin-top:8px">
+            <input type="text" id="drugAllergyName" class="inline-input full" placeholder="ระบุชื่อยาที่แพ้ / สิ่งที่แพ้">
+          </div>
+        </div>
+        <div class="field-group" style="margin-bottom:14px">
+          <label>ประวัติการแพ้อาหาร</label>
+          <input type="text" id="foodAllergy" placeholder="ระบุอาหารที่แพ้ (ถ้าไม่มี เว้นว่างได้)">
+        </div>
+
+        <!-- ── โรคประจำตัว ── -->
+        <div class="sub-section-label">โรคประจำตัว</div>
+        <div class="field-group" style="margin-bottom:14px">
+          <label>โรคประจำตัว <span class="req">*</span></label>
+          <div class="chip-radio-group">
+            <label class="chip-radio safe"><input type="radio" name="chronicDisease" value="none" onchange="toggleChronicDisease(false)"> ไม่มี</label>
+            <label class="chip-radio allergy"><input type="radio" name="chronicDisease" value="yes" onchange="toggleChronicDisease(true)"> มี (ระบุ)</label>
+          </div>
+          <input type="text" id="chronicDiseaseDetail" class="inline-input full" placeholder="ระบุโรคประจำตัว เช่น เบาหวาน ความดันโลหิตสูง" style="display:none;margin-top:6px">
+        </div>
 
       </div>
     </div>
@@ -4752,6 +4768,60 @@ function validateAndScrollToError() {
     }
   }
 
+  // ตรวจว่าเลือกประวัติการแพ้ยาหรือยัง — ถามทั้ง 2 โหมด (บล็อกนี้อยู่นอก fullInfoSection แล้ว)
+  // ⚠ attribute `required` บน radio ในฟอร์มนี้บังคับไม่ได้จริง (ฟอร์มตั้ง novalidate + generic
+  //   [required] loop ข้าม radio เพราะ radio.value ไม่เคยว่าง) จึงต้องเขียน explicit check ตรงนี้
+  const drugChecked = document.querySelector('input[name="drugAllergy"]:checked');
+  if (!drugChecked) {
+    const drugEl = document.querySelector('input[name="drugAllergy"]')?.closest('.field-group');
+    if (drugEl) {
+      drugEl.classList.add('field-error');
+      const topD = drugEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: topD, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกประวัติการแพ้ยา');
+    return false;
+  }
+  if (drugChecked.value === 'yes' || drugChecked.value === 'other') {
+    const drugName = document.getElementById('drugAllergyName');
+    if (!drugName || !drugName.value.trim()) {
+      drugName?.closest('.field-group')?.classList.add('field-error');
+      if (drugName) {
+        const topD2 = drugName.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: topD2, behavior: 'smooth' });
+        drugName.focus();
+      }
+      showToast('⚠ กรุณาระบุชื่อยา / สิ่งที่แพ้');
+      return false;
+    }
+  }
+
+  // ตรวจว่าเลือกโรคประจำตัวหรือยัง — ถามทั้ง 2 โหมด (บล็อกนี้อยู่นอก fullInfoSection แล้ว)
+  const chronicChecked = document.querySelector('input[name="chronicDisease"]:checked');
+  if (!chronicChecked) {
+    const chronicEl = document.querySelector('input[name="chronicDisease"]')?.closest('.field-group');
+    if (chronicEl) {
+      chronicEl.classList.add('field-error');
+      const top = chronicEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกโรคประจำตัว');
+    return false;
+  }
+  if (chronicChecked.value === 'yes') {
+    const chronicDetail = document.getElementById('chronicDiseaseDetail');
+    if (!chronicDetail || !chronicDetail.value.trim()) {
+      chronicDetail?.closest('.field-group')?.classList.add('field-error');
+      if (chronicDetail) {
+        const top2 = chronicDetail.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: top2, behavior: 'smooth' });
+        chronicDetail.focus();
+      }
+      showToast('⚠ กรุณาระบุโรคประจำตัว');
+      return false;
+    }
+  }
+
     const consent = document.getElementById('consentCheck');
   if (!consent || !consent.checked) {
     const consentEl = document.getElementById('sec6') || consent?.closest('section') || consent?.closest('.form-section');
@@ -4864,6 +4934,7 @@ function handleSubmit(e) {
     gender:        g,
     phone:         subPhone,
     idCard:        document.getElementById('idCard')?.value || '',
+    passport:      document.getElementById('passport')?.value || '',
     // หน่วยงาน
     department:    dept,
     orgStatus:     document.getElementById('orgStatus')?.value || '',
@@ -4872,9 +4943,34 @@ function handleSubmit(e) {
     maritalStatus: document.querySelector('input[name="maritalStatus"]:checked')?.value || '',
     education:     document.getElementById('education')?.value || '',
     occupation:    document.getElementById('occupation')?.value || '',
+    occupationDetail: document.getElementById('occupationDetail')?.value || '',
     // สุขภาพ
-    bloodGroup:    document.getElementById('bloodGroup')?.value || '',
-    allergy:       document.getElementById('allergyDetail')?.value || document.querySelector('input[name="allergy"]:checked')?.value || '',
+    // ⚠ เดิม 2 ฟิลด์นี้อ่านจาก #bloodGroup / #allergyDetail / input[name="allergy"] ซึ่ง "ไม่มีอยู่จริงในไฟล์"
+    //    (ของจริงคือ name="bloodType" / name="drugAllergy" + #drugAllergyName) → คอลัมน์ 'หมู่เลือด'
+    //    และ 'ประวัติแพ้ยา' ในชีตจึงว่างเปล่ามาตลอดทั้งที่ผู้ป่วยกรอกให้แล้ว — แก้ 2026-08-18
+    bloodGroup: (() => {
+      const v = document.querySelector('input[name="bloodType"]:checked')?.value || '';
+      if (v === 'other')     return document.getElementById('bloodOther')?.value.trim() || 'อื่นๆ';
+      if (v === 'unknown')   return 'ไม่ทราบ';
+      if (v === 'notTested') return 'ไม่เคยตรวจ';
+      return v;   // A / B / AB / O — หรือ '' ถ้ายังไม่เลือก
+    })(),
+    allergy: (() => {
+      const v = document.querySelector('input[name="drugAllergy"]:checked')?.value || '';
+      const detail = document.getElementById('drugAllergyName')?.value.trim() || '';
+      if (v === 'yes')     return detail ? 'แพ้ยา: ' + detail : 'แพ้ยา';
+      if (v === 'other')   return detail ? 'แพ้อื่นๆ: ' + detail : 'แพ้อื่นๆ';
+      if (v === 'unknown') return 'ไม่ทราบ';
+      if (v === 'none')    return 'ไม่มีประวัติการแพ้';
+      return '';
+    })(),
+    foodAllergy: document.getElementById('foodAllergy')?.value.trim() || '',
+    // โรคประจำตัว: "ไม่มี" หรือ "มี: <ที่ระบุ>" — บังคับเลือกทั้ง 2 โหมดแล้ว (ช่องอยู่นอก fullInfoSection)
+    chronicDisease: (() => {
+      const v = document.querySelector('input[name="chronicDisease"]:checked')?.value || '';
+      if (v === 'yes') return 'มี: ' + (document.getElementById('chronicDiseaseDetail')?.value.trim() || '');
+      return v === 'none' ? 'ไม่มี' : '';
+    })(),
     // ที่อยู่
     // โหมด HN: ช่องที่อยู่ในส่วนที่ 1 ถูกซ่อนไว้ ถ้าผู้ป่วยแจ้งที่อยู่ใหม่ในป็อปอัปให้ใช้ค่านั้นแทน
     address:       _am('ap_addr') || [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
@@ -4889,6 +4985,22 @@ function handleSubmit(e) {
     // ผู้ติดต่อฉุกเฉิน
     emergencyName:  document.getElementById('emergencyName')?.value || '',
     emergencyPhone: document.getElementById('emergencyPhone')?.value || '',
+    emergencyRelation: (() => {
+      const v = document.querySelector('input[name="emergencyRel"]:checked')?.value || '';
+      if (v === 'relative') return document.getElementById('emergencyRelDetail')?.value.trim() || 'ญาติ';
+      if (v === 'none')     return 'ไม่มีญาติ';
+      return '';
+    })(),
+    emergencyAddress: (() => {
+      const v = document.querySelector('input[name="emergencyAddr"]:checked')?.value || '';
+      if (v === 'same')  return 'บ้านเดียวกันกับผู้ป่วย';
+      if (v === 'other') return document.getElementById('emergencyAddrDetail')?.value.trim() || '';
+      return '';
+    })(),
+    // ข้อมูลครอบครัว
+    fatherName: document.getElementById('fatherName')?.value || '',
+    motherName: document.getElementById('motherName')?.value || '',
+    spouseName: document.getElementById('spouseName')?.value || '',
     // ชื่อเดิม
     oldFirstName:  subOldFirst,
     oldLastName:   subOldLast,
@@ -5504,7 +5616,22 @@ function toggleBloodOther(show) {
 function toggleDrugOther(val) {
   const show = val === 'yes' || val === 'other';
   document.getElementById('drugAllergyDetail').style.display = show ? 'block' : 'none';
-  if (!show) document.getElementById('drugAllergyName').value = '';
+  // เลือก "แพ้ยา"/"แพ้อื่นๆ" → ต้องระบุสิ่งที่แพ้ (ตั้ง required ให้ generic [required] loop จับเอง
+  // pattern เดียวกับ toggleChronicDisease) — เลือกอย่างอื่น ถอด required แล้วล้างค่าทิ้ง
+  const nameEl = document.getElementById('drugAllergyName');
+  if (show) { nameEl.setAttribute('required', ''); }
+  else { nameEl.removeAttribute('required'); nameEl.value = ''; }
+}
+
+// โรคประจำตัว: เลือก "มี" → เปิดช่องระบุ + ตั้ง required ให้ generic [required] loop
+// ใน validateAndScrollToError() จับได้เอง (pattern เดียวกับ togglePrefixOther)
+// เลือก "ไม่มี" → ซ่อน, ถอด required, ล้างค่าที่เคยพิมพ์ไว้ทิ้ง
+function toggleChronicDisease(show) {
+  const el = document.getElementById('chronicDiseaseDetail');
+  if (!el) return;
+  el.style.display = show ? 'block' : 'none';
+  if (show) { el.setAttribute('required', ''); }
+  else { el.removeAttribute('required'); el.value = ''; }
 }
 
 function togglePrefixOther(show) {
@@ -6146,6 +6273,10 @@ function showStaffSummary(idx) {
   if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + escHtml(r.phone) + '</span></div>';
   if (r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + escHtml(r.idCard) + '</span></div>';
   if (r.address) html += '<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">' + escHtml(r.address) + '</span></div>';
+  if (r.chronicDisease) html += '<div class="sr"><span class="sl">🩺 โรคประจำตัว</span><span class="sv">' + escHtml(r.chronicDisease) + '</span></div>';
+  if (r.bloodGroup)  html += '<div class="sr"><span class="sl">🩸 หมู่เลือด</span><span class="sv">' + escHtml(r.bloodGroup) + '</span></div>';
+  if (r.allergy)     html += '<div class="sr"><span class="sl">💊 ประวัติแพ้ยา</span><span class="sv">' + escHtml(r.allergy) + '</span></div>';
+  if (r.foodAllergy) html += '<div class="sr"><span class="sl">🍽 ประวัติแพ้อาหาร</span><span class="sv">' + escHtml(r.foodAllergy) + '</span></div>';
   if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + escHtml(r.age) + ' ปี / ' + genderTxt + '</span></div>';
   if (isHN && r.dob)   html += '<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">' + escHtml(r.dob) + '</span></div>';
   if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + escHtml(r.serviceDate) + '</span></div>';
