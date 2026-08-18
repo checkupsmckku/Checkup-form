@@ -2258,6 +2258,16 @@
           </div>
         </div>
 
+        <!-- ── อีเมลติดต่อ (ไม่บังคับ) — ใช้ส่งใบยืนยันการลงทะเบียนกลับให้ผู้ป่วย ── -->
+        <!-- อยู่นอก fullInfoSection โดยตั้งใจ ให้กรอกได้ทั้งโหมด "มี HN" และ "ไม่มี HN" -->
+        <div class="field-grid" style="margin-bottom:14px">
+          <div class="field-group">
+            <label>อีเมล (ถ้ามี)</label>
+            <input type="email" id="contactEmail" placeholder="example@email.com">
+            <div class="field-hint">ระบบจะส่ง<strong>ใบยืนยันการลงทะเบียน</strong>ไปให้ทางอีเมลนี้ (ไม่ใช่ผลตรวจ) — ไม่กรอกก็ลงทะเบียนได้ตามปกติ</div>
+          </div>
+        </div>
+
         <div id="fullInfoSection">
         <!-- ── 1.3 อายุ / หนังสือเดินทาง ── -->
         <div class="sub-section-label">อายุ / เอกสารประจำตัว</div>
@@ -4597,6 +4607,15 @@ function validateAndScrollToError() {
     cardEl.classList.remove('input-error');
   }
 
+  // อีเมลติดต่อไม่บังคับกรอก แต่ถ้ากรอกมาต้องเป็นรูปแบบที่ส่งได้จริง
+  // (ไม่งั้นใบยืนยันจะเด้งกลับเงียบๆ และผู้ป่วยจะคิดว่าลงทะเบียนไม่สำเร็จ)
+  const cEmail = document.getElementById('contactEmail');
+  if (cEmail && cEmail.value.trim() && !isValidEmail(cEmail.value)) {
+    showToast('⚠ รูปแบบอีเมลไม่ถูกต้อง เช่น example@email.com');
+    cEmail.focus();
+    return false;
+  }
+
   // 5. ตรวจที่อยู่จัดส่ง (บังคับกรอกเมื่อเลือก "ส่งทางไปรษณีย์")
   const postDetail = document.getElementById('postDetail');
   if (postDetail && postDetail.style.display !== 'none') {
@@ -4652,6 +4671,31 @@ function validateAndScrollToError() {
     }
   }
 
+  // 5a. ตรวจ E-mail รับผลตรวจ (บังคับกรอกเมื่อเลือก "ส่งทาง E-mail")
+  // ⚠ เดิม "ไม่มีการตรวจตรงนี้เลยแม้แต่บรรทัดเดียว" — ผู้ป่วยเลือกส่งทาง E-mail แล้วปล่อยช่องว่าง
+  //   หรือพิมพ์ยืนยันไม่ตรงกัน ก็ส่งฟอร์มผ่านได้ (checkEmailMatch() แค่โชว์ ✓/✗ ให้ดู ไม่ได้บล็อก)
+  //   ผลคือคลินิกไม่มีอีเมลจะส่งผลตรวจไปให้ และไม่มีใครรู้จนกว่าผู้ป่วยจะโทรมาทวง — แก้ 2026-08-18
+  const emailDetail = document.getElementById('emailDetail');
+  if (emailDetail && emailDetail.style.display !== 'none') {
+    const rEmail   = document.getElementById('resultEmail');
+    const rConfirm = document.getElementById('resultEmailConfirm');
+    if (!rEmail?.value.trim()) {
+      showToast('⚠ กรุณากรอก E-mail สำหรับรับผลตรวจ');
+      rEmail?.focus();
+      return false;
+    }
+    if (!isValidEmail(rEmail.value)) {
+      showToast('⚠ รูปแบบ E-mail ไม่ถูกต้อง เช่น example@email.com');
+      rEmail.focus();
+      return false;
+    }
+    if (!rConfirm?.value.trim() || rConfirm.value.trim() !== rEmail.value.trim()) {
+      showToast('⚠ กรุณายืนยัน E-mail ให้ตรงกัน');
+      rConfirm?.focus();
+      return false;
+    }
+  }
+
   // 5b. ตรวจช่องทางรับผลตรวจภายใน (บังคับเลือกเมื่อ ตรวจภายใน + รอรับด้วยตนเอง)
   const pickupPapDetail = document.getElementById('pickupPapDetail');
   if (pickupPapDetail && pickupPapDetail.style.display !== 'none') {
@@ -4669,6 +4713,12 @@ function validateAndScrollToError() {
       const papEmailConfirm = document.getElementById('papResultEmailConfirm');
       if (!papEmail?.value.trim()) {
         showToast('⚠ กรุณากรอก E-mail สำหรับรับผลตรวจภายใน');
+        papEmail.focus();
+        return false;
+      }
+      // เดิมเส้นทางนี้ตรวจแค่ "กรอกหรือยัง" กับ "ตรงกันไหม" ยังรับอีเมลที่ไม่มี @ ได้อยู่
+      if (!isValidEmail(papEmail.value)) {
+        showToast('⚠ รูปแบบ E-mail รับผลตรวจภายในไม่ถูกต้อง เช่น example@email.com');
         papEmail.focus();
         return false;
       }
@@ -4935,6 +4985,7 @@ function handleSubmit(e) {
     phone:         subPhone,
     idCard:        document.getElementById('idCard')?.value || '',
     passport:      document.getElementById('passport')?.value || '',
+    contactEmail:  document.getElementById('contactEmail')?.value.trim() || '',
     // หน่วยงาน
     department:    dept,
     orgStatus:     document.getElementById('orgStatus')?.value || '',
@@ -5007,6 +5058,9 @@ function handleSubmit(e) {
     // โปรแกรม
     // หมายเหตุ: ต้องเทียบ selectedGender ('male'/'female') ไม่ใช่ g เพราะ g ถูกแปลงเป็นภาษาไทย ('ชาย'/'หญิง') ไปแล้วที่บรรทัดด้านบน
     program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}` : '',
+    // สแนปช็อตรายการตรวจในโปรแกรม ณ เวลาที่ลงทะเบียน (เก็บเป็น JSON)
+    // ใบสรุปย้อนหลังจะอ่านจากค่านี้ก่อน ถ้าไม่มีค่อย fallback ไป PROG_DETAIL ปัจจุบัน
+    programTests: JSON.stringify((PROG_DETAIL[selectedProgram] && PROG_DETAIL[selectedProgram].tests) || []),
     total:         totalTxt,
     additionalItems: addList.map(x => {
       const t = TESTS.find(tt => tt.name === x.th);
@@ -5747,6 +5801,12 @@ function autoFillPostAddr() {
   }
 }
 
+// ตรวจรูปแบบอีเมลขั้นต่ำ — จำเป็นเพราะฟอร์มตั้ง novalidate ไว้ `<input type="email">`
+// จึงไม่ถูกเบราว์เซอร์ตรวจให้เลย (ตัวเดียวกันใช้ทั้งอีเมลรับผลตรวจและอีเมลรับผลตรวจภายใน)
+function isValidEmail(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || '').trim());
+}
+
 function checkEmailMatch() {
   const e1 = document.getElementById('resultEmail')?.value || '';
   const e2 = document.getElementById('resultEmailConfirm')?.value || '';
@@ -6208,6 +6268,16 @@ function showStaffSummary(idx) {
   const progMatch = (r.program || '').match(/โปรแกรม\s*(\d+)/);
   const progNum   = progMatch ? parseInt(progMatch[1]) : 0;
   const progData  = PROG_DETAIL[progNum];
+  // รายการตรวจ: ใช้สแนปช็อตที่บันทึกไว้ ณ วันลงทะเบียนก่อนเสมอ (ใบเก่าจะได้ไม่แสดงรายการที่เพิ่งเพิ่มทีหลัง)
+  // ใบที่บันทึกก่อนมีคอลัมน์นี้จะไม่มีค่า → fallback ไป PROG_DETAIL ปัจจุบันเหมือนเดิม
+  let staffTests = null;
+  if (r.programTests) {
+    try {
+      const snap = JSON.parse(r.programTests);
+      if (Array.isArray(snap) && snap.length) staffTests = snap;
+    } catch (e) { /* ค่าเสีย/ไม่ใช่ JSON → ใช้ fallback */ }
+  }
+  if (!staffTests) staffTests = progData ? progData.tests : null;
   const genderTxt = (r.gender === 'male' || r.gender === 'ชาย') ? 'ชาย' : 'หญิง';
   const isHN      = r.hnStatus === 'มี HN';
 
@@ -6297,12 +6367,12 @@ function showStaffSummary(idx) {
   html += '<div class="sr-section-title">' + escHtml(r.program || 'ไม่ระบุโปรแกรม') + '</div>';
   // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือเมื่อรายการรวมทั้งหมดยาวพอที่จะดันยอดรวมตกไปหน้าถัดไป
   // (เช่นโปรแกรม 4 ที่มีรายการตรวจในตัวมากอยู่แล้วแม้ไม่มีรายการเพิ่มเติมก็ตาม)
-  const totalStaffItemCount = (progData ? progData.tests.length : 0) + (papKey ? 1 : 0) + addItemsForCondense.length;
+  const totalStaffItemCount = (staffTests ? staffTests.length : 0) + (papKey ? 1 : 0) + addItemsForCondense.length;
   const condenseStaffPrint = addItemsForCondense.length >= 1 || totalStaffItemCount >= 14;
-  if (progData) {
+  if (staffTests) {
     html += '<div class="sr-test-list' + (condenseStaffPrint ? ' sr-test-list-full' : '') + '">';
-    progData.tests.forEach(function(t) {
-      html += '<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + t.th + '</span><span class="sr-name-eng">' + t.eng + '</span></div>';
+    staffTests.forEach(function(t) {
+      html += '<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + escHtml(t.th) + '</span><span class="sr-name-eng">' + escHtml(t.eng) + '</span></div>';
     });
     // ── ตรวจภายใน (Pap smear): แสดงเป็น line item พร้อมราคาเพิ่ม ──
     if (papKey && PAP_ITEM_MAP[papKey]) {
@@ -6311,7 +6381,7 @@ function showStaffSummary(idx) {
     }
     html += '</div>';
     if (condenseStaffPrint) {
-      const condensedStaffCount = progData.tests.length + (papKey ? 1 : 0);
+      const condensedStaffCount = staffTests.length + (papKey ? 1 : 0);
       html += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + condensedStaffCount + ' รายการตรวจตามโปรแกรม</div></div>';
     }
   }
