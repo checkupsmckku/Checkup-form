@@ -6051,6 +6051,8 @@ function showSuccessModal(data) {
   try { sessionStorage.setItem('regServiceDate', data.serviceDate || document.getElementById('serviceDate')?.value || ''); } catch(e) {}
   try { sessionStorage.setItem('regFirstName', data.firstName || document.getElementById('firstName')?.value || ''); } catch(e) {}
   try { sessionStorage.setItem('regLastName',  data.lastName  || document.getElementById('lastName')?.value  || ''); } catch(e) {}
+  // อายุ ณ วันลงทะเบียน (คำนวณจากวันเกิดโดย calcAge()) ส่งต่อให้ survey.html บันทึกลงชีตแบบประเมิน
+  try { sessionStorage.setItem('regAge', (data.age || document.getElementById('age')?.value || '').toString()); } catch(e) {}
   console.log('[SUBMIT] redirecting to survey.html...');
   window.location.replace('survey.html');
 }

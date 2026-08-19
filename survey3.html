@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>แบบประเมินการรับผลตรวจ - คลินิกตรวจสุขภาพ SMC</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sarabun',sans-serif;background:#f4f6f4;min-height:100vh;padding:1.5rem 1rem}
+  .wrap{max-width:560px;margin:0 auto}
+  .hero{margin-bottom:1.25rem;display:flex;align-items:center;gap:14px}
+  .hero-text h1{font-size:16px;font-weight:600;color:#1a1a1a}
+  .hero-text p{font-size:12px;color:#777;margin-top:3px;line-height:1.5}
+  .hero-text .time{margin-top:4px;font-size:11px;color:#aaa}
+  .card{background:#fff;border:1px solid #e8ede8;border-radius:12px;padding:1rem 1.1rem;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:border-color 0.15s}
+  .card.err{border-color:#E24B4A}
+  .q-label{font-size:13px;font-weight:600;color:#222;margin-bottom:10px}
+  .emoji-row{display:flex;gap:6px}
+  .emoji-btn{flex:1;background:none;border:1px solid #e0e0e0;border-radius:10px;padding:8px 4px;cursor:pointer;font-size:18px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;font-family:'Sarabun',sans-serif}
+  .emoji-btn span{font-size:10px;color:#999;line-height:1.2}
+  .emoji-btn:hover{border-color:#5DCAA5;background:#f0faf6}
+  .emoji-btn.active{background:#e6f7f0;border-color:#1D9E75}
+  .emoji-btn.active span{color:#0F6E56}
+  .stars{display:flex;gap:5px}
+  .star-btn{flex:1;background:none;border:1px solid #e0e0e0;border-radius:8px;padding:8px 3px;cursor:pointer;font-size:10px;color:#888;text-align:center;transition:all 0.15s;line-height:1.5;font-family:'Sarabun',sans-serif}
+  .star-btn .ico{font-size:13px;display:block;margin-bottom:2px}
+  .star-btn:hover{border-color:#5DCAA5;background:#f0faf6}
+  .star-btn.active{background:#e6f7f0;border-color:#1D9E75;color:#0F6E56}
+  .chip-row{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{background:none;border:1px solid #e0e0e0;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;color:#666;font-family:'Sarabun',sans-serif;transition:all 0.15s}
+  .chip:hover{border-color:#5DCAA5;background:#f0faf6}
+  .chip.active{background:#e6f7f0;border-color:#1D9E75;color:#0F6E56}
+  textarea{width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;font-family:'Sarabun',sans-serif;color:#333;background:#fafafa;resize:none;line-height:1.6}
+  textarea:focus{outline:none;border-color:#5DCAA5}
+  .submit-btn{width:100%;padding:11px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;margin-top:4px;transition:background 0.15s}
+  .submit-btn:hover:not(:disabled){background:#0F6E56}
+  .submit-btn:disabled{background:#aaa;cursor:not-allowed}
+  .hint{font-size:11px;color:#bbb;margin-top:6px;text-align:right}
+  .err-msg{font-size:12px;color:#E24B4A;font-weight:600;text-align:center;margin-bottom:8px;display:none}
+
+  /* กล่องแจ้งวิธีติดต่อ — แสดงเฉพาะคนที่ยังไม่ได้รับผลตรวจ/ไม่แน่ใจ */
+  #notReceivedBox{display:none;background:#FFFBEA;border:1px solid #F6C90E;border-left-width:4px;border-radius:10px;padding:0.9rem 1rem;margin-bottom:10px;font-size:12.5px;color:#5a4a00;line-height:1.75}
+  #notReceivedBox strong{color:#3d3200}
+
+  /* ── หน้าขอบคุณ ── */
+  #thanksScreen{display:none;padding-bottom:2rem;text-align:center}
+  .thanks-header{margin-top:2rem}
+  .thanks-header .check{width:60px;height:60px;background:#1D9E75;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;color:#fff}
+  .thanks-header h2{font-size:18px;font-weight:600;color:#1a1a1a;margin-bottom:6px}
+  .thanks-header p{font-size:13px;color:#888;line-height:1.7}
+  .thanks-card{background:#fff;border:1px solid #e0ede0;border-radius:12px;padding:1.1rem;margin-top:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.05);font-size:12.5px;color:#555;line-height:1.75}
+  .thanks-logos{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:1.5rem;opacity:0.85}
+  .thanks-logos img{height:44px;width:auto}
+
+  .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
+  .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1D9E75;border-radius:50%;animation:spin 0.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* จอแคบ (360px) — ปุ่มดาว/อีโมจิ 5 ปุ่มเรียงแถวเดียวยังต้องกดถูก */
+  @media (max-width: 380px) {
+    body{padding:1rem 0.6rem}
+    .card{padding:0.85rem 0.8rem}
+    .emoji-btn{padding:7px 2px;font-size:16px}
+    .emoji-btn span{font-size:9px}
+    .star-btn{font-size:9px;padding:7px 1px}
+    .star-btn .ico{font-size:10px}
+    .chip{padding:6px 11px;font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<div class="wrap">
+  <!-- ── แบบประเมินรอบ 2 (เรื่องการรับผลตรวจ) ── -->
+  <div id="surveyScreen">
+    <div class="hero">
+      <svg width="56" height="56" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <circle cx="45" cy="45" r="44" fill="#EAF3DE" stroke="#97C459" stroke-width="1.5"/>
+        <rect x="27" y="30" width="36" height="34" rx="4" fill="#fff" stroke="#5DCAA5" stroke-width="2"/>
+        <line x1="33" y1="40" x2="52" y2="40" stroke="#97C459" stroke-width="2" stroke-linecap="round"/>
+        <line x1="33" y1="47" x2="57" y2="47" stroke="#cfe0b8" stroke-width="2" stroke-linecap="round"/>
+        <line x1="33" y1="54" x2="46" y2="54" stroke="#cfe0b8" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="57" cy="57" r="10" fill="#1D9E75"/>
+        <path d="M52.5 57 L56 60.5 L61.5 54" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="39" y="24" width="12" height="6" rx="1.5" fill="#FAC775"/>
+      </svg>
+      <div class="hero-text">
+        <h1>แบบประเมินการรับผลตรวจ</h1>
+        <p>สอบถามความเห็นเรื่อง<strong>การรับผลตรวจ</strong> เพื่อปรับปรุงการจัดส่งและการอธิบายผล<br>คลินิกตรวจสุขภาพ SMC โรงพยาบาลศรีนครินทร์</p>
+        <p class="time">ใช้เวลาประมาณ 40 วินาที · ตอบแบบไม่ระบุตัวตน</p>
+      </div>
+    </div>
+
+    <div class="card" id="card-resultReceived">
+      <div class="q-label">1. ท่านได้รับผลตรวจสุขภาพแล้วหรือไม่</div>
+      <div class="chip-row" id="resultReceived">
+        <button type="button" class="chip" data-val="ได้รับแล้ว" onclick="pick('resultReceived',this)">ได้รับแล้ว</button>
+        <button type="button" class="chip" data-val="ยังไม่ได้รับ" onclick="pick('resultReceived',this)">ยังไม่ได้รับ</button>
+        <button type="button" class="chip" data-val="ไม่แน่ใจ" onclick="pick('resultReceived',this)">ไม่แน่ใจ</button>
+      </div>
+    </div>
+
+    <!-- แสดงเฉพาะคนที่ตอบข้อ 1 ว่า "ยังไม่ได้รับ" หรือ "ไม่แน่ใจ" — ดู syncResultQuestions() -->
+    <div id="notReceivedBox">
+      <strong>ผลตรวจปกติใช้เวลา 30–45 วันหลังวันตรวจ</strong><br>
+      หากเกินกำหนดแล้วยังไม่ได้รับ กรุณาติดต่อ <strong>043-366312</strong> หรือ <strong>043-366865</strong>
+      ในวันและเวลาราชการ
+    </div>
+
+    <!-- ข้อ 2–5 ถามเฉพาะคนที่ได้รับผลตรวจแล้วเท่านั้น — ซ่อน/ล้างคำตอบอัตโนมัติใน syncResultQuestions() -->
+    <div class="card followup-q" id="card-resultChannel" style="display:none">
+      <div class="q-label">2. ท่านได้รับผลตรวจทางช่องทางใด</div>
+      <div class="chip-row" id="resultChannel">
+        <button type="button" class="chip" data-val="ไปรษณีย์" onclick="pick('resultChannel',this)">ไปรษณีย์</button>
+        <button type="button" class="chip" data-val="อีเมล" onclick="pick('resultChannel',this)">อีเมล</button>
+        <button type="button" class="chip" data-val="มารับเอง" onclick="pick('resultChannel',this)">มารับเอง</button>
+        <button type="button" class="chip" data-val="หน่วยงานแจกให้" onclick="pick('resultChannel',this)">หน่วยงานแจกให้</button>
+        <button type="button" class="chip" data-val="อื่นๆ" onclick="pick('resultChannel',this)">อื่นๆ</button>
+      </div>
+    </div>
+
+    <div class="card followup-q" id="card-resultTimeOk" style="display:none">
+      <div class="q-label">3. ระยะเวลาที่รอผลตรวจเหมาะสม</div>
+      <div class="stars" id="resultTimeOk">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('resultTimeOk',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('resultTimeOk',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('resultTimeOk',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('resultTimeOk',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('resultTimeOk',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card followup-q" id="card-resultClear" style="display:none">
+      <div class="q-label">4. ผลตรวจอ่านเข้าใจง่าย มีคำอธิบายเพียงพอ</div>
+      <div class="stars" id="resultClear">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('resultClear',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('resultClear',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('resultClear',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('resultClear',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('resultClear',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card followup-q" id="card-abnormalAdvice" style="display:none">
+      <div class="q-label">5. กรณีพบค่าผิดปกติ ท่านได้รับการแจ้ง/คำแนะนำหรือไม่</div>
+      <div class="chip-row" id="abnormalAdvice">
+        <button type="button" class="chip" data-val="ไม่มีค่าผิดปกติ" onclick="pick('abnormalAdvice',this)">ไม่มีค่าผิดปกติ</button>
+        <button type="button" class="chip" data-val="มีค่าผิดปกติ และได้รับคำแนะนำ" onclick="pick('abnormalAdvice',this)">มีค่าผิดปกติ และได้รับคำแนะนำ</button>
+        <button type="button" class="chip" data-val="มีค่าผิดปกติ แต่ไม่ได้รับคำแนะนำ" onclick="pick('abnormalAdvice',this)">มีค่าผิดปกติ แต่ไม่ได้รับคำแนะนำ</button>
+        <button type="button" class="chip" data-val="ไม่ทราบ" onclick="pick('abnormalAdvice',this)">ไม่ทราบ</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-overall2">
+      <div class="q-label">6. ความพึงพอใจโดยรวมต่อการรับผลตรวจ</div>
+      <div class="emoji-row" id="overall2">
+        <button type="button" class="emoji-btn" data-val="5-ดีมาก" onclick="pick('overall2',this)">🤩<span>ดีมาก</span></button>
+        <button type="button" class="emoji-btn" data-val="4-ดี" onclick="pick('overall2',this)">😊<span>ดี</span></button>
+        <button type="button" class="emoji-btn" data-val="3-พอใช้" onclick="pick('overall2',this)">😐<span>พอใช้</span></button>
+        <button type="button" class="emoji-btn" data-val="2-แย่" onclick="pick('overall2',this)">😕<span>แย่</span></button>
+        <button type="button" class="emoji-btn" data-val="1-ปรับปรุง" onclick="pick('overall2',this)">🔧<span>ปรับปรุง</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q-label">7. ข้อเสนอแนะเพิ่มเติม <span style="font-weight:400;color:#aaa">(ไม่บังคับ)</span></div>
+      <textarea id="improve2" rows="3" placeholder="บอกเราได้เลย..."></textarea>
+    </div>
+
+    <div class="err-msg" id="surveyErr">⚠ กรุณาตอบให้ครบทุกข้อก่อนส่งแบบประเมิน</div>
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitFollowupSurvey()">ส่งแบบประเมิน</button>
+    <div class="hint">ข้อมูลจะถูกเก็บเป็นความลับ และไม่ระบุตัวตนผู้ตอบ</div>
+  </div>
+
+  <!-- ── หน้าขอบคุณ ── -->
+  <div id="thanksScreen">
+    <div class="thanks-header">
+      <div class="check">✓</div>
+      <h2>ขอบคุณสำหรับความคิดเห็น</h2>
+      <p>ทีมงานคลินิกตรวจสุขภาพ SMC<br>จะนำข้อเสนอแนะของท่านไปปรับปรุงการจัดส่งผลตรวจต่อไป</p>
+    </div>
+    <div class="thanks-card">
+      ท่านสามารถปิดหน้านี้ได้เลย<br>
+      หากยังไม่ได้รับผลตรวจ กรุณาติดต่อ <strong>043-366312</strong> หรือ <strong>043-366865</strong> ในวันและเวลาราชการ
+    </div>
+    <div class="thanks-logos">
+      <img src="smc_logo.png" alt="SMC">
+      <img src="mdkku_logo.png" alt="คณะแพทยศาสตร์ มข.">
+    </div>
+  </div>
+</div>
+
+<script>
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc5qBcd2UgrxFUPvAo3VQUFjdOIyBmu85ZDv0rY75vpaQYARJer-s/exec';
+
+// หน้านี้เข้ามาจากลิงก์ในอีเมลที่ระบบส่งให้หลังวันตรวจ ~45 วัน
+// ⚠ ห้ามอ่าน/เขียน sessionStorage และห้ามถามชื่อ/HN/เลขบัตรประชาชนในไฟล์นี้ — ตอบแบบไม่ระบุตัวตน
+var answers = {};
+
+// ข้อ 2–5 ถามเฉพาะคนที่ตอบข้อ 1 ว่า "ได้รับแล้ว" (ดู CONDITIONAL_QUESTIONS + syncResultQuestions)
+var REQUIRED_ALWAYS = ['resultReceived', 'overall2'];
+var CONDITIONAL_QUESTIONS = ['resultChannel', 'resultTimeOk', 'resultClear', 'abnormalAdvice'];
+
+// วันที่นัดหมายจาก query string ?d=YYYY-MM-DD ของลิงก์ในอีเมล
+// ไม่มี/รูปแบบไม่ตรง → ส่งค่าว่างไปเลย ห้าม error (ผู้ใช้อาจเปิดหน้านี้ตรงๆ โดยไม่ผ่านลิงก์)
+// รับเฉพาะรูปแบบ YYYY-MM-DD เท่านั้น กันค่าขยะ/ข้อความแปลกปลอมหลุดลงชีต
+function readServiceDateFromUrl() {
+  try {
+    var m = (window.location.search || '').match(/[?&]d=([^&]*)/);
+    if (!m) return '';
+    var v = decodeURIComponent(m[1] || '').trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+  } catch (e) {
+    return '';
+  }
+}
+var SERVICE_DATE = readServiceDateFromUrl();
+
+function pick(qid, btn) {
+  document.getElementById(qid).querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  answers[qid] = btn.dataset.val || btn.textContent.trim();
+  var card = document.getElementById('card-' + qid);
+  if (card) card.classList.remove('err');
+  // ข้อ 1 คุมการแสดง/ซ่อนข้อ 2–5 ทั้งชุด
+  if (qid === 'resultReceived') syncResultQuestions();
+}
+
+// แสดงข้อ 2–5 เฉพาะเมื่อข้อ 1 = "ได้รับแล้ว" (คนที่ยังไม่ได้รับผลตอบข้อพวกนี้ไม่ได้ = ได้ข้อมูลขยะ)
+// ⚠ ตอนซ่อนต้อง "ล้างคำตอบทิ้งด้วย" ไม่ใช่แค่ซ่อน — ไม่งั้นคนที่เคยตอบ "ได้รับแล้ว" + ให้ดาวไว้
+//   แล้วเปลี่ยนใจเป็น "ยังไม่ได้รับ" จะยังส่งคำตอบที่มองไม่เห็นแล้วไปบันทึกลงชีต
+//   (บั๊กรูปแบบเดียวกับ updateTestGenderFilter() ใน index.html ที่เคยซ่อนอย่างเดียวแล้วราคาเพี้ยน)
+function syncResultQuestions() {
+  var received = answers['resultReceived'] === 'ได้รับแล้ว';
+  var answeredQ1 = !!answers['resultReceived'];
+
+  CONDITIONAL_QUESTIONS.forEach(function(qid) {
+    var card = document.getElementById('card-' + qid);
+    if (!card) return;
+    if (received) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+      card.classList.remove('err');
+      delete answers[qid];
+      var group = document.getElementById(qid);
+      if (group) group.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+    }
+  });
+
+  // กล่องแจ้งเบอร์ติดต่อ — แสดงเฉพาะคนที่ตอบข้อ 1 แล้วและยังไม่ได้รับผล/ไม่แน่ใจ
+  var box = document.getElementById('notReceivedBox');
+  if (box) box.style.display = (answeredQ1 && !received) ? 'block' : 'none';
+}
+
+// รายการข้อบังคับ ณ ขณะนี้ = ข้อ 1 + ข้อ 6 เสมอ + ข้อ 2–5 เฉพาะตอนที่แสดงอยู่จริง
+function requiredNow() {
+  var list = REQUIRED_ALWAYS.slice();
+  if (answers['resultReceived'] === 'ได้รับแล้ว') list = list.concat(CONDITIONAL_QUESTIONS);
+  return list;
+}
+
+function validateSurvey() {
+  var firstMissing = null;
+  requiredNow().forEach(function(qid) {
+    var card = document.getElementById('card-' + qid);
+    if (!answers[qid]) {
+      if (card) card.classList.add('err');
+      if (!firstMissing) firstMissing = card;
+    } else {
+      if (card) card.classList.remove('err');
+    }
+  });
+  if (firstMissing) {
+    document.getElementById('surveyErr').style.display = 'block';
+    firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return false;
+  }
+  document.getElementById('surveyErr').style.display = 'none';
+  return true;
+}
+
+async function submitFollowupSurvey() {
+  if (!validateSurvey()) return;
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;   // กันกดส่งซ้ำ
+  btn.textContent = 'กำลังบันทึก...';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function(){ controller.abort(); }, 15000);
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'followupsurvey',
+        serviceDate:    SERVICE_DATE,
+        resultReceived: answers['resultReceived'] || '',
+        // ข้อ 2–5 ถูกล้างทิ้งไปแล้วถ้าข้อ 1 ไม่ใช่ "ได้รับแล้ว" จึงเป็นค่าว่างเสมอในกรณีนั้น
+        resultChannel:  answers['resultChannel']  || '',
+        resultTimeOk:   answers['resultTimeOk']   || '',
+        resultClear:    answers['resultClear']    || '',
+        abnormalAdvice: answers['abnormalAdvice'] || '',
+        overall2:       answers['overall2']       || '',
+        improve2:       document.getElementById('improve2').value.trim()
+      }),
+      // ต้องเป็น text/plain เท่านั้น (application/json จะโดน CORS preflight แล้วยิงไม่ออก)
+      headers: { 'Content-Type': 'text/plain' },
+      signal: controller.signal
+    });
+  } catch(e) {
+    // บันทึกไม่ได้/timeout ก็ยังขอบคุณ ไม่ปล่อยให้ผู้ใช้ค้างอยู่หน้าเดิม
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  document.getElementById('loadingOverlay').style.display = 'none';
+  showThanks();
+}
+
+function showThanks() {
+  document.getElementById('surveyScreen').style.display = 'none';
+  document.getElementById('thanksScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
