@@ -1445,8 +1445,12 @@
   .btn-copy-addr:hover { background: #D8DFFF; }
 
   /* ─── Back to Top Button ─── */
+  /* ⚠ ปุ่มลอยมุมขวาล่างเรียงเป็นชั้น ห้ามให้ช่วง bottom ซ้อนกัน (วัดจริงด้วย getBoundingClientRect):
+       .staff-fab 24–67 • .back-to-top 82–126 • .back-to-bottom 140–184
+     เดิม .back-to-top อยู่ที่ 28px = ทับ .staff-fab พอดี และ z-index 999 > 900 จึงบังข้อความ
+     "ค้นหาใบสรุป" ทุกครั้งที่เลื่อนหน้าเกิน 300px (เจอ 2026-08-19) */
   .back-to-top {
-    position: fixed; bottom: 28px; right: 24px;
+    position: fixed; bottom: 82px; right: 24px;
     width: 44px; height: 44px; border-radius: 50%;
     background: #2D3481; color: #fff; border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -1920,7 +1924,7 @@
 
   /* ─── Back-to-bottom button ─── */
   .back-to-bottom {
-    position: fixed; bottom: 82px; right: 24px;
+    position: fixed; bottom: 140px; right: 24px;
     width: 44px; height: 44px; border-radius: 50%;
     background: #F47920; color: #fff; border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -2006,6 +2010,12 @@
   }
   .prep-fab:hover { background:#00787f; transform:translateY(-2px); }
   @media print { .prep-fab { display:none !important; } }
+  /* จอแคบ (≤400px): .prep-fab (ซ้าย) + .staff-fab (ขวา) รวมกันกว้างเกินจอ — วัดที่ 360px ชนกัน 7px
+     ย่อทั้งคู่ให้อยู่แถวเดียวกันได้ แทนการยกขึ้นอีกแถว เพราะช่วง bottom 80–124px
+     เป็นที่ของ .atwarn-popup (z-index 9998) ถ้าไปวางตรงนั้นจะโดนป็อปอัปเตือนทับ (เจอ 2026-08-19) */
+  @media (max-width: 400px) {
+    .prep-fab, .staff-fab { padding: 11px 14px; font-size: 13px; }
+  }
 </style>
 </head>
 <body>
@@ -6651,10 +6661,27 @@ function printStaffSummary() {
           </div>
         </div>
 
-        <!-- 03. การตรวจภายใน และมะเร็งปากมดลูก -->
+        <!-- 03. การเก็บปัสสาวะ -->
+        <div class="prep-card" style="grid-column:1/-1">
+          <div class="prep-card-header">
+            <span class="prep-num" style="background:#0288D1">03</span>
+            <span class="prep-card-title">การเก็บปัสสาวะ</span>
+            <span class="prep-icon">💧</span>
+          </div>
+          <div class="prep-card-body">
+            <ol class="prep-ol">
+              <li>ผู้เข้ารับการตรวจต้อง<strong>ล้างมือของตนเองให้สะอาด</strong>เสียก่อนทำการเก็บปัสสาวะ</li>
+              <li>ควรเลือกเก็บเฉพาะน้ำปัสสาวะ<strong>ช่วงกลาง</strong> โดยให้ปัสสาวะในช่วงแรกและช่วงท้ายทิ้งไป ปริมาณการเก็บประมาณ <strong>30–60 มิลลิลิตร</strong> (1–2 ออนซ์)</li>
+              <li>ปิดฝากระปุก แล้ว<strong>ล้างมือให้สะอาดอีกครั้ง</strong></li>
+              <li>ตรวจดูความสะอาดบริเวณรอบภาชนะและปิดฝาให้เรียบร้อย</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- 04. การตรวจภายใน และมะเร็งปากมดลูก -->
         <div class="prep-card female-only-card">
           <div class="prep-card-header">
-            <span class="prep-num pink">03</span>
+            <span class="prep-num pink">04</span>
             <span class="prep-card-title">การตรวจภายใน และมะเร็งปากมดลูก</span>
             <span class="prep-icon">👩</span>
           </div>
@@ -6668,10 +6695,10 @@ function printStaffSummary() {
           </div>
         </div>
 
-        <!-- 04. การแต่งกาย -->
+        <!-- 05. การแต่งกาย -->
         <div class="prep-card">
           <div class="prep-card-header">
-            <span class="prep-num" style="background:#7B5EA7">04</span>
+            <span class="prep-num" style="background:#7B5EA7">05</span>
             <span class="prep-card-title">การแต่งกาย</span>
             <span class="prep-icon">👕</span>
           </div>
