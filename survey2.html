@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>แบบประเมินหลังเข้ารับบริการ - คลินิกตรวจสุขภาพ SMC</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sarabun',sans-serif;background:#f4f6f4;min-height:100vh;padding:1.5rem 1rem}
+  .wrap{max-width:560px;margin:0 auto}
+  .hero{margin-bottom:1.25rem;display:flex;align-items:center;gap:14px}
+  .hero-text h1{font-size:16px;font-weight:600;color:#1a1a1a}
+  .hero-text p{font-size:12px;color:#777;margin-top:3px;line-height:1.5}
+  .hero-text .time{margin-top:4px;font-size:11px;color:#aaa}
+  .card{background:#fff;border:1px solid #e8ede8;border-radius:12px;padding:1rem 1.1rem;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:border-color 0.15s}
+  .card.err{border-color:#E24B4A}
+  .q-label{font-size:13px;font-weight:600;color:#222;margin-bottom:10px}
+  .emoji-row{display:flex;gap:6px}
+  .emoji-btn{flex:1;background:none;border:1px solid #e0e0e0;border-radius:10px;padding:8px 4px;cursor:pointer;font-size:18px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:all 0.15s;font-family:'Sarabun',sans-serif}
+  .emoji-btn span{font-size:10px;color:#999;line-height:1.2}
+  .emoji-btn:hover{border-color:#5DCAA5;background:#f0faf6}
+  .emoji-btn.active{background:#e6f7f0;border-color:#1D9E75}
+  .emoji-btn.active span{color:#0F6E56}
+  .stars{display:flex;gap:5px}
+  .star-btn{flex:1;background:none;border:1px solid #e0e0e0;border-radius:8px;padding:8px 3px;cursor:pointer;font-size:10px;color:#888;text-align:center;transition:all 0.15s;line-height:1.5;font-family:'Sarabun',sans-serif}
+  .star-btn .ico{font-size:13px;display:block;margin-bottom:2px}
+  .star-btn:hover{border-color:#5DCAA5;background:#f0faf6}
+  .star-btn.active{background:#e6f7f0;border-color:#1D9E75;color:#0F6E56}
+  .chip-row{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{background:none;border:1px solid #e0e0e0;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;color:#666;font-family:'Sarabun',sans-serif;transition:all 0.15s}
+  .chip:hover{border-color:#5DCAA5;background:#f0faf6}
+  .chip.active{background:#e6f7f0;border-color:#1D9E75;color:#0F6E56}
+  textarea{width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;font-family:'Sarabun',sans-serif;color:#333;background:#fafafa;resize:none;line-height:1.6}
+  textarea:focus{outline:none;border-color:#5DCAA5}
+  input[type="text"]{width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:9px 10px;font-size:13px;font-family:'Sarabun',sans-serif;color:#333;background:#fafafa;line-height:1.5}
+  input[type="text"]:focus{outline:none;border-color:#5DCAA5}
+  .submit-btn{width:100%;padding:11px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;margin-top:4px;transition:background 0.15s}
+  .submit-btn:hover:not(:disabled){background:#0F6E56}
+  .submit-btn:disabled{background:#aaa;cursor:not-allowed}
+  .hint{font-size:11px;color:#bbb;margin-top:6px;text-align:right}
+  .err-msg{font-size:12px;color:#E24B4A;font-weight:600;text-align:center;margin-bottom:8px;display:none}
+
+  /* ── หน้าขอบคุณ ── */
+  #thanksScreen{display:none;padding-bottom:2rem;text-align:center}
+  .thanks-header{margin-top:2rem}
+  .thanks-header .check{width:60px;height:60px;background:#1D9E75;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;color:#fff}
+  .thanks-header h2{font-size:18px;font-weight:600;color:#1a1a1a;margin-bottom:6px}
+  .thanks-header p{font-size:13px;color:#888;line-height:1.7}
+  .thanks-card{background:#fff;border:1px solid #e0ede0;border-radius:12px;padding:1.1rem;margin-top:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.05);font-size:12.5px;color:#555;line-height:1.75}
+  .thanks-logos{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:1.5rem;opacity:0.85}
+  .thanks-logos img{height:44px;width:auto}
+
+  .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
+  .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1D9E75;border-radius:50%;animation:spin 0.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* จอแคบ (360px) — ปุ่มดาว/อีโมจิ 5 ปุ่มเรียงแถวเดียวยังต้องกดถูก */
+  @media (max-width: 380px) {
+    body{padding:1rem 0.6rem}
+    .card{padding:0.85rem 0.8rem}
+    .emoji-btn{padding:7px 2px;font-size:16px}
+    .emoji-btn span{font-size:9px}
+    .star-btn{font-size:9px;padding:7px 1px}
+    .star-btn .ico{font-size:10px}
+    .chip{padding:6px 11px;font-size:11.5px}
+  }
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+<div class="wrap">
+  <!-- ── แบบประเมินหลังเข้ารับบริการ ── -->
+  <div id="surveyScreen">
+    <div class="hero">
+      <svg width="56" height="56" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <circle cx="45" cy="45" r="44" fill="#EAF3DE" stroke="#97C459" stroke-width="1.5"/>
+        <ellipse cx="45" cy="59" rx="18" ry="13" fill="#5DCAA5"/>
+        <line x1="45" y1="56" x2="45" y2="62" stroke="white" stroke-width="1.8"/>
+        <line x1="42" y1="59" x2="48" y2="59" stroke="white" stroke-width="1.8"/>
+        <circle cx="45" cy="37" r="11" fill="#FAC775"/>
+        <path d="M34 33 Q45 23 56 33" fill="#3B6D11"/>
+        <rect x="41" y="23" width="8" height="5" rx="1" fill="white"/>
+        <line x1="45" y1="23" x2="45" y2="25.5" stroke="#E24B4A" stroke-width="1.5"/>
+        <line x1="43" y1="24.3" x2="47" y2="24.3" stroke="#E24B4A" stroke-width="1.5"/>
+        <circle cx="41" cy="38" r="1.3" fill="#3B6D11"/>
+        <circle cx="49" cy="38" r="1.3" fill="#3B6D11"/>
+        <path d="M42 42 Q45 45 48 42" fill="none" stroke="#BA7517" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <div class="hero-text">
+        <h1>แบบประเมินหลังเข้ารับบริการ</h1>
+        <p>ความคิดเห็นของท่านช่วยให้เราปรับปรุงบริการตรวจสุขภาพได้ตรงจุด<br>คลินิกตรวจสุขภาพ SMC โรงพยาบาลศรีนครินทร์</p>
+        <p class="time">ใช้เวลาประมาณ 1 นาที · ตอบแบบไม่ระบุตัวตน</p>
+      </div>
+    </div>
+
+    <div class="card" id="card-filledBy">
+      <div class="q-label">1. ใครเป็นผู้กรอกแบบฟอร์มลงทะเบียนออนไลน์</div>
+      <div class="chip-row" id="filledBy">
+        <button type="button" class="chip" data-val="กรอกเอง" onclick="pick('filledBy',this)">กรอกเอง</button>
+        <button type="button" class="chip" data-val="มีคนช่วยกรอก" onclick="pick('filledBy',this)">มีคนช่วยกรอก</button>
+        <button type="button" class="chip" data-val="เจ้าหน้าที่หน่วยงานกรอกให้" onclick="pick('filledBy',this)">เจ้าหน้าที่หน่วยงานกรอกให้</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-dataAccurate">
+      <div class="q-label">2. ข้อมูลที่กรอกล่วงหน้าถูกต้อง ไม่ต้องกรอกใหม่ในวันตรวจ</div>
+      <div class="stars" id="dataAccurate">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('dataAccurate',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-processSmooth">
+      <div class="q-label">3. ขั้นตอนในวันตรวจรวดเร็ว ไม่ติดขัด</div>
+      <div class="stars" id="processSmooth">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('processSmooth',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-waitTimeOk">
+      <div class="q-label">4. ระยะเวลารอคอยโดยรวมเหมาะสม</div>
+      <div class="stars" id="waitTimeOk">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('waitTimeOk',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-totalTime">
+      <div class="q-label">5. ท่านใช้เวลาทั้งหมดประมาณเท่าไร</div>
+      <div class="chip-row" id="totalTime">
+        <button type="button" class="chip" data-val="ไม่เกิน 30 นาที" onclick="pick('totalTime',this)">ไม่เกิน 30 นาที</button>
+        <button type="button" class="chip" data-val="30–60 นาที" onclick="pick('totalTime',this)">30–60 นาที</button>
+        <button type="button" class="chip" data-val="1–2 ชั่วโมง" onclick="pick('totalTime',this)">1–2 ชั่วโมง</button>
+        <button type="button" class="chip" data-val="มากกว่า 2 ชั่วโมง" onclick="pick('totalTime',this)">มากกว่า 2 ชั่วโมง</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-staffCare">
+      <div class="q-label">6. เจ้าหน้าที่ดูแลและตอบข้อสงสัยอย่างเพียงพอ</div>
+      <div class="stars" id="staffCare">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('staffCare',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('staffCare',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('staffCare',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('staffCare',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('staffCare',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-prepRead">
+      <div class="q-label">7. ท่านได้อ่านคำแนะนำการเตรียมตัวก่อนตรวจหรือไม่ <span style="font-weight:400;color:#aaa">(งดอาหาร เก็บอุจจาระ/ปัสสาวะ ฯลฯ)</span></div>
+      <div class="chip-row" id="prepRead">
+        <button type="button" class="chip" data-val="อ่านแล้ว" onclick="pick('prepRead',this)">อ่านแล้ว</button>
+        <button type="button" class="chip" data-val="ทราบว่ามีแต่ไม่ได้อ่าน" onclick="pick('prepRead',this)">ทราบว่ามีแต่ไม่ได้อ่าน</button>
+        <button type="button" class="chip" data-val="ไม่ทราบว่ามี" onclick="pick('prepRead',this)">ไม่ทราบว่ามี</button>
+      </div>
+    </div>
+
+    <!-- ข้อ 7b ถามเฉพาะคนที่ตอบข้อ 7 ว่า "อ่านแล้ว" — ซ่อน/ล้างคำตอบอัตโนมัติใน syncPrepClear() -->
+    <div class="card" id="card-prepClear" style="display:none">
+      <div class="q-label">7.1 คำแนะนำชัดเจนพอให้เตรียมตัวได้ถูกต้อง</div>
+      <div class="stars" id="prepClear">
+        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('prepClear',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
+        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('prepClear',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
+        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('prepClear',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
+        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('prepClear',this)"><span class="ico">⭐⭐</span>น้อย</button>
+        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('prepClear',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-costMatch">
+      <div class="q-label">8. ยอดค่าใช้จ่ายที่ชำระจริงตรงกับที่ระบบแจ้งไว้ล่วงหน้าหรือไม่</div>
+      <div class="chip-row" id="costMatch">
+        <button type="button" class="chip" data-val="ตรงกัน" onclick="pick('costMatch',this)">ตรงกัน</button>
+        <button type="button" class="chip" data-val="ต่างกันเล็กน้อย" onclick="pick('costMatch',this)">ต่างกันเล็กน้อย</button>
+        <button type="button" class="chip" data-val="ต่างกันมาก" onclick="pick('costMatch',this)">ต่างกันมาก</button>
+        <button type="button" class="chip" data-val="ไม่ได้สังเกต" onclick="pick('costMatch',this)">ไม่ได้สังเกต</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-confirmEmail">
+      <div class="q-label">9. ท่านได้รับอีเมลยืนยันการลงทะเบียนหรือไม่</div>
+      <div class="chip-row" id="confirmEmail">
+        <button type="button" class="chip" data-val="ได้รับ" onclick="pick('confirmEmail',this)">ได้รับ</button>
+        <button type="button" class="chip" data-val="ไม่ได้รับ" onclick="pick('confirmEmail',this)">ไม่ได้รับ</button>
+        <button type="button" class="chip" data-val="ไม่ได้ให้อีเมลไว้" onclick="pick('confirmEmail',this)">ไม่ได้ให้อีเมลไว้</button>
+        <button type="button" class="chip" data-val="จำไม่ได้" onclick="pick('confirmEmail',this)">จำไม่ได้</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-overall">
+      <div class="q-label">10. ความพึงพอใจโดยรวมต่อการรับบริการครั้งนี้</div>
+      <div class="emoji-row" id="overall">
+        <button type="button" class="emoji-btn" data-val="5-ดีมาก" onclick="pick('overall',this)">🤩<span>ดีมาก</span></button>
+        <button type="button" class="emoji-btn" data-val="4-ดี" onclick="pick('overall',this)">😊<span>ดี</span></button>
+        <button type="button" class="emoji-btn" data-val="3-พอใช้" onclick="pick('overall',this)">😐<span>พอใช้</span></button>
+        <button type="button" class="emoji-btn" data-val="2-แย่" onclick="pick('overall',this)">😕<span>แย่</span></button>
+        <button type="button" class="emoji-btn" data-val="1-ปรับปรุง" onclick="pick('overall',this)">🔧<span>ปรับปรุง</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q-label">11. ถ้าปรับปรุงได้ 1 อย่าง ท่านอยากให้ปรับอะไรมากที่สุด <span style="font-weight:400;color:#aaa">(ถ้ามี)</span></div>
+      <textarea id="improveOne" rows="3" placeholder="บอกเราได้เลย..."></textarea>
+    </div>
+
+    <div class="card">
+      <div class="q-label">12. หน่วยงาน/บริษัทของท่าน <span style="font-weight:400;color:#aaa">(ไม่บังคับ)</span></div>
+      <input type="text" id="orgName" placeholder="เช่น คณะแพทยศาสตร์ มข.">
+    </div>
+
+    <div class="err-msg" id="surveyErr">⚠ กรุณาตอบให้ครบทุกข้อก่อนส่งแบบประเมิน</div>
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitPostSurvey()">ส่งแบบประเมิน</button>
+    <div class="hint">ข้อมูลจะถูกเก็บเป็นความลับ และไม่ระบุตัวตนผู้ตอบ</div>
+  </div>
+
+  <!-- ── หน้าขอบคุณ ── -->
+  <div id="thanksScreen">
+    <div class="thanks-header">
+      <div class="check">✓</div>
+      <h2>ขอบคุณสำหรับความคิดเห็น</h2>
+      <p>ทีมงานคลินิกตรวจสุขภาพ SMC<br>จะนำข้อเสนอแนะของท่านไปปรับปรุงบริการต่อไป</p>
+    </div>
+    <div class="thanks-card">
+      ท่านสามารถปิดหน้านี้ได้เลย<br>
+      หากมีข้อสงสัยเพิ่มเติม ติดต่อคลินิกตรวจสุขภาพ SMC โรงพยาบาลศรีนครินทร์
+    </div>
+    <div class="thanks-logos">
+      <img src="smc_logo.png" alt="SMC">
+      <img src="mdkku_logo.png" alt="คณะแพทยศาสตร์ มข.">
+    </div>
+  </div>
+</div>
+
+<script>
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc5qBcd2UgrxFUPvAo3VQUFjdOIyBmu85ZDv0rY75vpaQYARJer-s/exec';
+
+// หน้านี้เข้ามาจากการสแกน QR ที่จุดรอหลังตรวจเสร็จ = ไม่มี sessionStorage จากหน้าลงทะเบียนเลย
+// (ต่างจาก survey.html ที่อ่านใบสรุปต่อจาก index.html) ห้ามพึ่ง sessionStorage ในไฟล์นี้
+var answers = {};
+
+// ข้อบังคับ (ยกเว้น prepClear ที่บังคับเฉพาะตอนที่ถูกแสดง — ดู requiredNow())
+var REQUIRED_QUESTIONS = [
+  'filledBy', 'dataAccurate', 'processSmooth', 'waitTimeOk', 'totalTime',
+  'staffCare', 'prepRead', 'costMatch', 'confirmEmail', 'overall'
+];
+
+function pick(qid, btn) {
+  document.getElementById(qid).querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  answers[qid] = btn.dataset.val || btn.textContent.trim();
+  var card = document.getElementById('card-' + qid);
+  if (card) card.classList.remove('err');
+  // ข้อ 7 คุมการแสดง/ซ่อนข้อ 7.1
+  if (qid === 'prepRead') syncPrepClear();
+}
+
+// แสดงข้อ 7.1 เฉพาะเมื่อข้อ 7 = "อ่านแล้ว"
+// ⚠ ตอนซ่อนต้อง "ล้างคำตอบ 7.1 ทิ้งด้วย" ไม่ใช่แค่ซ่อน — ไม่งั้นคนที่เคยตอบ "อ่านแล้ว" + ให้ดาวไว้
+//   แล้วเปลี่ยนใจเป็น "ไม่ทราบว่ามี" จะยังส่งดาวที่มองไม่เห็นแล้วไปบันทึกลงชีต
+//   (บั๊กรูปแบบเดียวกับ updateTestGenderFilter() ใน index.html ที่เคยซ่อนอย่างเดียวแล้วราคาเพี้ยน)
+function syncPrepClear() {
+  var card = document.getElementById('card-prepClear');
+  if (!card) return;
+  if (answers['prepRead'] === 'อ่านแล้ว') {
+    card.style.display = '';
+  } else {
+    card.style.display = 'none';
+    card.classList.remove('err');
+    delete answers['prepClear'];
+    document.getElementById('prepClear').querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+  }
+}
+
+// รายการข้อบังคับ ณ ขณะนี้ = ข้อบังคับปกติ + 7.1 เฉพาะตอนที่แสดงอยู่จริง
+function requiredNow() {
+  var list = REQUIRED_QUESTIONS.slice();
+  if (answers['prepRead'] === 'อ่านแล้ว') list.push('prepClear');
+  return list;
+}
+
+function validateSurvey() {
+  var firstMissing = null;
+  requiredNow().forEach(function(qid) {
+    var card = document.getElementById('card-' + qid);
+    if (!answers[qid]) {
+      if (card) card.classList.add('err');
+      if (!firstMissing) firstMissing = card;
+    } else {
+      if (card) card.classList.remove('err');
+    }
+  });
+  if (firstMissing) {
+    document.getElementById('surveyErr').style.display = 'block';
+    firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return false;
+  }
+  document.getElementById('surveyErr').style.display = 'none';
+  return true;
+}
+
+async function submitPostSurvey() {
+  if (!validateSurvey()) return;
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true;   // กันกดส่งซ้ำ
+  btn.textContent = 'กำลังบันทึก...';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function(){ controller.abort(); }, 15000);
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'postsurvey',
+        filledBy:      answers['filledBy']      || '',
+        dataAccurate:  answers['dataAccurate']  || '',
+        processSmooth: answers['processSmooth'] || '',
+        waitTimeOk:    answers['waitTimeOk']    || '',
+        totalTime:     answers['totalTime']     || '',
+        staffCare:     answers['staffCare']     || '',
+        prepRead:      answers['prepRead']      || '',
+        // ถูกล้างทิ้งไปแล้วถ้าข้อ 7 ไม่ใช่ "อ่านแล้ว" จึงเป็นค่าว่างเสมอในกรณีนั้น
+        prepClear:     answers['prepClear']     || '',
+        costMatch:     answers['costMatch']     || '',
+        confirmEmail:  answers['confirmEmail']  || '',
+        overall:       answers['overall']       || '',
+        improveOne:    document.getElementById('improveOne').value.trim(),
+        orgName:       document.getElementById('orgName').value.trim()
+      }),
+      // ต้องเป็น text/plain เท่านั้น (application/json จะโดน CORS preflight แล้วยิงไม่ออก)
+      headers: { 'Content-Type': 'text/plain' },
+      signal: controller.signal
+    });
+  } catch(e) {
+    // บันทึกไม่ได้/timeout ก็ยังขอบคุณ ไม่ปล่อยให้ผู้ใช้ค้างอยู่หน้าเดิม
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  document.getElementById('loadingOverlay').style.display = 'none';
+  showThanks();
+}
+
+function showThanks() {
+  document.getElementById('surveyScreen').style.display = 'none';
+  document.getElementById('thanksScreen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+</script>
+</body>
+</html>
