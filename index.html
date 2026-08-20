@@ -1889,7 +1889,7 @@
   @media print {
     .btn-submit, .price-box, .filter-bar { display: none; }
     .back-to-top, .back-to-bottom, .val-toast, #valToast,
-    .atwarn-popup, .amend-overlay { display: none !important; }
+    .atwarn-popup { display: none !important; }
     /* HN mode: hide age row when printing */
     .hn-age { display: none !important; }
     /* ยอดรวมต้องอยู่หน้าเดียวกับรายการที่เลือก ไม่ตกไปหน้าถัดไป */
@@ -1937,48 +1937,14 @@
   .back-to-bottom svg { width: 20px; height: 20px; }
   .back-to-bottom:hover { background: #2D3481; box-shadow: 0 6px 20px rgba(45,52,129,0.4); }
 
-  /* ─── Amendment Popup ─── */
-  .amend-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
-    display: none; align-items: center; justify-content: center;
-    z-index: 9997; padding: 20px; backdrop-filter: blur(3px);
-  }
-  .amend-overlay.show { display: flex; }
-  .amend-box {
-    background: #fff; border-radius: 16px; padding: 28px 28px 24px;
-    width: 100%; max-width: 400px; box-shadow: 0 16px 48px rgba(0,0,0,0.25);
-    animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
-    text-align: center;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-  .amend-icon { font-size: 36px; margin-bottom: 10px; }
-  .amend-title { font-size: 18px; font-weight: 800; color: var(--primary-dark,#001D3D); margin-bottom: 6px; }
-  .amend-sub { font-size: 13px; color: var(--text-muted,#6B7280); margin-bottom: 20px; line-height: 1.5; }
-  .amend-btns { display: flex; flex-direction: column; gap: 10px; }
-  .amend-btn-specify {
-    padding: 11px 20px; border-radius: 10px; border: none; cursor: pointer;
-    font-size: 14px; font-weight: 700;
-    background: var(--accent,#E67E22); color: #fff;
-    transition: background 0.2s;
-  }
-  .amend-btn-specify:hover { background: #CF6D17; }
-  .amend-btn-none {
-    padding: 11px 20px; border-radius: 10px; border: 1.5px solid #ddd; cursor: pointer;
-    font-size: 14px; font-weight: 600; background: #f5f5f5; color: #555;
-    transition: background 0.2s;
-  }
-  .amend-btn-none:hover { background: #eee; }
-
-  .amend-input {
-    padding: 7px 10px; border: 1.5px solid #ddd; border-radius: 7px;
-    font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box;
+  /* ─── ที่อยู่ใหม่ (โหมด "มี HN") ─── แทนที่ป็อปอัปแก้ไขข้อมูลเดิมที่ถูกถอดออกไปแล้ว */
+  #newAddr {
+    width: 100%; box-sizing: border-box;
+    padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 7px;
+    font-size: 13px; font-family: inherit; resize: vertical;
     color: var(--text-dark,#1a1a2e);
   }
-  .amend-input:focus { border-color: var(--accent,#E67E22); outline: none; }
-  .amend-field-label { font-size: 12px; font-weight: 700; color: var(--text-muted,#6B7280); margin-bottom: 5px; }
-  #amendBox { transition: max-width 0.3s; }
-  #amendBox.wide { max-width: 560px; }
+  #newAddr:focus { border-color: var(--accent,#E67E22); outline: none; }
 
   /* ── Staff Search Floating Button ── */
   .staff-fab {
@@ -2203,8 +2169,12 @@
           </div>
           <div class="field-hint" id="patientCardHint" style="display:none;color:#E67E22;font-size:12px"></div>
 
-          <!-- ── แสดงข้อมูลที่แก้ไข ── -->
-          <div id="amendSummaryBadge" style="display:none;margin-top:10px;background:#FFFBEA;border:1.5px solid #F6C90E;border-radius:9px;padding:10px 14px;font-size:13px;color:#5A4000;line-height:1.7">
+          <!-- ── ที่อยู่ใหม่ (ไม่บังคับกรอก) ── แสดงเฉพาะโหมด "มี HN" (ซ่อน/แสดงที่ toggleHN())
+               โหมด "ไม่มี HN" มีบล็อกที่อยู่เต็มใน fullInfoSection อยู่แล้ว จึงไม่ต้องถามซ้ำ -->
+          <div id="newAddrBlock" style="display:none;margin-top:12px">
+            <label for="newAddr" style="display:block;font-size:13px;font-weight:700;color:var(--text-muted,#6B7280);margin-bottom:4px">ที่อยู่ใหม่ (ถ้าเปลี่ยน)</label>
+            <textarea id="newAddr" rows="2" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด"></textarea>
+            <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">กรอกเฉพาะกรณีย้ายที่อยู่ ถ้าที่อยู่เดิมที่โรงพยาบาลมียังถูกต้อง ไม่ต้องกรอก</div>
           </div>
 
         </div>
@@ -4965,16 +4935,18 @@ function handleSubmit(e) {
   const hnNumber = (document.getElementById('patientCardNo')?.value || '').trim();
   const isHNMode = hnStatusVal === 'has' && hnNumber.length > 0;
 
-  // ── โหมด "มี HN": ค่าที่กรอกในป็อปอัปแก้ไขข้อมูล ให้ทับค่าเดิมในคอลัมน์เดียวกันของชีต ──
-  // (ค่าที่ผู้ป่วยแจ้งแก้ = ค่าที่ถูกต้องกว่า) ช่องไหนไม่ได้กรอกก็ใช้ค่าจากฟอร์มส่วนที่ 1 ตามเดิม
-  // ตัวข้อความสรุปยังถูกเก็บใน amendNote อีกทางเพื่อให้เจ้าหน้าที่ตรวจสอบย้อนหลังได้ว่าแก้อะไรบ้าง
-  const _am = id => (isHNMode ? (document.getElementById(id)?.value || '').trim() : '');
-  const subPrefix    = _am('ap_prefix')    || prefixVal;
-  const subFirstName = _am('ap_firstName') || fname;
-  const subLastName  = _am('ap_lastName')  || lname;
-  const subOldFirst  = _am('ap_oldFirst')  || (document.getElementById('oldFirstName')?.value || '');
-  const subOldLast   = _am('ap_oldLast')   || (document.getElementById('oldLastName')?.value || '');
-  const subPhone     = _am('ap_phone')     || (document.getElementById('phone')?.value || '');
+  // ── ค่าที่ใช้บันทึกลงชีต: อ่านจากช่องหลักในส่วนที่ 1 ตรงๆ ทั้ง 2 โหมด ──
+  // (เดิมโหมด "มี HN" มีป็อปอัปแก้ไขข้อมูลถามซ้ำอีกชุด — ถอดออกแล้ว เพราะช่องเหล่านี้
+  //  อยู่นอก fullInfoSection จึงแสดงและบังคับกรอกอยู่แล้วทั้งสองโหมด)
+  const subPrefix    = prefixVal;
+  const subFirstName = fname;
+  const subLastName  = lname;
+  const subOldFirst  = document.getElementById('oldFirstName')?.value || '';
+  const subOldLast   = document.getElementById('oldLastName')?.value || '';
+  const subPhone     = document.getElementById('phone')?.value || '';
+
+  // ที่อยู่ใหม่ (โหมด "มี HN" เท่านั้น, ไม่บังคับกรอก) — ของเดียวที่โหมด HN ยังไม่ได้ถาม
+  const newAddrVal = isHNMode ? (document.getElementById('newAddr')?.value || '').trim() : '';
 
   const nameOrHN = isHNMode
     ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${escHtml(hnNumber)}</span></div>
@@ -5008,8 +4980,8 @@ function handleSubmit(e) {
     lastName:      subLastName,
     hnStatus:      hnStatusEl ? (hnStatusEl.value === 'has' ? 'มี HN' : 'ไม่มี HN') : '',
     hn:            document.getElementById('patientCardNo')?.value || '',
-    // ข้อมูลที่ผู้ป่วยแจ้งแก้ในป็อปอัปโหมด "มี HN" (เก็บเป็นข้อความบรรทัดเดียว คั่นด้วย |)
-    amendNote:     isHNMode ? _amendParts.join(' | ') : '',
+    // คอลัมน์ 'ข้อมูลที่แก้ไข (โหมด HN)' ของชีต — ตอนนี้เหลือแค่ที่อยู่ใหม่ที่ผู้ป่วยแจ้ง
+    amendNote:     newAddrVal ? 'ที่อยู่ใหม่: ' + newAddrVal : '',
     dob:           document.getElementById('dob')?.value || '',
     age:           age,
     gender:        g,
@@ -5054,8 +5026,8 @@ function handleSubmit(e) {
       return v === 'none' ? 'ไม่มี' : '';
     })(),
     // ที่อยู่
-    // โหมด HN: ช่องที่อยู่ในส่วนที่ 1 ถูกซ่อนไว้ ถ้าผู้ป่วยแจ้งที่อยู่ใหม่ในป็อปอัปให้ใช้ค่านั้นแทน
-    address:       _am('ap_addr') || [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
+    // โหมด HN: ช่องที่อยู่ในส่วนที่ 1 ถูกซ่อนไว้ ถ้าผู้ป่วยแจ้งที่อยู่ใหม่ให้ใช้ค่านั้นแทน
+    address:       newAddrVal || [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
     subdistrict:   document.getElementById('subdistrict')?.value || '',
     district:      document.getElementById('district')?.value || '',
     province:      document.getElementById('province')?.value || '',
@@ -5196,7 +5168,7 @@ function handleSubmit(e) {
       lastName: subLastName,
       hnMode: isHNMode,
       hn: hnNumber,
-      amendParts: isHNMode ? [..._amendParts] : [],
+      newAddr: newAddrVal,
       dept: dept,
       orgStatus: document.getElementById('orgStatus')?.value || '',
       payRight: payRight,
@@ -5426,12 +5398,14 @@ function toggleHN(hasHN) {
   const bloodBlock = document.getElementById('bloodGroupBlock');
   if (bloodBlock) bloodBlock.style.display = hasHN ? 'none' : 'block';
 
+  // ที่อยู่ใหม่: แสดงเฉพาะโหมด "มี HN" (โหมดไม่มี HN มีบล็อกที่อยู่เต็มอยู่แล้ว)
+  // ไม่ล้างค่าที่พิมพ์ไว้เมื่อซ่อน — พฤติกรรมเดียวกับ bloodGroupBlock ข้างบน
+  const newAddrBlock = document.getElementById('newAddrBlock');
+  if (newAddrBlock) newAddrBlock.style.display = hasHN ? 'block' : 'none';
+
   if (hasHN) {
     // ซ่อน fullInfoSection (วันเกิด, ที่อยู่ ฯลฯ) แต่คงชื่อ-นามสกุลไว้
     if (fullInfo) fullInfo.style.display = 'none';
-    // Show amendment popup
-    const ov = document.getElementById('amendOverlay');
-    if (ov) ov.classList.add('show');
   } else {
     // แสดง fullInfoSection ทั้งหมด
     if (fullInfo) fullInfo.style.display = 'block';
@@ -5446,70 +5420,6 @@ function toggleHN(hasHN) {
 function _setFullInfoRequired(req) {
   // nameSection แสดงเสมอในทุกโหมด → prefix/firstName/lastName required ตลอด
   // ฟังก์ชันนี้คงไว้เพื่อ backward compatibility
-}
-
-function amendSpecify() {
-  // Switch to step 2 inside the popup
-  document.getElementById('amendStep1').style.display = 'none';
-  document.getElementById('amendStep2').style.display = 'block';
-  document.getElementById('amendBox').classList.add('wide');
-}
-
-// เก็บข้อมูลที่แก้ไขแบบ global เพื่อส่งไปแสดงใน modal
-let _amendParts = [];
-
-function amendSave() {
-  // Collect amendment note and store
-  const parts = [];
-  const pref = document.getElementById('ap_prefix')?.value;
-  const fn   = document.getElementById('ap_firstName')?.value.trim();
-  const ln   = document.getElementById('ap_lastName')?.value.trim();
-  const of_  = document.getElementById('ap_oldFirst')?.value.trim();
-  const ol   = document.getElementById('ap_oldLast')?.value.trim();
-  const ph   = document.getElementById('ap_phone')?.value.trim();
-  const ad   = document.getElementById('ap_addr')?.value.trim();
-  const nt   = document.getElementById('ap_note')?.value.trim();
-
-  if (pref || fn || ln) parts.push('ชื่อ-สกุล: ' + [pref,fn,ln].filter(Boolean).join(' '));
-  if (of_ || ol) parts.push('ชื่อเดิม: ' + [of_,ol].filter(Boolean).join(' '));
-  if (ph)  parts.push('โทร: ' + ph);
-  if (ad)  parts.push('ที่อยู่: ' + ad);
-  if (nt)  parts.push('หมายเหตุ: ' + nt);
-
-  _amendParts = [...parts]; // บันทึกไว้ใช้ตอน submit
-
-  // Show a summary badge below the HN block
-  const badge = document.getElementById('amendSummaryBadge');
-  if (badge && parts.length) {
-    badge.innerHTML = '<div style="display:flex;align-items:center;gap:6px;font-weight:700;color:#856404;margin-bottom:6px">📝 ข้อมูลที่แก้ไข</div>' +
-      parts.map(p => '<div style="display:flex;gap:6px;align-items:baseline"><span style="color:#B8860B">•</span><span>' + escHtml(p) + '</span></div>').join('') +
-      '<div style="margin-top:8px;border-top:1px solid #F0D060;padding-top:8px">' +
-      '<button onclick="reopenAmend()" style="width:100%;padding:7px 12px;background:#E67E22;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">✏ แก้ไขข้อมูล</button>' +
-      '</div>';
-    badge.style.display = 'block';
-  }
-  closeAmend();
-}
-
-function amendNone() {
-  // Clear badge and stored amend data if no changes
-  const badge = document.getElementById('amendSummaryBadge');
-  if (badge) badge.style.display = 'none';
-  _amendParts = [];
-  closeAmend();
-}
-
-function closeAmend() {
-  document.getElementById('amendOverlay').classList.remove('show');
-  // Reset to step 1 for next time
-  document.getElementById('amendStep1').style.display = 'block';
-  document.getElementById('amendStep2').style.display = 'none';
-  document.getElementById('amendBox').classList.remove('wide');
-}
-
-function reopenAmend() {
-  const ov = document.getElementById('amendOverlay');
-  if (ov) ov.classList.add('show');
 }
 
 // Legacy stubs
@@ -5935,13 +5845,11 @@ function showSuccessModal(data) {
   if (hasHNMode) {
     html += `<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">${escHtml(data.hn)}</span></div>`;
     if (data.name) html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${escHtml(data.name)}</span></div>`;
-    // แสดงข้อมูลที่แก้ไข (ถ้ามี)
-    if (data.amendParts && data.amendParts.length > 0) {
+    // แสดงที่อยู่ใหม่ เฉพาะเมื่อผู้ป่วยกรอกมาเท่านั้น
+    if (data.newAddr) {
       html += `<div style="background:#FFFBEA;border:1.5px solid #F6C90E;border-radius:9px;padding:10px 14px;margin:8px 0;font-size:13px;color:#5A4000;line-height:1.8">`;
-      html += `<div style="font-weight:700;color:#856404;margin-bottom:4px">📝 ข้อมูลที่แก้ไข</div>`;
-      data.amendParts.forEach(p => {
-        html += `<div>• ${escHtml(p)}</div>`;
-      });
+      html += `<div style="font-weight:700;color:#856404;margin-bottom:4px">📝 ที่อยู่ใหม่</div>`;
+      html += `<div>${escHtml(data.newAddr)}</div>`;
       html += `</div>`;
     }
   } else {
@@ -6894,78 +6802,6 @@ function printStaffSummary() {
         ปิด
       </button>
     </div>
-  </div>
-</div>
-
-<!-- ─── Amendment Popup (shown when HN = มี) ─── -->
-<div class="amend-overlay" id="amendOverlay">
-  <div class="amend-box" id="amendBox">
-
-    <!-- ── Step 1: คำถาม ── -->
-    <div id="amendStep1">
-      <div class="amend-icon">📋</div>
-   
-      <div class="amend-title">มีข้อมูลที่ต้องการแก้ไขหรือไม่?</div>
-      <div class="amend-sub">เช่น ชื่อ-นามสกุล, ที่อยู่, ข้อมูลการแพ้ยา<br>หรือข้อมูลส่วนตัวอื่นๆ</div>
-      <div class="amend-btns">
-        <button class="amend-btn-specify" onclick="amendSpecify()">แก้ไขข้อมูล</button>
-        <button class="amend-btn-none"    onclick="amendNone()">ไม่แก้ไข</button>
-      </div>
-    </div>
-
-    <!-- ── Step 2: ฟอร์มแก้ไข (ซ่อนไว้ก่อน) ── -->
-    <div id="amendStep2" style="display:none;text-align:left">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div style="font-size:16px;font-weight:800;color:var(--primary-dark,#001D3D)">📝 ระบุส่วนที่ต้องแก้ไข</div>
-        <button onclick="amendNone()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;line-height:1">✕</button>
-      </div>
-      <!-- ชื่อ-นามสกุล -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">คำนำหน้า / ชื่อ / นามสกุล</div>
-        <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:6px">
-          <select id="ap_prefix" style="padding:7px 8px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
-            <option value="">คำนำหน้า</option>
-            <option>นาย</option><option>นาง</option><option>น.ส.</option>
-            <option>Mr.</option><option>Miss</option><option>Mrs.</option>
-          </select>
-          <input type="text" id="ap_firstName" placeholder="ชื่อ" class="amend-input" oninput="thaiNameInput(this)">
-          <input type="text" id="ap_lastName"  placeholder="นามสกุล" class="amend-input" oninput="thaiNameInput(this)">
-        </div>
-      </div>
-      <!-- ชื่อเดิม / นามสกุลเดิม -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">ชื่อเดิม / นามสกุลเดิม (กรณีเปลี่ยนชื่อ-สกุล)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <input type="text" id="ap_oldFirst" placeholder="ชื่อเดิม" class="amend-input">
-          <input type="text" id="ap_oldLast"  placeholder="นามสกุลเดิม" class="amend-input">
-        </div>
-        <div style="font-size:11px;color:#E67E22;margin-top:3px">⚠ กรุณานำสำเนาใบเปลี่ยนชื่อ-นามสกุลมาด้วย</div>
-      </div>
-      <!-- โทรศัพท์ -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">เบอร์โทรศัพท์</div>
-        <input type="tel" id="ap_phone" placeholder="08x-xxx-xxxx" maxlength="10"
-          oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)"
-          class="amend-input" style="width:100%">
-      </div>
-      <!-- ที่อยู่ใหม่ -->
-      <div style="margin-bottom:10px">
-        <div class="amend-field-label">ที่อยู่ใหม่ (ถ้าเปลี่ยน)</div>
-        <input type="text" id="ap_addr" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด"
-          class="amend-input" style="width:100%">
-      </div>
-      <!-- หมายเหตุ -->
-      <div style="margin-bottom:16px">
-        <div class="amend-field-label">หมายเหตุ / ส่วนอื่นๆ ที่ต้องแก้ไข</div>
-        <textarea id="ap_note" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."
-          style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
-      </div>
-      <button onclick="amendSave()"
-        style="width:100%;padding:11px;background:var(--accent,#E67E22);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
-        ✔ บันทึกและปิด
-      </button>
-    </div>
-
   </div>
 </div>
 
