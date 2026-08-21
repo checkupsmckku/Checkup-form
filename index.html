@@ -2173,8 +2173,34 @@
                โหมด "ไม่มี HN" มีบล็อกที่อยู่เต็มใน fullInfoSection อยู่แล้ว จึงไม่ต้องถามซ้ำ -->
           <div id="newAddrBlock" style="display:none;margin-top:12px">
             <label for="newAddr" style="display:block;font-size:13px;font-weight:700;color:var(--text-muted,#6B7280);margin-bottom:4px">ที่อยู่ใหม่ (ถ้าเปลี่ยน)</label>
-            <textarea id="newAddr" rows="2" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด"></textarea>
-            <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">กรอกเฉพาะกรณีย้ายที่อยู่ ถ้าที่อยู่เดิมที่โรงพยาบาลมียังถูกต้อง ไม่ต้องกรอก</div>
+            <textarea id="newAddr" rows="2" placeholder="บ้านเลขที่ / ถนน / ซอย / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"></textarea>
+            <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">กรอกเฉพาะกรณีย้ายที่อยู่ ถ้าที่อยู่เดิมที่โรงพยาบาลมียังถูกต้อง ไม่ต้องกรอก — <strong>กรุณาระบุรหัสไปรษณีย์ด้วย</strong></div>
+          </div>
+
+          <!-- ── ข้อมูลเพิ่มเติมสำหรับผู้ที่มี HN (ไม่บังคับกรอกทั้งหมด) ──
+               ช่องพวกนี้ของเดิมอยู่ใน #fullInfoSection ซึ่งโหมด "มี HN" ซ่อนทั้งก้อน
+               จึงต้องมีชุดของตัวเองที่นี่ — ค่าที่กรอกลงคอลัมน์เดียวกันในชีตกับของเดิม
+               ⚠ ห้ามใส่ attribute required ให้ช่องไหนในบล็อกนี้ -->
+          <div id="hnExtraBlock" style="margin-top:14px">
+            <div class="field-group" style="margin-bottom:12px">
+              <label for="hnPassport" style="display:block;font-size:13px;font-weight:700;color:var(--text-muted,#6B7280);margin-bottom:4px">เลขหนังสือเดินทาง (Passport)</label>
+              <input type="text" id="hnPassport" placeholder="สำหรับชาวต่างชาติ">
+              <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">ไม่บังคับกรอก — สำหรับชาวต่างชาติที่ไม่มีเลขบัตรประชาชนไทย</div>
+            </div>
+            <div class="field-group" style="margin-bottom:4px">
+              <label style="display:block;font-size:13px;font-weight:700;color:var(--text-muted,#6B7280);margin-bottom:4px">หมู่เลือด</label>
+              <div class="chip-radio-group">
+                <label class="chip-radio blood a"><input type="radio" name="hnBloodType" value="A" onchange="syncBloodType('hn')"> A</label>
+                <label class="chip-radio blood b"><input type="radio" name="hnBloodType" value="B" onchange="syncBloodType('hn')"> B</label>
+                <label class="chip-radio blood ab"><input type="radio" name="hnBloodType" value="AB" onchange="syncBloodType('hn')"> AB</label>
+                <label class="chip-radio blood o"><input type="radio" name="hnBloodType" value="O" onchange="syncBloodType('hn')"> O</label>
+                <label class="chip-radio"><input type="radio" name="hnBloodType" value="other" onchange="syncBloodType('hn')"> อื่นๆ</label>
+                <label class="chip-radio neutral"><input type="radio" name="hnBloodType" value="unknown" onchange="syncBloodType('hn')"> ไม่ทราบ</label>
+                <label class="chip-radio neutral"><input type="radio" name="hnBloodType" value="notTested" onchange="syncBloodType('hn')"> ไม่เคยตรวจ</label>
+              </div>
+              <input type="text" id="hnBloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px" oninput="syncBloodOtherText('hn')">
+              <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">ไม่บังคับกรอก — เลือกที่นี่หรือที่หัวข้อ "หมู่เลือด" ด้านล่างก็ได้ ระบบซิงก์ให้อัตโนมัติ</div>
+            </div>
           </div>
 
         </div>
@@ -2468,15 +2494,15 @@
         <div class="field-group" style="margin-bottom:10px">
           <label>หมู่เลือด</label>
           <div class="chip-radio-group">
-            <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A"> A</label>
-            <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B"> B</label>
-            <label class="chip-radio blood ab"><input type="radio" name="bloodType" value="AB"> AB</label>
-            <label class="chip-radio blood o"><input type="radio" name="bloodType" value="O"> O</label>
-            <label class="chip-radio"><input type="radio" name="bloodType" value="other" onchange="toggleBloodOther(true)"> อื่นๆ</label>
-            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="toggleBloodOther(false)"> ไม่ทราบ</label>
-            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="toggleBloodOther(false)"> ไม่เคยตรวจ</label>
+            <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A" onchange="syncBloodType('main')"> A</label>
+            <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B" onchange="syncBloodType('main')"> B</label>
+            <label class="chip-radio blood ab"><input type="radio" name="bloodType" value="AB" onchange="syncBloodType('main')"> AB</label>
+            <label class="chip-radio blood o"><input type="radio" name="bloodType" value="O" onchange="syncBloodType('main')"> O</label>
+            <label class="chip-radio"><input type="radio" name="bloodType" value="other" onchange="syncBloodType('main')"> อื่นๆ</label>
+            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="syncBloodType('main')"> ไม่ทราบ</label>
+            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="syncBloodType('main')"> ไม่เคยตรวจ</label>
           </div>
-          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
+          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px" oninput="syncBloodOtherText('main')">
         </div>
         </div><!-- /bloodGroupBlock -->
 
@@ -4948,6 +4974,30 @@ function handleSubmit(e) {
   // ที่อยู่ใหม่ (โหมด "มี HN" เท่านั้น, ไม่บังคับกรอก) — ของเดียวที่โหมด HN ยังไม่ได้ถาม
   const newAddrVal = isHNMode ? (document.getElementById('newAddr')?.value || '').trim() : '';
 
+  // Passport (โหมด "มี HN" เท่านั้น, ไม่บังคับกรอก) — ช่อง #passport เดิมอยู่ใน fullInfoSection ที่ถูกซ่อน
+  const hnPassportVal = isHNMode ? (document.getElementById('hnPassport')?.value || '').trim() : '';
+
+  // รหัสไปรษณีย์ในโหมด "มี HN": ไม่มีช่องแยก (เจ้าของระบบสั่งให้พิมพ์รวมมาในช่องที่อยู่ใหม่)
+  // จึงต้องดึงเลข 5 หลักออกมาเองเพื่อลงคอลัมน์ 'รหัสไปรษณีย์' ของชีต
+  // เอา "กลุ่มตัวเลข 5 หลักตัวท้ายสุด" เพราะคำแนะนำใต้ช่องบอกให้ใส่รหัสไปรษณีย์ไว้ท้ายที่อยู่
+  // (บ้านเลขที่ที่บังเอิญยาว 5 หลักอยู่ต้นข้อความจึงไม่ถูกหยิบไปแทน)
+  // ⚠ ห้ามใช้ lookbehind/lookahead ใน regex ตรงนี้ — Safari เก่า parse ทั้ง <script> ไม่ผ่าน = ฟอร์มพังทั้งหน้า
+  const hnZipVal = (() => {
+    if (!isHNMode) return '';
+    const runs = [];
+    const re = /\d+/g;
+    let m;
+    while ((m = re.exec(newAddrVal)) !== null) {
+      if (m[0].length !== 5) continue;
+      const before = newAddrVal.charAt(m.index - 1);
+      const after  = newAddrVal.charAt(m.index + 5);
+      // ข้ามเลขที่บ้านแบบ 12345/6 หรือ 12345-6 — ปล่อยคอลัมน์ว่างดีกว่าใส่รหัสผิด
+      if (before === '/' || before === '-' || after === '/' || after === '-') continue;
+      runs.push(m[0]);
+    }
+    return runs.length ? runs[runs.length - 1] : '';
+  })();
+
   const nameOrHN = isHNMode
     ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${escHtml(hnNumber)}</span></div>
        <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(subPrefix + ' ' + subFirstName + ' ' + subLastName)}</span></div>`
@@ -4987,7 +5037,7 @@ function handleSubmit(e) {
     gender:        g,
     phone:         subPhone,
     idCard:        document.getElementById('idCard')?.value || '',
-    passport:      document.getElementById('passport')?.value || '',
+    passport:      hnPassportVal || document.getElementById('passport')?.value || '',
     contactEmail:  document.getElementById('contactEmail')?.value.trim() || '',
     // หน่วยงาน
     department:    dept,
@@ -5003,8 +5053,11 @@ function handleSubmit(e) {
     //    (ของจริงคือ name="bloodType" / name="drugAllergy" + #drugAllergyName) → คอลัมน์ 'หมู่เลือด'
     //    และ 'ประวัติแพ้ยา' ในชีตจึงว่างเปล่ามาตลอดทั้งที่ผู้ป่วยกรอกให้แล้ว — แก้ 2026-08-18
     bloodGroup: (() => {
-      const v = document.querySelector('input[name="bloodType"]:checked')?.value || '';
-      if (v === 'other')     return document.getElementById('bloodOther')?.value.trim() || 'อื่นๆ';
+      const el = document.querySelector('input[name="bloodType"]:checked')
+              || document.querySelector('input[name="hnBloodType"]:checked');
+      const v = el?.value || '';
+      if (v === 'other')     return document.getElementById('bloodOther')?.value.trim()
+                                 || document.getElementById('hnBloodOther')?.value.trim() || 'อื่นๆ';
       if (v === 'unknown')   return 'ไม่ทราบ';
       if (v === 'notTested') return 'ไม่เคยตรวจ';
       return v;   // A / B / AB / O — หรือ '' ถ้ายังไม่เลือก
@@ -5031,7 +5084,7 @@ function handleSubmit(e) {
     subdistrict:   document.getElementById('subdistrict')?.value || '',
     district:      document.getElementById('district')?.value || '',
     province:      document.getElementById('province')?.value || '',
-    zipcode:       document.getElementById('zipcode')?.value || '',
+    zipcode:       hnZipVal || document.getElementById('zipcode')?.value || '',
     // สัญชาติ
     nationality: (() => { const v = document.querySelector('input[name="nationality"]:checked')?.value || ''; return v === 'other' ? (document.getElementById('nationalityOther')?.value.trim() || '') : v; })(),
     ethnicity:   (() => { const v = document.querySelector('input[name="ethnicity"]:checked')?.value || '';   return v === 'other' ? (document.getElementById('ethnicityOther')?.value.trim() || '') : v; })(),
@@ -5179,7 +5232,8 @@ function handleSubmit(e) {
         formData.subdistrict ? 'ต.' + formData.subdistrict : '',
         formData.district    ? 'อ.' + formData.district    : '',
         formData.province    ? 'จ.' + formData.province    : '',
-        formData.zipcode || ''
+        // โหมด HN: รหัสไปรษณีย์ถูกดึงมาจากข้อความที่อยู่ใหม่อยู่แล้ว ถ้าต่อท้ายอีกจะแสดงเลขซ้ำ 2 ครั้ง
+        (formData.zipcode && !String(formData.address).includes(formData.zipcode)) ? formData.zipcode : ''
       ].filter(Boolean).join(' '),
       dob: document.getElementById('dob')?.value || '',
       age: age,
@@ -5392,11 +5446,10 @@ function toggleHN(hasHN) {
     if (ageEl) ageEl.setAttribute('required', '');
   }
 
-  // หมู่เลือด: ซ่อนในโหมด "มี HN" เพราะโรงพยาบาลมีข้อมูลอยู่แล้ว
-  // ไม่ล้างค่าที่ผู้ป่วยเผลอเลือกไว้ก่อนสลับโหมด (เป็นข้อมูลจริง เก็บลงชีตได้ ไม่เสียหาย)
-  // — พฤติกรรมเดียวกับช่องอื่นใน fullInfoSection ที่ถูกซ่อนแต่ยังส่งค่าเดิม
+  // หมู่เลือด: แสดงทั้ง 2 โหมด (เจ้าของระบบสั่งเมื่อ 2026-08-21 — เดิมซ่อนในโหมด "มี HN")
+  // โหมด HN จะเห็นคำถามหมู่เลือด 2 ที่ (กล่อง HN + ที่นี่) ซิงก์กันด้วย syncBloodType()
   const bloodBlock = document.getElementById('bloodGroupBlock');
-  if (bloodBlock) bloodBlock.style.display = hasHN ? 'none' : 'block';
+  if (bloodBlock) bloodBlock.style.display = 'block';
 
   // ที่อยู่ใหม่: แสดงเฉพาะโหมด "มี HN" (โหมดไม่มี HN มีบล็อกที่อยู่เต็มอยู่แล้ว)
   // ไม่ล้างค่าที่พิมพ์ไว้เมื่อซ่อน — พฤติกรรมเดียวกับ bloodGroupBlock ข้างบน
@@ -5609,6 +5662,34 @@ function toggleUnconscious(checked) {
   // ไม่ต้องทำอะไรพิเศษ แค่ track state
 }
 
+// ── ซิงก์หมู่เลือด 2 กล่อง ──────────────────────────────────────────────────
+// โหมด "มี HN" แสดงคำถามหมู่เลือด 2 ที่พร้อมกัน (ในกล่อง HN และในหัวข้อ "ข้อมูลสุขภาพ")
+// ตามที่เจ้าของระบบสั่ง — ซิงก์ 2 ทางเพื่อไม่ให้ผู้ป่วยเผลอตอบขัดกันเอง
+// ผลคือค่าที่ส่งเข้าชีตมีค่าเดียวเสมอ ไม่ต้องตัดสินว่ากล่องไหนชนะ
+function syncBloodType(src) {
+  const from = src === 'hn' ? 'hnBloodType' : 'bloodType';
+  const to   = src === 'hn' ? 'bloodType'   : 'hnBloodType';
+  const v = document.querySelector('input[name="' + from + '"]:checked')?.value || '';
+  document.querySelectorAll('input[name="' + to + '"]').forEach(function(el) {
+    el.checked = (el.value === v);
+  });
+  const show = (v === 'other');
+  ['bloodOther', 'hnBloodOther'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = show ? 'block' : 'none';
+    if (!show) el.value = '';
+  });
+}
+
+// ซิงก์ข้อความในช่อง "ระบุหมู่เลือด" ของทั้ง 2 กล่องให้ตรงกัน
+function syncBloodOtherText(src) {
+  const fromEl = document.getElementById(src === 'hn' ? 'hnBloodOther' : 'bloodOther');
+  const toEl   = document.getElementById(src === 'hn' ? 'bloodOther'   : 'hnBloodOther');
+  if (fromEl && toEl) toEl.value = fromEl.value;
+}
+
+// legacy — ไม่มีคนเรียกแล้วตั้งแต่ย้ายไปใช้ syncBloodType()
 function toggleBloodOther(show) {
   document.getElementById('bloodOther').style.display = show ? 'block' : 'none';
   if (!show) document.getElementById('bloodOther').value = '';
