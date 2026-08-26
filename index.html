@@ -1233,6 +1233,27 @@
   .chip-radio.allergy:has(input:checked) { border-color: #E74C3C; background: #FDEDEC; color: #C0392B; }
   .chip-radio.safe:has(input:checked) { border-color: var(--success); background: #E8F8F5; color: var(--success); }
 
+  /* ─── BMD (DEXA) survey — รายการโรค ข้อ 6 ── เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง ─── */
+  .bmd-check-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    padding: 3px 0;
+  }
+  .bmd-check-row input[type="checkbox"] { cursor: pointer; accent-color: var(--primary); }
+  .bmd-check-row input[type="number"] {
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: 13px;
+    width: 70px;
+  }
+
 
   /* ─── Delivery Section ─── */
   .delivery-grid {
@@ -2524,6 +2545,21 @@
           <input type="text" id="chronicDiseaseDetail" class="inline-input full" placeholder="ระบุโรคประจำตัว เช่น เบาหวาน ความดันโลหิตสูง" style="display:none;margin-top:6px">
         </div>
 
+        <!-- ── ประวัติการเจ็บป่วย/ผ่าตัด ── เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง
+             อยู่ "นอก" #fullInfoSection เหมือนโรคประจำตัว → ถามทั้งโหมด "มี HN" และ "ไม่มี HN"
+             ⚠ attribute required บน radio บังคับไม่ได้จริงในฟอร์มนี้ (form ตั้ง novalidate + generic
+                [required] loop ข้าม radio เพราะ radio.value ไม่เคยว่าง) → ต้องมี explicit check
+                ใน validateAndScrollToError() เท่านั้น -->
+        <div class="sub-section-label">ประวัติการเจ็บป่วย/ผ่าตัด</div>
+        <div class="field-group" style="margin-bottom:14px">
+          <label>ประวัติการเจ็บป่วย/ผ่าตัด <span class="req">*</span></label>
+          <div class="chip-radio-group">
+            <label class="chip-radio safe"><input type="radio" name="illnessSurgery" value="none" onchange="toggleIllnessSurgery(false)"> ไม่มี</label>
+            <label class="chip-radio allergy"><input type="radio" name="illnessSurgery" value="yes" onchange="toggleIllnessSurgery(true)"> มี (ระบุ)</label>
+          </div>
+          <input type="text" id="illnessSurgeryDetail" class="inline-input full" placeholder="ระบุประวัติการเจ็บป่วย/ผ่าตัด เช่น ผ่าตัดไส้ติ่ง ปี 2560" style="display:none;margin-top:6px">
+        </div>
+
         <!-- ── ประวัติการแพ้ยาและอาหาร ── -->
         <div class="sub-section-label">ประวัติการแพ้ยาและอาหาร</div>
         <div class="field-group" style="margin-bottom:10px">
@@ -2799,6 +2835,136 @@
         <div class="test-grid" id="testGrid">
           <!-- Rendered by JS -->
         </div>
+
+        <!-- ── แบบซักประวัติ BMD (DEXA) ── เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง
+             โผล่เฉพาะเมื่อเลือกรายการตรวจ id:33 (BMD เอวและสะโพก) — ควบคุมทั้งหมดผ่าน updateBmdBlock()
+             (เรียกจากท้าย setTest() ทุกครั้ง + จากจุดรีเซ็ตฟอร์ม)
+             ⚠ ห้ามใส่ required ให้ช่องในนี้เลย — บล็อกถูกซ่อนด้วย style.display ไม่ใช่แค่ offsetParent
+                (generic [required] loop ข้าม hidden field ด้วย offsetParent===null ซึ่งพังง่ายถ้าซ่อนวิธีอื่น)
+                → ต้องเช็คเองใน validateAndScrollToError() เท่านั้น ดูบล็อกเช็คตรงนั้นประกอบ
+             ⚠ ต้นฉบับคือแบบสอบถาม DEXA กระดาษของหน่วยเวชศาสตร์นิวเคลียร์ สาขารังสีวิทยา — ยึดถ้อยคำตามกระดาษ
+                ห้ามแก้คำถาม/ตัวเลือกเองโดยไม่เช็คกับต้นฉบับก่อน -->
+        <div id="bmdBlock" style="display:none">
+          <div class="sub-section-label" style="margin-top:18px">แบบสอบถามผู้ป่วยตรวจความหนาแน่นของกระดูกด้วย Dual-energy X-ray Absorptiometry (DEXA)</div>
+          <div style="font-size:12px;color:var(--text-muted,#6B7280);margin:-6px 0 10px">หน่วยเวชศาสตร์นิวเคลียร์ สาขารังสีวิทยา คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</div>
+          <div class="field-hint" style="margin-bottom:14px">กรุณาตอบคำถามต่อไปนี้ หากมีข้อสงสัยเกี่ยวกับคำถาม สามารถสอบถามเจ้าหน้าที่ได้ทุกเมื่อ</div>
+
+          <!-- 1.1 ข้อมูลพื้นฐาน
+               ⚠ ใบกระดาษต้นฉบับมีช่อง "น้ำหนัก" กับ "ส่วนสูง" ด้วย — **ตัดออกโดยตั้งใจ** (เจ้าของสั่ง 2026-08-27)
+                  เพราะเจ้าหน้าที่ชั่ง/วัดให้จริงในวันเข้ารับบริการอยู่แล้ว ให้ผู้ป่วยกรอกล่วงหน้าได้ค่าที่ไม่ตรง
+                  ถ้าจะเอากลับ ต้องเพิ่มทั้ง 4 จุด: ช่องกรอก, validate, ท่อนใน bmdSurvey, การล้างค่าใน updateBmdBlock() -->
+          <div class="field-group" style="margin-bottom:14px">
+            <label>มือข้างที่ถนัด <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdHand" value="ซ้าย"> ซ้าย</label>
+              <label class="chip-radio"><input type="radio" name="bmdHand" value="ขวา"> ขวา</label>
+            </div>
+          </div>
+
+          <!-- 1.2 คำถาม 7 ข้อ ตามแบบสอบถามกระดาษ -->
+          <div class="field-group" style="margin-bottom:14px">
+            <label>1. ท่านเคยมีกระดูกหักที่เกิดขึ้นเองหรือจากการได้รับแรงกระแทกที่ไม่รุนแรงหรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ1" value="เคย"> เคย</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ1" value="ไม่เคย"> ไม่เคย</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:14px">
+            <label>2. บิดามารดาของท่านเคยกระดูกสะโพกหักหรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ2" value="เคย"> เคย</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ2" value="ไม่เคย"> ไม่เคย</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:14px">
+            <label>3. ท่านสูบบุหรี่หรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ3" value="สูบ"> สูบ</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ3" value="ไม่สูบ"> ไม่สูบ</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:14px">
+            <label>4. ท่านเคยใช้ยาในกลุ่มคอร์ติโคสเตียรอยด์หรือไม่ เช่น ยาเพรดนิโซโลน เดกซาเมทาโซน <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ4" value="ใช้"> ใช้</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ4" value="ไม่ใช้"> ไม่ใช้</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:14px">
+            <label>5. ท่านเป็นข้ออักเสบรูมาตอยด์หรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ5" value="เป็น"> เป็น</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ5" value="ไม่เป็น"> ไม่เป็น</label>
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:14px">
+            <label>6. ท่านป่วยเป็นโรคต่อไปนี้โรคใดโรคหนึ่งหรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ6" value="เป็น" onchange="toggleBmdQ6Detail(true)"> เป็น</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ6" value="ไม่เป็น" onchange="toggleBmdQ6Detail(false)"> ไม่เป็น</label>
+            </div>
+            <div id="bmdQ6Detail" style="display:none;margin-top:10px;padding:12px 14px;background:#F7F7FA;border-radius:8px;flex-direction:column;gap:2px">
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="เบาหวานชนิดที่ 1"> เบาหวานชนิดที่ 1</label>
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="โรค osteogenesis imperfecta ในผู้ใหญ่"> โรค osteogenesis imperfecta ในผู้ใหญ่</label>
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="ผู้ที่มีภาวะไทรอยด์ฮอร์โมนเป็นพิษระยะยาวที่ไม่ได้รับการรักษา"> ผู้ที่มีภาวะไทรอยด์ฮอร์โมนเป็นพิษระยะยาวที่ไม่ได้รับการรักษา</label>
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="ภาวะการดูดซึมอาหารผิดปกติ"> ภาวะการดูดซึมอาหารผิดปกติ</label>
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="ผู้ที่มีภาวะพร่องฮอร์โมนเพศ"> ผู้ที่มีภาวะพร่องฮอร์โมนเพศ</label>
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="ภาวะทุพโภชนาการเรื้อรัง"> ภาวะทุพโภชนาการเรื้อรัง</label>
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ6Disease" value="โรคตับเรื้อรัง"> โรคตับเรื้อรัง</label>
+            </div>
+          </div>
+
+          <!-- ข้อ 7 — แยกออกมาจากข้อ 6 เมื่อ 2026-08-27 ตามที่เจ้าของสั่ง
+               ใบกระดาษรวม 3 ข้อนี้ไว้ในรายการโรคของข้อ 6 แต่มันเป็นเรื่องประวัติประจำเดือน/มดลูก
+               ไม่ใช่ "โรค" และถามเฉพาะผู้หญิง จึงแยกเป็นข้อของตัวเอง (แอลกอฮอล์เลื่อนไปเป็นข้อ 8)
+               ⚠ ไม่บังคับตอบ — เป็นแบบ "ติ๊กเท่าที่ตรงกับตัวเอง" ผู้หญิงที่ไม่มีข้อไหนตรงเลยเว้นว่างได้
+               แสดง/ล้างค่าโดย updateBmdFemaleOnly() -->
+          <div id="bmdQ7Female" class="field-group" style="display:none;margin-bottom:14px">
+            <label>7. สำหรับผู้หญิง — ประวัติเกี่ยวกับประจำเดือนและมดลูก <span style="font-weight:400;color:var(--text-muted,#6B7280);font-size:12px">(ติ๊กเท่าที่ตรงกับท่าน)</span></label>
+            <div style="margin-top:8px;padding:12px 14px;background:#F7F7FA;border-radius:8px;display:flex;flex-direction:column;gap:2px">
+              <label class="bmd-check-row"><input type="checkbox" name="bmdQ7Female" value="ประจำเดือนหมดก่อนอายุ 45 ปี"> ประจำเดือนหมดก่อนอายุ 45 ปี</label>
+              <label class="bmd-check-row">
+                <input type="checkbox" id="bmdMenopauseChk" onchange="toggleBmdAgeInput('bmdMenopauseAge', this.checked)"> หมดประจำเดือนเองเมื่ออายุ
+                <input type="number" id="bmdMenopauseAge" min="1" max="120" style="display:none" disabled> ปี
+              </label>
+              <label class="bmd-check-row">
+                <input type="checkbox" id="bmdHysterectomyChk" onchange="toggleBmdAgeInput('bmdHysterectomyAge', this.checked)"> ผ่าตัดมดลูกเมื่ออายุ
+                <input type="number" id="bmdHysterectomyAge" min="1" max="120" style="display:none" disabled> ปี
+              </label>
+            </div>
+          </div>
+
+          <div class="field-group" style="margin-bottom:14px">
+            <label>8. ท่านดื่มเครื่องดื่มแอลกอฮอล์ตั้งแต่ 3 ยูนิตต่อวันขึ้นไปหรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group">
+              <label class="chip-radio"><input type="radio" name="bmdQ8" value="ใช่"> ใช่</label>
+              <label class="chip-radio"><input type="radio" name="bmdQ8" value="ไม่ใช่"> ไม่ใช่</label>
+            </div>
+            <div class="field-hint">เบียร์ตั้งแต่ 285 มิลลิลิตร (1 แก้ว หรือ 1 กระป๋อง) · เหล้าตั้งแต่ 30 มิลลิลิตร (1 เป๊ก) · ไวน์ตั้งแต่ 120 มิลลิลิตร (ครึ่งแก้ว)</div>
+          </div>
+
+          <!-- 1.4 สำหรับผู้หญิง — แสดง/ล้างค่าโดย updateBmdFemaleOnly() -->
+          <div id="bmdFemaleBlock" style="display:none">
+            <div class="sub-section-label" style="margin-top:12px">สำหรับผู้หญิง กรุณาตอบคำถามต่อไปนี้</div>
+            <div class="field-group" style="margin-bottom:14px">
+              <label>ขณะนี้ท่านมีการตั้งครรภ์หรือไม่ <span class="req">*</span></label>
+              <div class="chip-radio-group">
+                <label class="chip-radio"><input type="radio" name="bmdPregnant" value="ไม่ตั้งครรภ์"> ไม่ตั้งครรภ์</label>
+                <label class="chip-radio"><input type="radio" name="bmdPregnant" value="ตั้งครรภ์"> ตั้งครรภ์</label>
+                <label class="chip-radio"><input type="radio" name="bmdPregnant" value="ไม่แน่ใจ"> ไม่แน่ใจ</label>
+              </div>
+            </div>
+            <div class="field-group" style="margin-bottom:14px">
+              <label>ท่านยังมีประจำเดือนอยู่หรือไม่ <span class="req">*</span></label>
+              <div class="chip-radio-group">
+                <label class="chip-radio"><input type="radio" name="bmdMenstrual" value="หมดประจำเดือน มากกว่า 12 เดือน"> หมดประจำเดือน มากกว่า 12 เดือน</label>
+                <label class="chip-radio"><input type="radio" name="bmdMenstrual" value="หมดประจำเดือน แต่ยังไม่ถึง 12 เดือน"> หมดประจำเดือน แต่ยังไม่ถึง 12 เดือน</label>
+                <label class="chip-radio"><input type="radio" name="bmdMenstrual" value="ยังมีประจำเดือนอยู่"> ยังมีประจำเดือนอยู่</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -3309,14 +3475,14 @@ const TESTS = [
   { id:20, name:'ตรวจสารบ่งชี้มะเร็งลำไส้', eng:'CEA for GI Cancer', price:320,  gender:'all', tags:['cancer'] },
   { id:21, name:'ตรวจสารบ่งชี้มะเร็งตับ', eng:'AFP for Liver Cancer', price:280,  gender:'all', tags:['cancer','liver'] },
   { id:25, name:'ตรวจหมู่เลือด', eng:'Blood Group + RH typing', price:328,  gender:'all', tags:['heart'] },
-  { id:26, name:'ตรวจการทำงานต่อมไทรอยด์', eng:'Free T3, Free T4, TSH', price:630,  gender:'all', tags:[] },
+  { id:26, name:'ตรวจการทำงานต่อมไทรอยด์', eng:'Free T3, Free T4, TSH', price:630,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> การมีอาการหรือความเสี่ยงที่สงสัยว่าต่อมไทรอยด์ทำงานผิดปกติ เช่น ไทรอยด์เป็นพิษหรือไทรอยด์ทำงานต่ำ' },
   { id:27, name:'ตรวจฮอร์โมนเพศชาย', eng:'Testosterone (Male)', price:300,  gender:'male', tags:['male'] },
-  { id:28, name:'ตรวจภาวะขาดวิตามินดี', eng:'Total Vitamin D level', price:950,  gender:'all', tags:[] },
-  { id:29, name:'ตรวจวิตามิน B12', eng:'Vitamin B12', price:260,  gender:'all', tags:[] },
-  { id:30, name:'ตรวจภาวะขาดวิตามินบี 9 (กรดโฟลิค)', eng:'Folate (serum)', price:260,  gender:'all', tags:[] },
-  { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[] },
+  { id:28, name:'ตรวจวิตามินดี', eng:'Total Vitamin D level', price:950,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> สำหรับผู้ที่มีความเสี่ยงต่อภาวะขาดวิตามินดี หรือมีโรคที่ส่งผลต่อระบบเผาผลาญแคลเซียมและกระดูก' },
+  { id:29, name:'ตรวจวิตามินบี 12', eng:'Vitamin B12', price:260,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> การวินิจฉัยภาวะขาดวิตามินบี 12 ตรวจหาสาเหตุของโรคโลหิตจาง หรือประเมินความผิดปกติของระบบประสาท' },
+  { id:30, name:'ตรวจวิตามินบี 9 (โฟเลต)', eng:'Folate (serum)', price:260,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> เพื่อประเมินภาวะขาดวิตามินบี 9 และหาสาเหตุของโรคโลหิตจาง' },
+  { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong><br>• ผู้ที่ต้องการทราบสัดส่วนไขมัน กล้ามเนื้อ และมวลน้ำในร่างกาย หรือติดตามผลการลดน้ำหนัก/เพิ่มกล้ามเนื้อ<br>• ผู้สูงอายุหรือผู้ป่วยโรคเรื้อรังที่เสี่ยงภาวะมวลกล้ามเนื้อสลาย (Sarcopenia) และผู้ที่ต้องการประเมินความเสี่ยงโรคอ้วนจากไขมันในช่องท้อง (Visceral Fat) ซึ่งสัมพันธ์กับเบาหวานและโรคหัวใจ' },
   { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ)', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[], note:'หญิง: มดลูก รังไข่ &nbsp;|&nbsp; ชาย: ต่อมลูกหมาก<br><span style="color:#E65100">⚠ ผู้หญิงที่เคยผ่าตัดมดลูก กรุณาสอบถามเจ้าหน้าที่ก่อนเลือกรายการนี้</span>' },
-  { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[] },
+  { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[], note:'<strong>แนะนำให้ตรวจทุกคน</strong> ในกลุ่มต่อไปนี้<br>♀ <strong>หญิงอายุ 65 ปีขึ้นไป</strong> — มีความเสี่ยงกระดูกพรุนสูงหลังวัยหมดประจำเดือน<br>♂ <strong>ชายอายุ 70 ปีขึ้นไป</strong> — เพื่อประเมินความเสี่ยง<br><strong>ผู้ที่มีประวัติกระดูกหัก</strong> — อายุ 50 ปีขึ้นไปที่เคยกระดูกหักจากอุบัติเหตุไม่รุนแรง' },
   { id:34, name:'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', eng:'Ultrasound Breast', price:1275, gender:'female', tags:['cancer','female'], note:'แนะนำสำหรับอายุ <strong>น้อยกว่า 35 ปี</strong> หรือ ติดตามอาการผิดปกติ<br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม Mammogram ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'], note:'รวม Ultrasound Breast อยู่แล้ว — แนะนำสำหรับอายุ <strong>35 ปีขึ้นไป</strong><br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม U/S Breast ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:36, name:'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', eng:'Hemoglobin typing (Thalassemia screening)', price:320, gender:'all', tags:[] },
@@ -3478,6 +3644,8 @@ function setTest(id, checked) {
     }
   }
   calcTotal();
+  // เช็คทุกครั้งไม่ต้องดูว่า id===33 เพราะฟังก์ชันอ่านสถานะจริงจาก checkbox เอง (เพิ่ม 2026-08-26)
+  updateBmdBlock();
 }
 
 function showAddTestWarn() {
@@ -3508,6 +3676,8 @@ function onGenderChange() {
   updateProgramPrices();
   // Update gender-specific test visibility
   updateTestGenderFilter();
+  // เผื่อเลือกเพศหลังติ๊ก BMD ไว้แล้ว — ต้องอัปเดตว่าโชว์ส่วน "สำหรับผู้หญิง" ไหม (เพิ่ม 2026-08-26)
+  updateBmdFemaleOnly();
   calcTotal();
 }
 
@@ -3571,6 +3741,71 @@ function updateTestGenderFilter() {
       el.classList.remove('hidden-gender');
     }
   });
+}
+
+// ─── BMD (DEXA) Survey Block ──────────────────────────────────────────────────
+// เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง — โผล่เฉพาะคนที่เลือกรายการตรวจ id:33 (BMD เอวและสะโพก)
+// เรียกจากท้าย setTest() ทุกครั้ง (ไม่ต้องเช็คว่า id===33 เพราะอ่านสถานะจริงจาก checkbox เอง)
+// และจากจุดรีเซ็ตฟอร์ม (resetForm) เพื่อไม่ให้ฟอร์มที่รีเซ็ตแล้วค้างคำตอบเดิม
+function updateBmdBlock() {
+  const block = document.getElementById('bmdBlock');
+  if (!block) return;
+  const show = !!document.getElementById('chk-33')?.checked;
+  block.style.display = show ? 'block' : 'none';
+  if (!show) {
+    // ล้างคำตอบทั้งบล็อกทิ้ง — ไม่ใช่แค่ซ่อนด้วย CSS (บั๊กแบบนี้เคยเกิดกับ updateTestGenderFilter() มาแล้ว)
+    ['bmdHand','bmdQ1','bmdQ2','bmdQ3','bmdQ4','bmdQ5','bmdQ6','bmdQ7Female','bmdQ8','bmdPregnant','bmdMenstrual']
+      .forEach(n => document.querySelectorAll('input[name="' + n + '"]').forEach(el => el.checked = false));
+    toggleBmdQ6Detail(false);
+    clearBmdQ7Female();
+  }
+  // เผื่อเลือกเพศไว้ก่อนติ๊ก BMD (หรือค้างจากก่อนหน้า) ให้ส่วน "สำหรับผู้หญิง" ตรงกับเพศปัจจุบันเสมอ
+  updateBmdFemaleOnly();
+}
+
+// เปิด/ปิดกล่องรายการโรค (ข้อ 6) — เลือก "ไม่เป็น" หรือปิดบล็อกทั้งก้อนต้องล้าง checkbox/ช่องอายุด้วย ไม่ใช่แค่ซ่อน
+function toggleBmdQ6Detail(show) {
+  const el = document.getElementById('bmdQ6Detail');
+  if (!el) return;
+  el.style.display = show ? 'flex' : 'none';
+  if (!show) {
+    document.querySelectorAll('input[name="bmdQ6Disease"]').forEach(c => c.checked = false);
+  }
+}
+
+// ล้างข้อ 7 (ประวัติประจำเดือน/มดลูก) — แยกเป็นฟังก์ชันเพราะถูกเรียกจาก 2 ทาง:
+// ปิดบล็อก BMD ทั้งก้อน (updateBmdBlock) และเปลี่ยนเพศเป็นชาย (updateBmdFemaleOnly)
+function clearBmdQ7Female() {
+  document.querySelectorAll('input[name="bmdQ7Female"]').forEach(c => c.checked = false);
+  const mChk = document.getElementById('bmdMenopauseChk'); if (mChk) mChk.checked = false;
+  toggleBmdAgeInput('bmdMenopauseAge', false);
+  const hChk = document.getElementById('bmdHysterectomyChk'); if (hChk) hChk.checked = false;
+  toggleBmdAgeInput('bmdHysterectomyAge', false);
+}
+
+// ช่องอายุคู่กับ checkbox "หมดประจำเดือนเองเมื่ออายุ" / "ผ่าตัดมดลูกเมื่ออายุ" — แสดง/ใช้งานได้เฉพาะติ๊กคู่ของมันเท่านั้น
+function toggleBmdAgeInput(id, show) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = show ? 'inline-block' : 'none';
+  el.disabled = !show;
+  if (!show) el.value = '';
+}
+
+// แสดงส่วน "สำหรับผู้หญิง" (คำถามตั้งครรภ์/ประจำเดือน + 3 ตัวเลือกในข้อ 6) เฉพาะเพศหญิงเท่านั้น
+// เรียกจาก onGenderChange() และ updateBmdBlock() — pattern เดียวกับ updateTestGenderFilter(): ต้อง uncheck จริง ไม่ใช่ซ่อนด้วย CSS เฉยๆ
+function updateBmdFemaleOnly() {
+  const isFemale = selectedGender === 'female';
+  const femaleBlock = document.getElementById('bmdFemaleBlock');
+  if (femaleBlock) femaleBlock.style.display = isFemale ? 'block' : 'none';
+  // ข้อ 7 (ประวัติประจำเดือน/มดลูก) เป็นข้อของผู้หญิงล้วน — แยกออกมาจากข้อ 6 เมื่อ 2026-08-27
+  const q7 = document.getElementById('bmdQ7Female');
+  if (q7) q7.style.display = isFemale ? 'block' : 'none';
+  if (!isFemale) {
+    document.querySelectorAll('input[name="bmdPregnant"]').forEach(el => el.checked = false);
+    document.querySelectorAll('input[name="bmdMenstrual"]').forEach(el => el.checked = false);
+    clearBmdQ7Female();
+  }
 }
 
 // ─── Program Change ───────────────────────────────────────────────────────────
@@ -4936,6 +5171,115 @@ function validateAndScrollToError() {
     }
   }
 
+  // ตรวจว่าเลือกประวัติการเจ็บป่วย/ผ่าตัดหรือยัง — คู่ขนานของบล็อกโรคประจำตัวด้านบน
+  const illnessSurgeryChecked = document.querySelector('input[name="illnessSurgery"]:checked');
+  if (!illnessSurgeryChecked) {
+    const illnessSurgeryEl = document.querySelector('input[name="illnessSurgery"]')?.closest('.field-group');
+    if (illnessSurgeryEl) {
+      illnessSurgeryEl.classList.add('field-error');
+      const top = illnessSurgeryEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกประวัติการเจ็บป่วย/ผ่าตัด');
+    return false;
+  }
+  if (illnessSurgeryChecked.value === 'yes') {
+    const illnessSurgeryDetail = document.getElementById('illnessSurgeryDetail');
+    if (!illnessSurgeryDetail || !illnessSurgeryDetail.value.trim()) {
+      illnessSurgeryDetail?.closest('.field-group')?.classList.add('field-error');
+      if (illnessSurgeryDetail) {
+        const top2 = illnessSurgeryDetail.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top: top2, behavior: 'smooth' });
+        illnessSurgeryDetail.focus();
+      }
+      showToast('⚠ กรุณาระบุประวัติการเจ็บป่วย/ผ่าตัด');
+      return false;
+    }
+  }
+
+  // ── แบบซักประวัติ BMD (DEXA) ── เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง
+  // ทำงานเฉพาะเมื่อ #bmdBlock แสดงอยู่ (เลือกรายการตรวจ id:33) — คนส่วนใหญ่ไม่ได้ตรวจ BMD จึงต้องข้ามบล็อกนี้ไปเฉยๆ
+  const bmdBlockEl = document.getElementById('bmdBlock');
+  if (bmdBlockEl && bmdBlockEl.style.display !== 'none') {
+    // (ไม่มีการเช็คน้ำหนัก/ส่วนสูงแล้ว — ตัดออก 2026-08-27 เพราะวัดจริงในวันเข้ารับบริการ)
+    if (!document.querySelector('input[name="bmdHand"]:checked')) {
+      const handEl = document.querySelector('input[name="bmdHand"]')?.closest('.field-group');
+      if (handEl) {
+        handEl.classList.add('field-error');
+        const top = handEl.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+      showToast('⚠ กรุณาเลือกมือข้างที่ถนัด');
+      return false;
+    }
+    // ข้อที่บังคับตอบ = 1-6 และ 8 — **ข้าม 7 โดยตั้งใจ** เพราะข้อ 7 เป็นแบบติ๊กเท่าที่ตรง
+    // (ผู้หญิงที่ไม่มีข้อไหนตรงเลยต้องส่งฟอร์มได้ ส่วนผู้ชายไม่เห็นข้อนี้ด้วยซ้ำ)
+    for (const n of [1, 2, 3, 4, 5, 6, 8]) {
+      const name = 'bmdQ' + n;
+      if (!document.querySelector('input[name="' + name + '"]:checked')) {
+        const qEl = document.querySelector('input[name="' + name + '"]')?.closest('.field-group');
+        if (qEl) {
+          qEl.classList.add('field-error');
+          const top = qEl.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+        showToast('⚠ กรุณาตอบคำถามข้อ ' + n + ' ของแบบซักประวัติ BMD');
+        return false;
+      }
+    }
+    const bmdQ6Val = document.querySelector('input[name="bmdQ6"]:checked')?.value;
+    if (bmdQ6Val === 'เป็น') {
+      // ⚠ นับเฉพาะรายการโรคในข้อ 6 เท่านั้น — 3 ข้อของผู้หญิงย้ายไปเป็นข้อ 7 แล้ว (2026-08-27)
+      //   ถ้ายังนับรวม จะเกิดกรณี "ตอบข้อ 6 ว่าเป็น แต่ไปติ๊กแค่ข้อ 7" แล้วผ่าน validate ทั้งที่ไม่ได้ระบุโรค
+      const anyDisease = document.querySelector('input[name="bmdQ6Disease"]:checked');
+      if (!anyDisease) {
+        const detailEl = document.getElementById('bmdQ6Detail');
+        if (detailEl) {
+          detailEl.closest('.field-group')?.classList.add('field-error');
+          const top = detailEl.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+        showToast('⚠ กรุณาเลือกโรคที่ท่านเป็น อย่างน้อย 1 ข้อ');
+        return false;
+      }
+    }
+    // ── ข้อ 7 (ผู้หญิง) — ไม่บังคับตอบ แต่ถ้าติ๊กช่องที่มีอายุ ต้องกรอกอายุด้วย ──
+    const mChk = document.getElementById('bmdMenopauseChk');
+    if (mChk?.checked && !document.getElementById('bmdMenopauseAge')?.value.trim()) {
+      showToast('⚠ กรุณาระบุอายุที่หมดประจำเดือน');
+      document.getElementById('bmdMenopauseAge')?.focus();
+      return false;
+    }
+    const hChk = document.getElementById('bmdHysterectomyChk');
+    if (hChk?.checked && !document.getElementById('bmdHysterectomyAge')?.value.trim()) {
+      showToast('⚠ กรุณาระบุอายุที่ผ่าตัดมดลูก');
+      document.getElementById('bmdHysterectomyAge')?.focus();
+      return false;
+    }
+    if (selectedGender === 'female') {
+      if (!document.querySelector('input[name="bmdPregnant"]:checked')) {
+        const pEl = document.querySelector('input[name="bmdPregnant"]')?.closest('.field-group');
+        if (pEl) {
+          pEl.classList.add('field-error');
+          const top = pEl.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+        showToast('⚠ กรุณาตอบคำถามเรื่องการตั้งครรภ์');
+        return false;
+      }
+      if (!document.querySelector('input[name="bmdMenstrual"]:checked')) {
+        const mEl = document.querySelector('input[name="bmdMenstrual"]')?.closest('.field-group');
+        if (mEl) {
+          mEl.classList.add('field-error');
+          const top = mEl.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+        showToast('⚠ กรุณาตอบคำถามเรื่องประจำเดือน');
+        return false;
+      }
+    }
+  }
+
     const consent = document.getElementById('consentCheck');
   if (!consent || !consent.checked) {
     const consentEl = document.getElementById('sec6') || consent?.closest('section') || consent?.closest('.form-section');
@@ -5103,6 +5447,68 @@ function handleSubmit(e) {
       const v = document.querySelector('input[name="chronicDisease"]:checked')?.value || '';
       if (v === 'yes') return 'มี: ' + (document.getElementById('chronicDiseaseDetail')?.value.trim() || '');
       return v === 'none' ? 'ไม่มี' : '';
+    })(),
+    // ประวัติการเจ็บป่วย/ผ่าตัด: "ไม่มี" หรือ "มี: <ที่ระบุ>" — คู่ขนานของ chronicDisease ด้านบน
+    illnessSurgery: (() => {
+      const v = document.querySelector('input[name="illnessSurgery"]:checked')?.value || '';
+      if (v === 'yes') return 'มี: ' + (document.getElementById('illnessSurgeryDetail')?.value.trim() || '');
+      return v === 'none' ? 'ไม่มี' : '';
+    })(),
+    // แบบซักประวัติ BMD (DEXA) — เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง เก็บเป็นคอลัมน์เดียวรวมทุกคำถาม
+    // ไม่ได้เลือกตรวจ BMD (chk-33) → '' เสมอ ห้ามใส่ขยะให้คนที่ไม่ได้ตรวจ (บั๊กแบบเดียวกับ papDeliveryMethod เดิม)
+    bmdSurvey: (() => {
+      const chk33 = document.getElementById('chk-33');
+      if (!chk33 || !chk33.checked) return '';
+      const parts = [];
+      // ไม่มีน้ำหนัก/ส่วนสูงในชุดนี้แล้ว — เจ้าหน้าที่ชั่ง/วัดจริงในวันเข้ารับบริการ (เจ้าของสั่ง 2026-08-27)
+      const hand = document.querySelector('input[name="bmdHand"]:checked')?.value;
+      if (hand) parts.push('มือข้างที่ถนัด: ' + hand);
+      const qLabels = {
+        bmdQ1: '1.กระดูกหักจากแรงกระแทกไม่รุนแรง',
+        bmdQ2: '2.บิดามารดากระดูกสะโพกหัก',
+        bmdQ3: '3.สูบบุหรี่',
+        bmdQ4: '4.ยาคอร์ติโคสเตียรอยด์',
+        bmdQ5: '5.ข้ออักเสบรูมาตอยด์',
+        bmdQ8: '8.แอลกอฮอล์ ≥3 ยูนิต/วัน'
+      };
+      ['bmdQ1', 'bmdQ2', 'bmdQ3', 'bmdQ4', 'bmdQ5'].forEach(n => {
+        const v = document.querySelector('input[name="' + n + '"]:checked')?.value;
+        if (v) parts.push(qLabels[n] + ': ' + v);
+      });
+      // ข้อ 6 — ถ้า "เป็น" ประกอบรายการโรคที่ติ๊กไว้ (รวม 2 ตัวเลือกที่มีอายุ ต่อคำว่า " ปี" ท้ายตัวเลข)
+      const q6 = document.querySelector('input[name="bmdQ6"]:checked')?.value;
+      if (q6 === 'เป็น') {
+        const diseases = [...document.querySelectorAll('input[name="bmdQ6Disease"]:checked')].map(el => el.value);
+        parts.push('6.โรคประจำตัวตามรายการ: เป็น (' + diseases.join(', ') + ')');
+      } else if (q6 === 'ไม่เป็น') {
+        parts.push('6.โรคประจำตัวตามรายการ: ไม่เป็น');
+      }
+      // ข้อ 7 — ประวัติประจำเดือน/มดลูก (หญิงเท่านั้น, ไม่บังคับ) → ใส่ท่อนนี้เฉพาะเมื่อมีการติ๊กจริง
+      // ไม่ติ๊กเลยแปลว่า "ไม่มีข้อไหนตรง" ซึ่งไม่ใช่คำตอบที่ผู้ป่วยให้ จึงไม่เขียนอะไรลงไปแทน
+      if (selectedGender === 'female') {
+        const q7items = [...document.querySelectorAll('input[name="bmdQ7Female"]:checked')].map(el => el.value);
+        const mChk = document.getElementById('bmdMenopauseChk');
+        if (mChk?.checked) {
+          const age = document.getElementById('bmdMenopauseAge')?.value.trim();
+          q7items.push('หมดประจำเดือนเองเมื่ออายุ' + (age ? ' ' + age + ' ปี' : ''));
+        }
+        const hChk = document.getElementById('bmdHysterectomyChk');
+        if (hChk?.checked) {
+          const age = document.getElementById('bmdHysterectomyAge')?.value.trim();
+          q7items.push('ผ่าตัดมดลูกเมื่ออายุ' + (age ? ' ' + age + ' ปี' : ''));
+        }
+        if (q7items.length) parts.push('7.ประวัติประจำเดือน/มดลูก: ' + q7items.join(', '));
+      }
+      const q8 = document.querySelector('input[name="bmdQ8"]:checked')?.value;
+      if (q8) parts.push(qLabels.bmdQ8 + ': ' + q8);
+      // 2 บรรทัดสุดท้ายมีเฉพาะเพศหญิง
+      if (selectedGender === 'female') {
+        const preg = document.querySelector('input[name="bmdPregnant"]:checked')?.value;
+        if (preg) parts.push('การตั้งครรภ์: ' + preg);
+        const mens = document.querySelector('input[name="bmdMenstrual"]:checked')?.value;
+        if (mens) parts.push('ประจำเดือน: ' + mens);
+      }
+      return parts.join(' | ');
     })(),
     // ลักษณะการเดินทาง — value เป็นภาษาไทยอยู่แล้ว ใช้ตรงๆ ได้เลย
     mobility: document.querySelector('input[name="mobility"]:checked')?.value || '',
@@ -5283,6 +5689,8 @@ function handleSubmit(e) {
       // ⚠ อ่านจาก formData เท่านั้น ห้ามคำนวณซ้ำที่นี่ ไม่งั้นสองที่จะเพี้ยนจากกันเมื่อแก้ตัวใดตัวหนึ่ง
       mobility:       formData.mobility || '',
       chronicDisease: formData.chronicDisease || '',
+      illnessSurgery: formData.illnessSurgery || '',
+      bmdSurvey:      formData.bmdSurvey || '',
       allergy:        formData.allergy || '',
       foodAllergy:    formData.foodAllergy || '',
       prog: selectedProgram,
@@ -5350,6 +5758,10 @@ function resetForm() {
   document.getElementById('papPostDetail').style.display = 'none';
   document.getElementById('papCallDetail').style.display = 'none';
   renderTests();
+  // ⚠ ต้องเรียกหลัง renderTests() — ตัวมันอ่านสถานะจาก #chk-33 ที่เพิ่งถูกสร้างใหม่ (ไม่ติ๊ก)
+  // ถ้าไม่เรียก: #bmdBlock ค้างเปิดหลังกด "ส่งแบบฟอร์มใหม่" แล้ว validateAndScrollToError()
+  // จะบังคับกรอกแบบสอบถาม DEXA กับคนถัดไปที่ไม่ได้เลือก BMD → ส่งฟอร์มไม่ผ่านทั้งใบ (เจอจริง 2026-08-27)
+  updateBmdBlock();
   calcTotal();
   document.getElementById('main-form').style.display = 'block';
   document.getElementById('successScreen').style.display = 'none';
@@ -5753,6 +6165,15 @@ function toggleChronicDisease(show) {
   else { el.removeAttribute('required'); el.value = ''; }
 }
 
+// ประวัติการเจ็บป่วย/ผ่าตัด: คู่ขนานของ toggleChronicDisease() ด้านบน — โครงเดียวกันเป๊ะ
+function toggleIllnessSurgery(show) {
+  const el = document.getElementById('illnessSurgeryDetail');
+  if (!el) return;
+  el.style.display = show ? 'block' : 'none';
+  if (show) { el.setAttribute('required', ''); }
+  else { el.removeAttribute('required'); el.value = ''; }
+}
+
 function togglePrefixOther(show) {
   const el = document.getElementById('prefixOther');
   el.style.display = show ? 'block' : 'none';
@@ -5992,6 +6413,7 @@ function showSuccessModal(data) {
   // ⚠ ถ้าเพิ่ม/แก้แถวตรงนี้ ต้องไปแก้ที่ showStaffSummary ให้ตรงกันด้วย ไม่งั้น 2 ใบจะเริ่มเพี้ยนจากกัน
   html += srAlways('🚶 ลักษณะการเดินทาง', data.mobility);
   html += srAlways('🩺 โรคประจำตัว', data.chronicDisease);
+  html += srAlways('🏥 ประวัติการเจ็บป่วย/ผ่าตัด', data.illnessSurgery);
   html += srAlways('💊 ประวัติแพ้ยา', data.allergy);
   html += srAlways('🍽 ประวัติแพ้อาหาร', data.foodAllergy);
   // ── อายุ / เพศ / วันเกิด — แสดงชุดเดียวกันทั้ง 2 โหมด (เจ้าของสั่ง 2026-08-26) ──
@@ -6081,6 +6503,20 @@ function showSuccessModal(data) {
 
   // ── ยอดรวม ──
   html += `<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">${data.total} <span style="font-size:13px;font-weight:500">บาท</span></span></div>`;
+
+  // ── แบบสอบถามผู้ป่วยตรวจความหนาแน่นของกระดูกด้วย DEXA (เจ้าของสั่งเพิ่ม 2026-08-26) ──
+  // แสดงเฉพาะคนที่เลือกตรวจ BMD (id:33) — ต้องอยู่ "หลัง" เนื้อใบสรุปแต่ "ก่อน" คำแนะนำก่อนเข้ารับบริการ
+  // regPrepHtml (คำแนะนำ) ถูกเก็บแยกเป็นค่าคนละตัวแล้วต่อเข้า #prepContent "หลัง" #summaryContent เสมอ
+  // (ดู survey.html: #summaryContent มาก่อน #prepContent ในโครง DOM) — วางท้ายสุดของ html ตรงนี้จึงเรียงถูกลำดับแล้ว
+  if (data.bmdSurvey) {
+    html += `<div class="sr-section-title" id="dexaSection">แบบสอบถามผู้ป่วยตรวจความหนาแน่นของกระดูกด้วย Dual-energy X-ray Absorptiometry (DEXA)</div>`;
+    data.bmdSurvey.split(' | ').forEach(part => {
+      const idx = part.indexOf(': ');
+      const label = idx >= 0 ? part.slice(0, idx) : part;
+      const val   = idx >= 0 ? part.slice(idx + 2) : '';
+      html += `<div class="sr"><span class="sl">${escHtml(label)}</span><span class="sv">${escHtml(val)}</span></div>`;
+    });
+  }
 
   // บันทึก summary HTML ไว้ใน sessionStorage แล้ว redirect ไป survey
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
@@ -6491,6 +6927,7 @@ function showStaffSummary(idx) {
   html += srA('🏠 ที่อยู่', r.address);
   html += srA('🚶 ลักษณะการเดินทาง', r.mobility);
   html += srA('🩺 โรคประจำตัว', r.chronicDisease);
+  html += srA('🏥 ประวัติการเจ็บป่วย/ผ่าตัด', r.illnessSurgery);
   if (r.bloodGroup)  html += '<div class="sr"><span class="sl">🩸 หมู่เลือด</span><span class="sv">' + escHtml(r.bloodGroup) + '</span></div>';
   html += srA('💊 ประวัติแพ้ยา', r.allergy);
   html += srA('🍽 ประวัติแพ้อาหาร', r.foodAllergy);
@@ -6563,6 +7000,19 @@ function showStaffSummary(idx) {
   // ── ยอดรวม ──
   html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(r.total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
 
+  // ── แบบสอบถามผู้ป่วยตรวจความหนาแน่นของกระดูกด้วย DEXA (เจ้าของสั่งเพิ่ม 2026-08-26) ──
+  // r.bmdSurvey มาจากคอลัมน์ 'แบบซักประวัติ BMD (DEXA)' ในชีต ผ่าน doSearch — ว่างสำหรับคนที่ไม่ได้ตรวจ BMD
+  // ใบสรุปเจ้าหน้าที่ไม่มีบล็อกคำแนะนำก่อนตรวจอยู่แล้ว (ดูหมายเหตุถัดไป) จึงต่อท้ายสุดได้เลยไม่ต้องกังวลเรื่องลำดับ
+  if (r.bmdSurvey && r.bmdSurvey.trim()) {
+    html += '<div class="sr-section-title" id="dexaSection">แบบสอบถามผู้ป่วยตรวจความหนาแน่นของกระดูกด้วย Dual-energy X-ray Absorptiometry (DEXA)</div>';
+    r.bmdSurvey.split(' | ').forEach(function(part) {
+      var idx = part.indexOf(': ');
+      var label = idx >= 0 ? part.slice(0, idx) : part;
+      var val   = idx >= 0 ? part.slice(idx + 2) : '';
+      html += '<div class="sr"><span class="sl">' + escHtml(label) + '</span><span class="sv">' + escHtml(val) + '</span></div>';
+    });
+  }
+
   // หมายเหตุ: เคยต่อบล็อก "คำแนะนำก่อนตรวจ" ท้ายใบสรุปเจ้าหน้าที่ แต่ user สั่งยกเลิกเมื่อ 2026-08-18
   // ใบสรุปเจ้าหน้าที่จึงมีแค่ข้อมูลผู้ป่วย/รายการตรวจ/ยอดรวมเหมือนเดิม
   // ผู้รับบริการยังเปิดอ่าน/พิมพ์คำแนะนำเองได้จากปุ่มลอย "คำแนะนำก่อนตรวจ" (openPrepModal)
@@ -6610,6 +7060,17 @@ function printStaffSummary() {
   const title   = document.getElementById('staffSummaryTitle').textContent;
   const dateStr = document.getElementById('staffSummaryDate').textContent;
   const content = document.getElementById('staffSummaryCard').innerHTML;
+  // ── Technologist's Note (เจ้าของสั่งเพิ่ม 2026-08-26) ──
+  // ช่องเปล่าให้เจ้าหน้าที่เขียนมือหลังตรวจ BMD เสร็จ — "ไม่ใช่" input ที่กรอกบนเว็บ จึงต่อเข้าเฉพาะตอนพิมพ์เท่านั้น
+  // เช็คจาก marker id="dexaSection" ที่ต่อเข้า content ไว้แล้วใน showStaffSummary() — มีเฉพาะคนที่ตรวจ BMD
+  const bmdNoteHtml = content.indexOf('id="dexaSection"') !== -1
+    ? '<div class="sr-section-title">Technologist\'s Note</div>'
+      + '<div class="sr-test-item" style="font-size:12.5px;color:#555">ระหว่างตรวจพบว่ามี technical difficulty หรือไม่ หากมีโปรดระบุ</div>'
+      + '<div class="sr-test-item" style="font-size:12.5px">☐ จัดท่ายาก &nbsp;&nbsp; ☐ ผู้ป่วยมีเหล็กดาม &nbsp;&nbsp; ☐ เคลื่อนย้ายผู้ป่วยลำบาก &nbsp;&nbsp; ☐ ภาพวิเคราะห์ยาก &nbsp;&nbsp; ☐ อื่นๆ</div>'
+      + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
+      + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
+      + '<div class="sr-test-item" style="font-size:12.5px;color:#555;margin-top:10px">หากมีข้อสงสัยกรุณาติดต่อแพทย์ประจำบ้านหรืออาจารย์แพทย์</div>'
+    : '';
   const w = window.open('', '_blank');
   // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
   if (!w) {
@@ -6653,6 +7114,7 @@ function printStaffSummary() {
     + '<h2>' + escHtml(title) + '</h2>'
     + '<div class="sub">' + escHtml(dateStr) + '</div>'
     + content
+    + bmdNoteHtml
     + '<script>window.onload=function(){window.print();}<\/script>'
     + '</body></html>');
   w.document.close();
