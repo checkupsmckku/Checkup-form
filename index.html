@@ -1727,6 +1727,11 @@
     font-size: 12px;
   }
   .prep-note-title { font-weight: 700; color: #7A5A00; margin-bottom: 4px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  /* กล่องเตือนสีแดง — ใช้กับคำแนะนำที่ถ้าทำไม่ถูกแล้วตรวจไม่ได้ ต้องเลื่อนนัด (เจ้าของสั่ง 2026-08-26)
+     ตอนนี้ใช้ที่เดียว: "สำหรับผู้ที่ตรวจอัลตราซาวต์ช่องท้องส่วนล่าง" ในการ์ด 01 งดอาหารและเครื่องดื่ม */
+  .prep-note-box.alert { background: #FDECEA; border-left-color: #C62828; }
+  .prep-note-box.alert .prep-note-title { color: #B71C1C; }
+  .prep-note-box.alert strong { color: #C62828; }
   .prep-ol { padding-left: 18px; margin: 0; }
   .prep-ol li { margin-bottom: 3px; }
   .prep-ul { padding-left: 18px; margin: 0; }
@@ -2177,29 +2182,15 @@
             <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">กรอกเฉพาะกรณีย้ายที่อยู่ ถ้าที่อยู่เดิมที่โรงพยาบาลมียังถูกต้อง ไม่ต้องกรอก — <strong>กรุณาระบุรหัสไปรษณีย์ด้วย</strong></div>
           </div>
 
-          <!-- ── ข้อมูลเพิ่มเติมสำหรับผู้ที่มี HN (ไม่บังคับกรอกทั้งหมด) ──
-               ช่องพวกนี้ของเดิมอยู่ใน #fullInfoSection ซึ่งโหมด "มี HN" ซ่อนทั้งก้อน
+          <!-- ── ข้อมูลเพิ่มเติมสำหรับผู้ที่มี HN (ไม่บังคับกรอก) ──
+               ช่องนี้ของเดิมอยู่ใน #fullInfoSection ซึ่งโหมด "มี HN" ซ่อนทั้งก้อน
                จึงต้องมีชุดของตัวเองที่นี่ — ค่าที่กรอกลงคอลัมน์เดียวกันในชีตกับของเดิม
                ⚠ ห้ามใส่ attribute required ให้ช่องไหนในบล็อกนี้ -->
           <div id="hnExtraBlock" style="margin-top:14px">
-            <div class="field-group" style="margin-bottom:12px">
+            <div class="field-group" style="margin-bottom:4px">
               <label for="hnPassport" style="display:block;font-size:13px;font-weight:700;color:var(--text-muted,#6B7280);margin-bottom:4px">เลขหนังสือเดินทาง (Passport)</label>
               <input type="text" id="hnPassport" placeholder="สำหรับชาวต่างชาติ">
               <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">ไม่บังคับกรอก — สำหรับชาวต่างชาติที่ไม่มีเลขบัตรประชาชนไทย</div>
-            </div>
-            <div class="field-group" style="margin-bottom:4px">
-              <label style="display:block;font-size:13px;font-weight:700;color:var(--text-muted,#6B7280);margin-bottom:4px">หมู่เลือด</label>
-              <div class="chip-radio-group">
-                <label class="chip-radio blood a"><input type="radio" name="hnBloodType" value="A" onchange="syncBloodType('hn')"> A</label>
-                <label class="chip-radio blood b"><input type="radio" name="hnBloodType" value="B" onchange="syncBloodType('hn')"> B</label>
-                <label class="chip-radio blood ab"><input type="radio" name="hnBloodType" value="AB" onchange="syncBloodType('hn')"> AB</label>
-                <label class="chip-radio blood o"><input type="radio" name="hnBloodType" value="O" onchange="syncBloodType('hn')"> O</label>
-                <label class="chip-radio"><input type="radio" name="hnBloodType" value="other" onchange="syncBloodType('hn')"> อื่นๆ</label>
-                <label class="chip-radio neutral"><input type="radio" name="hnBloodType" value="unknown" onchange="syncBloodType('hn')"> ไม่ทราบ</label>
-                <label class="chip-radio neutral"><input type="radio" name="hnBloodType" value="notTested" onchange="syncBloodType('hn')"> ไม่เคยตรวจ</label>
-              </div>
-              <input type="text" id="hnBloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px" oninput="syncBloodOtherText('hn')">
-              <div class="field-hint" style="font-size:12px;color:var(--text-muted,#6B7280);margin-top:4px">ไม่บังคับกรอก — เลือกที่นี่หรือที่หัวข้อ "หมู่เลือด" ด้านล่างก็ได้ ระบบซิงก์ให้อัตโนมัติ</div>
             </div>
           </div>
 
@@ -2487,24 +2478,40 @@
              "มี HN" และ "ไม่มี HN" — ข้อมูลชุดนี้เปลี่ยนได้ทุกปี ต่างจากสัญชาติ/เชื้อชาติที่ถามครั้งเดียวพอ
              ถ้าย้ายกลับเข้าไปใน fullInfoSection เมื่อไร ผู้ป่วยที่มี HN จะไม่ถูกถามอีกและคอลัมน์ในชีตจะว่าง -->
 
-        <!-- ── หมู่เลือด ── ซ่อนในโหมด "มี HN" (โรงพยาบาลมีข้อมูลหมู่เลือดของผู้ป่วยอยู่แล้ว)
-             ต่างจากโรคประจำตัว/ประวัติแพ้ยา ที่ยังต้องถามทุกครั้งเพราะเปลี่ยนได้ทุกปี — ซ่อน/แสดงที่ toggleHN() -->
+        <!-- ── หมู่เลือด ── แสดงทั้งโหมด "มี HN" และ "ไม่มี HN" เป็นจุดเดียวที่ถามหมู่เลือดในฟอร์ม
+             (เดิมมี 2 กล่อง ยุบเหลือกล่องเดียวเมื่อ 2026-08-25 — ดู #hnExtraBlock ด้านบนที่เคยมีชุดซ้ำ) -->
         <div id="bloodGroupBlock">
         <div class="sub-section-label">หมู่เลือด</div>
         <div class="field-group" style="margin-bottom:10px">
           <label>หมู่เลือด</label>
           <div class="chip-radio-group">
-            <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A" onchange="syncBloodType('main')"> A</label>
-            <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B" onchange="syncBloodType('main')"> B</label>
-            <label class="chip-radio blood ab"><input type="radio" name="bloodType" value="AB" onchange="syncBloodType('main')"> AB</label>
-            <label class="chip-radio blood o"><input type="radio" name="bloodType" value="O" onchange="syncBloodType('main')"> O</label>
-            <label class="chip-radio"><input type="radio" name="bloodType" value="other" onchange="syncBloodType('main')"> อื่นๆ</label>
-            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="syncBloodType('main')"> ไม่ทราบ</label>
-            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="syncBloodType('main')"> ไม่เคยตรวจ</label>
+            <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A" onchange="onBloodTypeChange()"> A</label>
+            <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B" onchange="onBloodTypeChange()"> B</label>
+            <label class="chip-radio blood ab"><input type="radio" name="bloodType" value="AB" onchange="onBloodTypeChange()"> AB</label>
+            <label class="chip-radio blood o"><input type="radio" name="bloodType" value="O" onchange="onBloodTypeChange()"> O</label>
+            <label class="chip-radio"><input type="radio" name="bloodType" value="other" onchange="onBloodTypeChange()"> อื่นๆ</label>
+            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="onBloodTypeChange()"> ไม่ทราบ</label>
+            <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="onBloodTypeChange()"> ไม่เคยตรวจ</label>
           </div>
-          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px" oninput="syncBloodOtherText('main')">
+          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
         </div>
         </div><!-- /bloodGroupBlock -->
+
+        <!-- ── ลักษณะการเดินทาง ── เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง
+             อยู่ "นอก" #fullInfoSection เหมือนโรคประจำตัว/แพ้ยา → ถามทั้งโหมด "มี HN" และ "ไม่มี HN"
+             ⚠ attribute required บน radio บังคับไม่ได้จริงในฟอร์มนี้ (form ตั้ง novalidate + generic
+                [required] loop ข้าม radio เพราะ radio.value ไม่เคยว่าง) → ต้องมี explicit check
+                ใน validateAndScrollToError() เท่านั้น อย่าใส่ required แล้วคิดว่าพอ
+             ⚠ value เป็นภาษาไทยตรงๆ = ค่าที่ลงชีตเลย ไม่ต้องมีตาราง map -->
+        <div class="sub-section-label">ลักษณะการเดินทาง</div>
+        <div class="field-group" style="margin-bottom:14px">
+          <label>ลักษณะการเดินทาง <span class="req">*</span></label>
+          <div class="chip-radio-group">
+            <label class="chip-radio safe"><input type="radio" name="mobility" value="เดินมาด้วยตนเอง"> เดินมาด้วยตนเอง</label>
+            <label class="chip-radio"><input type="radio" name="mobility" value="รถนั่ง"> รถนั่ง</label>
+            <label class="chip-radio"><input type="radio" name="mobility" value="รถนอน"> รถนอน</label>
+          </div>
+        </div>
 
         <!-- ── โรคประจำตัว ── -->
         <div class="sub-section-label">โรคประจำตัว</div>
@@ -4521,6 +4528,22 @@ function thaiNameInput(el, extraChars) {
   el.value = after;
 }
 
+// ── วันเกิด "10/05/2530" → "10 พฤษภาคม 2530" สำหรับใบสรุปฝั่งผู้ป่วย ──────────
+// ใบสรุปเจ้าหน้าที่แปลงให้แล้วที่ฝั่ง Apps Script (fmtThaiDate ใน ลงทะเบียน.js) แต่ใบผู้ป่วย
+// อ่านค่าจากช่อง #dob ตรงๆ ไม่ได้ผ่าน backend เลย จึงต้องมีตัวแปลงของตัวเองที่นี่ให้ 2 ใบตรงกัน
+// ⚠ ปีที่ผู้ป่วยกรอกเป็น พ.ศ. อยู่แล้ว (ฟอร์มระบุ "วว/ดด/ปปปป (พ.ศ.)") — ห้ามบวก 543 ซ้ำ
+// ⚠ ห้ามใช้ lookbehind/lookahead ใน regex ตรงนี้ — Safari เก่า parse ทั้ง <script> ไม่ผ่าน = ฟอร์มพังทั้งหน้า
+const TH_MONTHS_FULL = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+function thaiDateBE(v) {
+  const s = (v === undefined || v === null) ? '' : String(v).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return s;   // รูปแบบอื่นที่ไม่รู้จัก คืนของเดิม ดีกว่าทำวันเกิดหายจากใบสรุป
+  const mo = parseInt(m[2], 10);
+  if (mo < 1 || mo > 12) return s;
+  return parseInt(m[1], 10) + ' ' + TH_MONTHS_FULL[mo - 1] + ' ' + m[3];
+}
+
 // ─── Validation ──────────────────────────────────────────────────────────────
 function validateAndScrollToError() {
   // ล้าง error เดิม
@@ -4845,6 +4868,20 @@ function validateAndScrollToError() {
     }
   }
 
+  // ตรวจว่าเลือกลักษณะการเดินทางหรือยัง — ถามทั้ง 2 โหมด (บล็อกอยู่นอก fullInfoSection)
+  // ⚠ radio required ใช้บังคับไม่ได้จริงในฟอร์มนี้ ต้องเช็คเองตรงนี้เท่านั้น
+  const mobilityChecked = document.querySelector('input[name="mobility"]:checked');
+  if (!mobilityChecked) {
+    const mobEl = document.querySelector('input[name="mobility"]')?.closest('.field-group');
+    if (mobEl) {
+      mobEl.classList.add('field-error');
+      const topM = mobEl.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: topM, behavior: 'smooth' });
+    }
+    showToast('⚠ กรุณาเลือกลักษณะการเดินทาง');
+    return false;
+  }
+
   // ตรวจว่าเลือกประวัติการแพ้ยาหรือยัง — ถามทั้ง 2 โหมด (บล็อกนี้อยู่นอก fullInfoSection แล้ว)
   // ⚠ attribute `required` บน radio ในฟอร์มนี้บังคับไม่ได้จริง (ฟอร์มตั้ง novalidate + generic
   //   [required] loop ข้าม radio เพราะ radio.value ไม่เคยว่าง) จึงต้องเขียน explicit check ตรงนี้
@@ -5045,11 +5082,8 @@ function handleSubmit(e) {
     //    (ของจริงคือ name="bloodType" / name="drugAllergy" + #drugAllergyName) → คอลัมน์ 'หมู่เลือด'
     //    และ 'ประวัติแพ้ยา' ในชีตจึงว่างเปล่ามาตลอดทั้งที่ผู้ป่วยกรอกให้แล้ว — แก้ 2026-08-18
     bloodGroup: (() => {
-      const el = document.querySelector('input[name="bloodType"]:checked')
-              || document.querySelector('input[name="hnBloodType"]:checked');
-      const v = el?.value || '';
-      if (v === 'other')     return document.getElementById('bloodOther')?.value.trim()
-                                 || document.getElementById('hnBloodOther')?.value.trim() || 'อื่นๆ';
+      const v = document.querySelector('input[name="bloodType"]:checked')?.value || '';
+      if (v === 'other')     return document.getElementById('bloodOther')?.value.trim() || 'อื่นๆ';
       if (v === 'unknown')   return 'ไม่ทราบ';
       if (v === 'notTested') return 'ไม่เคยตรวจ';
       return v;   // A / B / AB / O — หรือ '' ถ้ายังไม่เลือก
@@ -5070,6 +5104,8 @@ function handleSubmit(e) {
       if (v === 'yes') return 'มี: ' + (document.getElementById('chronicDiseaseDetail')?.value.trim() || '');
       return v === 'none' ? 'ไม่มี' : '';
     })(),
+    // ลักษณะการเดินทาง — value เป็นภาษาไทยอยู่แล้ว ใช้ตรงๆ ได้เลย
+    mobility: document.querySelector('input[name="mobility"]:checked')?.value || '',
     // ที่อยู่
     // โหมด HN: ช่องที่อยู่ในส่วนที่ 1 ถูกซ่อนไว้ ถ้าผู้ป่วยแจ้งที่อยู่ใหม่ให้ใช้ค่านั้นแทน
     address:       newAddrVal || [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
@@ -5130,25 +5166,36 @@ function handleSubmit(e) {
     postZip:         document.getElementById('postZip')?.value || '',
     postEmail:     document.getElementById('resultEmail')?.value || '',
     // ช่องทางรับผลตรวจภายใน (ตรวจภายใน + รอรับด้วยตนเอง, ใช้เวลา 30-45 วัน)
+    // ⚠ ทั้งกลุ่ม pap* ต้องว่างเมื่อผู้ป่วย "ไม่ได้ตรวจภายใน" — เดิมไม่เช็ค hasInternalExam() เลย
+    //   ทุกใบจึงได้แถว "🔬 ช่องทางรับผลตรวจภายใน" ติดมาด้วย แม้แต่ผู้ชายที่ไม่มีรายการนี้ในโปรแกรม
+    //   (เจ้าของเจอจริง 2026-08-26) — ใช้ hasInternalExam() ตัวเดียวกับที่ UI ใช้ซ่อน/แสดงกล่อง
+    //   #pickupPapDetail เพื่อให้สิ่งที่บันทึกกับสิ่งที่ผู้ป่วยเห็นบนหน้าจอตรงกันเสมอ
     papDeliveryMethod: (() => {
+      if (!hasInternalExam()) return '';
       const m = document.querySelector('input[name="papDeliveryMethod"]:checked')?.value || '';
       const map = { email: 'ส่งทาง E-mail', post: 'ส่งทางไปรษณีย์', call: 'นัดรับผล (โทรแจ้ง)' };
       if (m) return map[m] || '';
-      // ถ้าไม่มี pap delivery แยก → ใช้ช่องทาง main delivery
+      // ไม่ได้เลือกแยก = เลือกช่องทางหลักเป็นไปรษณีย์/อีเมล → ผลตรวจภายในส่งไปทางเดียวกัน
+      // ⚠ 'pickup' ต้องเป็น "นัดรับผล (โทรแจ้ง)" ไม่ใช่ "รอรับด้วยตนเอง" — ผลตรวจภายในใช้เวลา 30–45 วัน
+      //   จึงรอรับในวันตรวจไม่ได้ และ "รอรับด้วยตนเอง" ก็ไม่ใช่ 1 ใน 3 ตัวเลือกที่ฟอร์มนี้มีให้เลือกด้วย
       const mainDel = document.querySelector('input[name="deliveryMethod"]:checked')?.value || '';
-      return { post: 'ส่งทางไปรษณีย์', email: 'ส่งทาง E-mail', pickup: 'รอรับด้วยตนเอง' }[mainDel] || '';
+      return { post: 'ส่งทางไปรษณีย์', email: 'ส่งทาง E-mail', pickup: 'นัดรับผล (โทรแจ้ง)' }[mainDel] || '';
     })(),
     papResultEmail: (() => {
+      if (!hasInternalExam()) return '';
       const papEmail = document.getElementById('papResultEmail')?.value || '';
       if (papEmail) return papEmail;
       // ถ้าไม่มี pap email แยก → ใช้ email main delivery
       const mainDel = document.querySelector('input[name="deliveryMethod"]:checked')?.value || '';
       return mainDel === 'email' ? (document.getElementById('resultEmail')?.value || '') : '';
     })(),
-    papResultRecipient:     document.getElementById('papRecipient')?.value || document.getElementById('postRecipient')?.value || '',
-    papResultRecipientLast: document.getElementById('papRecipientLast')?.value || document.getElementById('postRecipientLast')?.value || '',
-    papResultPhone:         document.getElementById('papPhone')?.value || document.getElementById('postPhone')?.value || '',
+    // ที่อยู่ส่งผลตรวจภายใน — ว่างทั้งชุดเมื่อไม่ได้ตรวจภายใน (เหตุผลเดียวกับ papDeliveryMethod ข้างบน)
+    // เดิมคอลัมน์เหล่านี้ถูกเติมด้วยที่อยู่จัดส่งหลักให้ทุกใบ ทำให้ชีตมีที่อยู่ส่งผลตรวจภายในของคนที่ไม่ได้ตรวจ
+    papResultRecipient:     !hasInternalExam() ? '' : (document.getElementById('papRecipient')?.value || document.getElementById('postRecipient')?.value || ''),
+    papResultRecipientLast: !hasInternalExam() ? '' : (document.getElementById('papRecipientLast')?.value || document.getElementById('postRecipientLast')?.value || ''),
+    papResultPhone:         !hasInternalExam() ? '' : (document.getElementById('papPhone')?.value || document.getElementById('postPhone')?.value || ''),
     papResultAddr: (() => {
+      if (!hasInternalExam()) return '';
       const papAddr = [
         (document.getElementById('papHouseNo')?.value || ''),
         (document.getElementById('papMoo')?.value ? 'หมู่' + document.getElementById('papMoo').value : ''),
@@ -5162,10 +5209,10 @@ function handleSubmit(e) {
         (document.getElementById('postAddr1')?.value || '')
       ].filter(Boolean).join(' ');
     })(),
-    papResultSubdistrict:   document.getElementById('papSubdistrict')?.value || document.getElementById('postSubdistrict')?.value || '',
-    papResultDistrict:      document.getElementById('papDistrict')?.value    || document.getElementById('postDistrict')?.value    || '',
-    papResultProvince:      document.getElementById('papProvince')?.value    || document.getElementById('postProvince')?.value    || '',
-    papResultZip:           document.getElementById('papZip')?.value         || document.getElementById('postZip')?.value         || '',
+    papResultSubdistrict:   !hasInternalExam() ? '' : (document.getElementById('papSubdistrict')?.value || document.getElementById('postSubdistrict')?.value || ''),
+    papResultDistrict:      !hasInternalExam() ? '' : (document.getElementById('papDistrict')?.value    || document.getElementById('postDistrict')?.value    || ''),
+    papResultProvince:      !hasInternalExam() ? '' : (document.getElementById('papProvince')?.value    || document.getElementById('postProvince')?.value    || ''),
+    papResultZip:           !hasInternalExam() ? '' : (document.getElementById('papZip')?.value         || document.getElementById('postZip')?.value         || ''),
     // เอกสารเพิ่มเติม
     medCertCount:          document.getElementById('medCertCount')?.value || '',
     nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
@@ -5230,6 +5277,14 @@ function handleSubmit(e) {
       dob: document.getElementById('dob')?.value || '',
       age: age,
       gender: selectedGender,
+      // ── ข้อมูลสุขภาพ (เจ้าของสั่งเติม 2026-08-26) ──
+      // 3 ค่านี้ถูกคำนวณไว้ใน formData แล้วและลงชีตถูกต้องมาตลอด แต่ "ไม่เคยถูกส่งเข้าใบสรุปผู้ป่วยเลย"
+      // ใบสรุปเจ้าหน้าที่มีครบเพราะอ่านจากชีตคนละเส้นทาง → ผู้ป่วยเลยไม่เห็นสิ่งที่ตัวเองกรอกไป
+      // ⚠ อ่านจาก formData เท่านั้น ห้ามคำนวณซ้ำที่นี่ ไม่งั้นสองที่จะเพี้ยนจากกันเมื่อแก้ตัวใดตัวหนึ่ง
+      mobility:       formData.mobility || '',
+      chronicDisease: formData.chronicDisease || '',
+      allergy:        formData.allergy || '',
+      foodAllergy:    formData.foodAllergy || '',
       prog: selectedProgram,
       delivery: delTxt,
       postEmail: formData.postEmail || '',
@@ -5248,6 +5303,9 @@ function handleSubmit(e) {
       addTotal: _addTotal,
       addListPriced: _addListPriced,
       serviceDate: document.getElementById('serviceDate')?.value || '',
+      // #serviceDate เก็บเป็น ISO ค.ศ. (2026-09-21) ไว้ให้ระบบใช้ ส่วนที่ผู้ป่วยพิมพ์/เลือกจริงคือ พ.ศ.
+      // ใบสรุปต้องโชว์แบบไทย ไม่ใช่ ISO — ถ้าไม่มีค่า raw ค่อย fallback ไป ISO เดิม
+      serviceDateTh: document.getElementById('serviceDateRaw')?.value || '',
       medCertCount: document.getElementById('medCertCount')?.value || '',
       nonFormularyDrugCount: document.getElementById('nonFormularyDrugCount')?.value || '',
       medCertDriverCount: document.getElementById('medCertDriverCount')?.value || '',
@@ -5439,7 +5497,7 @@ function toggleHN(hasHN) {
   }
 
   // หมู่เลือด: แสดงทั้ง 2 โหมด (เจ้าของระบบสั่งเมื่อ 2026-08-21 — เดิมซ่อนในโหมด "มี HN")
-  // โหมด HN จะเห็นคำถามหมู่เลือด 2 ที่ (กล่อง HN + ที่นี่) ซิงก์กันด้วย syncBloodType()
+  // ถามที่เดียวที่ #bloodGroupBlock — แสดงทั้ง 2 โหมด ไม่มีกล่องซ้ำใน HN แล้ว (ยุบรวม 2026-08-25)
   const bloodBlock = document.getElementById('bloodGroupBlock');
   if (bloodBlock) bloodBlock.style.display = 'block';
 
@@ -5654,34 +5712,21 @@ function toggleUnconscious(checked) {
   // ไม่ต้องทำอะไรพิเศษ แค่ track state
 }
 
-// ── ซิงก์หมู่เลือด 2 กล่อง ──────────────────────────────────────────────────
-// โหมด "มี HN" แสดงคำถามหมู่เลือด 2 ที่พร้อมกัน (ในกล่อง HN และในหัวข้อ "ข้อมูลสุขภาพ")
-// ตามที่เจ้าของระบบสั่ง — ซิงก์ 2 ทางเพื่อไม่ให้ผู้ป่วยเผลอตอบขัดกันเอง
-// ผลคือค่าที่ส่งเข้าชีตมีค่าเดียวเสมอ ไม่ต้องตัดสินว่ากล่องไหนชนะ
-function syncBloodType(src) {
-  const from = src === 'hn' ? 'hnBloodType' : 'bloodType';
-  const to   = src === 'hn' ? 'bloodType'   : 'hnBloodType';
-  const v = document.querySelector('input[name="' + from + '"]:checked')?.value || '';
-  document.querySelectorAll('input[name="' + to + '"]').forEach(function(el) {
-    el.checked = (el.value === v);
-  });
+// ── หมู่เลือด ──────────────────────────────────────────────────────────────
+// เลือก "อื่นๆ" → เปิดช่องระบุ • เลือกอย่างอื่น → ซ่อนแล้วล้างค่าทิ้ง
+// ⚠ radio ของ name="bloodType" ต้องมี onchange นี้ครบ "ทุกตัว" รวม A/B/AB/O
+//   เดิม A/B/AB/O ไม่มี handler เลย → เลือก "อื่นๆ" แล้วกดกลับมา A ช่อง #bloodOther ค้างอยู่
+//   (บั๊กที่แก้ไปแล้ว 2026-08-21 อย่าให้กลับมาอีก)
+function onBloodTypeChange() {
+  const v  = document.querySelector('input[name="bloodType"]:checked')?.value || '';
+  const el = document.getElementById('bloodOther');
+  if (!el) return;
   const show = (v === 'other');
-  ['bloodOther', 'hnBloodOther'].forEach(function(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = show ? 'block' : 'none';
-    if (!show) el.value = '';
-  });
+  el.style.display = show ? 'block' : 'none';
+  if (!show) el.value = '';
 }
 
-// ซิงก์ข้อความในช่อง "ระบุหมู่เลือด" ของทั้ง 2 กล่องให้ตรงกัน
-function syncBloodOtherText(src) {
-  const fromEl = document.getElementById(src === 'hn' ? 'hnBloodOther' : 'bloodOther');
-  const toEl   = document.getElementById(src === 'hn' ? 'bloodOther'   : 'hnBloodOther');
-  if (fromEl && toEl) toEl.value = fromEl.value;
-}
-
-// legacy — ไม่มีคนเรียกแล้วตั้งแต่ย้ายไปใช้ syncBloodType()
+// legacy — ไม่มีคนเรียกแล้วตั้งแต่ย้ายไป handler ตัวใหม่ของ #bloodGroupBlock ด้านบน
 function toggleBloodOther(show) {
   document.getElementById('bloodOther').style.display = show ? 'block' : 'none';
   if (!show) document.getElementById('bloodOther').value = '';
@@ -5914,6 +5959,14 @@ function showSuccessModal(data) {
   }
 
   let html = '';
+  // ── แถวที่ "ต้องแสดงเสมอ" (เจ้าของสั่ง 2026-08-26) ─────────────────────────
+  // ช่องเหล่านี้บังคับกรอกอยู่แล้ว ถ้าแถวหายไปจากใบสรุปแปลว่ามีอะไรผิดพลาด ซึ่งต้องเห็น ไม่ใช่ซ่อน
+  // (เดิมใช้ `if (data.x)` ทุกแถว → ค่าว่างเมื่อไรแถวก็หายเงียบ เช่นอายุว่างแล้วเพศหายตามไปด้วย)
+  // ค่าว่างแสดงเป็น "—" ไม่ใช่เดาแทนผู้ป่วยว่า "ไม่มี" เพราะไม่ได้ตอบมาจริงๆ
+  const srAlways = (label, val) => `<div class="sr"><span class="sl">${label}</span><span class="sv">${
+    (val === undefined || val === null || String(val).trim() === '')
+      ? '<span style="color:#9AA0A6;font-weight:500">—</span>'
+      : escHtml(val)}</span></div>`;
   // ── ข้อมูลส่วนตัว ──
   if (hasHNMode) {
     html += `<div class="sr"><span class="sl">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sv">${escHtml(data.hn)}</span></div>`;
@@ -5928,20 +5981,30 @@ function showSuccessModal(data) {
   } else {
     html += `<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">${escHtml(data.name)}</span></div>`;
   }
-  if (data.dept) html += `<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">${escHtml(data.dept)}</span></div>`;
-  if (data.orgStatus) html += `<div class="sr"><span class="sl">สถานะ</span><span class="sv">${escHtml(data.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : data.orgStatus)}</span></div>`;
-  if (data.payRight) html += `<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">${escHtml(data.payRight)}</span></div>`;
-  if (data.phone) html += `<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">${escHtml(data.phone)}</span></div>`;
-  if (data.idCard) html += `<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">${escHtml(data.idCard)}</span></div>`;
-  if (data.homeAddr) html += `<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">${escHtml(data.homeAddr)}</span></div>`;
-  if (!hasHNMode) {
-    html += `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${escHtml(data.age)} ปี / ${genderTxt}</span></div>`;
-  } else {
-    html += `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
-    if (data.dob) html += `<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">${escHtml(data.dob)}</span></div>`;
-  }
-  if (data.serviceDate) html += `<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">${escHtml(data.serviceDate)}</span></div>`;
-  if (data.delivery) html += `<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">${escHtml(data.delivery)}</span></div>`;
+  html += srAlways('หน่วยงาน', data.dept);
+  html += srAlways('สถานะ', data.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : data.orgStatus);
+  html += srAlways('สิทธิ์ชำระเงิน', data.payRight);
+  html += srAlways('📞 เบอร์โทรศัพท์', data.phone);
+  html += srAlways('🪪 บัตรประชาชน', data.idCard);
+  html += srAlways('🏠 ที่อยู่', data.homeAddr);
+  // ── ข้อมูลสุขภาพ (เจ้าของสั่งเติม 2026-08-26) ──
+  // ลำดับและป้ายชื่อยกมาจากใบสรุปเจ้าหน้าที่ (showStaffSummary) ให้ 2 ใบอ่านแล้วตรงกัน
+  // ⚠ ถ้าเพิ่ม/แก้แถวตรงนี้ ต้องไปแก้ที่ showStaffSummary ให้ตรงกันด้วย ไม่งั้น 2 ใบจะเริ่มเพี้ยนจากกัน
+  html += srAlways('🚶 ลักษณะการเดินทาง', data.mobility);
+  html += srAlways('🩺 โรคประจำตัว', data.chronicDisease);
+  html += srAlways('💊 ประวัติแพ้ยา', data.allergy);
+  html += srAlways('🍽 ประวัติแพ้อาหาร', data.foodAllergy);
+  // ── อายุ / เพศ / วันเกิด — แสดงชุดเดียวกันทั้ง 2 โหมด (เจ้าของสั่ง 2026-08-26) ──
+  // เดิมแยกทาง: โหมด "ไม่มี HN" ได้แค่ "อายุ / เพศ" ไม่มีวันเกิดเลย ส่วนโหมด "มี HN" ได้ "เพศ" + วันเกิด แต่ไม่มีอายุ
+  // ⚠ อายุกับเพศเคยอยู่แถวเดียวกันแบบผูกเงื่อนไขไว้ด้วยกัน → พอ #age ว่าง (เกิดได้จริงในโหมด HN
+  //   เมื่อวันเกิดที่กรอกมาคำนวณอายุไม่ได้) เพศจะหายไปจากใบสรุปด้วยทั้งที่ผู้ป่วยเลือกไว้แล้ว
+  //   จึงแยกเป็น 2 ทางให้เพศแสดงเสมอ
+  html += data.age
+    ? `<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">${escHtml(data.age)} ปี / ${genderTxt}</span></div>`
+    : `<div class="sr"><span class="sl">เพศ</span><span class="sv">${genderTxt}</span></div>`;
+  html += srAlways('🎂 วันเดือนปีเกิด', thaiDateBE(data.dob));
+  html += srAlways('📅 วันที่นัดหมายเข้ารับบริการ', thaiDateBE(data.serviceDateTh || data.serviceDate));
+  html += srAlways('ช่องทางการรับผลตรวจสุขภาพ', data.delivery);
   if (data.postEmail) html += `<div class="sr"><span class="sl">📧 อีเมลรับผลตรวจ</span><span class="sv">${escHtml(data.postEmail)}</span></div>`;
   if (data.postAddr)  html += `<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">${escHtml(data.postAddr)}</span></div>`;
   if (data.papDelivery) html += `<div class="sr"><span class="sl">🔬 ช่องทางรับผลตรวจภายใน</span><span class="sv">${escHtml(data.papDelivery)}</span></div>`;
@@ -6412,21 +6475,35 @@ function showStaffSummary(idx) {
           .map(function(p) { return '<div>• ' + escHtml(p) + '</div>'; }).join('')
       + '</div>';
   }
-  if (r.department)    html += '<div class="sr"><span class="sl">หน่วยงาน</span><span class="sv">' + escHtml(r.department) + '</span></div>';
-  if (r.orgStatus)     html += '<div class="sr"><span class="sl">สถานะ</span><span class="sv">' + escHtml(r.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : r.orgStatus) + '</span></div>';
-  if (r.paymentRight)  html += '<div class="sr"><span class="sl">สิทธิ์ชำระเงิน</span><span class="sv">' + escHtml(r.paymentRight) + '</span></div>';
-  if (r.phone)         html += '<div class="sr"><span class="sl">📞 เบอร์โทรศัพท์</span><span class="sv">' + escHtml(r.phone) + '</span></div>';
-  if (r.idCard) html += '<div class="sr"><span class="sl">🪪 บัตรประชาชน</span><span class="sv">' + escHtml(r.idCard) + '</span></div>';
-  if (r.address) html += '<div class="sr"><span class="sl">🏠 ที่อยู่</span><span class="sv">' + escHtml(r.address) + '</span></div>';
-  if (r.chronicDisease) html += '<div class="sr"><span class="sl">🩺 โรคประจำตัว</span><span class="sv">' + escHtml(r.chronicDisease) + '</span></div>';
+  // ── แถวที่ "ต้องแสดงเสมอ" (เจ้าของสั่ง 2026-08-26) — ตรรกะเดียวกับ showSuccessModal ──
+  // ช่องพวกนี้บังคับกรอกในฟอร์ม ถ้าคอลัมน์ในชีตว่าง แปลว่ามีอะไรผิดพลาด เจ้าหน้าที่ต้องเห็น ไม่ใช่ซ่อนหาย
+  // ค่าว่างแสดง "—" ไม่ใช่เดาแทนผู้ป่วยว่า "ไม่มี"
+  const srA = function(label, val) {
+    var empty = (val === undefined || val === null || String(val).trim() === '');
+    return '<div class="sr"><span class="sl">' + label + '</span><span class="sv">'
+      + (empty ? '<span style="color:#9AA0A6;font-weight:500">—</span>' : escHtml(val)) + '</span></div>';
+  };
+  html += srA('หน่วยงาน', r.department);
+  html += srA('สถานะ', r.orgStatus === 'ครอบครัว' ? 'ครอบครัวพนักงาน' : r.orgStatus);
+  html += srA('สิทธิ์ชำระเงิน', r.paymentRight);
+  html += srA('📞 เบอร์โทรศัพท์', r.phone);
+  html += srA('🪪 บัตรประชาชน', r.idCard);
+  html += srA('🏠 ที่อยู่', r.address);
+  html += srA('🚶 ลักษณะการเดินทาง', r.mobility);
+  html += srA('🩺 โรคประจำตัว', r.chronicDisease);
   if (r.bloodGroup)  html += '<div class="sr"><span class="sl">🩸 หมู่เลือด</span><span class="sv">' + escHtml(r.bloodGroup) + '</span></div>';
-  if (r.allergy)     html += '<div class="sr"><span class="sl">💊 ประวัติแพ้ยา</span><span class="sv">' + escHtml(r.allergy) + '</span></div>';
-  if (r.foodAllergy) html += '<div class="sr"><span class="sl">🍽 ประวัติแพ้อาหาร</span><span class="sv">' + escHtml(r.foodAllergy) + '</span></div>';
-  if (r.age)           html += '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + escHtml(r.age) + ' ปี / ' + genderTxt + '</span></div>';
-  if (isHN && r.dob)   html += '<div class="sr"><span class="sl">🎂 วันเดือนปีเกิด</span><span class="sv">' + escHtml(r.dob) + '</span></div>';
-  if (r.serviceDate)   html += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + escHtml(r.serviceDate) + '</span></div>';
+  html += srA('💊 ประวัติแพ้ยา', r.allergy);
+  html += srA('🍽 ประวัติแพ้อาหาร', r.foodAllergy);
+  // ── อายุ / เพศ / วันเกิด — แสดงชุดเดียวกันทั้ง 2 โหมด (เจ้าของสั่ง 2026-08-26) ──
+  // เดิมวันเกิดผูกกับ isHN → แถวที่ลงทะเบียนแบบ "ไม่มี HN" ไม่เคยเห็นวันเกิดบนใบสรุปเลย
+  // ⚠ อายุกับเพศเคยผูกเงื่อนไขเดียวกัน → คอลัมน์อายุว่าง = เพศหายไปจากใบสรุปด้วย จึงแยกเป็น 2 ทาง
+  html += r.age
+    ? '<div class="sr"><span class="sl">อายุ / เพศ</span><span class="sv">' + escHtml(r.age) + ' ปี / ' + genderTxt + '</span></div>'
+    : '<div class="sr"><span class="sl">เพศ</span><span class="sv">' + genderTxt + '</span></div>';
+  html += srA('🎂 วันเดือนปีเกิด', r.dob);
+  html += srA('📅 วันที่นัดหมายเข้ารับบริการ', r.serviceDate);
+  html += srA('ช่องทางการรับผลตรวจสุขภาพ', r.deliveryMethod);   // แสดงเสมอ ส่วนรายละเอียดย่อยด้านล่างยังตามเงื่อนไขเดิม
   if (r.deliveryMethod) {
-    html += '<div class="sr"><span class="sl">ช่องทางรับผล</span><span class="sv">' + escHtml(r.deliveryMethod) + '</span></div>';
     if (r.postEmail)    html += '<div class="sr"><span class="sl">📧 อีเมลจัดส่ง</span><span class="sv">' + escHtml(r.postEmail) + '</span></div>';
     if (r.postRecipient) html += '<div class="sr"><span class="sl">ผู้รับ</span><span class="sv">' + escHtml(r.postRecipient) + '</span></div>';
     if (r.postAddr)     html += '<div class="sr"><span class="sl">📮 ที่อยู่จัดส่ง</span><span class="sv">' + escHtml(r.postAddr + (r.postProvince ? ' ' + r.postProvince : '') + (r.postZip ? ' ' + r.postZip : '')) + '</span></div>';
@@ -6623,6 +6700,14 @@ function printStaffSummary() {
                 <li>หากท่านกำลังรับประทานยาเพื่อ<strong><u>ควบคุมความดันโลหิต</u><br><u>สามารถรับประทานก่อนเข้ารับบริการได้</u></strong></li>
               </ol>
             </div>
+            <!-- ย้ายมาจากการ์ด 02 "เก็บอุจจาระ" เมื่อ 2026-08-26 ตามที่เจ้าของสั่ง —
+                 คำแนะนำนี้เป็นเรื่อง "ดื่มน้ำ/กลั้นปัสสาวะก่อนตรวจ" จึงอยู่คู่กับข้อกำหนดงดน้ำงดอาหาร
+                 (การ์ดนี้บอกว่าจิบน้ำเปล่าได้ตลอดเวลา) ตรงกว่าอยู่ใต้หัวข้อเก็บอุจจาระที่คนละเรื่องกัน -->
+            <div class="prep-note-box alert" style="margin-top:10px">
+              <div class="prep-note-title">⚠ สำหรับผู้ที่ตรวจอัลตราซาวต์ช่องท้องส่วนล่าง</div>
+              <p style="margin:0 0 4px"><strong>ดื่มน้ำเปล่า :</strong> ก่อนเข้ารับการตรวจประมาณ 1 ชั่วโมง ควรดื่มน้ำเปล่าประมาณ 500–1,000 มิลลิลิตร (ประมาณ 2–3 แก้วใหญ่)</p>
+              <p style="margin:0"><strong>กลั้นปัสสาวะ :</strong> ห้ามปัสสาวะทิ้งก่อนตรวจ เนื่องจากต้องให้มีปัสสาวะเต็มกระเพาะปัสสาวะ เพื่อช่วยทำให้แพทย์เห็นมดลูก รังไข่ ต่อมลูกหมาก หรือนิ่วในกระเพาะปัสสาวะได้ชัดเจนยิ่งขึ้น</p>
+            </div>
           </div>
         </div>
 
@@ -6634,13 +6719,9 @@ function printStaffSummary() {
             <span class="prep-icon">🧪</span>
           </div>
           <div class="prep-card-body">
-            <p style="margin:0 0 6px">สามารถเก็บอุจจาระมาก่อนได้ แนะนำใส่<strong>ภาชนะที่สะอาด</strong><br>เมื่อถึงวันเข้ารับบริการ เปลี่ยนใส่ภาชนะของโรงพยาบาล (ที่ห้องเจาะเลือด) และปัสสาวะให้มาเก็บที่โรงพยาบาล</p>
+            <p style="margin:0 0 6px">สามารถเก็บอุจจาระมาก่อนได้ แนะนำใส่<strong>ภาชนะที่สะอาด</strong><br>เมื่อถึงวันเข้ารับบริการ เปลี่ยนใส่ภาชนะของโรงพยาบาล และปัสสาวะให้มาเก็บที่โรงพยาบาล</p>
+            <div class="prep-highlight" style="margin:0 0 8px">📍 <strong>สถานที่ส่งอุจจาระ</strong><br>ห้องเจาะเลือด SMC ตึกสว. ชั้น 1</div>
             <p style="margin:0;color:#C62828;font-weight:600">การส่งตรวจปัสสาวะและอุจจาระ ควรหลีกเลี่ยงการเก็บส่งตรวจในช่วงที่เป็นประจำเดือน หากเป็นประจำเดือนต้องรอให้ประจำเดือนหมดสนิทก่อน 5–7 วัน</p>
-            <div class="prep-note-box" style="margin-top:10px">
-              <div class="prep-note-title">สำหรับผู้ที่ตรวจอัลตราซาวต์ช่องท้องส่วนล่าง</div>
-              <p style="margin:0 0 4px"><strong>ดื่มน้ำเปล่า :</strong> ก่อนเข้ารับการตรวจประมาณ 1 ชั่วโมง ควรดื่มน้ำเปล่าประมาณ 500–1,000 มิลลิลิตร (ประมาณ 2–3 แก้วใหญ่)</p>
-              <p style="margin:0"><strong>กลั้นปัสสาวะ :</strong> ห้ามปัสสาวะทิ้งก่อนตรวจ เนื่องจากต้องให้มีปัสสาวะเต็มกระเพาะปัสสาวะ เพื่อช่วยทำให้แพทย์เห็นมดลูก รังไข่ ต่อมลูกหมาก หรือนิ่วในกระเพาะปัสสาวะได้ชัดเจนยิ่งขึ้น</p>
-            </div>
           </div>
         </div>
 
