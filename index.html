@@ -1844,6 +1844,37 @@
      หน้ากระดาษจะเตี้ยลงจนกล่องติดต่อหลุดไปหน้าถัดไป (วัดจริง: prep-section สูง 875 px) */
   @page { margin: 10mm; }
 
+  /* ── มือถือ: กันช่องกรอกทำให้ iOS Safari ซูมเข้าอัตโนมัติ ──────────────────
+     iOS ซูมทุกครั้งที่แตะช่องที่ font-size < 16px แล้วไม่ซูมกลับ ในฟอร์มที่มี 37 ช่อง
+     = ผู้ป่วยต้องหุบนิ้วออกเอง 37 รอบ (ตรวจพบ 2026-08-27)
+     แก้ที่ขนาดตัวอักษร ไม่ใช่ใส่ maximum-scale=1 ใน viewport เพราะการห้ามซูม
+     เป็นปัญหาการเข้าถึงสำหรับผู้สูงอายุ ซึ่งเป็นผู้ใช้หลักของฟอร์มนี้ */
+  @media (max-width: 820px) {
+    .field-group input,
+    .field-group select,
+    .field-group textarea,
+    .inline-input,
+    .addr-search-box,
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea,
+    /* กฎระดับคอมโพเนนต์บางตัวมี specificity สูงกว่า (เช่น .org-combo input[type="text"])
+       จึงต้องระบุเพิ่ม — ใช้ !important เฉพาะ font-size ในบล็อกนี้บล็อกเดียว เพราะเป็นการ
+       บังคับเรื่องการเข้าถึง ไม่ใช่การจัดหน้า และมีเทสต์ T20-K1 ล็อกไว้ว่าต้องไม่มีช่องไหนหลุด */
+    .org-combo input[type="text"],
+    #serviceDateRaw,
+    #dob { font-size: 16px !important; }
+
+    /* กล่องตัวเลือกที่ข้อความยาว (ลักษณะการเดินทาง / การตั้งครรภ์) — เรียงเต็มความกว้าง
+       ไม่ตกบรรทัดเป็นขั้นบันได • ใช้เฉพาะกล่องที่ใส่ .stack-mobile ไม่แตะอีก 19 กล่องที่ตัวเลือกสั้น */
+    .chip-radio-group.stack-mobile { flex-direction: column; align-items: stretch; }
+    .chip-radio-group.stack-mobile .chip-radio { width: 100%; justify-content: flex-start; }
+  }
+
   @media print {
     /* ── Layout reset ── */
     .modal-overlay { position: static; background: none; backdrop-filter: none; padding: 0; }
@@ -2504,7 +2535,7 @@
         <div id="bloodGroupBlock">
         <div class="sub-section-label">หมู่เลือด</div>
         <div class="field-group" style="margin-bottom:10px">
-          <label>หมู่เลือด</label>
+          <label>โปรดเลือกหมู่เลือดของท่าน</label>
           <div class="chip-radio-group">
             <label class="chip-radio blood a"><input type="radio" name="bloodType" value="A" onchange="onBloodTypeChange()"> A</label>
             <label class="chip-radio blood b"><input type="radio" name="bloodType" value="B" onchange="onBloodTypeChange()"> B</label>
@@ -2514,7 +2545,7 @@
             <label class="chip-radio neutral"><input type="radio" name="bloodType" value="unknown" onchange="onBloodTypeChange()"> ไม่ทราบ</label>
             <label class="chip-radio neutral"><input type="radio" name="bloodType" value="notTested" onchange="onBloodTypeChange()"> ไม่เคยตรวจ</label>
           </div>
-          <input type="text" id="bloodOther" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
+          <input type="text" id="bloodOther" data-error-label="หมู่เลือด" class="inline-input medium" placeholder="ระบุหมู่เลือด" style="display:none;margin-top:6px">
         </div>
         </div><!-- /bloodGroupBlock -->
 
@@ -2523,26 +2554,34 @@
              ⚠ attribute required บน radio บังคับไม่ได้จริงในฟอร์มนี้ (form ตั้ง novalidate + generic
                 [required] loop ข้าม radio เพราะ radio.value ไม่เคยว่าง) → ต้องมี explicit check
                 ใน validateAndScrollToError() เท่านั้น อย่าใส่ required แล้วคิดว่าพอ
-             ⚠ value เป็นภาษาไทยตรงๆ = ค่าที่ลงชีตเลย ไม่ต้องมีตาราง map -->
+             ⚠ value เป็นภาษาไทยตรงๆ = ค่าที่ลงชีตเลย ไม่ต้องมีตาราง map
+             ⚠ 2026-08-27 เจ้าของสั่งเปลี่ยนข้อความ + ตัวเลือกตามใบต้นฉบับ (3 ข้อ → 4 ข้อ)
+                เดิม: เดินมาด้วยตนเอง / รถนั่ง / รถนอน — **แถวเก่าในชีตยังเป็นคำเดิม** ตั้งใจปล่อยไว้
+                2026-08-27 (รอบ 2) เจ้าของสั่งเอา "อื่น ๆ (โปรดระบุ)" กลับเข้ามา — เหตุผล: ช่องนี้บังคับตอบ
+                และเก็บเป็นเวชระเบียน คนที่ไม่เข้าข่าย 4 ข้อ (เช่นใช้ไม้เท้า/walker) จะถูกบังคับให้บันทึกค่าที่ไม่จริง
+             ⚠ เลือก "อื่น ๆ" แล้วต้องกรอกข้อความ — เช็คใน validateAndScrollToError() และล้างใน resetForm() -->
         <div class="sub-section-label">ลักษณะการเดินทาง</div>
         <div class="field-group" style="margin-bottom:14px">
-          <label>ลักษณะการเดินทาง <span class="req">*</span></label>
-          <div class="chip-radio-group">
-            <label class="chip-radio safe"><input type="radio" name="mobility" value="เดินมาด้วยตนเอง"> เดินมาด้วยตนเอง</label>
-            <label class="chip-radio"><input type="radio" name="mobility" value="รถนั่ง"> รถนั่ง</label>
-            <label class="chip-radio"><input type="radio" name="mobility" value="รถนอน"> รถนอน</label>
+          <label>โปรดเลือกลักษณะที่ตรงกับท่านมากที่สุด <span class="req">*</span></label>
+          <div class="chip-radio-group stack-mobile">
+            <label class="chip-radio safe"><input type="radio" name="mobility" value="สามารถเดินได้ด้วยตนเอง" onchange="toggleMobilityOther(this.value)"> สามารถเดินได้ด้วยตนเอง</label>
+            <label class="chip-radio"><input type="radio" name="mobility" value="สามารถเดินได้ แต่ต้องการผู้ช่วยพยุง" onchange="toggleMobilityOther(this.value)"> สามารถเดินได้ แต่ต้องการผู้ช่วยพยุง</label>
+            <label class="chip-radio"><input type="radio" name="mobility" value="ใช้รถเข็น (Wheelchair)" onchange="toggleMobilityOther(this.value)"> ใช้รถเข็น (Wheelchair)</label>
+            <label class="chip-radio"><input type="radio" name="mobility" value="ต้องใช้เปลนอน (Stretcher)" onchange="toggleMobilityOther(this.value)"> ต้องใช้เปลนอน (Stretcher)</label>
+            <label class="chip-radio"><input type="radio" name="mobility" value="อื่น ๆ" onchange="toggleMobilityOther(this.value)"> อื่น ๆ (โปรดระบุ)</label>
           </div>
+          <input type="text" id="mobilityOther" class="inline-input full" placeholder="โปรดระบุ เช่น ใช้ไม้เท้าช่วยเดิน" style="display:none;margin-top:6px">
         </div>
 
         <!-- ── โรคประจำตัว ── -->
         <div class="sub-section-label">โรคประจำตัว</div>
         <div class="field-group" style="margin-bottom:14px">
-          <label>โรคประจำตัว <span class="req">*</span></label>
+          <label>ท่านมีโรคประจำตัวหรือไม่ <span class="req">*</span></label>
           <div class="chip-radio-group">
             <label class="chip-radio safe"><input type="radio" name="chronicDisease" value="none" onchange="toggleChronicDisease(false)"> ไม่มี</label>
             <label class="chip-radio allergy"><input type="radio" name="chronicDisease" value="yes" onchange="toggleChronicDisease(true)"> มี (ระบุ)</label>
           </div>
-          <input type="text" id="chronicDiseaseDetail" class="inline-input full" placeholder="ระบุโรคประจำตัว เช่น เบาหวาน ความดันโลหิตสูง" style="display:none;margin-top:6px">
+          <input type="text" id="chronicDiseaseDetail" data-error-label="โรคประจำตัว" class="inline-input full" placeholder="ระบุโรคประจำตัว เช่น เบาหวาน ความดันโลหิตสูง" style="display:none;margin-top:6px">
         </div>
 
         <!-- ── ประวัติการเจ็บป่วย/ผ่าตัด ── เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง
@@ -2552,12 +2591,38 @@
                 ใน validateAndScrollToError() เท่านั้น -->
         <div class="sub-section-label">ประวัติการเจ็บป่วย/ผ่าตัด</div>
         <div class="field-group" style="margin-bottom:14px">
-          <label>ประวัติการเจ็บป่วย/ผ่าตัด <span class="req">*</span></label>
+          <label>ท่านมีประวัติการเจ็บป่วยหรือผ่าตัดหรือไม่ <span class="req">*</span></label>
           <div class="chip-radio-group">
             <label class="chip-radio safe"><input type="radio" name="illnessSurgery" value="none" onchange="toggleIllnessSurgery(false)"> ไม่มี</label>
             <label class="chip-radio allergy"><input type="radio" name="illnessSurgery" value="yes" onchange="toggleIllnessSurgery(true)"> มี (ระบุ)</label>
           </div>
-          <input type="text" id="illnessSurgeryDetail" class="inline-input full" placeholder="ระบุประวัติการเจ็บป่วย/ผ่าตัด เช่น ผ่าตัดไส้ติ่ง ปี 2560" style="display:none;margin-top:6px">
+          <input type="text" id="illnessSurgeryDetail" data-error-label="ประวัติการเจ็บป่วย/ผ่าตัด" class="inline-input full" placeholder="ระบุประวัติการเจ็บป่วย/ผ่าตัด เช่น ผ่าตัดไส้ติ่ง ปี 2560" style="display:none;margin-top:6px">
+        </div>
+
+        <!-- ── การตั้งครรภ์ ── เพิ่ม 2026-08-27 ตามที่เจ้าของระบบสั่ง
+             เหตุผล: **ทุกโปรแกรมมีเอกซเรย์ปอดและหัวใจ** แต่เดิมฟอร์มถามเรื่องตั้งครรภ์ที่เดียว
+             คือในแบบสอบถาม DEXA ซึ่งโผล่เฉพาะคนที่ติ๊ก BMD → ผู้หญิงตั้งครรภ์ที่ลงโปรแกรมปกติ
+             ไม่เคยถูกถามเลย และเวชระเบียนไม่มีร่องรอยว่าเคยถาม
+             ⚠ คำถามนี้ถูก "ย้าย" มาจากบล็อก DEXA ไม่ใช่ก๊อป — ใน #bmdFemaleBlock ไม่มีคำถามนี้แล้ว
+                ค่า bmdSurvey ยังได้ "การตั้งครรภ์: …" เหมือนเดิมโดยอ่านจาก name="pregnancy" ตรงนี้
+             ⚠ เงื่อนไขแสดง (updatePregnancyBlock): เพศหญิง และ (อายุ 15-55 | คำนวณอายุไม่ได้ | ติ๊ก BMD)
+                ต้องล้างค่าเมื่อซ่อนเสมอ ไม่ใช่แค่ซ่อนด้วย CSS — บั๊กแบบเดียวกับ updateBmdBlock() 2026-08-27
+             ⚠ ตอบ "ตั้งครรภ์"/"ไม่แน่ใจ" → ขึ้นคำเตือน แต่ **ไม่บล็อกการส่งฟอร์ม** โดยตั้งใจ
+                (บล็อกการส่ง = สร้างแรงจูงใจให้ตอบว่าไม่ตั้งครรภ์เพื่อให้ลงทะเบียนจบ) -->
+        <div id="pregnancyBlock" style="display:none">
+          <div class="sub-section-label">การตั้งครรภ์</div>
+          <div class="field-group" style="margin-bottom:14px">
+            <label>ขณะนี้ท่านมีการตั้งครรภ์หรือไม่ <span class="req">*</span></label>
+            <div class="chip-radio-group stack-mobile">
+              <label class="chip-radio safe"><input type="radio" name="pregnancy" value="ไม่ตั้งครรภ์" onchange="onPregnancyChange()"> ไม่ตั้งครรภ์</label>
+              <label class="chip-radio allergy"><input type="radio" name="pregnancy" value="ตั้งครรภ์" onchange="onPregnancyChange()"> ตั้งครรภ์</label>
+              <label class="chip-radio neutral"><input type="radio" name="pregnancy" value="ไม่แน่ใจ" onchange="onPregnancyChange()"> ไม่แน่ใจ</label>
+            </div>
+            <div id="pregnancyWarn" class="prep-highlight" style="display:none;margin-top:8px;background:#FDEDEC;border-color:#E74C3C;color:#C0392B;font-weight:700">
+              ⚠ โปรแกรมตรวจสุขภาพมีการ<strong>เอกซเรย์ปอดและหัวใจ</strong> ซึ่งไม่เหมาะกับผู้ที่ตั้งครรภ์หรือสงสัยว่าอาจตั้งครรภ์<br>
+              ท่านยังลงทะเบียนได้ตามปกติ — <strong>กรุณาแจ้งเจ้าหน้าที่ในวันเข้ารับบริการ</strong> เพื่อพิจารณางดหรือเลื่อนรายการเอกซเรย์
+            </div>
+          </div>
         </div>
 
         <!-- ── ประวัติการแพ้ยาและอาหาร ── -->
@@ -2946,14 +3011,10 @@
           <!-- 1.4 สำหรับผู้หญิง — แสดง/ล้างค่าโดย updateBmdFemaleOnly() -->
           <div id="bmdFemaleBlock" style="display:none">
             <div class="sub-section-label" style="margin-top:12px">สำหรับผู้หญิง กรุณาตอบคำถามต่อไปนี้</div>
-            <div class="field-group" style="margin-bottom:14px">
-              <label>ขณะนี้ท่านมีการตั้งครรภ์หรือไม่ <span class="req">*</span></label>
-              <div class="chip-radio-group">
-                <label class="chip-radio"><input type="radio" name="bmdPregnant" value="ไม่ตั้งครรภ์"> ไม่ตั้งครรภ์</label>
-                <label class="chip-radio"><input type="radio" name="bmdPregnant" value="ตั้งครรภ์"> ตั้งครรภ์</label>
-                <label class="chip-radio"><input type="radio" name="bmdPregnant" value="ไม่แน่ใจ"> ไม่แน่ใจ</label>
-              </div>
-            </div>
+            <!-- ⚠ คำถาม "ขณะนี้ท่านมีการตั้งครรภ์หรือไม่" (name="bmdPregnant") ถูกย้ายออกไปไว้นอกบล็อกนี้
+                 เมื่อ 2026-08-27 → ดูบล็อก #pregnancyBlock (name="pregnancy") ต่อจากประวัติการเจ็บป่วย/ผ่าตัด
+                 เหตุผล: ทุกโปรแกรมมีเอกซเรย์ปอด จึงต้องถามผู้หญิงทุกคน ไม่ใช่เฉพาะคนที่ตรวจ BMD
+                 คอลัมน์ 'แบบซักประวัติ BMD (DEXA)' ยังได้ "การตั้งครรภ์: …" เหมือนเดิม โดยอ่านจาก name="pregnancy" -->
             <div class="field-group" style="margin-bottom:14px">
               <label>ท่านยังมีประจำเดือนอยู่หรือไม่ <span class="req">*</span></label>
               <div class="chip-radio-group">
@@ -3475,14 +3536,14 @@ const TESTS = [
   { id:20, name:'ตรวจสารบ่งชี้มะเร็งลำไส้', eng:'CEA for GI Cancer', price:320,  gender:'all', tags:['cancer'] },
   { id:21, name:'ตรวจสารบ่งชี้มะเร็งตับ', eng:'AFP for Liver Cancer', price:280,  gender:'all', tags:['cancer','liver'] },
   { id:25, name:'ตรวจหมู่เลือด', eng:'Blood Group + RH typing', price:328,  gender:'all', tags:['heart'] },
-  { id:26, name:'ตรวจการทำงานต่อมไทรอยด์', eng:'Free T3, Free T4, TSH', price:630,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> การมีอาการหรือความเสี่ยงที่สงสัยว่าต่อมไทรอยด์ทำงานผิดปกติ เช่น ไทรอยด์เป็นพิษหรือไทรอยด์ทำงานต่ำ' },
+  { id:26, name:'ตรวจการทำงานต่อมไทรอยด์', eng:'Free T3, Free T4, TSH', price:630,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้การตรวจ</strong> หากท่านมีอาการใจสั่น เหนื่อยง่าย มือสั่น ทนร้อนหรือทนหนาวได้น้อยกว่าปกติ น้ำหนักลดหรือเพิ่มขึ้นอย่างรวดเร็วโดยไม่ทราบสาเหตุ คอโต หรือมีบุคคลในครอบครัวเป็นโรคไทรอยด์' },
   { id:27, name:'ตรวจฮอร์โมนเพศชาย', eng:'Testosterone (Male)', price:300,  gender:'male', tags:['male'] },
-  { id:28, name:'ตรวจวิตามินดี', eng:'Total Vitamin D level', price:950,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> สำหรับผู้ที่มีความเสี่ยงต่อภาวะขาดวิตามินดี หรือมีโรคที่ส่งผลต่อระบบเผาผลาญแคลเซียมและกระดูก' },
-  { id:29, name:'ตรวจวิตามินบี 12', eng:'Vitamin B12', price:260,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> การวินิจฉัยภาวะขาดวิตามินบี 12 ตรวจหาสาเหตุของโรคโลหิตจาง หรือประเมินความผิดปกติของระบบประสาท' },
-  { id:30, name:'ตรวจวิตามินบี 9 (โฟเลต)', eng:'Folate (serum)', price:260,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong> เพื่อประเมินภาวะขาดวิตามินบี 9 และหาสาเหตุของโรคโลหิตจาง' },
-  { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้</strong><br>• ผู้ที่ต้องการทราบสัดส่วนไขมัน กล้ามเนื้อ และมวลน้ำในร่างกาย หรือติดตามผลการลดน้ำหนัก/เพิ่มกล้ามเนื้อ<br>• ผู้สูงอายุหรือผู้ป่วยโรคเรื้อรังที่เสี่ยงภาวะมวลกล้ามเนื้อสลาย (Sarcopenia) และผู้ที่ต้องการประเมินความเสี่ยงโรคอ้วนจากไขมันในช่องท้อง (Visceral Fat) ซึ่งสัมพันธ์กับเบาหวานและโรคหัวใจ' },
+  { id:28, name:'ตรวจวิตามินดี', eng:'Total Vitamin D level', price:950,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้การตรวจ</strong> หากท่านไม่ค่อยได้รับแสงแดด ใช้ชีวิตอยู่ภายในอาคารเป็นส่วนใหญ่ มีอาการปวดเมื่อยกล้ามเนื้อเรื้อรัง หรือมีภาวะกระดูกบางหรือกระดูกหักง่าย' },
+  { id:29, name:'ตรวจวิตามินบี 12', eng:'Vitamin B12', price:260,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้การตรวจ</strong> หากท่านมีอาการซีด อ่อนเพลีย ชาปลายมือ หลงลืมง่าย รับประทานอาหารมังสวิรัติหรืออาหารเจเป็นประจำ หรือเคยเข้ารับการผ่าตัดกระเพาะอาหารหรือลำไส้' },
+  { id:30, name:'ตรวจวิตามินบี 9 (โฟเลต)', eng:'Folate (serum)', price:260,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้การตรวจ</strong> หากท่านมีอาการซีดหรืออ่อนเพลียโดยไม่ทราบสาเหตุ รับประทานผักได้น้อย ดื่มเครื่องดื่มแอลกอฮอล์เป็นประจำ หรือกำลังวางแผนตั้งครรภ์' },
+  { id:31, name:'วิเคราะห์องค์ประกอบร่างกาย', eng:'InBody (Body Composition)', price:600,  gender:'all', tags:[], note:'<strong>ข้อบ่งชี้การตรวจ</strong><br>• หากท่านต้องการทราบสัดส่วนไขมัน กล้ามเนื้อ และปริมาณน้ำในร่างกาย หรือมีแผนจะลดน้ำหนักหรือเพิ่มกล้ามเนื้อและต้องการติดตามผล<br>• หากท่านเป็นผู้สูงอายุหรือมีโรคประจำตัวเรื้อรัง ซึ่งมวลกล้ามเนื้ออาจลดลงจนอ่อนแรงหรือหกล้มได้ง่าย' },
   { id:32, name:'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ)', eng:'Ultrasound Lower Abdomen', price:1275, gender:'all', tags:[], note:'หญิง: มดลูก รังไข่ &nbsp;|&nbsp; ชาย: ต่อมลูกหมาก<br><span style="color:#E65100">⚠ ผู้หญิงที่เคยผ่าตัดมดลูก กรุณาสอบถามเจ้าหน้าที่ก่อนเลือกรายการนี้</span>' },
-  { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[], note:'<strong>แนะนำให้ตรวจทุกคน</strong> ในกลุ่มต่อไปนี้<br>♀ <strong>หญิงอายุ 65 ปีขึ้นไป</strong> — มีความเสี่ยงกระดูกพรุนสูงหลังวัยหมดประจำเดือน<br>♂ <strong>ชายอายุ 70 ปีขึ้นไป</strong> — เพื่อประเมินความเสี่ยง<br><strong>ผู้ที่มีประวัติกระดูกหัก</strong> — อายุ 50 ปีขึ้นไปที่เคยกระดูกหักจากอุบัติเหตุไม่รุนแรง' },
+  { id:33, name:'ตรวจมวลกระดูก BMD (เอวและสะโพก)', eng:'BMD (Lumbar and Hip)', price:3010, gender:'all', tags:[], note:'<strong>แนะนำตรวจในกลุ่มต่อไปนี้</strong><br>♀ <strong>หญิงอายุ 65 ปีขึ้นไป</strong> — มีความเสี่ยงกระดูกพรุนสูงหลังวัยหมดประจำเดือน<br>♂ <strong>ชายอายุ 70 ปีขึ้นไป</strong> — เพื่อประเมินความเสี่ยง<br><strong>ผู้ที่มีประวัติกระดูกหัก</strong> — อายุ 50 ปีขึ้นไปที่เคยกระดูกหักจากอุบัติเหตุไม่รุนแรง' },
   { id:34, name:'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', eng:'Ultrasound Breast', price:1275, gender:'female', tags:['cancer','female'], note:'แนะนำสำหรับอายุ <strong>น้อยกว่า 35 ปี</strong> หรือ ติดตามอาการผิดปกติ<br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม Mammogram ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'], note:'รวม Ultrasound Breast อยู่แล้ว — แนะนำสำหรับอายุ <strong>35 ปีขึ้นไป</strong><br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม U/S Breast ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:36, name:'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', eng:'Hemoglobin typing (Thalassemia screening)', price:320, gender:'all', tags:[] },
@@ -3678,6 +3739,8 @@ function onGenderChange() {
   updateTestGenderFilter();
   // เผื่อเลือกเพศหลังติ๊ก BMD ไว้แล้ว — ต้องอัปเดตว่าโชว์ส่วน "สำหรับผู้หญิง" ไหม (เพิ่ม 2026-08-26)
   updateBmdFemaleOnly();
+  // คำถามตั้งครรภ์ขึ้นกับเพศโดยตรง (เพิ่ม 2026-08-27)
+  updatePregnancyBlock();
   calcTotal();
 }
 
@@ -3747,6 +3810,48 @@ function updateTestGenderFilter() {
 // เพิ่ม 2026-08-26 ตามที่เจ้าของระบบสั่ง — โผล่เฉพาะคนที่เลือกรายการตรวจ id:33 (BMD เอวและสะโพก)
 // เรียกจากท้าย setTest() ทุกครั้ง (ไม่ต้องเช็คว่า id===33 เพราะอ่านสถานะจริงจาก checkbox เอง)
 // และจากจุดรีเซ็ตฟอร์ม (resetForm) เพื่อไม่ให้ฟอร์มที่รีเซ็ตแล้วค้างคำตอบเดิม
+// ─── ลักษณะการเดินทาง: ช่อง "อื่น ๆ (โปรดระบุ)" ──────────────────────────────
+// เปิดเฉพาะตอนเลือก "อื่น ๆ" และ **ล้างค่าทิ้งเมื่อปิด** ไม่ใช่แค่ซ่อน
+// (ไม่ล้าง = ค่าที่มองไม่เห็นแล้วจะถูกส่งลงชีตต่อ — บั๊กแบบเดียวกับ updateTestGenderFilter เดิม)
+function toggleMobilityOther(v) {
+  const el = document.getElementById('mobilityOther');
+  if (!el) return;
+  const show = (v === 'อื่น ๆ');
+  el.style.display = show ? 'block' : 'none';
+  if (!show) el.value = '';
+}
+
+// ─── การตั้งครรภ์ ────────────────────────────────────────────────────────────
+// เพิ่ม 2026-08-27 — เงื่อนไขแสดง: เพศหญิง และ (อายุ 15-55 | คำนวณอายุไม่ได้ | ติ๊ก BMD)
+// เหตุผลที่รวม "คำนวณอายุไม่ได้": ถามเกินเสียแค่เวลาไม่กี่วินาที แต่ไม่ถามคนที่ควรถาม
+//   คือปัญหาที่บล็อกนี้ถูกสร้างมาแก้พอดี
+// เหตุผลที่รวม "ติ๊ก BMD": ใบ DEXA ต้นฉบับถามผู้หญิงทุกวัยไม่จำกัดอายุ ถ้าตัดออกจะถอยหลังจากของเดิม
+// ⚠ ต้องเรียกจาก 4 ทาง: onGenderChange() • calcAge() • updateBmdBlock() • resetForm()
+function updatePregnancyBlock() {
+  const block = document.getElementById('pregnancyBlock');
+  if (!block) return;
+  const ageRaw = document.getElementById('age')?.value;
+  const age = parseInt(ageRaw, 10);
+  const ageUnknown = !ageRaw || isNaN(age);
+  const bmdTicked = !!document.getElementById('chk-33')?.checked;
+  const show = (selectedGender === 'female') && (ageUnknown || bmdTicked || (age >= 15 && age <= 55));
+  block.style.display = show ? 'block' : 'none';
+  if (!show) {
+    document.querySelectorAll('input[name="pregnancy"]').forEach(el => el.checked = false);
+  }
+  onPregnancyChange();
+}
+
+// คำเตือนเรื่องเอกซเรย์ — ขึ้นเมื่อตอบ "ตั้งครรภ์" หรือ "ไม่แน่ใจ"
+// **ไม่บล็อกการส่งฟอร์มโดยตั้งใจ** (ดูเหตุผลในคอมเมนต์ของ #pregnancyBlock)
+function onPregnancyChange() {
+  const warn = document.getElementById('pregnancyWarn');
+  if (!warn) return;
+  const v = document.querySelector('input[name="pregnancy"]:checked')?.value || '';
+  const visible = document.getElementById('pregnancyBlock')?.style.display !== 'none';
+  warn.style.display = (visible && (v === 'ตั้งครรภ์' || v === 'ไม่แน่ใจ')) ? 'block' : 'none';
+}
+
 function updateBmdBlock() {
   const block = document.getElementById('bmdBlock');
   if (!block) return;
@@ -3754,13 +3859,15 @@ function updateBmdBlock() {
   block.style.display = show ? 'block' : 'none';
   if (!show) {
     // ล้างคำตอบทั้งบล็อกทิ้ง — ไม่ใช่แค่ซ่อนด้วย CSS (บั๊กแบบนี้เคยเกิดกับ updateTestGenderFilter() มาแล้ว)
-    ['bmdHand','bmdQ1','bmdQ2','bmdQ3','bmdQ4','bmdQ5','bmdQ6','bmdQ7Female','bmdQ8','bmdPregnant','bmdMenstrual']
+    ['bmdHand','bmdQ1','bmdQ2','bmdQ3','bmdQ4','bmdQ5','bmdQ6','bmdQ7Female','bmdQ8','bmdMenstrual']
       .forEach(n => document.querySelectorAll('input[name="' + n + '"]').forEach(el => el.checked = false));
     toggleBmdQ6Detail(false);
     clearBmdQ7Female();
   }
   // เผื่อเลือกเพศไว้ก่อนติ๊ก BMD (หรือค้างจากก่อนหน้า) ให้ส่วน "สำหรับผู้หญิง" ตรงกับเพศปัจจุบันเสมอ
   updateBmdFemaleOnly();
+  // ติ๊ก/ปลด BMD เปลี่ยนเงื่อนไขแสดงคำถามตั้งครรภ์ (ผู้หญิงที่ตรวจ BMD ต้องถูกถามทุกวัย)
+  updatePregnancyBlock();
 }
 
 // เปิด/ปิดกล่องรายการโรค (ข้อ 6) — เลือก "ไม่เป็น" หรือปิดบล็อกทั้งก้อนต้องล้าง checkbox/ช่องอายุด้วย ไม่ใช่แค่ซ่อน
@@ -3802,7 +3909,7 @@ function updateBmdFemaleOnly() {
   const q7 = document.getElementById('bmdQ7Female');
   if (q7) q7.style.display = isFemale ? 'block' : 'none';
   if (!isFemale) {
-    document.querySelectorAll('input[name="bmdPregnant"]').forEach(el => el.checked = false);
+    // (bmdPregnant ถูกย้ายออกไปเป็น name="pregnancy" นอกบล็อกนี้แล้ว — updatePregnancyBlock() ล้างให้เอง)
     document.querySelectorAll('input[name="bmdMenstrual"]').forEach(el => el.checked = false);
     clearBmdQ7Female();
   }
@@ -4809,7 +4916,11 @@ function validateAndScrollToError() {
       window.scrollTo({ top, behavior: 'smooth' });
       setTimeout(() => field.focus(), 400);
       // แสดง toast
-      const label = field.closest('.field-group')?.querySelector('label')?.textContent?.replace('*','').trim()
+      // ⚠ data-error-label มาก่อนเสมอ — ตั้งแต่ 2026-08-27 label หลายกล่องเปลี่ยนเป็น "คำถาม"
+      //   ("ท่านมีโรคประจำตัวหรือไม่") ซึ่งพอเอามาต่อท้าย "กรุณากรอก:" แล้วอ่านไม่รู้เรื่อง
+      //   ช่องไหนที่ label เป็นประโยคคำถาม ให้ใส่ data-error-label ชื่อสั้นๆ ไว้ที่ input
+      const label = field.dataset.errorLabel
+        || field.closest('.field-group')?.querySelector('label')?.textContent?.replace('*','').trim()
         || field.placeholder || 'ข้อมูลที่จำเป็น';
       showToast(`⚠ กรุณากรอก: ${label.substring(0,30)}`);
       return false;
@@ -5116,6 +5227,35 @@ function validateAndScrollToError() {
     showToast('⚠ กรุณาเลือกลักษณะการเดินทาง');
     return false;
   }
+  // เลือก "อื่น ๆ" แล้วต้องกรอกข้อความด้วย (เพิ่ม 2026-08-27) — ไม่งั้นชีตจะได้ค่า "อื่น ๆ: " เปล่าๆ
+  if (mobilityChecked.value === 'อื่น ๆ') {
+    const mo = document.getElementById('mobilityOther');
+    if (!mo?.value.trim()) {
+      const g = mo?.closest('.field-group');
+      if (g) {
+        g.classList.add('field-error');
+        window.scrollTo({ top: g.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+      }
+      mo?.focus();
+      showToast('⚠ กรุณาระบุลักษณะการเดินทาง');
+      return false;
+    }
+  }
+
+  // ตรวจคำถามการตั้งครรภ์ — บังคับเฉพาะตอนบล็อกแสดงอยู่จริง (เพิ่ม 2026-08-27)
+  // ⚠ เช็คจาก display ของบล็อก ไม่ใช่คำนวณเงื่อนไขเพศ/อายุซ้ำ ไม่งั้นเงื่อนไข 2 ที่จะแตกจากกันได้
+  const pregBlock = document.getElementById('pregnancyBlock');
+  if (pregBlock && pregBlock.style.display !== 'none') {
+    if (!document.querySelector('input[name="pregnancy"]:checked')) {
+      const pg = document.querySelector('input[name="pregnancy"]')?.closest('.field-group');
+      if (pg) {
+        pg.classList.add('field-error');
+        window.scrollTo({ top: pg.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+      }
+      showToast('⚠ กรุณาตอบคำถามเรื่องการตั้งครรภ์');
+      return false;
+    }
+  }
 
   // ตรวจว่าเลือกประวัติการแพ้ยาหรือยัง — ถามทั้ง 2 โหมด (บล็อกนี้อยู่นอก fullInfoSection แล้ว)
   // ⚠ attribute `required` บน radio ในฟอร์มนี้บังคับไม่ได้จริง (ฟอร์มตั้ง novalidate + generic
@@ -5257,16 +5397,7 @@ function validateAndScrollToError() {
       return false;
     }
     if (selectedGender === 'female') {
-      if (!document.querySelector('input[name="bmdPregnant"]:checked')) {
-        const pEl = document.querySelector('input[name="bmdPregnant"]')?.closest('.field-group');
-        if (pEl) {
-          pEl.classList.add('field-error');
-          const top = pEl.getBoundingClientRect().top + window.scrollY - 80;
-          window.scrollTo({ top, behavior: 'smooth' });
-        }
-        showToast('⚠ กรุณาตอบคำถามเรื่องการตั้งครรภ์');
-        return false;
-      }
+      // คำถามตั้งครรภ์ถูกย้ายออกไปนอกบล็อก DEXA แล้ว (2026-08-27) — ตรวจรวมศูนย์ที่บล็อก #pregnancyBlock
       if (!document.querySelector('input[name="bmdMenstrual"]:checked')) {
         const mEl = document.querySelector('input[name="bmdMenstrual"]')?.closest('.field-group');
         if (mEl) {
@@ -5503,7 +5634,7 @@ function handleSubmit(e) {
       if (q8) parts.push(qLabels.bmdQ8 + ': ' + q8);
       // 2 บรรทัดสุดท้ายมีเฉพาะเพศหญิง
       if (selectedGender === 'female') {
-        const preg = document.querySelector('input[name="bmdPregnant"]:checked')?.value;
+        const preg = document.querySelector('input[name="pregnancy"]:checked')?.value;
         if (preg) parts.push('การตั้งครรภ์: ' + preg);
         const mens = document.querySelector('input[name="bmdMenstrual"]:checked')?.value;
         if (mens) parts.push('ประจำเดือน: ' + mens);
@@ -5511,7 +5642,17 @@ function handleSubmit(e) {
       return parts.join(' | ');
     })(),
     // ลักษณะการเดินทาง — value เป็นภาษาไทยอยู่แล้ว ใช้ตรงๆ ได้เลย
-    mobility: document.querySelector('input[name="mobility"]:checked')?.value || '',
+    // "อื่น ๆ" เก็บเป็น 'อื่น ๆ: <ข้อความ>' ตามแบบแผนเดียวกับ chronicDisease/illnessSurgery/allergy
+    // (เก็บคำนำหน้าไว้ด้วยเพื่อให้กรองกลุ่มนอกเกณฑ์ออกมานับได้ภายหลัง — ช่องนี้เป็นเวชระเบียนไว้ดูย้อนหลัง)
+    mobility: (() => {
+      const v = document.querySelector('input[name="mobility"]:checked')?.value || '';
+      if (v !== 'อื่น ๆ') return v;
+      const d = document.getElementById('mobilityOther')?.value.trim() || '';
+      return d ? 'อื่น ๆ: ' + d : 'อื่น ๆ';
+    })(),
+    // การตั้งครรภ์ (เพิ่ม 2026-08-27) — '' เสมอถ้าบล็อกไม่ได้แสดง (ชาย หรือ นอกช่วงอายุ)
+    //   ห้ามใส่ค่าให้คนที่ไม่ได้ถูกถาม — บั๊กแบบเดียวกับ papDeliveryMethod เดิม
+    pregnancy: document.querySelector('input[name="pregnancy"]:checked')?.value || '',
     // ที่อยู่
     // โหมด HN: ช่องที่อยู่ในส่วนที่ 1 ถูกซ่อนไว้ ถ้าผู้ป่วยแจ้งที่อยู่ใหม่ให้ใช้ค่านั้นแทน
     address:       newAddrVal || [document.getElementById('houseNo')?.value, document.getElementById('moo')?.value ? 'หมู่ ' + document.getElementById('moo').value : '', document.getElementById('soi')?.value ? 'ซอย ' + document.getElementById('soi').value : '', document.getElementById('street')?.value ? 'ถนน ' + document.getElementById('street').value : ''].filter(Boolean).join(' '),
@@ -5688,6 +5829,7 @@ function handleSubmit(e) {
       // ใบสรุปเจ้าหน้าที่มีครบเพราะอ่านจากชีตคนละเส้นทาง → ผู้ป่วยเลยไม่เห็นสิ่งที่ตัวเองกรอกไป
       // ⚠ อ่านจาก formData เท่านั้น ห้ามคำนวณซ้ำที่นี่ ไม่งั้นสองที่จะเพี้ยนจากกันเมื่อแก้ตัวใดตัวหนึ่ง
       mobility:       formData.mobility || '',
+      pregnancy:      formData.pregnancy || '',
       chronicDisease: formData.chronicDisease || '',
       illnessSurgery: formData.illnessSurgery || '',
       bmdSurvey:      formData.bmdSurvey || '',
@@ -5762,6 +5904,10 @@ function resetForm() {
   // ถ้าไม่เรียก: #bmdBlock ค้างเปิดหลังกด "ส่งแบบฟอร์มใหม่" แล้ว validateAndScrollToError()
   // จะบังคับกรอกแบบสอบถาม DEXA กับคนถัดไปที่ไม่ได้เลือก BMD → ส่งฟอร์มไม่ผ่านทั้งใบ (เจอจริง 2026-08-27)
   updateBmdBlock();
+  // ⚠ 2 บรรทัดนี้ต้องอยู่หลัง reset() เสมอ — form.reset() ล้าง radio/ช่องข้อความให้ก็จริง
+  //   แต่ไม่ได้ซ่อนบล็อก/ช่องที่ถูกเปิดไว้ด้วย style.display (บั๊กเดียวกับ #bmdBlock ที่เจอ 2026-08-27)
+  toggleMobilityOther('');
+  updatePregnancyBlock();
   calcTotal();
   document.getElementById('main-form').style.display = 'block';
   document.getElementById('successScreen').style.display = 'none';
@@ -5816,7 +5962,11 @@ const ORG_OPTIONS = [
   'คณะพยาบาล มข.',
   'หน่วยงานทรัพย์สิน มข.',
   'คณะเศรษฐศาตร์ มข.',
-  'โรงงานพลังงานไฟฟ้า มข.'
+  'โรงงานพลังงานไฟฟ้า มข.',
+  // เพิ่ม 2026-08-27 ตามที่เจ้าของสั่ง — สะกดชื่อเต็มตามที่เจ้าของกำหนด ไม่ย่อเป็น "มข." เหมือนรายการเก่า
+  // (รายการเก่าไม่แก้ เพราะแถวเก่าในชีตสะกดแบบนั้นไปแล้ว การแก้ดรอปดาวน์จะสร้างการสะกด 2 แบบของหน่วยงานเดียวกัน)
+  'คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น',
+  'ศูนย์หัวใจสิริกิติ์ ภาคตะวันออกเฉียงเหนือ'
 ];
 
 function renderOrgDropdown(list) {
@@ -6117,6 +6267,8 @@ function calcAge() {
   if (age >= 0 && age <= 120) {
     document.getElementById('age').value = age;
     suggestProgram();
+    // อายุเพิ่งคำนวณได้/เปลี่ยนไป → เงื่อนไขแสดงคำถามตั้งครรภ์ (15-55) อาจเปลี่ยนตาม (เพิ่ม 2026-08-27)
+    updatePregnancyBlock();
   }
 }
 
@@ -6412,6 +6564,14 @@ function showSuccessModal(data) {
   // ลำดับและป้ายชื่อยกมาจากใบสรุปเจ้าหน้าที่ (showStaffSummary) ให้ 2 ใบอ่านแล้วตรงกัน
   // ⚠ ถ้าเพิ่ม/แก้แถวตรงนี้ ต้องไปแก้ที่ showStaffSummary ให้ตรงกันด้วย ไม่งั้น 2 ใบจะเริ่มเพี้ยนจากกัน
   html += srAlways('🚶 ลักษณะการเดินทาง', data.mobility);
+  // การตั้งครรภ์ — แสดงเฉพาะคนที่ถูกถามจริง (ค่าว่าง = ไม่ได้ถูกถาม ไม่ใช่ 'ไม่ตอบ')
+  if (data.pregnancy) {
+    const pregAlert = (data.pregnancy === 'ตั้งครรภ์' || data.pregnancy === 'ไม่แน่ใจ');
+    html += '<div class="sr"><span class="sl">🤰 การตั้งครรภ์</span><span class="sv"'
+         + (pregAlert ? ' style="color:#C0392B;font-weight:800"' : '') + '>'
+         + escHtml(data.pregnancy) + (pregAlert ? ' — กรุณาแจ้งเจ้าหน้าที่ก่อนเอกซเรย์' : '')
+         + '</span></div>';
+  }
   html += srAlways('🩺 โรคประจำตัว', data.chronicDisease);
   html += srAlways('🏥 ประวัติการเจ็บป่วย/ผ่าตัด', data.illnessSurgery);
   html += srAlways('💊 ประวัติแพ้ยา', data.allergy);
@@ -6926,6 +7086,14 @@ function showStaffSummary(idx) {
   html += srA('🪪 บัตรประชาชน', r.idCard);
   html += srA('🏠 ที่อยู่', r.address);
   html += srA('🚶 ลักษณะการเดินทาง', r.mobility);
+  // การตั้งครรภ์ — ต้องสะดุดตาเจ้าหน้าที่ ไม่ใช่แถวธรรมดาปนกับอีกหลายสิบแถว (เพิ่ม 2026-08-27)
+  if (r.pregnancy) {
+    var pAlert = (r.pregnancy === 'ตั้งครรภ์' || r.pregnancy === 'ไม่แน่ใจ');
+    html += '<div class="sr"><span class="sl">🤰 การตั้งครรภ์</span><span class="sv"'
+         + (pAlert ? ' style="color:#C0392B;font-weight:800"' : '') + '>'
+         + escHtml(r.pregnancy) + (pAlert ? ' — ⚠ ตรวจสอบก่อนส่งเอกซเรย์' : '')
+         + '</span></div>';
+  }
   html += srA('🩺 โรคประจำตัว', r.chronicDisease);
   html += srA('🏥 ประวัติการเจ็บป่วย/ผ่าตัด', r.illnessSurgery);
   if (r.bloodGroup)  html += '<div class="sr"><span class="sl">🩸 หมู่เลือด</span><span class="sv">' + escHtml(r.bloodGroup) + '</span></div>';
@@ -7181,8 +7349,19 @@ function printStaffSummary() {
             <span class="prep-icon">🧪</span>
           </div>
           <div class="prep-card-body">
-            <p style="margin:0 0 6px">สามารถเก็บอุจจาระมาก่อนได้ แนะนำใส่<strong>ภาชนะที่สะอาด</strong><br>เมื่อถึงวันเข้ารับบริการ เปลี่ยนใส่ภาชนะของโรงพยาบาล และปัสสาวะให้มาเก็บที่โรงพยาบาล</p>
-            <div class="prep-highlight" style="margin:0 0 8px">📍 <strong>สถานที่ส่งอุจจาระ</strong><br>ห้องเจาะเลือด SMC ตึกสว. ชั้น 1</div>
+            <!-- 2026-08-27 เจ้าของสั่ง: คงย่อหน้านี้ไว้ + ต่อท้ายเงื่อนไข 7 ชม. (ต้องอ่านคู่กันเสมอ
+                 ไม่งั้นคนอ่านแค่ "เก็บมาก่อนได้" อาจเก็บตั้งแต่คืนก่อน = เกิน 7 ชม. ตัวอย่างใช้ไม่ได้)
+                 และตัดกล่อง 📍 "สถานที่ส่งอุจจาระ" เดิมออก เพราะขั้นตอนข้อ 3 ระบุจุดส่งละเอียดกว่า
+                 ถ้าเก็บทั้งคู่ไว้จะมีสถานที่ส่ง 2 แห่งในการ์ดเดียวที่ไม่ตรงกันเป๊ะ -->
+            <p style="margin:0 0 6px">สามารถเก็บอุจจาระมาก่อนได้ แนะนำใส่<strong>ภาชนะที่สะอาด</strong> <strong>อุจจาระเก็บไม่เกิน 7 ชั่วโมง สามารถส่งตรวจได้</strong><br>เมื่อถึงวันเข้ารับบริการ เปลี่ยนใส่ภาชนะของโรงพยาบาล และปัสสาวะให้มาเก็บที่โรงพยาบาล</p>
+            <div class="prep-highlight" style="margin:0 0 8px">
+              <strong>ขั้นตอนการเก็บอุจจาระ</strong>
+              <ol style="margin:6px 0 0;padding-left:20px">
+                <li>ตักอุจจาระขนาดประมาณหัวแม่มือ ใส่ในกระป๋องสีเทา ปิดฝาให้สนิท</li>
+                <li>ติดสติ๊กเกอร์ที่ <span style="color:#C62828;font-weight:800">ห้องเจาะเลือด SMC ตึกสว. ชั้น 1</span></li>
+                <li>ส่งที่ <strong>กล่องรับสิ่งส่งตรวจ</strong> อยู่บริเวณหน้าห้องน้ำหลังห้องเจาะเลือด SMC ตึกสว. ชั้น 1 <strong>เท่านั้น</strong></li>
+              </ol>
+            </div>
             <p style="margin:0;color:#C62828;font-weight:600">การส่งตรวจปัสสาวะและอุจจาระ ควรหลีกเลี่ยงการเก็บส่งตรวจในช่วงที่เป็นประจำเดือน หากเป็นประจำเดือนต้องรอให้ประจำเดือนหมดสนิทก่อน 5–7 วัน</p>
           </div>
         </div>
