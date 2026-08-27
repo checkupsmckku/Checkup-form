@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>แบบประเมินความพึงพอใจ - คลินิกตรวจสุขภาพ SMC</title>
+<title>แบบประเมินความพึงพอใจ - หน่วยคลินิกตรวจสุขภาพ SMC</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -159,13 +159,17 @@
       </svg>
       <div class="hero-text">
         <h1>แบบประเมินความพึงพอใจ</h1>
-        <p>แบบบันทึกข้อมูลลงทะเบียนตรวจสุขภาพประจำปีออนไลน์<br>สำหรับหน่วยงานองค์กร คลินิกตรวจสุขภาพ SMC</p>
+        <p>แบบบันทึกข้อมูลลงทะเบียนตรวจสุขภาพประจำปีออนไลน์<br>สำหรับหน่วยงานองค์กร หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></p>
         <p class="time">ใช้เวลาประมาณ 1 นาที</p>
       </div>
     </div>
 
     <div class="card" id="card-q1">
-      <div class="q-label">1. ความพึงพอใจโดยรวม</div>
+      <!-- 2026-08-27 เจ้าของสั่งแก้ — เดิมเขียนว่า "ความพึงพอใจโดยรวม" ลอยๆ ทั้งที่แบบประเมินนี้
+           เด้งทันทีหลังกดส่งลงทะเบียน (บางคนกรอกก่อนวันนัดเป็นสัปดาห์) ผู้ตอบจึงยังไม่ได้รับบริการเลย
+           ตอบได้อย่างเดียวคือพอใจ "การกรอกฟอร์ม" และไปชนกับข้อความพึงพอใจโดยรวมของ survey2 ที่เป็นของจริง
+           ข้อความหลักใช้คำเดียวกับวัตถุประสงค์โครงการและ survey2 · วงเล็บเทาคือชื่อที่ผู้ตอบเพิ่งเห็นบนหัวฟอร์ม -->
+      <div class="q-label">1. ความพึงพอใจโดยรวมต่อการลงทะเบียนออนไลน์ <span style="font-weight:400;color:#aaa">(แบบบันทึกข้อมูลตรวจสุขภาพประจำปี)</span></div>
       <div class="emoji-row" id="q1">
         <button type="button" class="emoji-btn" data-val="5-ดีมาก" onclick="pick('q1',this)">🤩<span>ดีมาก</span></button>
         <button type="button" class="emoji-btn" data-val="4-ดี" onclick="pick('q1',this)">😊<span>ดี</span></button>
@@ -217,7 +221,7 @@
 
     <div class="card">
       <div class="q-label">ข้อเสนอแนะเพิ่มเติม <span style="font-weight:400;color:#aaa">(ถ้ามี)</span></div>
-      <textarea id="q6" rows="3" placeholder="บอกเราได้เลย..."></textarea>
+      <textarea id="q6" rows="3" placeholder="โปรดระบุ"></textarea>
     </div>
 
     <div class="err-msg" id="surveyErr">⚠ กรุณาตอบให้ครบทุกข้อก่อนส่งแบบประเมิน</div>

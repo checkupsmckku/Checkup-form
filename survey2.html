@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>แบบประเมินหลังเข้ารับบริการ - คลินิกตรวจสุขภาพ SMC</title>
+<title>แบบประเมินหลังเข้ารับบริการ - หน่วยคลินิกตรวจสุขภาพ SMC</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -91,22 +91,47 @@
       </svg>
       <div class="hero-text">
         <h1>แบบประเมินหลังเข้ารับบริการ</h1>
-        <p>ความคิดเห็นของท่านช่วยให้เราปรับปรุงบริการตรวจสุขภาพได้ตรงจุด<br>คลินิกตรวจสุขภาพ SMC โรงพยาบาลศรีนครินทร์</p>
-        <p class="time">ใช้เวลาประมาณ 1 นาที · ตอบแบบไม่ระบุตัวตน</p>
+        <p>ความคิดเห็นของท่านช่วยให้เราปรับปรุงบริการตรวจสุขภาพได้ตรงจุด<br>หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></p>
+        <p class="time">ใช้เวลาประมาณ 2 นาที · ตอบแบบไม่ระบุตัวตน</p>
+      </div>
+    </div>
+
+    <!-- ข้อ 1 — ยุบมาจาก 2 คำถามที่เคยถามเรื่องเดียวกันคนละที่ (2026-08-27 ตามที่เจ้าของสั่ง)
+         เดิม: ข้อ 2 "เคยรับบริการที่ SMC ไหม" + ข้อ 15 "เคยมาก่อนมีระบบออนไลน์ไหม" ห่างกัน 13 ข้อ
+         ⚠ วางเป็นข้อแรกโดยตั้งใจ เพราะเป็นข้อที่คัดว่าใครตอบข้อ 1.1 ได้ — ถามก่อนจึงอ่านลื่นกว่าไปโผล่ท้ายฟอร์ม -->
+    <div class="card" id="card-visitedBefore">
+      <div class="q-label">1. ท่านเคยเข้ารับบริการตรวจสุขภาพก่อนมีระบบลงทะเบียนออนไลน์หรือไม่</div>
+      <div class="chip-row" id="visitedBefore">
+        <button type="button" class="chip" data-val="เคย" onclick="pick('visitedBefore',this)">เคย</button>
+        <button type="button" class="chip" data-val="ไม่เคย" onclick="pick('visitedBefore',this)">ไม่เคย</button>
+        <button type="button" class="chip" data-val="จำไม่ได้" onclick="pick('visitedBefore',this)">จำไม่ได้</button>
+      </div>
+    </div>
+
+    <!-- ข้อ 1.1 ถามเฉพาะคนที่ตอบข้อ 1 ว่า "เคย" — ซ่อน/ล้างคำตอบอัตโนมัติใน syncWaitCompare()
+         ข้อนี้คือข้อเดียวในแบบประเมินที่ทำให้สรุปได้ว่า "ลดเวลารอคอยได้จริง"
+         ข้ออื่นบอกได้แค่ว่าผู้รับบริการพอใจกับเวลารอคอย ซึ่งเป็นคนละข้ออ้าง -->
+    <div class="card" id="card-waitCompare" style="display:none">
+      <div class="q-label">1.1 เมื่อเทียบกับครั้งก่อน ท่านเห็นว่าระยะเวลารอคอยครั้งนี้เป็นอย่างไร</div>
+      <div class="chip-row" id="waitCompare">
+        <button type="button" class="chip" data-val="เร็วขึ้นมาก" onclick="pick('waitCompare',this)">เร็วขึ้นมาก</button>
+        <button type="button" class="chip" data-val="เร็วขึ้นเล็กน้อย" onclick="pick('waitCompare',this)">เร็วขึ้นเล็กน้อย</button>
+        <button type="button" class="chip" data-val="เท่าเดิม" onclick="pick('waitCompare',this)">เท่าเดิม</button>
+        <button type="button" class="chip" data-val="ช้าลง" onclick="pick('waitCompare',this)">ช้าลง</button>
       </div>
     </div>
 
     <div class="card" id="card-filledBy">
-      <div class="q-label">1. ใครเป็นผู้กรอกแบบฟอร์มลงทะเบียนออนไลน์</div>
+      <div class="q-label">2. ท่านกรอกแบบฟอร์มลงทะเบียนออนไลน์ด้วยตนเองหรือไม่</div>
       <div class="chip-row" id="filledBy">
         <button type="button" class="chip" data-val="กรอกเอง" onclick="pick('filledBy',this)">กรอกเอง</button>
-        <button type="button" class="chip" data-val="มีคนช่วยกรอก" onclick="pick('filledBy',this)">มีคนช่วยกรอก</button>
+        <button type="button" class="chip" data-val="มีผู้ช่วยกรอก" onclick="pick('filledBy',this)">มีผู้ช่วยกรอก</button>
         <button type="button" class="chip" data-val="เจ้าหน้าที่หน่วยงานกรอกให้" onclick="pick('filledBy',this)">เจ้าหน้าที่หน่วยงานกรอกให้</button>
       </div>
     </div>
 
     <div class="card" id="card-dataAccurate">
-      <div class="q-label">2. ข้อมูลที่กรอกล่วงหน้าถูกต้อง ไม่ต้องกรอกใหม่ในวันตรวจ</div>
+      <div class="q-label">3. ข้อมูลที่ท่านกรอกล่วงหน้าถูกต้องครบถ้วนเพียงใด</div>
       <div class="stars" id="dataAccurate">
         <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
         <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
@@ -116,51 +141,8 @@
       </div>
     </div>
 
-    <div class="card" id="card-processSmooth">
-      <div class="q-label">3. ขั้นตอนในวันตรวจรวดเร็ว ไม่ติดขัด</div>
-      <div class="stars" id="processSmooth">
-        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
-        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
-        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
-        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('processSmooth',this)"><span class="ico">⭐⭐</span>น้อย</button>
-        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('processSmooth',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
-      </div>
-    </div>
-
-    <div class="card" id="card-waitTimeOk">
-      <div class="q-label">4. ระยะเวลารอคอยโดยรวมเหมาะสม</div>
-      <div class="stars" id="waitTimeOk">
-        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
-        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
-        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
-        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('waitTimeOk',this)"><span class="ico">⭐⭐</span>น้อย</button>
-        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('waitTimeOk',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
-      </div>
-    </div>
-
-    <div class="card" id="card-totalTime">
-      <div class="q-label">5. ท่านใช้เวลาทั้งหมดประมาณเท่าไร</div>
-      <div class="chip-row" id="totalTime">
-        <button type="button" class="chip" data-val="ไม่เกิน 30 นาที" onclick="pick('totalTime',this)">ไม่เกิน 30 นาที</button>
-        <button type="button" class="chip" data-val="30–60 นาที" onclick="pick('totalTime',this)">30–60 นาที</button>
-        <button type="button" class="chip" data-val="1–2 ชั่วโมง" onclick="pick('totalTime',this)">1–2 ชั่วโมง</button>
-        <button type="button" class="chip" data-val="มากกว่า 2 ชั่วโมง" onclick="pick('totalTime',this)">มากกว่า 2 ชั่วโมง</button>
-      </div>
-    </div>
-
-    <div class="card" id="card-staffCare">
-      <div class="q-label">6. เจ้าหน้าที่ดูแลและตอบข้อสงสัยอย่างเพียงพอ</div>
-      <div class="stars" id="staffCare">
-        <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('staffCare',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
-        <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('staffCare',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
-        <button type="button" class="star-btn" data-val="3-ปานกลาง" onclick="pick('staffCare',this)"><span class="ico">⭐⭐⭐</span>ปานกลาง</button>
-        <button type="button" class="star-btn" data-val="2-น้อย" onclick="pick('staffCare',this)"><span class="ico">⭐⭐</span>น้อย</button>
-        <button type="button" class="star-btn" data-val="1-น้อยที่สุด" onclick="pick('staffCare',this)"><span class="ico">⭐</span>น้อยที่สุด</button>
-      </div>
-    </div>
-
     <div class="card" id="card-prepRead">
-      <div class="q-label">7. ท่านได้อ่านคำแนะนำการเตรียมตัวก่อนตรวจหรือไม่ <span style="font-weight:400;color:#aaa">(งดอาหาร เก็บอุจจาระ/ปัสสาวะ ฯลฯ)</span></div>
+      <div class="q-label">4. ท่านได้อ่านคำแนะนำการเตรียมตัวก่อนตรวจหรือไม่ <span style="font-weight:400;color:#aaa">(งดอาหาร เก็บอุจจาระ/ปัสสาวะ ฯลฯ)</span></div>
       <div class="chip-row" id="prepRead">
         <button type="button" class="chip" data-val="อ่านแล้ว" onclick="pick('prepRead',this)">อ่านแล้ว</button>
         <button type="button" class="chip" data-val="ทราบว่ามีแต่ไม่ได้อ่าน" onclick="pick('prepRead',this)">ทราบว่ามีแต่ไม่ได้อ่าน</button>
@@ -168,9 +150,9 @@
       </div>
     </div>
 
-    <!-- ข้อ 7b ถามเฉพาะคนที่ตอบข้อ 7 ว่า "อ่านแล้ว" — ซ่อน/ล้างคำตอบอัตโนมัติใน syncPrepClear() -->
+    <!-- ข้อ 4.1 ถามเฉพาะคนที่ตอบข้อ 4 ว่า "อ่านแล้ว" — ซ่อน/ล้างคำตอบอัตโนมัติใน syncPrepClear() -->
     <div class="card" id="card-prepClear" style="display:none">
-      <div class="q-label">7.1 คำแนะนำชัดเจนพอให้เตรียมตัวได้ถูกต้อง</div>
+      <div class="q-label">4.1 ท่านเตรียมตัวได้ถูกต้องตามคำแนะนำหรือไม่</div>
       <div class="stars" id="prepClear">
         <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('prepClear',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
         <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('prepClear',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
@@ -180,45 +162,38 @@
       </div>
     </div>
 
+    <!-- ยุบ 2 ประเด็นเป็นข้อเดียว (2026-08-27 ตามที่เจ้าของสั่ง): "ทราบยอดล่วงหน้าหรือไม่"
+         กับ "ยอดที่ชำระจริงตรงหรือไม่" — ตัวเลือกแยกทั้ง 2 มิติในตัวมันเอง จึงไม่ต้องถาม 2 ข้อ
+         ⚠ "ไม่ทราบยอดล่วงหน้า" เป็นคำตอบที่มีความหมาย = แพลตฟอร์มยังไม่ทำหน้าที่แจ้งราคา -->
     <div class="card" id="card-costMatch">
-      <div class="q-label">8. ยอดค่าใช้จ่ายที่ชำระจริงตรงกับที่ระบบแจ้งไว้ล่วงหน้าหรือไม่</div>
+      <div class="q-label">5. ท่านทราบยอดค่าใช้จ่ายล่วงหน้าจากระบบ และตรงกับที่ชำระจริงหรือไม่</div>
       <div class="chip-row" id="costMatch">
-        <button type="button" class="chip" data-val="ตรงกัน" onclick="pick('costMatch',this)">ตรงกัน</button>
-        <button type="button" class="chip" data-val="ต่างกันเล็กน้อย" onclick="pick('costMatch',this)">ต่างกันเล็กน้อย</button>
-        <button type="button" class="chip" data-val="ต่างกันมาก" onclick="pick('costMatch',this)">ต่างกันมาก</button>
-        <button type="button" class="chip" data-val="ไม่ได้สังเกต" onclick="pick('costMatch',this)">ไม่ได้สังเกต</button>
-      </div>
-    </div>
-
-    <div class="card" id="card-confirmEmail">
-      <div class="q-label">9. ท่านได้รับอีเมลยืนยันการลงทะเบียนหรือไม่</div>
-      <div class="chip-row" id="confirmEmail">
-        <button type="button" class="chip" data-val="ได้รับ" onclick="pick('confirmEmail',this)">ได้รับ</button>
-        <button type="button" class="chip" data-val="ไม่ได้รับ" onclick="pick('confirmEmail',this)">ไม่ได้รับ</button>
-        <button type="button" class="chip" data-val="ไม่ได้ให้อีเมลไว้" onclick="pick('confirmEmail',this)">ไม่ได้ให้อีเมลไว้</button>
-        <button type="button" class="chip" data-val="จำไม่ได้" onclick="pick('confirmEmail',this)">จำไม่ได้</button>
+        <button type="button" class="chip" data-val="ทราบล่วงหน้า และตรงกัน" onclick="pick('costMatch',this)">ทราบล่วงหน้า และตรงกัน</button>
+        <button type="button" class="chip" data-val="ทราบล่วงหน้า แต่ต่างกันเล็กน้อย" onclick="pick('costMatch',this)">ทราบล่วงหน้า แต่ต่างกันเล็กน้อย</button>
+        <button type="button" class="chip" data-val="ทราบล่วงหน้า แต่ต่างกันมาก" onclick="pick('costMatch',this)">ทราบล่วงหน้า แต่ต่างกันมาก</button>
+        <button type="button" class="chip" data-val="ไม่ทราบยอดล่วงหน้า" onclick="pick('costMatch',this)">ไม่ทราบยอดล่วงหน้า</button>
       </div>
     </div>
 
     <div class="card" id="card-overall">
-      <div class="q-label">10. ความพึงพอใจโดยรวมต่อการรับบริการครั้งนี้</div>
+      <div class="q-label">6. ท่านพึงพอใจต่อการเข้ารับบริการครั้งนี้เพียงใด</div>
       <div class="emoji-row" id="overall">
-        <button type="button" class="emoji-btn" data-val="5-ดีมาก" onclick="pick('overall',this)">🤩<span>ดีมาก</span></button>
-        <button type="button" class="emoji-btn" data-val="4-ดี" onclick="pick('overall',this)">😊<span>ดี</span></button>
-        <button type="button" class="emoji-btn" data-val="3-พอใช้" onclick="pick('overall',this)">😐<span>พอใช้</span></button>
-        <button type="button" class="emoji-btn" data-val="2-แย่" onclick="pick('overall',this)">😕<span>แย่</span></button>
-        <button type="button" class="emoji-btn" data-val="1-ปรับปรุง" onclick="pick('overall',this)">🔧<span>ปรับปรุง</span></button>
+        <button type="button" class="emoji-btn" data-val="5-มากที่สุด" onclick="pick('overall',this)">🤩<span>มากที่สุด</span></button>
+        <button type="button" class="emoji-btn" data-val="4-มาก" onclick="pick('overall',this)">😊<span>มาก</span></button>
+        <button type="button" class="emoji-btn" data-val="3-ปานกลาง" onclick="pick('overall',this)">😐<span>ปานกลาง</span></button>
+        <button type="button" class="emoji-btn" data-val="2-น้อย" onclick="pick('overall',this)">😕<span>น้อย</span></button>
+        <button type="button" class="emoji-btn" data-val="1-น้อยที่สุด" onclick="pick('overall',this)">🔧<span>น้อยที่สุด</span></button>
       </div>
     </div>
 
     <div class="card">
-      <div class="q-label">11. ถ้าปรับปรุงได้ 1 อย่าง ท่านอยากให้ปรับอะไรมากที่สุด <span style="font-weight:400;color:#aaa">(ถ้ามี)</span></div>
-      <textarea id="improveOne" rows="3" placeholder="บอกเราได้เลย..."></textarea>
+      <div class="q-label">7. ท่านต้องการให้ปรับปรุงเรื่องใดมากที่สุด <span style="font-weight:400;color:#aaa">(ถ้ามี)</span></div>
+      <textarea id="improveOne" rows="3" placeholder="โปรดระบุ"></textarea>
     </div>
 
     <div class="card">
-      <div class="q-label">12. หน่วยงาน/บริษัทของท่าน <span style="font-weight:400;color:#aaa">(ไม่บังคับ)</span></div>
-      <input type="text" id="orgName" placeholder="เช่น คณะแพทยศาสตร์ มข.">
+      <div class="q-label">8. หน่วยงานของท่าน <span style="font-weight:400;color:#aaa">(ไม่บังคับ)</span></div>
+      <input type="text" id="orgName" placeholder="เช่น คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น">
     </div>
 
     <div class="err-msg" id="surveyErr">⚠ กรุณาตอบให้ครบทุกข้อก่อนส่งแบบประเมิน</div>
@@ -231,11 +206,11 @@
     <div class="thanks-header">
       <div class="check">✓</div>
       <h2>ขอบคุณสำหรับความคิดเห็น</h2>
-      <p>ทีมงานคลินิกตรวจสุขภาพ SMC<br>จะนำข้อเสนอแนะของท่านไปปรับปรุงบริการต่อไป</p>
+      <p>ทีมงานหน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span><br>จะนำข้อเสนอแนะของท่านไปปรับปรุงบริการต่อไป</p>
     </div>
     <div class="thanks-card">
       ท่านสามารถปิดหน้านี้ได้เลย<br>
-      หากมีข้อสงสัยเพิ่มเติม ติดต่อคลินิกตรวจสุขภาพ SMC โรงพยาบาลศรีนครินทร์
+      หากมีข้อสงสัยเพิ่มเติม ติดต่อหน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span>
     </div>
     <div class="thanks-logos">
       <img src="smc_logo.png" alt="SMC">
@@ -252,10 +227,26 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc5q
 var answers = {};
 
 // ข้อบังคับ (ยกเว้น prepClear ที่บังคับเฉพาะตอนที่ถูกแสดง — ดู requiredNow())
+// 2026-08-28 เจ้าของสั่งตัดคำถามเหลือเท่าที่จำเป็น — ข้อบังคับตอบเหลือ 6 ข้อ
+// (1.1 และ 4.1 บังคับแบบมีเงื่อนไข ดู requiredNow())
 var REQUIRED_QUESTIONS = [
-  'filledBy', 'dataAccurate', 'processSmooth', 'waitTimeOk', 'totalTime',
-  'staffCare', 'prepRead', 'costMatch', 'confirmEmail', 'overall'
+  'visitedBefore', 'filledBy', 'dataAccurate', 'prepRead', 'costMatch', 'overall'
 ];
+
+// อ่านวันนัดที่ติดมากับลิงก์ในอีเมล (?d=yyyy-MM-dd) — เพิ่ม 2026-08-28
+// ว่างเสมอถ้าผู้ตอบสแกน QR หน้างาน ซึ่งถูกต้องแล้ว: ใช้แยกได้ว่าคำตอบมาจากช่องทางไหน
+// ⚠ ตรวจรูปแบบก่อนใช้เสมอ — ค่านี้มาจาก URL ที่ใครก็แก้ได้ ห้ามเชื่อตรงๆ
+function readServiceDateFromUrl() {
+  try {
+    var m = (window.location.search || '').match(/[?&]d=([^&]*)/);
+    if (!m) return '';
+    var v = decodeURIComponent(m[1] || '').trim();
+    return /^d{4}-d{2}-d{2}$/.test(v) ? v : '';
+  } catch (e) {
+    return '';
+  }
+}
+var SERVICE_DATE = readServiceDateFromUrl();
 
 function pick(qid, btn) {
   document.getElementById(qid).querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
@@ -263,11 +254,39 @@ function pick(qid, btn) {
   answers[qid] = btn.dataset.val || btn.textContent.trim();
   var card = document.getElementById('card-' + qid);
   if (card) card.classList.remove('err');
-  // ข้อ 7 คุมการแสดง/ซ่อนข้อ 7.1
+  // ข้อ 4 คุมการแสดง/ซ่อนข้อ 4.1
   if (qid === 'prepRead') syncPrepClear();
+  // ข้อ 1 คุมการแสดง/ซ่อนข้อ 1.1 (เพิ่ม 2026-08-27)
+  if (qid === 'visitedBefore') syncWaitCompare();
 }
 
-// แสดงข้อ 7.1 เฉพาะเมื่อข้อ 7 = "อ่านแล้ว"
+// เลือกได้หลายข้อ (ใช้กับข้อ 13 เท่านั้นในตอนนี้) — เก็บเป็นข้อความเดียวคั่นด้วย " | "
+// ⚠ ไม่เก็บเป็นอาร์เรย์ เพราะ validateSurvey() เช็คด้วย !answers[qid] และชีตเก็บเป็นข้อความอยู่แล้ว
+//   ถ้าไม่เลือกอะไรเลย ต้อง "ลบคีย์ทิ้ง" ไม่ใช่ปล่อยเป็นสตริงว่าง ไม่งั้นจะผ่าน validate ทั้งที่ยังไม่ตอบ
+var EXCLUSIVE_STEP = 'ไม่ต้องทำขั้นตอนใดเลย';
+function toggleMulti(qid, btn) {
+  var box = document.getElementById(qid);
+  var val = btn.dataset.val || btn.textContent.trim();
+  var turningOn = !btn.classList.contains('active');
+  if (val === EXCLUSIVE_STEP) {
+    // ตัวเลือกพิเศษ: เลือกแล้วล้างข้ออื่นทั้งหมด
+    box.querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+    if (turningOn) btn.classList.add('active');
+  } else {
+    btn.classList.toggle('active');
+    // เลือกข้ออื่น = ยกเลิกตัวเลือกพิเศษอัตโนมัติ (ขัดกันเองไม่ได้)
+    var ex = box.querySelector('[data-val="' + EXCLUSIVE_STEP + '"]');
+    if (ex) ex.classList.remove('active');
+  }
+  var picked = [];
+  box.querySelectorAll('button.active').forEach(function(b){ picked.push(b.dataset.val || b.textContent.trim()); });
+  if (picked.length) answers[qid] = picked.join(' | ');
+  else delete answers[qid];
+  var card = document.getElementById('card-' + qid);
+  if (card && picked.length) card.classList.remove('err');
+}
+
+// แสดงข้อ 4.1 เฉพาะเมื่อข้อ 4 = "อ่านแล้ว"
 // ⚠ ตอนซ่อนต้อง "ล้างคำตอบ 7.1 ทิ้งด้วย" ไม่ใช่แค่ซ่อน — ไม่งั้นคนที่เคยตอบ "อ่านแล้ว" + ให้ดาวไว้
 //   แล้วเปลี่ยนใจเป็น "ไม่ทราบว่ามี" จะยังส่งดาวที่มองไม่เห็นแล้วไปบันทึกลงชีต
 //   (บั๊กรูปแบบเดียวกับ updateTestGenderFilter() ใน index.html ที่เคยซ่อนอย่างเดียวแล้วราคาเพี้ยน)
@@ -284,10 +303,28 @@ function syncPrepClear() {
   }
 }
 
-// รายการข้อบังคับ ณ ขณะนี้ = ข้อบังคับปกติ + 7.1 เฉพาะตอนที่แสดงอยู่จริง
+// แสดงข้อ 1.1 เฉพาะเมื่อข้อ 1 = "เคย" (เพิ่ม 2026-08-27)
+// ⚠ ตอนซ่อนต้องล้างคำตอบทิ้งด้วย เหตุผลเดียวกับ syncPrepClear() ทุกประการ —
+//   คนที่ตอบ "เคย" + เลือก "เร็วขึ้นมาก" แล้วเปลี่ยนใจเป็น "มาครั้งแรก"
+//   จะยังส่งคำตอบที่มองไม่เห็นแล้วไปบันทึกลงชีต ทำให้สถิติเปรียบเทียบเพี้ยน
+function syncWaitCompare() {
+  var card = document.getElementById('card-waitCompare');
+  if (!card) return;
+  if (answers['visitedBefore'] === 'เคย') {
+    card.style.display = '';
+  } else {
+    card.style.display = 'none';
+    card.classList.remove('err');
+    delete answers['waitCompare'];
+    document.getElementById('waitCompare').querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });
+  }
+}
+
+// รายการข้อบังคับ ณ ขณะนี้ = ข้อบังคับปกติ + 1.1 / 4.1 เฉพาะตอนที่แสดงอยู่จริง
 function requiredNow() {
   var list = REQUIRED_QUESTIONS.slice();
   if (answers['prepRead'] === 'อ่านแล้ว') list.push('prepClear');
+  if (answers['visitedBefore'] === 'เคย') list.push('waitCompare');
   return list;
 }
 
@@ -326,18 +363,17 @@ async function submitPostSurvey() {
       method: 'POST',
       body: JSON.stringify({
         action: 'postsurvey',
+        serviceDate:   SERVICE_DATE,
         filledBy:      answers['filledBy']      || '',
         dataAccurate:  answers['dataAccurate']  || '',
-        processSmooth: answers['processSmooth'] || '',
-        waitTimeOk:    answers['waitTimeOk']    || '',
-        totalTime:     answers['totalTime']     || '',
-        staffCare:     answers['staffCare']     || '',
         prepRead:      answers['prepRead']      || '',
         // ถูกล้างทิ้งไปแล้วถ้าข้อ 7 ไม่ใช่ "อ่านแล้ว" จึงเป็นค่าว่างเสมอในกรณีนั้น
         prepClear:     answers['prepClear']     || '',
         costMatch:     answers['costMatch']     || '',
-        confirmEmail:  answers['confirmEmail']  || '',
         overall:       answers['overall']       || '',
+        visitedBefore: answers['visitedBefore'] || '',
+        // ถูกล้างทิ้งไปแล้วถ้าข้อ 1 ไม่ใช่ "เคย" จึงเป็นค่าว่างเสมอในกรณีนั้น
+        waitCompare:   answers['waitCompare']   || '',
         improveOne:    document.getElementById('improveOne').value.trim(),
         orgName:       document.getElementById('orgName').value.trim()
       }),
