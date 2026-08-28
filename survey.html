@@ -10,6 +10,11 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Sarabun',sans-serif;background:#f4f6f4;min-height:100vh;padding:1.5rem 1rem}
   .wrap{max-width:560px;margin:0 auto}
+  /* ── แถบโลโก้ด้านบน (เพิ่ม 2026-08-28) — เดิมหัวหน้าจอมีแต่ภาพการ์ตูน ไม่มีตราสัญลักษณ์เลยสักหน้า
+     วางไว้ใน #surveyScreen เท่านั้น เพราะหน้าขอบคุณมี .thanks-logos ของตัวเองอยู่แล้ว (กันโลโก้ซ้ำ 2 ชุด) */
+  .brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e8ede8;border-radius:12px;padding:10px 14px;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+  .brandbar img{height:40px;width:auto;display:block}
+  @media(max-width:380px){.brandbar img{height:32px}}
   .hero{margin-bottom:1.25rem;display:flex;align-items:center;gap:14px}
   .hero-text h1{font-size:16px;font-weight:600;color:#1a1a1a}
   .hero-text p{font-size:12px;color:#777;margin-top:3px;line-height:1.5}
@@ -114,6 +119,20 @@
     .prep-info-row { grid-template-columns: 1fr; }
   }
 
+  /* จอแคบ (360px) — ปุ่มดาว/อีโมจิ 5 ปุ่มเรียงแถวเดียวยังต้องกดถูก
+     เพิ่ม 2026-08-28: บล็อกนี้มีอยู่ใน survey2/survey3 แต่ "ขาดไปเฉพาะไฟล์นี้"
+     ผลคือที่จอ 320px แถวปุ่มดาวล้นขอบจอไป 42px ปุ่ม "⭐ ยากมาก/แย่มาก" ถูกดันตกจอ
+     ต้นเหตุ: .star-btn{flex:1} มี min-width:auto อยู่ในตัว → หดต่ำกว่าความกว้างของ ⭐⭐⭐⭐⭐ ไม่ได้ */
+  @media (max-width: 380px) {
+    body{padding:1rem 0.6rem}
+    .card{padding:0.85rem 0.8rem}
+    .emoji-btn{padding:7px 2px;font-size:16px}
+    .emoji-btn span{font-size:9px}
+    .star-btn{font-size:9px;padding:7px 1px}
+    .star-btn .ico{font-size:10px}
+    .chip{padding:6px 11px;font-size:11.5px}
+  }
+
   @media print {
     body { background: #fff !important; padding: 0 !important; }
     .wrap { max-width: 100% !important; }
@@ -142,6 +161,10 @@
 <div class="wrap">
   <!-- ── แบบประเมิน ── -->
   <div id="surveyScreen">
+    <div class="brandbar">
+      <img src="smc_logo.png" alt="โลโก้ หน่วยคลินิกตรวจสุขภาพ SMC">
+      <img src="mdkku_logo.png" alt="โลโก้ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น">
+    </div>
     <div class="hero">
       <svg width="56" height="56" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
         <circle cx="45" cy="45" r="44" fill="#EAF3DE" stroke="#97C459" stroke-width="1.5"/>
