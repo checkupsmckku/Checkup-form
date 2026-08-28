@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>แบบบันทึกข้อมูลตรวจสุขภาพประจำปี (สำหรับหน่วยงานเรียกเก็บเท่านั้น) — SMC KKU</title>
+<title>แบบบันทึกข้อมูลตรวจสุขภาพประจำปี (สำหรับหน่วยงานเท่านั้น) — SMC KKU</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -114,6 +114,7 @@
     padding: 20px 24px 30px;
     position: relative;
     z-index: 1;
+    text-align: center;          /* เจ้าของสั่งจัดกึ่งกลาง 2026-08-28 */
   }
   .header-badge {
     display: inline-flex;
@@ -141,6 +142,7 @@
     font-size: 13px;
     opacity: 0.75;
     font-weight: 400;
+    line-height: 1.5;
   }
   .header-meta {
     display: flex;
@@ -152,6 +154,7 @@
     font-size: 12.5px;
     opacity: 0.85;
   }
+  .header-meta { justify-content: center; }   /* ตามการจัดกึ่งกลางของหัวเว็บ */
   .header-meta span { display: flex; align-items: center; gap: 6px; }
 
   /* ─── Progress Steps ─── */
@@ -1664,6 +1667,21 @@
   /* ── Prep Section ── */
   .prep-section { padding: 20px 22px; background: #FDFAF5; }
 
+  /* ─── ขั้นตอนการเข้ารับบริการ — เพิ่ม 2026-08-28 จากใบ "ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี"
+     เจ้าของสั่งให้เป็นกล่องอยู่ "เหนือ" การเตรียมตัวก่อนตรวจ (อยู่ในใบสรุปและใบพิมพ์ชุดเดียวกัน) ─── */
+  .flow-section { padding: 20px 22px 0; background: #FDFAF5; }
+  .flow-box { background: #fff; border: 1px solid #E4DCC8; border-radius: 12px; padding: 14px 16px; }
+  .flow-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: #2E5E3A; margin-bottom: 10px; }
+  .flow-list { list-style: none; margin: 0; padding: 0; }
+  .flow-list > li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 12.5px; line-height: 1.55; color: #3E3020; }
+  .flow-list > li + li { border-top: 1px dashed #EFE6D2; }
+  .flow-n { flex: 0 0 22px; height: 22px; border-radius: 11px; background: #2E7D46; color: #fff; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .flow-where { color: #7A6A45; }
+  .flow-sub { list-style: none; margin: 6px 0 0; padding: 0; }
+  .flow-sub li { display: flex; gap: 8px; align-items: flex-start; padding: 2px 0; font-size: 12px; }
+  .flow-sub .flow-n { flex: 0 0 30px; height: 18px; border-radius: 9px; background: #EAF3EC; color: #2E7D46; font-size: 10.5px; font-weight: 700; }
+  .flow-extra-label { margin: 8px 0 2px; font-size: 11.5px; font-weight: 700; color: #C62828; }
+
   .prep-main-title {
     background: linear-gradient(90deg, #E8F4F0 0%, #FFF8EC 100%);
     border: 1.5px solid #C8E6C9;
@@ -1909,6 +1927,13 @@
     }
 
     /* ── Compact prep section to fit contact on page 2 ── */
+    .flow-section { padding: 10px 16px 0; }
+    .flow-box { padding: 8px 10px; }
+    .flow-title { font-size: 12px; margin-bottom: 6px; }
+    .flow-list > li { padding: 3px 0; font-size: 10.5px; line-height: 1.35; }
+    .flow-sub li { font-size: 10px; padding: 1px 0; }
+    .flow-n { flex: 0 0 18px; height: 18px; font-size: 10px; }
+    .flow-sub .flow-n { flex: 0 0 26px; height: 15px; font-size: 9.5px; }
     .prep-section { padding: 10px 16px; font-size: 11px; }
     .prep-main-title { margin-bottom: 6px; padding: 8px 14px; }
     .prep-grid { gap: 8px; margin-bottom: 6px; }
@@ -2091,8 +2116,8 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
       SMC — คลินิกตรวจสุขภาพ
     </div>
-    <h1 class="form-title">แบบบันทึกข้อมูลตรวจสุขภาพประจำปี<br>(สำหรับหน่วยงานเรียกเก็บเท่านั้น)</h1>
-    <div class="header-sub">SMC ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>
+    <h1 class="form-title">แบบบันทึกข้อมูลตรวจสุขภาพประจำปี<br>(สำหรับหน่วยงานเท่านั้น)</h1>
+    <div class="header-sub">หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></div>
     <div class="header-meta">
       <span>📅 วันจันทร์ – ศุกร์</span>
       <span>⏰ 7.00 – 9.30 น.</span>
@@ -2223,9 +2248,10 @@
         <!-- ── 1.2 เลขบัตรประจำตัวโรงพยาบาล (HN) ── -->
         <div class="sub-section-label">เลขบัตรประจำตัวโรงพยาบาล (HN) <span class="req">*</span></div>
         <div class="inline-radio-group" id="hnStatusGroup" style="margin-bottom:8px;flex-wrap:wrap;gap:10px">
-          <label class="radio-inline"><input type="radio" name="hnStatus" value="has" onchange="toggleHN(true)"> มี</label>
-          <label class="radio-inline"><input type="radio" name="hnStatus" value="none" onchange="toggleHN(false)"> ไม่มี / ไม่แน่ใจ</label>
+          <label class="radio-inline"><input type="radio" name="hnStatus" value="has" onchange="onHnStatusChange(true)"> มี</label>
+          <label class="radio-inline"><input type="radio" name="hnStatus" value="none" onchange="onHnStatusChange(false)"> ไม่มี / ไม่แน่ใจ</label>
         </div>
+        <div class="field-hint" id="hnLockHint" style="display:none;color:#E67E22;font-size:12px;font-weight:600;margin-bottom:8px">⚠ กรุณาเลือกก่อนว่าท่านมี HN หรือไม่ จึงจะกรอกข้อมูลส่วนอื่นได้</div>
         <!-- HN input (shown when มี) -->
         <div id="hnBlock" style="display:none;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
@@ -3513,8 +3539,8 @@
 </div>
 
 <footer class="site-footer">
-  <div class="site-footer-author">จัดทำโดย ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล</div>
-  <div>หน่วยคลินิกตรวจสุขภาพ ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>
+  <div class="site-footer-author">พัฒนาโดย ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล</div>
+  <div>หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></div>
 </footer>
 
 <script>
@@ -3587,6 +3613,7 @@ window.onload = function() {
   initScrollSpy();
   initBackToTop();
   initBackToBottom();
+  applyHnLock();
 };
 
 // ─── Scroll Spy: อัปเดต active step อัตโนมัติเมื่อ scroll ───────────────────
@@ -5922,6 +5949,10 @@ function resetForm() {
   document.getElementById('main-form').style.display = 'block';
   document.getElementById('successScreen').style.display = 'none';
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // ⚠ ต้องเรียกหลัง form.reset() เสมอ (บั๊กแบบเดียวกับ #bmdBlock ที่เคยพังมาแล้ว 2026-08-27 — ดูคอมเมนต์
+  // updateBmdBlock() ด้านบนในฟังก์ชันนี้) — form.reset() เคลียร์ hnStatus radio กลับเป็น "ยังไม่เลือก"
+  // แต่ไม่ได้ enable/disable อะไรเอง ต้องล็อกฟอร์มใหม่ที่นี่ ไม่งั้นแบบฟอร์มถัดไปจะเริ่มแบบไม่ล็อก
+  applyHnLock();
 }
 
 // ─── Org / Dept Helpers ──────────────────────────────────────────────────────
@@ -6090,6 +6121,147 @@ function toggleHN(hasHN) {
     if (cardEl) cardEl.value = '';
     if (hintEl) { hintEl.textContent = ''; hintEl.style.display = 'none'; }
   }
+
+  // ล็อกฟอร์มใหม่ตามสถานะ HN ปัจจุบัน (เพิ่ม 2026-08-28) — ดู applyHnLock()
+  applyHnLock();
+}
+
+// ─── HN Lock: ล็อกฟอร์มทั้งหมดจนกว่าจะเลือกสถานะ HN (เพิ่ม 2026-08-28) ──────────
+// เหตุผล: เดิม toggleHN() แค่ซ่อน/แสดงบล็อกด้วย display:none แต่ไม่ได้ล้างค่า และ handleSubmit()
+// อ่าน .value ของทุกช่องโดยไม่ดูโหมด → สลับโหมดแล้วข้อมูลที่มองไม่เห็นแล้วยังถูกส่งขึ้นชีตเงียบๆ
+// วิธีแก้: (1) ล็อกฟอร์มทั้งหมดจนกว่าจะเลือกสถานะ HN กันการกรอกก่อนเลือกโหมด
+//         (2) เตือนก่อนล้างเมื่อสลับโหมดแล้วมีข้อมูลที่จะถูกซ่อน (ดู onHnStatusChange ด้านล่าง)
+// ⚠ ต้องแตะเฉพาะ element ที่ฟังก์ชันนี้เป็นคน disable เอง (แท็กด้วย data-hnlock="1") ห้าม enable
+// ช่องที่ถูก disable ไว้ด้วยเหตุผลอื่น (เช่น #bmdMenopauseAge/#bmdHysterectomyAge ที่ disabled ตายตัวใน HTML)
+function applyHnLock() {
+  const form = document.getElementById('healthForm');
+  if (!form) return;
+  const hnGroup = document.getElementById('hnStatusGroup');
+  const hint = document.getElementById('hnLockHint');
+  const checked = document.querySelector('input[name="hnStatus"]:checked');
+
+  if (!checked) {
+    form.querySelectorAll('input, select, textarea, button').forEach(el => {
+      if (hnGroup && hnGroup.contains(el)) return;
+      if (el.disabled) return; // ถูก disable ไว้ด้วยเหตุผลอื่นอยู่แล้ว — ห้ามแตะ ห้ามแท็ก
+      el.disabled = true;
+      el.dataset.hnlock = '1';
+    });
+    if (hint) hint.style.display = 'block';
+  } else {
+    form.querySelectorAll('[data-hnlock="1"]').forEach(el => {
+      el.disabled = false;
+      delete el.dataset.hnlock;
+    });
+    if (hint) hint.style.display = 'none';
+  }
+}
+
+// ─── HN Switch Confirm: เตือนก่อนล้าง เมื่อสลับโหมดแล้วมีข้อมูลที่จะถูกซ่อน (เพิ่ม 2026-08-28) ──
+// หา label ที่อ่านง่ายของ control หนึ่งตัว — ใช้แสดงในกล่องยืนยันเท่านั้น เป็น best-effort/คอสเมติก
+function _hnFieldLabel(el) {
+  if (el.id) {
+    const byFor = document.querySelector('label[for="' + el.id + '"]');
+    if (byFor) return byFor.textContent.replace(/\*/g, '').trim();
+  }
+  const wrap = el.closest('.field-group');
+  if (wrap) {
+    const lbl = wrap.querySelector('label');
+    if (lbl) return lbl.textContent.replace(/\*/g, '').trim();
+  }
+  return el.name || el.id || 'ข้อมูลที่กรอกไว้';
+}
+
+// รวบรวม control ที่ "มีค่าอยู่จริง" ภายใน root ที่ให้มา (root เป็น element เดียว เช่น #patientCardNo
+// หรือ container เช่น #fullInfoSection ก็ได้)
+// ⚠ radio ต้องเช็คด้วย .checked ห้ามเช็ค .value.trim()!=='' — radio.value ไม่เคยว่าง (กับดักที่เจอมาแล้ว
+// ในโปรเจกต์นี้ ดู CLAUDE.md หัวข้อ Validation) — ถ้าเผลอใช้ .value จะเห็นว่า "มีค่า" เสมอทั้งที่ผู้ใช้ยังไม่กด
+function _hnCollectFilled(roots) {
+  const out = [];
+  const seenRadioNames = new Set();
+  roots.forEach(root => {
+    if (!root) return;
+    const controls = (root.tagName === 'INPUT' || root.tagName === 'SELECT' || root.tagName === 'TEXTAREA')
+      ? [root]
+      : Array.from(root.querySelectorAll('input, select, textarea'));
+    controls.forEach(el => {
+      if (el.type === 'radio') {
+        if (!el.name || seenRadioNames.has(el.name)) return;
+        seenRadioNames.add(el.name);
+        const checkedEl = document.querySelector('input[name="' + el.name + '"]:checked');
+        if (checkedEl && root.contains(checkedEl)) out.push({ kind: 'check', refEl: checkedEl, label: _hnFieldLabel(checkedEl) });
+        return;
+      }
+      if (el.type === 'checkbox') {
+        if (el.checked) out.push({ kind: 'check', refEl: el, label: _hnFieldLabel(el) });
+        return;
+      }
+      if ((el.value || '').trim() !== '') out.push({ kind: 'value', refEl: el, label: _hnFieldLabel(el) });
+    });
+  });
+  return out;
+}
+
+function _hnClearFilled(items) {
+  items.forEach(it => {
+    if (it.kind === 'value') it.refEl.value = '';
+    else it.refEl.checked = false;
+    it.refEl.dispatchEvent(new Event('input', { bubbles: true }));
+    it.refEl.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+let _hnPendingSwitch = null;
+
+// เรียกจาก onchange ของ radio hnStatus แทน toggleHN() ตรงๆ (ดู Edit 1)
+function onHnStatusChange(hasHN) {
+  const roots = hasHN
+    ? [document.getElementById('fullInfoSection')]
+    : [document.getElementById('newAddrBlock'), document.getElementById('patientCardNo')];
+  const items = _hnCollectFilled(roots);
+
+  // ไม่มีอะไรจะหาย หรือเทสต์สั่งข้าม modal (window.__hnNoConfirm) → ทำเหมือนกดยืนยันทันที ไม่ต้องเปิด dialog
+  if (items.length === 0 || window.__hnNoConfirm === true) {
+    _hnClearFilled(items);
+    toggleHN(hasHN);
+    return;
+  }
+
+  // มีของจะหาย → ย้อน radio กลับไปค่าเดิมทันที (ตอนนี้ browser เพิ่งติ๊ก target ให้แล้วโดย native click)
+  // แล้วรอผู้ใช้ยืนยันผ่าน modal — ไม่แตะ toggleHN()/applyHnLock() จนกว่าจะยืนยัน
+  const prevRadio = document.querySelector('input[name="hnStatus"][value="' + (hasHN ? 'none' : 'has') + '"]');
+  if (prevRadio) prevRadio.checked = true;
+
+  _hnPendingSwitch = { hasHN, items };
+  const labels = [...new Set(items.map(it => it.label))];
+  const listEl = document.getElementById('hnSwitchFieldList');
+  if (listEl) listEl.innerHTML = labels.map(l => '<li>' + escHtml(l) + '</li>').join('');
+  const modal = document.getElementById('hnSwitchModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function confirmHnSwitch() {
+  if (!_hnPendingSwitch) return;
+  const { hasHN, items } = _hnPendingSwitch;
+  closeHnSwitchModal();
+  const targetRadio = document.querySelector('input[name="hnStatus"][value="' + (hasHN ? 'has' : 'none') + '"]');
+  _hnClearFilled(items);
+  if (targetRadio) targetRadio.checked = true;
+  toggleHN(hasHN);
+}
+
+function cancelHnSwitch() {
+  closeHnSwitchModal();
+}
+
+function closeHnSwitchModal() {
+  _hnPendingSwitch = null;
+  const modal = document.getElementById('hnSwitchModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function hnSwitchModalOutside(e) {
+  if (e.target === document.getElementById('hnSwitchModal')) cancelHnSwitch();
 }
 
 function _setFullInfoRequired(req) {
@@ -7313,6 +7485,37 @@ function printStaffSummary() {
     </div>
     <div class="modal-summary" id="modalSummaryCard"></div>
 
+    <!-- ─── ขั้นตอนการเข้ารับบริการ (จากใบของหน่วย ฉบับล่าสุด 2026-08-28) ─── -->
+    <div class="flow-section">
+      <div class="flow-box">
+        <div class="flow-title">🧭 ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี</div>
+        <ol class="flow-list">
+          <li><span class="flow-n">1</span><span>ลงทะเบียนและคัดกรอง <span class="flow-where">— สว. ชั้น 1</span></span></li>
+          <li><span class="flow-n">2</span><span>ให้ข้อมูลโปรแกรม <span class="flow-where">— สว. ชั้น 1</span></span></li>
+          <li><span class="flow-n">3</span><span>ประเมินสัญญาณชีพ <span class="flow-where">— สว. ชั้น 1</span></span></li>
+          <li><span class="flow-n">4</span><span>เจาะเลือด <span class="flow-where">— สว. ชั้น 1</span></span></li>
+          <li><span class="flow-n">5</span><span><strong>ตรวจตามขั้นตอนโปรแกรม</strong>
+            <ul class="flow-sub">
+            <li><span class="flow-n">5.1</span><span>เอกซเรย์ปอด <span class="flow-where">— สว. ชั้น 2</span></span></li>
+            <li><span class="flow-n">5.2</span><span>อัลตราซาวด์ช่องท้อง <span class="flow-where">— สว. ชั้น 1 ห้องเบอร์ 7</span></span></li>
+            <li><span class="flow-n">5.3</span><span>คลื่นไฟฟ้าหัวใจ <span class="flow-where">— สว. ชั้น 1 (ข้างห้องเจาะเลือด)</span></span></li>
+            </ul>
+            <div class="flow-extra-label">กรณีซื้อตรวจเพิ่ม</div>
+            <ul class="flow-sub">
+            <li><span class="flow-n">5.4</span><span>วัดองค์ประกอบร่างกาย <span class="flow-where">— สว. ชั้น 1</span></span></li>
+            <li><span class="flow-n">5.5</span><span>ตรวจภายใน <span class="flow-where">— ห้องนรีเวช เบอร์ 2 (จ–ศ) · คลินิกเฉพาะทาง (อา)</span></span></li>
+            <li><span class="flow-n">5.6</span><span>ตรวจมวลกระดูก <span class="flow-where">— ชั้นใต้ดิน (จ–ศ)</span></span></li>
+            <li><span class="flow-n">5.7</span><span>ตรวจมะเร็งเต้านม <span class="flow-where">— สว. ชั้น 2 (ช่วงบ่าย จ–ศ)</span></span></li>
+            </ul>
+          </span></li>
+          <li><span class="flow-n">6</span><span>คืนเอกสารและรอพบแพทย์</span></li>
+          <li><span class="flow-n">7</span><span>จุดจำหน่าย <span class="flow-where">— สว. ชั้น 1</span></span></li>
+          <li><span class="flow-n">8</span><span>การเงิน <span class="flow-where">— สว. ชั้น 1</span></span></li>
+          <li><span class="flow-n">9</span><span>ฉีดวัคซีน <span class="flow-where">(วัคซีนสามารถปรึกษาขณะพบแพทย์)</span></span></li>
+        </ol>
+      </div>
+    </div>
+
     <!-- ─── การเตรียมตัวก่อนตรวจสุขภาพ ─── -->
     <div class="prep-section">
       <div class="prep-main-title">
@@ -7558,6 +7761,29 @@ function printStaffSummary() {
     <div class="modal-footer">
       <button type="button" class="btn-modal-print" onclick="printPrepOnly()">🖨 พิมพ์คำแนะนำ</button>
       <button type="button" class="btn-modal-close" onclick="closePrepModal()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── HN Switch Confirm Modal (เพิ่ม 2026-08-28) ───
+     เตือนก่อนล้างข้อมูล เมื่อสลับสถานะ HN แล้วช่องที่จะถูกซ่อนมีค่าอยู่จริง
+     ดู onHnStatusChange()/confirmHnSwitch()/cancelHnSwitch() ในบล็อกสคริปต์ด้านล่าง (ห้ามเขียนคำว่า s-c-r-i-p-t ในแท็กตรงนี้ ตัวตรวจ syntax จะหลงว่าเป็นแท็กเปิดจริง) -->
+<div class="modal-overlay" id="hnSwitchModal" style="display:none" onclick="hnSwitchModalOutside(event)">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">⚠ ยืนยันการเปลี่ยนสถานะ HN</div>
+        <div class="modal-subtitle">ข้อมูลบางส่วนที่กรอกไว้จะถูกล้างเมื่อเปลี่ยนโหมด</div>
+      </div>
+      <button class="modal-close-btn" onclick="cancelHnSwitch()" title="ปิด">✕</button>
+    </div>
+    <div style="padding:20px 24px">
+      <div style="font-size:13.5px;color:var(--text-muted,#6B7280)">ข้อมูลต่อไปนี้จะถูกล้าง:</div>
+      <ul id="hnSwitchFieldList" style="margin:10px 0 0 20px;padding:0;font-size:13.5px;color:var(--text,#333)"></ul>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-modal-close" onclick="cancelHnSwitch()">ยกเลิก</button>
+      <button type="button" class="btn-modal-print" onclick="confirmHnSwitch()">ยืนยัน เปลี่ยนโหมด</button>
     </div>
   </div>
 </div>
