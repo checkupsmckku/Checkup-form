@@ -12,9 +12,11 @@
   .wrap{max-width:560px;margin:0 auto}
   /* ── แถบโลโก้ด้านบน (เพิ่ม 2026-08-28) — เดิมหัวหน้าจอมีแต่ภาพการ์ตูน ไม่มีตราสัญลักษณ์เลยสักหน้า
      วางไว้ใน #surveyScreen เท่านั้น เพราะหน้าขอบคุณมี .thanks-logos ของตัวเองอยู่แล้ว (กันโลโก้ซ้ำ 2 ชุด) */
-  .brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e8ede8;border-radius:12px;padding:10px 14px;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+  .pagehead{background:#fff;border:1px solid #e8ede8;border-radius:12px;padding:14px 16px;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+  .brandbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid #eef1ee}
   .brandbar img{height:40px;width:auto;display:block}
-  @media(max-width:380px){.brandbar img{height:32px}}
+  .pagehead .hero{margin-bottom:0}
+  @media(max-width:380px){.brandbar img{height:32px}.pagehead{padding:12px}}
   .hero{margin-bottom:1.25rem;display:flex;align-items:center;gap:14px}
   .hero-text h1{font-size:16px;font-weight:600;color:#1a1a1a}
   .hero-text p{font-size:12px;color:#777;margin-top:3px;line-height:1.5}
@@ -81,6 +83,7 @@
 <div class="wrap">
   <!-- ── แบบประเมินรอบ 2 (เรื่องการรับผลตรวจ) ── -->
   <div id="surveyScreen">
+    <div class="pagehead">
     <div class="brandbar">
       <img src="smc_logo.png" alt="โลโก้ หน่วยคลินิกตรวจสุขภาพ SMC">
       <img src="mdkku_logo.png" alt="โลโก้ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น">
@@ -102,6 +105,7 @@
         <p class="time">ใช้เวลาประมาณ 40 วินาที · ตอบแบบไม่ระบุตัวตน</p>
       </div>
     </div>
+    </div><!-- /.pagehead -->
 
     <div class="card" id="card-resultReceived">
       <div class="q-label">1. ท่านได้รับผลตรวจสุขภาพแล้วหรือไม่</div>
