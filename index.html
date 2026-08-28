@@ -1739,6 +1739,12 @@
     color: #7A5A00;
     margin-bottom: 6px;
   }
+  /* รูปประกอบขั้นตอนเก็บอุจจาระ — เพิ่ม 2026-08-28 จากภาพต้นฉบับที่เจ้าของส่งมา
+     (ครอปเฉพาะกระป๋องสีเทากับกล่องรับสิ่งส่งตรวจ ข้อความใช้ตามใบต้นฉบับเป๊ะ) */
+  .stool-photos { display: flex; gap: 12px; margin-top: 8px; justify-content: center; }
+  .stool-photos figure { flex: 0 1 130px; text-align: center; }
+  .stool-photos img { width: 100%; height: 118px; object-fit: contain; background: #fff; border-radius: 6px; border: 1px solid #E8DCC0; display: block; }
+  .stool-photos figcaption { font-size: 11px; font-weight: 600; color: #7A5A00; margin-top: 4px; line-height: 1.35; }
   .prep-note-box {
     background: #FFF8E8;
     border-left: 3px solid #F0C040;
@@ -1911,6 +1917,10 @@
     .prep-card-body { padding: 5px 10px 6px; font-size: 10.5px; }
     .prep-card-body p, .prep-card-body li { font-size: 10.5px; line-height: 1.35; margin: 2px 0; }
     .prep-highlight { padding: 4px 10px; font-size: 10.5px; margin-bottom: 4px !important; }
+    .stool-photos { gap: 8px; margin-top: 5px; }
+    .stool-photos figure { flex: 0 1 96px; }
+    .stool-photos img { height: 84px; }
+    .stool-photos figcaption { font-size: 9.5px; margin-top: 2px; }
     .prep-note-box { padding: 5px 10px; margin-top: 4px !important; }
     .prep-info-row { gap: 6px; margin: 6px 0; }
     .prep-info-card { padding: 6px 10px; }
@@ -7358,9 +7368,19 @@ function printStaffSummary() {
               <strong>ขั้นตอนการเก็บอุจจาระ</strong>
               <ol style="margin:6px 0 0;padding-left:20px">
                 <li>ตักอุจจาระขนาดประมาณหัวแม่มือ ใส่ในกระป๋องสีเทา ปิดฝาให้สนิท</li>
-                <li>ติดสติ๊กเกอร์ที่ <span style="color:#C62828;font-weight:800">ห้องเจาะเลือด SMC ตึกสว. ชั้น 1</span></li>
-                <li>ส่งที่ <strong>กล่องรับสิ่งส่งตรวจ</strong> อยู่บริเวณหน้าห้องน้ำหลังห้องเจาะเลือด SMC ตึกสว. ชั้น 1 <strong>เท่านั้น</strong></li>
+                <li>ติดสติ๊กเกอร์ <strong>ชื่อ-สกุล</strong> ที่กระป๋องสีเทา <span style="color:#C62828;font-weight:800;text-decoration:underline">โดยรับสติ๊กเกอร์ได้ที่ห้องเจาะเลือด SMC ตึก สว. ชั้น 1</span></li>
+                <li>ส่งที่ <strong>กล่องรับสิ่งส่งตรวจ</strong> อยู่บริเวณหน้าห้องน้ำหลังห้องเจาะเลือด SMC ตึก สว. ชั้น 1 <span style="color:#C62828;font-weight:800">เท่านั้น</span></li>
               </ol>
+              <div class="stool-photos">
+                <figure>
+                  <img src="stool_jar.png" alt="กระป๋องสีเทาสำหรับเก็บอุจจาระ ติดสติ๊กเกอร์ชื่อ-สกุล">
+                  <figcaption>กระป๋องสีเทา<br>ติดสติ๊กเกอร์ ชื่อ-สกุล</figcaption>
+                </figure>
+                <figure>
+                  <img src="stool_box.png" alt="กล่องรับสิ่งส่งตรวจสีชมพู">
+                  <figcaption>กล่องรับสิ่งส่งตรวจ<br>หน้าห้องน้ำหลังห้องเจาะเลือด</figcaption>
+                </figure>
+              </div>
             </div>
             <p style="margin:0;color:#C62828;font-weight:600">การส่งตรวจปัสสาวะและอุจจาระ ควรหลีกเลี่ยงการเก็บส่งตรวจในช่วงที่เป็นประจำเดือน หากเป็นประจำเดือนต้องรอให้ประจำเดือนหมดสนิทก่อน 5–7 วัน</p>
           </div>
