@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>กระดานบันทึกสถิติบริการหน้าเคาน์เตอร์ | Checkup SMC KKU</title>
+<style>
+  :root {
+    --primary: #2D3481;
+    --primary-dark: #1A2060;
+    --primary-light: #4050B5;
+    --accent: #F47920;
+    --accent-light: #FF9840;
+    --bg: #F4F5FB;
+    --surface: #FFFFFF;
+    --text: #1A1E40;
+    --text-muted: #5A6080;
+    --border: #CDD0EA;
+    --danger: #C0392B;
+    --success: #1A7A4A;
+    --green: #27AE60;
+    --green-pale: #E8F8F0;
+    --gray-pale: #F1F3F5;
+    --prog1: #2ECC71;
+    --prog2: #3498DB;
+    --prog3: #9B59B6;
+    --prog4: #E67E22;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; max-width: 100%; overflow-x: hidden;
+  }
+  body {
+    font-family: 'Sarabun','Noto Sans Thai','Tahoma',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-bottom: 40px;
+  }
+  h1, h2, h3 { color: var(--primary-dark); margin: 0 0 8px; }
+  input, select, button, textarea { font-family: inherit; font-size: 16px; }
+  button { cursor: pointer; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 12px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .muted { color: var(--text-muted); font-size: 14px; }
+  .btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    min-height: 44px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn:disabled { background: #A6ACD8; cursor: not-allowed; }
+  .btn.secondary { background: var(--gray-pale); color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger); }
+  .btn.accent { background: var(--accent); }
+  .btn.small { padding: 6px 10px; min-height: 32px; font-size: 14px; font-weight: 500; }
+  .btn.block { display: block; width: 100%; text-align: center; }
+  input[type=text], input[type=password], input[type=number], input[type=search], input[type=month], select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    background: #fff;
+    color: var(--text);
+    max-width: 100%;
+  }
+  label.field-label { display: block; font-weight: 600; margin: 10px 0 4px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .row > * { flex: 1 1 auto; }
+
+  header.topbar {
+    background: linear-gradient(135deg, #1A2060 0%, #2D3481 60%, #4050B5 100%);
+    color: #fff;
+    padding: 14px 12px;
+  }
+  header.topbar .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  header.topbar h1 { color: #fff; font-size: 18px; }
+  header.topbar .point-name { font-weight: 700; }
+
+  .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
+  .tabs button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 12px 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    min-height: 44px;
+  }
+  .tabs button.active { color: var(--primary); border-bottom-color: var(--accent); }
+
+  .section-toggle {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 17px; font-weight: 700;
+    padding: 10px 0;
+  }
+  .section-toggle input[type=checkbox] { width: 20px; height: 20px; }
+  .section-body { padding: 6px 4px 10px 26px; border-left: 3px solid var(--border); margin-left: 8px; }
+
+  .opt-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 44px;
+    font-size: 15px;
+    cursor: pointer;
+    background: #fff;
+  }
+  .opt-btn input { margin: 0; }
+  .opt-btn:has(input:checked) { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
+  .opt-price { font-size: 13px; color: var(--text-muted); }
+
+  details.list-fold { border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; background: #fff; }
+  details.list-fold > summary {
+    padding: 10px 12px; font-weight: 600; cursor: pointer; list-style: none;
+  }
+  details.list-fold > summary::-webkit-details-marker { display: none; }
+  .fold-body { padding: 0 10px 10px; }
+  .check-list { max-height: 320px; overflow-y: auto; border-top: 1px solid var(--border); margin-top: 6px; }
+  .check-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 4px; border-bottom: 1px solid var(--gray-pale);
+    font-size: 15px;
+  }
+  .check-row input { width: 18px; height: 18px; flex-shrink: 0; }
+  .check-row span.item-name { flex: 1; }
+  .check-row span.opt-price { white-space: nowrap; }
+
+  .price-banner {
+    display: inline-block;
+    font-size: 14px; font-weight: 700;
+    padding: 6px 10px; border-radius: 6px; margin: 6px 0;
+  }
+  .price-banner.banner-normal { background: var(--green-pale); color: var(--success); }
+  .price-banner.banner-alt { background: #FFF3E0; color: #A85700; }
+
+  .totals-box {
+    background: var(--gray-pale);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .totals-box .line { display: flex; justify-content: space-between; padding: 2px 0; }
+  .totals-box .grand {
+    display: flex; justify-content: space-between;
+    font-size: 20px; font-weight: 800; color: var(--primary-dark);
+    border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px;
+  }
+
+  .warning-box {
+    background: #FFF8E8; border: 1px solid #F0C040; color: #7A5A00;
+    border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 14px; font-weight: 600;
+  }
+  .error-box {
+    background: #FDECEA; border: 1px solid var(--danger); color: var(--danger);
+    border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 14px; font-weight: 600;
+  }
+
+  .summary-bar {
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+    background: var(--primary); color: #fff; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+    font-size: 14px; font-weight: 600;
+  }
+
+  .record-item {
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 14px;
+  }
+  .record-item.cancelled { opacity: 0.55; }
+  .record-item .rec-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .record-item .rec-time { font-weight: 700; color: var(--primary-dark); }
+  .record-item .rec-total { font-weight: 700; color: var(--accent); }
+  .record-item .rec-detail { margin-top: 4px; color: var(--text-muted); }
+  .record-item .cancelled-tag { color: var(--danger); font-weight: 700; text-decoration: line-through; }
+
+  .scroll-x { overflow-x: auto; max-width: 100%; }
+  table.report-table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 14px; }
+  table.report-table th, table.report-table td {
+    border: 1px solid var(--border); padding: 6px 8px; text-align: right; white-space: nowrap;
+  }
+  table.report-table th { background: var(--gray-pale); text-align: center; }
+  table.report-table td:first-child, table.report-table th:first-child { text-align: left; white-space: normal; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: var(--primary-dark); color: #fff; padding: 10px 18px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; z-index: 999; display: none; max-width: 90vw;
+  }
+
+  #gateScreen .gate-wrap { max-width: 420px; margin: 40px auto; padding: 12px; }
+  #gateScreen .card { text-align: center; }
+
+  @media print {
+    header.topbar, .tabs, #tabLog, .btn, .no-print { display: none !important; }
+    #tabReport { display: block !important; }
+    body { background: #fff; padding: 0; }
+    .wrap { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ============== GATE SCREEN ============== -->
+<div id="gateScreen">
+  <div class="gate-wrap">
+    <div class="card">
+      <h1>กระดานบันทึกสถิติบริการหน้าเคาน์เตอร์</h1>
+      <p class="muted">Checkup SMC KKU — ไม่เก็บชื่อ / HN / เลขบัตรประชาชน หรือข้อมูลระบุตัวผู้รับบริการใด ๆ</p>
+
+      <div id="gateStepKey">
+        <label class="field-label" for="gateStaffKey">รหัสผ่านเจ้าหน้าที่</label>
+        <input type="password" id="gateStaffKey" autocomplete="off" placeholder="กรอกรหัสผ่าน">
+        <button class="btn block" id="btnGateKey" style="margin-top:12px;">เข้าสู่ระบบ</button>
+        <div id="gateKeyMsg"></div>
+      </div>
+
+      <div id="gateStepPoint" hidden>
+        <label class="field-label" for="gatePointSelect">เลือกจุดบริการ</label>
+        <select id="gatePointSelect"></select>
+        <button class="btn block" id="btnGatePoint" style="margin-top:12px;">เข้าใช้งาน</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== APP SCREEN ============== -->
+<div id="appScreen" style="display:none;">
+  <header class="topbar">
+    <div class="wrap">
+      <div>
+        <h1>สถิติบริการหน้าเคาน์เตอร์</h1>
+        <div>จุดบริการ: <span class="point-name" id="hdrPointName"></span></div>
+      </div>
+      <button class="btn secondary small no-print" id="btnChangePoint">เปลี่ยนจุดบริการ</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="tabs no-print">
+      <button type="button" class="tab-btn active" data-tab="log">บันทึกบริการ</button>
+      <button type="button" class="tab-btn" data-tab="report">รายงานรายเดือน</button>
+    </div>
+
+    <!-- ---------- TAB: บันทึกบริการ ---------- -->
+    <section id="tabLog">
+      <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ 0 คน · ยอดเงินรวม 0 บาท</div>
+
+      <form id="logForm" class="card">
+        <!-- ตรวจสุขภาพ -->
+        <label class="section-toggle"><input type="checkbox" id="chkCheckup"> ตรวจสุขภาพ</label>
+        <div class="section-body" id="checkupBody" hidden>
+          <label class="field-label">โปรแกรม</label>
+          <div class="row" id="progButtons">
+            <label class="opt-btn"><input type="radio" name="program" value="1"> โปรแกรม 1 <span class="opt-price" data-prog="1"></span></label>
+            <label class="opt-btn"><input type="radio" name="program" value="2"> โปรแกรม 2 <span class="opt-price" data-prog="2"></span></label>
+            <label class="opt-btn"><input type="radio" name="program" value="3"> โปรแกรม 3 <span class="opt-price" data-prog="3"></span></label>
+            <label class="opt-btn"><input type="radio" name="program" value="4"> โปรแกรม 4 <span class="opt-price" data-prog="4"></span></label>
+          </div>
+
+          <label class="field-label">เพศ</label>
+          <div class="row" id="genderButtons">
+            <label class="opt-btn"><input type="radio" name="gender" value="male"> ชาย</label>
+            <label class="opt-btn"><input type="radio" name="gender" value="female"> หญิง</label>
+          </div>
+
+          <label class="opt-btn" style="margin-top:10px;"><input type="checkbox" id="chkPap"> Pap smear (+200 บาท)</label>
+
+          <details class="list-fold" id="extrasDetails">
+            <summary>ตรวจเพิ่ม (เลือกแล้ว <span id="extrasCount">0</span> รายการ) ▸</summary>
+            <div class="fold-body">
+              <input type="search" id="extrasSearch" placeholder="ค้นหารายการตรวจเพิ่ม">
+              <div class="check-list" id="extrasList"></div>
+            </div>
+          </details>
+        </div>
+
+        <div id="vaccinePriceBanner" class="price-banner banner-normal">ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)</div>
+
+        <!-- วัคซีน -->
+        <label class="section-toggle"><input type="checkbox" id="chkVaccine"> วัคซีน</label>
+        <div class="section-body" id="vaccineBody" hidden>
+          <details class="list-fold" open>
+            <summary>รายการวัคซีน (เลือกแล้ว <span id="vaccineCount">0</span> เข็ม) ▸</summary>
+            <div class="fold-body">
+              <input type="search" id="vaccineSearch" placeholder="ค้นหาวัคซีน">
+              <div class="check-list" id="vaccineList"></div>
+            </div>
+          </details>
+        </div>
+
+        <!-- ใบรับรองแพทย์ -->
+        <label class="section-toggle"><input type="checkbox" id="chkMedCert"> ใบรับรองแพทย์</label>
+        <div class="section-body" id="medCertBody" hidden>
+          <div class="row">
+            <div>
+              <label class="field-label" for="medCert5">สุขภาพดี 5 โรค (จำนวนใบ)</label>
+              <input type="number" id="medCert5" min="0" step="1" value="0">
+            </div>
+            <div>
+              <label class="field-label" for="medCertDriver">ใบขับขี่ (จำนวนใบ)</label>
+              <input type="number" id="medCertDriver" min="0" step="1" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="totals-box">
+          <div class="line"><span>ตรวจสุขภาพ</span><span id="totCheckup">0</span></div>
+          <div class="line"><span>ตรวจเพิ่ม</span><span id="totExtra">0</span></div>
+          <div class="line"><span>วัคซีน</span><span id="totVaccine">0</span></div>
+          <div class="line"><span>ใบรับรอง</span><span id="totMedCert">0</span></div>
+          <div class="grand"><span>💰 รวม</span><span id="totGrand">0 บาท</span></div>
+        </div>
+
+        <div id="formWarning" class="warning-box" hidden></div>
+        <div id="formError" class="error-box" hidden></div>
+
+        <button type="submit" class="btn block" id="btnSubmitLog" style="margin-top:12px;" disabled>บันทึก</button>
+      </form>
+
+      <h2 style="margin-top:18px;">รายการวันนี้</h2>
+      <div id="todayList"></div>
+    </section>
+
+    <!-- ---------- TAB: รายงานรายเดือน ---------- -->
+    <section id="tabReport" style="display:none;">
+      <div class="card no-print">
+        <label class="field-label" for="reportMonth">เลือกเดือน</label>
+        <input type="month" id="reportMonth">
+        <div class="row" id="reportMonthFallback" hidden style="margin-top:8px;">
+          <select id="reportMonthSel"></select>
+          <select id="reportYearSel"></select>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <button type="button" class="btn" id="btnLoadReport">ดูรายงาน</button>
+          <button type="button" class="btn secondary" id="btnPrintReport">สั่งพิมพ์</button>
+        </div>
+      </div>
+
+      <div id="reportContent"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   0. ค่าคงที่ Apps Script
+   ⚠ ถ้า deploy ใหม่ ต้องใช้ `clasp create-deployment -i <deployment ID เดิม>` URL นี้จะได้ไม่เปลี่ยน
+   ========================================================================= */
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwiIHjTJ49hoYav3yaR9yCxEzpv0zaIiKiDXL1-r03P0SwLHMYtnCDKk3mfE0IjFEo/exec';
+
+/* =========================================================================
+   1. ข้อมูลตั้งต้น (fallback) — ใช้เติมค่าที่หายไปจาก response ของ action=config
+   ========================================================================= */
+var PRICE_DEFAULTS = {
+  DF: 200, PE: 200, NEEDLE: 24, MARKUP_PERCENT: 10,
+  PAP: 200, MEDCERT_FIRST: 120, MEDCERT_NEXT: 20
+};
+
+var PROGRAMS_DEFAULT = {
+  1: { male: 1318, female: 1318 },
+  2: { male: 2298, female: 2298 },
+  3: { male: 3674, female: 3674 },
+  4: { male: 5314, female: 5014 }
+};
+
+var VACCINES_DEFAULT = [
+  { code: 'influenza', name: 'Influenza (ไข้หวัดใหญ่ 4 สายพันธุ์)', price: 245 },
+  { code: 'efluelda', name: 'Efluelda (ไข้หวัดใหญ่ High dose 65+)', price: 872 },
+  { code: 'engerix', name: 'Engerix-B (ไวรัสตับอักเสบ บี)', price: 294 },
+  { code: 'gardasil4', name: 'Gardasil 4 (มะเร็งปากมดลูก 4 สายพันธุ์)', price: 2444 },
+  { code: 'gardasil9', name: 'Gardasil 9 (มะเร็งปากมดลูก 9 สายพันธุ์)', price: 5593 },
+  { code: 'pcv15', name: 'Vaxneuvance PCV15 (ปอดอักเสบ 15 สายพันธุ์)', price: 2256 },
+  { code: 'prevnar20', name: 'Prevnar 20 (ปอดอักเสบ 20 สายพันธุ์)', price: 2533 },
+  { code: 'ppsv23', name: 'Pneumovax 23 (ปอดอักเสบ 23 สายพันธุ์)', price: 1094 },
+  { code: 'tdap', name: 'Tdap Boostagen (บาดทะยัก คอตีบ ไอกรน)', price: 644 },
+  { code: 'mmr', name: 'MMR Masu (หัด คางทูม หัดเยอรมัน)', price: 247 },
+  { code: 'varivax', name: 'Varivax (อีสุกอีใส)', price: 850 },
+  { code: 'mevaca', name: 'Mevac A (ไวรัสตับอักเสบ เอ)', price: 626 },
+  { code: 'qdenga', name: 'Qdenga (ไข้เลือดออก 4 สายพันธุ์)', price: 1639 },
+  { code: 'shingrix', name: 'Shingrix (งูสวัด)', price: 5199 },
+  { code: 'arexvy', name: 'Arexvy (RSV)', price: 7211 },
+  { code: 'abrysvo', name: 'Abrysvo (RSV — หญิงตั้งครรภ์/18+)', price: 7308 },
+  { code: 'pfizer', name: 'Pfizer (Covid-19)', price: 1762 }
+];
+
+var TESTS_DEFAULT = [
+  { id: 6, name: 'ตรวจน้ำตาลในเลือด', price: 50, gender: 'all' },
+  { id: 7, name: 'ตรวจไขมันในเลือด (Lipid Profile)', price: 450, gender: 'all' },
+  { id: 8, name: 'ตรวจการทำงานตับ', price: 180, gender: 'all' },
+  { id: 9, name: 'ตรวจการทำงานไต', price: 120, gender: 'all' },
+  { id: 10, name: 'ตรวจความเสี่ยงโรคเก๊าท์', price: 75, gender: 'all' },
+  { id: 12, name: 'ตรวจค่าน้ำตาลสะสม', price: 180, gender: 'all' },
+  { id: 13, name: 'คลื่นไฟฟ้าหัวใจ', price: 240, gender: 'all' },
+  { id: 14, name: 'ตรวจเชื้อไวรัสตับอักเสบ บี', price: 150, gender: 'all' },
+  { id: 15, name: 'ตรวจภูมิคุ้มกันตับอักเสบ บี', price: 180, gender: 'all' },
+  { id: 16, name: 'ตรวจเชื้อไวรัสตับอักเสบ ซี', price: 320, gender: 'all' },
+  { id: 17, name: 'ตรวจเชื้อไวรัสเอชไอวี', price: 140, gender: 'all' },
+  { id: 18, name: 'ตรวจคัดกรองเชื้อซิฟิลิส', price: 120, gender: 'all' },
+  { id: 19, name: 'ตรวจสารบ่งชี้มะเร็งต่อมลูกหมาก', price: 320, gender: 'male' },
+  { id: 20, name: 'ตรวจสารบ่งชี้มะเร็งลำไส้', price: 320, gender: 'all' },
+  { id: 21, name: 'ตรวจสารบ่งชี้มะเร็งตับ', price: 280, gender: 'all' },
+  { id: 25, name: 'ตรวจหมู่เลือด', price: 328, gender: 'all' },
+  { id: 26, name: 'ตรวจการทำงานต่อมไทรอยด์', price: 630, gender: 'all' },
+  { id: 27, name: 'ตรวจฮอร์โมนเพศชาย', price: 300, gender: 'male' },
+  { id: 28, name: 'ตรวจวิตามินดี', price: 950, gender: 'all' },
+  { id: 29, name: 'ตรวจวิตามินบี 12', price: 260, gender: 'all' },
+  { id: 30, name: 'ตรวจวิตามินบี 9 (โฟเลต)', price: 260, gender: 'all' },
+  { id: 31, name: 'วิเคราะห์องค์ประกอบร่างกาย', price: 600, gender: 'all' },
+  { id: 32, name: 'อัลตราซาวด์ช่องท้องส่วนล่าง (กระเพาะปัสสาวะ)', price: 1275, gender: 'all' },
+  { id: 33, name: 'ตรวจมวลกระดูก BMD (เอวและสะโพก)', price: 3010, gender: 'all' },
+  { id: 34, name: 'อัลตราซาวด์เต้านม (อายุ < 35 ปี)', price: 1275, gender: 'female' },
+  { id: 35, name: 'ตรวจมะเร็งเต้านม (Mammogram)', price: 3243, gender: 'female' },
+  { id: 36, name: 'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', price: 320, gender: 'all' }
+];
+
+var SERVICE_POINTS_DEFAULT = ['จุดบริการที่ 1'];
+
+/* =========================================================================
+   2. UTIL — escape / storage / toast
+   ========================================================================= */
+function escHtml(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escapeRegExp(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function safeSetItem(key, value) {
+  try { sessionStorage.setItem(key, value); } catch (e) { /* QuotaExceededError หรือ private mode — ข้ามไป */ }
+}
+function safeGetItem(key) {
+  try { return sessionStorage.getItem(key); } catch (e) { return null; }
+}
+function safeRemoveItem(key) {
+  try { sessionStorage.removeItem(key); } catch (e) { /* ignore */ }
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.style.display = 'none'; }, 3200);
+}
+
+function money(n) {
+  n = (typeof n === 'number' && !isNaN(n)) ? n : 0;
+  return n.toLocaleString('th-TH');
+}
+
+/* =========================================================================
+   3. สูตรคิดเงิน (pure function — ทดสอบได้อิสระ ไม่แตะ DOM)
+   ========================================================================= */
+function calcVaccineTotal(vaccineCodes, checkupChecked, vaccinesData, priceConsts) {
+  vaccineCodes = vaccineCodes || [];
+  if (vaccineCodes.length === 0) return 0;
+  var needle = (priceConsts && typeof priceConsts.NEEDLE === 'number') ? priceConsts.NEEDLE : PRICE_DEFAULTS.NEEDLE;
+  var sumBareNeedle = 0;
+  for (var i = 0; i < vaccineCodes.length; i++) {
+    var v = null;
+    for (var j = 0; j < vaccinesData.length; j++) {
+      if (vaccinesData[j].code === vaccineCodes[i]) { v = vaccinesData[j]; break; }
+    }
+    var bare = v ? Number(v.price) : 0;
+    sumBareNeedle += bare + needle;
+  }
+  if (checkupChecked) {
+    return sumBareNeedle;
+  }
+  var df = (priceConsts && typeof priceConsts.DF === 'number') ? priceConsts.DF : PRICE_DEFAULTS.DF;
+  var pe = (priceConsts && typeof priceConsts.PE === 'number') ? priceConsts.PE : PRICE_DEFAULTS.PE;
+  var markup = (priceConsts && typeof priceConsts.MARKUP_PERCENT === 'number') ? priceConsts.MARKUP_PERCENT : PRICE_DEFAULTS.MARKUP_PERCENT;
+  var base = df + pe + sumBareNeedle;
+  return base + Math.round(base * markup / 100);
+}
+
+function calcCheckupTotal(program, gender, pap, programsData, priceConsts) {
+  if (!program || !gender) return 0;
+  var key = (gender === 'male') ? 'male' : 'female';
+  var progRow = programsData ? programsData[program] : null;
+  var progPrice = (progRow && typeof progRow[key] === 'number') ? progRow[key] : 0;
+  var papPrice = (priceConsts && typeof priceConsts.PAP === 'number') ? priceConsts.PAP : PRICE_DEFAULTS.PAP;
+  return progPrice + (pap ? papPrice : 0);
+}
+
+function calcExtraTotal(testIds, testsData) {
+  testIds = testIds || [];
+  var sum = 0;
+  for (var i = 0; i < testIds.length; i++) {
+    for (var j = 0; j < testsData.length; j++) {
+      if (testsData[j].id === testIds[i]) { sum += Number(testsData[j].price); break; }
+    }
+  }
+  return sum;
+}
+
+function calcMedCertTotal(n, priceConsts) {
+  if (!n || n <= 0) return 0;
+  var first = (priceConsts && typeof priceConsts.MEDCERT_FIRST === 'number') ? priceConsts.MEDCERT_FIRST : PRICE_DEFAULTS.MEDCERT_FIRST;
+  var next = (priceConsts && typeof priceConsts.MEDCERT_NEXT === 'number') ? priceConsts.MEDCERT_NEXT : PRICE_DEFAULTS.MEDCERT_NEXT;
+  return first + next * (n - 1);
+}
+
+function calcGrandTotal(checkupTotal, extraTotal, vaccineTotal, medCertTotal) {
+  return (checkupTotal || 0) + (extraTotal || 0) + (vaccineTotal || 0) + (medCertTotal || 0);
+}
+
+/* =========================================================================
+   4. STATE
+   ========================================================================= */
+var STATE = {
+  staffKey: '',
+  point: '',
+  points: SERVICE_POINTS_DEFAULT.slice(),
+  prices: Object.assign({}, PRICE_DEFAULTS),
+  programs: PROGRAMS_DEFAULT,
+  vaccines: VACCINES_DEFAULT,
+  tests: TESTS_DEFAULT
+};
+
+/* =========================================================================
+   5. เรียก API
+   ========================================================================= */
+function apiCall(action, payload) {
+  var body = JSON.stringify(Object.assign({ action: action }, payload || {}));
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: body
+  }).then(function (res) {
+    return res.json();
+  }).catch(function (err) {
+    return { status: 'error', message: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ (' + (err && err.message ? err.message : 'network error') + ')' };
+  });
+}
+
+/* =========================================================================
+   6. GATE / เข้าสู่ระบบ
+   ========================================================================= */
+function qs(id) { return document.getElementById(id); }
+
+function setGateKeyLoading(loading) {
+  var btn = qs('btnGateKey');
+  if (btn) { btn.disabled = loading; btn.textContent = loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'; }
+}
+
+function showGateKeyMsg(msg, isError) {
+  var el = qs('gateKeyMsg');
+  if (!el) return;
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="' + (isError ? 'error-box' : 'warning-box') + '">' + escHtml(msg) + '</div>';
+}
+
+/* ราคาโปรแกรม (PROG1_M..PROG4_F) เป็นส่วนหนึ่งของ prices แบบแบน ไม่ใช่คีย์แยกต่างหาก
+   ตาม SPEC.md ข้อ 4 (แท็บ "ราคา" หมวด "โปรแกรม") และข้อ 5 (action=config คืน prices/points/vaccines/tests เท่านั้น) */
+function buildProgramsFromPrices(prices) {
+  var out = {};
+  [1, 2, 3, 4].forEach(function (p) {
+    var mKey = 'PROG' + p + '_M', fKey = 'PROG' + p + '_F';
+    var fallback = PROGRAMS_DEFAULT[p];
+    out[p] = {
+      male: (prices && typeof prices[mKey] === 'number') ? prices[mKey] : fallback.male,
+      female: (prices && typeof prices[fKey] === 'number') ? prices[fKey] : fallback.female
+    };
+  });
+  return out;
+}
+
+function applyConfigResponse(resp, staffKey) {
+  STATE.staffKey = staffKey;
+  STATE.prices = Object.assign({}, PRICE_DEFAULTS, resp.prices || {});
+  STATE.programs = buildProgramsFromPrices(STATE.prices);
+  STATE.vaccines = (resp.vaccines && resp.vaccines.length) ? resp.vaccines : VACCINES_DEFAULT;
+  STATE.tests = (resp.tests && resp.tests.length) ? resp.tests : TESTS_DEFAULT;
+  STATE.points = (resp.points && resp.points.length) ? resp.points : SERVICE_POINTS_DEFAULT.slice();
+  safeSetItem('svcLogStaffKey', staffKey);
+}
+
+function handleGateKeySubmit(e) {
+  if (e) e.preventDefault();
+  var key = (qs('gateStaffKey').value || '').trim();
+  if (!key) { showGateKeyMsg('กรุณากรอกรหัสผ่านเจ้าหน้าที่', true); return; }
+  showGateKeyMsg('');
+  setGateKeyLoading(true);
+  apiCall('config', { staffKey: key }).then(function (resp) {
+    setGateKeyLoading(false);
+    if (resp && resp.status === 'ok') {
+      applyConfigResponse(resp, key);
+      showPointStep();
+    } else {
+      showGateKeyMsg((resp && resp.message) ? resp.message : 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่', true);
+    }
+  });
+}
+
+function showPointStep() {
+  var sel = qs('gatePointSelect');
+  sel.innerHTML = '';
+  STATE.points.forEach(function (p) {
+    var opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+  var savedPoint = safeGetItem('svcLogPoint');
+  if (savedPoint && STATE.points.indexOf(savedPoint) !== -1) sel.value = savedPoint;
+  qs('gateStepKey').hidden = true;
+  qs('gateStepPoint').hidden = false;
+}
+
+function handleGatePointSubmit(e) {
+  if (e) e.preventDefault();
+  var point = qs('gatePointSelect').value;
+  if (!point) return;
+  STATE.point = point;
+  safeSetItem('svcLogPoint', point);
+  enterAppScreen();
+}
+
+function enterAppScreen() {
+  qs('gateScreen').style.display = 'none';
+  qs('appScreen').style.display = 'block';
+  qs('hdrPointName').textContent = STATE.point;
+  buildExtrasList();
+  buildVaccineList();
+  updateProgramLabels();
+  recalcTotals();
+  loadToday();
+}
+
+function handleChangePoint() {
+  qs('appScreen').style.display = 'none';
+  qs('gateScreen').style.display = 'block';
+  showPointStep();
+}
+
+/* พยายามคืนเซสชันเดิมถ้ามีรหัส+จุดบริการเก็บไว้ใน sessionStorage แล้ว */
+function tryRestoreSession() {
+  var savedKey = safeGetItem('svcLogStaffKey');
+  var savedPoint = safeGetItem('svcLogPoint');
+  if (!savedKey) return;
+  apiCall('config', { staffKey: savedKey }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      applyConfigResponse(resp, savedKey);
+      if (savedPoint && STATE.points.indexOf(savedPoint) !== -1) {
+        STATE.point = savedPoint;
+        enterAppScreen();
+      } else {
+        showPointStep();
+      }
+    } else {
+      safeRemoveItem('svcLogStaffKey');
+      safeRemoveItem('svcLogPoint');
+    }
+  });
+}
+
+/* =========================================================================
+   7. ฟอร์มบันทึกบริการ — สร้างรายการ / กรอง / คำนวณ / validate / submit
+   ========================================================================= */
+function buildExtrasList() {
+  var wrap = qs('extrasList');
+  wrap.innerHTML = '';
+  STATE.tests.forEach(function (t) {
+    var row = document.createElement('label');
+    row.className = 'check-row';
+    row.setAttribute('data-gender', escHtml(t.gender || 'all'));
+    row.setAttribute('data-name', escHtml((t.name || '').toLowerCase()));
+    row.innerHTML =
+      '<input type="checkbox" value="' + escHtml(t.id) + '">' +
+      '<span class="item-name">' + escHtml(t.name) + '</span>' +
+      '<span class="opt-price">' + escHtml(money(Number(t.price))) + ' บ.</span>';
+    row.querySelector('input').addEventListener('change', recalcTotals);
+    wrap.appendChild(row);
+  });
+  applyExtrasFilter();
+}
+
+function buildVaccineList() {
+  var wrap = qs('vaccineList');
+  wrap.innerHTML = '';
+  STATE.vaccines.forEach(function (v) {
+    var row = document.createElement('label');
+    row.className = 'check-row';
+    row.setAttribute('data-name', escHtml((v.name || '').toLowerCase()));
+    row.innerHTML =
+      '<input type="checkbox" value="' + escHtml(v.code) + '">' +
+      '<span class="item-name">' + escHtml(v.name) + '</span>' +
+      '<span class="opt-price">' + escHtml(money(Number(v.price))) + ' บ.</span>';
+    row.querySelector('input').addEventListener('change', recalcTotals);
+    wrap.appendChild(row);
+  });
+  applyVaccineFilter();
+}
+
+function getSelectedProgram() {
+  var el = document.querySelector('input[name="program"]:checked');
+  return el ? el.value : '';
+}
+function getSelectedGender() {
+  var el = document.querySelector('input[name="gender"]:checked');
+  return el ? el.value : '';
+}
+function getCheckedExtraIds() {
+  var out = [];
+  document.querySelectorAll('#extrasList input[type="checkbox"]:checked').forEach(function (cb) {
+    out.push(Number(cb.value));
+  });
+  return out;
+}
+function getCheckedVaccineCodes() {
+  var out = [];
+  document.querySelectorAll('#vaccineList input[type="checkbox"]:checked').forEach(function (cb) {
+    out.push(cb.value);
+  });
+  return out;
+}
+
+function applyExtrasFilter() {
+  var gender = getSelectedGender();
+  var q = (qs('extrasSearch') ? qs('extrasSearch').value : '').trim().toLowerCase();
+  document.querySelectorAll('#extrasList .check-row').forEach(function (row) {
+    var rowGender = row.getAttribute('data-gender');
+    var genderOk = (rowGender === 'all' || rowGender === gender);
+    var textOk = !q || row.getAttribute('data-name').indexOf(q) !== -1;
+    if (!genderOk) {
+      var cb = row.querySelector('input');
+      if (cb && cb.checked) cb.checked = false;
+    }
+    row.hidden = !(genderOk && textOk);
+  });
+}
+
+function applyVaccineFilter() {
+  var q = (qs('vaccineSearch') ? qs('vaccineSearch').value : '').trim().toLowerCase();
+  document.querySelectorAll('#vaccineList .check-row').forEach(function (row) {
+    var textOk = !q || row.getAttribute('data-name').indexOf(q) !== -1;
+    row.hidden = !textOk;
+  });
+}
+
+function updateProgramLabels() {
+  var gender = getSelectedGender() || 'male';
+  [1, 2, 3, 4].forEach(function (p) {
+    var el = document.querySelector('.opt-price[data-prog="' + p + '"]');
+    if (!el) return;
+    var row = STATE.programs[p];
+    var price = (row && typeof row[gender] === 'number') ? row[gender] : 0;
+    el.textContent = '(' + money(price) + ' บ.)';
+  });
+}
+
+function updateVaccinePriceBanner(checkupOn) {
+  var banner = qs('vaccinePriceBanner');
+  if (!banner) return;
+  if (checkupOn) {
+    banner.textContent = 'ราคาวัคซีน: ชุดมาตรวจสุขภาพ (ไม่มี DF/PE/10%)';
+    banner.className = 'price-banner banner-alt';
+  } else {
+    banner.textContent = 'ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)';
+    banner.className = 'price-banner banner-normal';
+  }
+}
+
+function validateForm(ctx) {
+  var warnEl = qs('formWarning');
+  var btn = qs('btnSubmitLog');
+  var msg = '';
+
+  var hasAnything = ctx.checkupOn || ctx.vaccineCodes.length > 0 || ctx.nCert > 0;
+  if (!hasAnything) {
+    msg = 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+  } else if (ctx.checkupOn && (!ctx.program || !ctx.gender)) {
+    msg = 'ติ๊ก "ตรวจสุขภาพ" แล้วต้องเลือกโปรแกรมและเพศให้ครบก่อนบันทึก';
+  }
+
+  if (msg) {
+    warnEl.textContent = '⚠ ' + msg;
+    warnEl.hidden = false;
+    btn.disabled = true;
+  } else {
+    warnEl.hidden = true;
+    btn.disabled = false;
+  }
+}
+
+function recalcTotals() {
+  var checkupOn = qs('chkCheckup').checked;
+  var program = checkupOn ? getSelectedProgram() : '';
+  var gender = checkupOn ? getSelectedGender() : '';
+  var pap = checkupOn && qs('chkPap').checked;
+  var extraIds = checkupOn ? getCheckedExtraIds() : [];
+
+  var vaccineOn = qs('chkVaccine').checked;
+  var vaccineCodes = vaccineOn ? getCheckedVaccineCodes() : [];
+
+  var medOn = qs('chkMedCert').checked;
+  var n5 = medOn ? (parseInt(qs('medCert5').value, 10) || 0) : 0;
+  var nDriver = medOn ? (parseInt(qs('medCertDriver').value, 10) || 0) : 0;
+  var nCert = n5 + nDriver;
+
+  var checkupTotal = calcCheckupTotal(program, gender, pap, STATE.programs, STATE.prices);
+  var extraTotal = calcExtraTotal(extraIds, STATE.tests);
+  var vaccineTotal = calcVaccineTotal(vaccineCodes, checkupOn, STATE.vaccines, STATE.prices);
+  var medCertTotal = calcMedCertTotal(nCert, STATE.prices);
+  var grand = calcGrandTotal(checkupTotal, extraTotal, vaccineTotal, medCertTotal);
+
+  qs('totCheckup').textContent = money(checkupTotal);
+  qs('totExtra').textContent = money(extraTotal);
+  qs('totVaccine').textContent = money(vaccineTotal);
+  qs('totMedCert').textContent = money(medCertTotal);
+  qs('totGrand').textContent = money(grand) + ' บาท';
+
+  qs('extrasCount').textContent = String(extraIds.length);
+  qs('vaccineCount').textContent = String(vaccineCodes.length);
+
+  updateVaccinePriceBanner(checkupOn);
+  updateProgramLabels();
+
+  validateForm({ checkupOn: checkupOn, program: program, gender: gender, vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert, extraIds: extraIds });
+
+  return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
+}
+
+function onChkCheckupChange() {
+  var on = qs('chkCheckup').checked;
+  qs('checkupBody').hidden = !on;
+  if (!on) {
+    qs('chkPap').checked = false;
+    document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = false; });
+    document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = false; });
+  }
+  applyExtrasFilter();
+  recalcTotals();
+}
+
+function onChkVaccineChange() {
+  var on = qs('chkVaccine').checked;
+  qs('vaccineBody').hidden = !on;
+  if (!on) {
+    document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+  }
+  recalcTotals();
+}
+
+function onChkMedCertChange() {
+  var on = qs('chkMedCert').checked;
+  qs('medCertBody').hidden = !on;
+  if (!on) {
+    qs('medCert5').value = 0;
+    qs('medCertDriver').value = 0;
+  }
+  recalcTotals();
+}
+
+function resetLogForm() {
+  qs('logForm').reset();
+  qs('checkupBody').hidden = true;
+  qs('vaccineBody').hidden = true;
+  qs('medCertBody').hidden = true;
+  document.querySelectorAll('#extrasList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+  document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+  applyExtrasFilter();
+  applyVaccineFilter();
+  recalcTotals();
+}
+
+function onSubmitLog(e) {
+  e.preventDefault();
+  var btn = qs('btnSubmitLog');
+  if (btn.disabled) return;
+
+  var checkupOn = qs('chkCheckup').checked;
+  var program = checkupOn ? getSelectedProgram() : '';
+  var gender = checkupOn ? getSelectedGender() : '';
+  var pap = checkupOn && qs('chkPap').checked;
+  var extraIds = checkupOn ? getCheckedExtraIds() : [];
+  var vaccineCodes = qs('chkVaccine').checked ? getCheckedVaccineCodes() : [];
+  var medOn = qs('chkMedCert').checked;
+  var medCert5 = medOn ? (parseInt(qs('medCert5').value, 10) || 0) : 0;
+  var medCertDriver = medOn ? (parseInt(qs('medCertDriver').value, 10) || 0) : 0;
+
+  var payload = {
+    staffKey: STATE.staffKey,
+    point: STATE.point,
+    program: program,
+    gender: gender,
+    pap: !!pap,
+    tests: extraIds,
+    vaccines: vaccineCodes,
+    medCert5: medCert5,
+    medCertDriver: medCertDriver
+  };
+
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+  qs('formError').hidden = true;
+
+  apiCall('log', payload).then(function (resp) {
+    btn.textContent = 'บันทึก';
+    if (resp && resp.status === 'ok') {
+      showToast('✔ บันทึกสำเร็จ');
+      resetLogForm();
+      loadToday();
+    } else {
+      var errEl = qs('formError');
+      errEl.textContent = '❌ ' + ((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่');
+      errEl.hidden = false;
+      recalcTotals(); // คืนสถานะปุ่มตามความถูกต้องของฟอร์ม
+    }
+  });
+}
+
+/* =========================================================================
+   8. รายการวันนี้ + ยกเลิก
+   ========================================================================= */
+function todayStr() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
+}
+
+function summarizeRecordText(rec) {
+  var parts = [];
+  if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
+  if (rec.pap) parts.push('Pap smear');
+  if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
+  if (rec.vaccineCount) parts.push('วัคซีน ' + rec.vaccineCount + ' เข็ม');
+  if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
+  return parts.length ? parts.join(' · ') : '-';
+}
+
+function recordGrandTotal(rec) {
+  return (rec && rec.totals && typeof rec.totals.grand === 'number') ? rec.totals.grand : 0;
+}
+
+function renderTodayList(records) {
+  var wrap = qs('todayList');
+  wrap.innerHTML = '';
+  if (!records || records.length === 0) {
+    wrap.innerHTML = '<p class="muted">ยังไม่มีบันทึกวันนี้</p>';
+    return;
+  }
+  var totalPeople = 0, totalMoney = 0;
+  records.forEach(function (rec) {
+    var cancelled = rec.status === 'ยกเลิก';
+    if (!cancelled) { totalPeople++; totalMoney += recordGrandTotal(rec); }
+
+    var div = document.createElement('div');
+    div.className = 'record-item' + (cancelled ? ' cancelled' : '');
+    var html = '<div class="rec-head">' +
+      '<span class="rec-time">' + escHtml(rec.time || '') + '</span>' +
+      '<span class="rec-total">' + escHtml(money(recordGrandTotal(rec))) + ' บาท</span>' +
+      '</div>' +
+      '<div class="rec-detail">' + escHtml(summarizeRecordText(rec)) + '</div>';
+    if (cancelled) {
+      html += '<div class="cancelled-tag">ยกเลิกแล้ว</div>';
+    } else {
+      html += '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '" style="margin-top:6px;">ยกเลิก</button>';
+    }
+    div.innerHTML = html;
+    wrap.appendChild(div);
+  });
+
+  wrap.querySelectorAll('button[data-record-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onCancelRecord(btn.getAttribute('data-record-id'), btn); });
+  });
+
+  qs('todaySummaryBar').textContent = 'วันนี้ให้บริการ ' + totalPeople + ' คน · ยอดเงินรวม ' + money(totalMoney) + ' บาท';
+}
+
+function loadToday() {
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: todayStr() }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      renderTodayList(resp.records || []);
+    } else {
+      qs('todayList').innerHTML = '<p class="muted">โหลดรายการวันนี้ไม่สำเร็จ' + (resp && resp.message ? ' (' + escHtml(resp.message) + ')' : '') + '</p>';
+    }
+  });
+}
+
+function onCancelRecord(recordId, btnEl) {
+  if (!window.confirm('ยืนยันยกเลิกบันทึกนี้?')) return;
+  if (btnEl) btnEl.disabled = true;
+  apiCall('cancel', { staffKey: STATE.staffKey, recordId: recordId }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      showToast('ยกเลิกบันทึกแล้ว');
+      loadToday();
+    } else {
+      showToast('❌ ยกเลิกไม่สำเร็จ' + (resp && resp.message ? ': ' + resp.message : ''));
+      if (btnEl) btnEl.disabled = false;
+    }
+  });
+}
+
+/* =========================================================================
+   9. แท็บรายงานรายเดือน
+   ========================================================================= */
+function supportsMonthInput() {
+  var i = document.createElement('input');
+  i.setAttribute('type', 'month');
+  return i.type === 'month';
+}
+
+function initReportMonthPicker() {
+  var now = new Date();
+  var bkkParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit' }).format(now); // YYYY-MM
+  if (supportsMonthInput()) {
+    qs('reportMonth').value = bkkParts;
+  } else {
+    qs('reportMonth').hidden = true;
+    qs('reportMonthFallback').hidden = false;
+    var monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    var curYear = Number(bkkParts.split('-')[0]);
+    var curMonth = Number(bkkParts.split('-')[1]);
+    var monthSel = qs('reportMonthSel');
+    var yearSel = qs('reportYearSel');
+    monthSel.innerHTML = '';
+    monthNames.forEach(function (name, idx) {
+      var opt = document.createElement('option');
+      opt.value = String(idx + 1);
+      opt.textContent = name;
+      monthSel.appendChild(opt);
+    });
+    monthSel.value = String(curMonth);
+    yearSel.innerHTML = '';
+    for (var y = curYear - 2; y <= curYear + 1; y++) {
+      var yopt = document.createElement('option');
+      yopt.value = String(y);
+      yopt.textContent = String(y);
+      yearSel.appendChild(yopt);
+    }
+    yearSel.value = String(curYear);
+  }
+}
+
+function getSelectedReportMonth() {
+  if (supportsMonthInput()) return qs('reportMonth').value;
+  var m = qs('reportMonthSel').value;
+  var y = qs('reportYearSel').value;
+  if (!m || !y) return '';
+  return y + '-' + (m.length < 2 ? '0' + m : m);
+}
+
+function numOr0(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
+
+/* summary.extra.items / summary.vaccine.items เป็น object map {'ชื่อ': count, ...} ไม่ใช่ array
+   แปลงเป็น array แล้วเรียงจำนวนมาก -> น้อยให้อ่านง่าย (ตาม SPEC.md ข้อ 5.1) */
+function itemsMapToSortedArray(itemsObj) {
+  var out = [];
+  if (itemsObj && typeof itemsObj === 'object') {
+    Object.keys(itemsObj).forEach(function (name) {
+      out.push({ name: name, count: numOr0(itemsObj[name]) });
+    });
+  }
+  out.sort(function (a, b) { return b.count - a.count; });
+  return out;
+}
+
+/* summary.byPoint เป็น object map {'ชื่อจุด': {count, money}, ...} */
+function byPointMapToArray(byPointObj) {
+  var out = [];
+  if (byPointObj && typeof byPointObj === 'object') {
+    Object.keys(byPointObj).forEach(function (name) {
+      var v = byPointObj[name] || {};
+      out.push({ point: name, count: numOr0(v.count), money: numOr0(v.money) });
+    });
+  }
+  return out;
+}
+
+function renderReport(summary) {
+  var el = qs('reportContent');
+  if (!summary) { el.innerHTML = '<p class="muted">ไม่มีข้อมูล</p>'; return; }
+
+  var html = '';
+  html += '<div class="card"><h2>สรุปรวม</h2>' +
+    '<div class="line">จำนวนผู้รับบริการรวม: <b>' + escHtml(numOr0(summary.totalPeople)) + '</b> คน</div>' +
+    '<div class="line">ยอดเงินรวมทั้งเดือน: <b>' + escHtml(money(numOr0(summary.grandTotal))) + '</b> บาท</div>' +
+    '</div>';
+
+  // ตรวจสุขภาพ — summary.checkup.programs[p] = { ชาย, หญิง } (คีย์ภาษาไทย, p เป็นสตริง '1'..'4')
+  var checkup = summary.checkup || {};
+  var programs = checkup.programs || {};
+  html += '<div class="card"><h2>ตรวจสุขภาพ</h2><div class="scroll-x"><table class="report-table"><thead><tr>' +
+    '<th>โปรแกรม</th><th>ชาย</th><th>หญิง</th></tr></thead><tbody>';
+  [1, 2, 3, 4].forEach(function (p) {
+    var row = programs[String(p)] || {};
+    html += '<tr><td>โปรแกรม ' + p + '</td><td>' + numOr0(row['ชาย']) + '</td><td>' + numOr0(row['หญิง']) + '</td></tr>';
+  });
+  html += '</tbody></table></div>' +
+    '<div class="line" style="margin-top:8px;">จำนวน Pap smear: ' + numOr0(checkup.papCount) + ' ราย</div>' +
+    '<div class="line">ยอดเงินหมวดตรวจสุขภาพ: ' + money(numOr0(checkup.money)) + ' บาท</div></div>';
+
+  // ตรวจเพิ่ม — summary.extra.items (object map), summary.extra.money
+  var extra = summary.extra || {};
+  var extraItems = itemsMapToSortedArray(extra.items);
+  html += '<div class="card"><h2>ตรวจเพิ่ม</h2><div class="scroll-x"><table class="report-table"><thead><tr><th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
+  if (extraItems.length === 0) {
+    html += '<tr><td colspan="2">ไม่มีข้อมูล</td></tr>';
+  } else {
+    extraItems.forEach(function (it) {
+      html += '<tr><td>' + escHtml(it.name) + '</td><td>' + numOr0(it.count) + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div><div class="line" style="margin-top:8px;">ยอดเงินหมวดตรวจเพิ่ม: ' + money(numOr0(extra.money)) + ' บาท</div></div>';
+
+  // วัคซีน — summary.vaccine.items (object map), summary.vaccine.money
+  var vaccine = summary.vaccine || {};
+  var vaccineItems = itemsMapToSortedArray(vaccine.items);
+  html += '<div class="card"><h2>วัคซีน</h2><div class="scroll-x"><table class="report-table"><thead><tr><th>วัคซีน</th><th>จำนวนเข็ม</th></tr></thead><tbody>';
+  if (vaccineItems.length === 0) {
+    html += '<tr><td colspan="2">ไม่มีข้อมูล</td></tr>';
+  } else {
+    vaccineItems.forEach(function (it) {
+      html += '<tr><td>' + escHtml(it.name) + '</td><td>' + numOr0(it.count) + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div><div class="line" style="margin-top:8px;">ยอดเงินหมวดวัคซีน: ' + money(numOr0(vaccine.money)) + ' บาท</div></div>';
+
+  // ใบรับรองแพทย์ — summary.medcert (ตัวเล็กหมด)
+  var medcert = summary.medcert || {};
+  html += '<div class="card"><h2>ใบรับรองแพทย์</h2>' +
+    '<div class="line">สุขภาพดี 5 โรค: ' + numOr0(medcert.count5) + ' ใบ</div>' +
+    '<div class="line">ใบขับขี่: ' + numOr0(medcert.countDriver) + ' ใบ</div>' +
+    '<div class="line">ยอดเงินหมวดใบรับรอง: ' + money(numOr0(medcert.money)) + ' บาท</div></div>';
+
+  // แยกตามจุดบริการ — summary.byPoint (object map)
+  var byPoint = byPointMapToArray(summary.byPoint);
+  html += '<div class="card"><h2>แยกตามจุดบริการ</h2><div class="scroll-x"><table class="report-table"><thead><tr><th>จุดบริการ</th><th>จำนวนคน</th><th>ยอดเงิน</th></tr></thead><tbody>';
+  if (byPoint.length === 0) {
+    html += '<tr><td colspan="3">ไม่มีข้อมูล</td></tr>';
+  } else {
+    byPoint.forEach(function (pt) {
+      html += '<tr><td>' + escHtml(pt.point) + '</td><td>' + numOr0(pt.count) + '</td><td>' + money(numOr0(pt.money)) + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div></div>';
+
+  el.innerHTML = html;
+}
+
+function loadReport() {
+  var month = getSelectedReportMonth();
+  if (!month) { showToast('กรุณาเลือกเดือน'); return; }
+  qs('reportContent').innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  apiCall('report', { staffKey: STATE.staffKey, month: month }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      renderReport(resp.summary);
+    } else {
+      qs('reportContent').innerHTML = '<div class="error-box">โหลดรายงานไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
+    }
+  });
+}
+
+/* =========================================================================
+   10. แท็บสลับ
+   ========================================================================= */
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-tab') === name);
+  });
+  qs('tabLog').style.display = (name === 'log') ? 'block' : 'none';
+  qs('tabReport').style.display = (name === 'report') ? 'block' : 'none';
+}
+
+/* =========================================================================
+   11. Bootstrap
+   ========================================================================= */
+document.addEventListener('DOMContentLoaded', function () {
+  qs('btnGateKey').addEventListener('click', handleGateKeySubmit);
+  qs('gateStaffKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateKeySubmit(e); });
+  qs('btnGatePoint').addEventListener('click', handleGatePointSubmit);
+  qs('btnChangePoint').addEventListener('click', handleChangePoint);
+
+  qs('chkCheckup').addEventListener('change', onChkCheckupChange);
+  qs('chkVaccine').addEventListener('change', onChkVaccineChange);
+  qs('chkMedCert').addEventListener('change', onChkMedCertChange);
+  qs('chkPap').addEventListener('change', recalcTotals);
+  document.querySelectorAll('input[name="program"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
+  document.querySelectorAll('input[name="gender"]').forEach(function (r) {
+    r.addEventListener('change', function () { applyExtrasFilter(); recalcTotals(); });
+  });
+  qs('medCert5').addEventListener('input', recalcTotals);
+  qs('medCertDriver').addEventListener('input', recalcTotals);
+  qs('extrasSearch').addEventListener('input', applyExtrasFilter);
+  qs('vaccineSearch').addEventListener('input', applyVaccineFilter);
+  qs('logForm').addEventListener('submit', onSubmitLog);
+
+  document.querySelectorAll('.tab-btn').forEach(function (b) {
+    b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
+  });
+
+  qs('btnLoadReport').addEventListener('click', loadReport);
+  qs('btnPrintReport').addEventListener('click', function () { window.print(); });
+  initReportMonthPicker();
+
+  tryRestoreSession();
+});
+</script>
+
+</body>
+</html>
