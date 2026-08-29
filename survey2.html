@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>แบบประเมินหลังเข้ารับบริการ - หน่วยคลินิกตรวจสุขภาพ SMC</title>
+<title>แบบประเมินการเข้ารับบริการหลังลงทะเบียนออนไลน์ - หน่วยคลินิกตรวจสุขภาพ SMC</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -79,7 +79,7 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
 
 <div class="wrap">
-  <!-- ── แบบประเมินหลังเข้ารับบริการ ── -->
+  <!-- ── แบบประเมินการเข้ารับบริการหลังลงทะเบียนออนไลน์ ── -->
   <div id="surveyScreen">
     <div class="pagehead">
     <div class="brandbar">
@@ -102,7 +102,7 @@
         <path d="M42 42 Q45 45 48 42" fill="none" stroke="#BA7517" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
       <div class="hero-text">
-        <h1>แบบประเมินหลังเข้ารับบริการ</h1>
+        <h1>แบบประเมินการเข้ารับบริการหลังลงทะเบียนออนไลน์</h1>
         <p>ความคิดเห็นของท่านช่วยให้เราปรับปรุงบริการตรวจสุขภาพได้ตรงจุด<br>หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></p>
         <p class="time">ใช้เวลาประมาณ 2 นาที · ตอบแบบไม่ระบุตัวตน</p>
       </div>
@@ -135,7 +135,10 @@
     </div>
 
     <div class="card" id="card-filledBy">
-      <div class="q-label">2. ท่านกรอกแบบฟอร์มลงทะเบียนออนไลน์ด้วยตนเองหรือไม่</div>
+      <!-- 2026-08-29 เจ้าของสั่งแก้ — เดิมใช้คำว่า "แบบฟอร์ม" เปลี่ยนเป็น "เว็บ" ให้ตรงกับ survey.html
+           ที่นี่คงคำว่า "ลงทะเบียนออนไลน์" ต่อท้ายไว้ เพราะผู้ตอบมาตอบในวันตรวจ ซึ่งอาจห่างจากวันกรอกเป็นสัปดาห์
+           คำว่า "เว็บ" ลอยๆ จึงยังไม่มีบริบท (ต่างจาก survey.html ที่ข้อ 1 เพิ่งพูดถึงไปแล้ว) -->
+      <div class="q-label">2. ท่านกรอกข้อมูลในเว็บลงทะเบียนออนไลน์ด้วยตนเองหรือไม่</div>
       <div class="chip-row" id="filledBy">
         <button type="button" class="chip" data-val="กรอกเอง" onclick="pick('filledBy',this)">กรอกเอง</button>
         <button type="button" class="chip" data-val="มีผู้ช่วยกรอก" onclick="pick('filledBy',this)">มีผู้ช่วยกรอก</button>
@@ -144,7 +147,7 @@
     </div>
 
     <div class="card" id="card-dataAccurate">
-      <div class="q-label">3. ข้อมูลที่ท่านกรอกล่วงหน้าถูกต้องครบถ้วนเพียงใด</div>
+      <div class="q-label">3. ข้อมูลที่ท่านลงทะเบียนออนไลน์ถูกต้องครบถ้วนในวันเข้ารับบริการเพียงใด</div>
       <div class="stars" id="dataAccurate">
         <button type="button" class="star-btn" data-val="5-มากที่สุด" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐⭐⭐</span>มากที่สุด</button>
         <button type="button" class="star-btn" data-val="4-มาก" onclick="pick('dataAccurate',this)"><span class="ico">⭐⭐⭐⭐</span>มาก</button>
@@ -179,7 +182,7 @@
          กับ "ยอดที่ชำระจริงตรงหรือไม่" — ตัวเลือกแยกทั้ง 2 มิติในตัวมันเอง จึงไม่ต้องถาม 2 ข้อ
          ⚠ "ไม่ทราบยอดล่วงหน้า" เป็นคำตอบที่มีความหมาย = แพลตฟอร์มยังไม่ทำหน้าที่แจ้งราคา -->
     <div class="card" id="card-costMatch">
-      <div class="q-label">5. ท่านทราบยอดค่าใช้จ่ายล่วงหน้าจากระบบ และตรงกับที่ชำระจริงหรือไม่</div>
+      <div class="q-label">5. ท่านทราบจำนวนค่าใช้จ่ายล่วงหน้าและจำนวนค่าใช้จ่ายตรงกับวันเข้ารับบริการหรือไม่</div>
       <div class="chip-row" id="costMatch">
         <button type="button" class="chip" data-val="ทราบล่วงหน้า และตรงกัน" onclick="pick('costMatch',this)">ทราบล่วงหน้า และตรงกัน</button>
         <button type="button" class="chip" data-val="ทราบล่วงหน้า แต่ต่างกันเล็กน้อย" onclick="pick('costMatch',this)">ทราบล่วงหน้า แต่ต่างกันเล็กน้อย</button>
