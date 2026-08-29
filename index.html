@@ -1670,17 +1670,13 @@
   /* ─── ขั้นตอนการเข้ารับบริการ — เพิ่ม 2026-08-28 จากใบ "ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี"
      เจ้าของสั่งให้เป็นกล่องอยู่ "เหนือ" การเตรียมตัวก่อนตรวจ (อยู่ในใบสรุปและใบพิมพ์ชุดเดียวกัน) ─── */
   .flow-section { padding: 20px 22px 0; background: #FDFAF5; }
-  .flow-box { background: #fff; border: 1px solid #E4DCC8; border-radius: 12px; padding: 14px 16px; }
-  .flow-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: #2E5E3A; margin-bottom: 10px; }
-  .flow-list { list-style: none; margin: 0; padding: 0; }
-  .flow-list > li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; font-size: 12.5px; line-height: 1.55; color: #3E3020; }
-  .flow-list > li + li { border-top: 1px dashed #EFE6D2; }
-  .flow-n { flex: 0 0 22px; height: 22px; border-radius: 11px; background: #2E7D46; color: #fff; font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
-  .flow-where { color: #7A6A45; }
-  .flow-sub { list-style: none; margin: 6px 0 0; padding: 0; }
-  .flow-sub li { display: flex; gap: 8px; align-items: flex-start; padding: 2px 0; font-size: 12px; }
-  .flow-sub .flow-n { flex: 0 0 30px; height: 18px; border-radius: 9px; background: #EAF3EC; color: #2E7D46; font-size: 10.5px; font-weight: 700; }
-  .flow-extra-label { margin: 8px 0 2px; font-size: 11.5px; font-weight: 700; color: #C62828; }
+  .flow-box { background: #fff; border: 1px solid #E4DCC8; border-radius: 12px; padding: 10px; }
+  /* ใช้ "ภาพจากไฟล์ต้นฉบับของหน่วย" ตรงๆ ตามที่เจ้าของสั่ง 2026-08-29 ("เอาไฟล์ pdf ไปใส่เลย / ไม่ต้องปรับ")
+     เดิมผมถอดเป็นรายการข้อความ HTML ให้ — เจ้าของไม่เอา ต้องการภาพเหมือนในไฟล์
+     ⚠ service_steps.jpg เรนเดอร์มาจาก service_steps.pdf ในโฟลเดอร์เดียวกัน ถ้าใบต้นฉบับเปลี่ยน ต้องเปลี่ยนทั้งคู่ */
+  .flow-img { width: 100%; height: auto; display: block; border-radius: 8px; }
+  .flow-pdf { margin-top: 8px; text-align: center; font-size: 12px; }
+  .flow-pdf a { color: #2E7D46; font-weight: 700; text-decoration: underline; }
 
   .prep-main-title {
     background: linear-gradient(90deg, #E8F4F0 0%, #FFF8EC 100%);
@@ -1928,12 +1924,8 @@
 
     /* ── Compact prep section to fit contact on page 2 ── */
     .flow-section { padding: 10px 16px 0; }
-    .flow-box { padding: 8px 10px; }
-    .flow-title { font-size: 12px; margin-bottom: 6px; }
-    .flow-list > li { padding: 3px 0; font-size: 10.5px; line-height: 1.35; }
-    .flow-sub li { font-size: 10px; padding: 1px 0; }
-    .flow-n { flex: 0 0 18px; height: 18px; font-size: 10px; }
-    .flow-sub .flow-n { flex: 0 0 26px; height: 15px; font-size: 9.5px; }
+    .flow-box { padding: 6px; }
+    .flow-pdf { display: none; }   /* ลิงก์กดไม่ได้บนกระดาษ */
     .prep-section { padding: 10px 16px; font-size: 11px; }
     .prep-main-title { margin-bottom: 6px; padding: 8px 14px; }
     .prep-grid { gap: 8px; margin-bottom: 6px; }
@@ -2067,12 +2059,29 @@
     transition:background 0.2s,transform 0.15s; font-family:inherit;
   }
   .prep-fab:hover { background:#00787f; transform:translateY(-2px); }
+
+  /* ปุ่มลอย "ขั้นตอนการเข้ารับบริการ" — เจ้าของสั่งเมื่อ 2026-08-29 ให้ "แยกออกจาก" คำแนะนำก่อนตรวจ
+     และให้อยู่ "ด้านบน" ⇒ ซ้อนขึ้นไปจาก .prep-fab ฝั่งซ้ายเหมือนกัน
+     ⚠ ห้ามย้ายไปฝั่งขวา: ฝั่งนั้นมี .staff-fab (bottom:24) + .back-to-bottom (bottom:82)
+       และช่วง bottom 80–124px เป็นที่ของ .atwarn-popup (z-index 9998) อยู่แล้ว */
+  .flow-fab {
+    position:fixed; bottom:76px; left:24px;
+    background:#2E7D46; color:#fff;
+    border:none; border-radius:50px;
+    padding:12px 20px; font-size:14px; font-weight:700;
+    cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,0.28);
+    z-index:900; display:flex; align-items:center; gap:6px;
+    transition:background 0.2s,transform 0.15s; font-family:inherit;
+  }
+  .flow-fab:hover { background:#3B9A58; transform:translateY(-2px); }
+  @media print { .flow-fab { display:none !important; } }
   @media print { .prep-fab { display:none !important; } }
   /* จอแคบ (≤400px): .prep-fab (ซ้าย) + .staff-fab (ขวา) รวมกันกว้างเกินจอ — วัดที่ 360px ชนกัน 7px
      ย่อทั้งคู่ให้อยู่แถวเดียวกันได้ แทนการยกขึ้นอีกแถว เพราะช่วง bottom 80–124px
      เป็นที่ของ .atwarn-popup (z-index 9998) ถ้าไปวางตรงนั้นจะโดนป็อปอัปเตือนทับ (เจอ 2026-08-19) */
   @media (max-width: 400px) {
-    .prep-fab, .staff-fab { padding: 11px 14px; font-size: 13px; }
+    .prep-fab, .staff-fab, .flow-fab { padding: 11px 14px; font-size: 13px; }
+    .flow-fab { bottom: 70px; }
   }
 </style>
 </head>
@@ -6864,7 +6873,7 @@ function showSuccessModal(data) {
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
   // ระบุ #successModal ให้ชัด — หลัง 2026-08-18 มี .prep-section สำเนาอยู่ในใบสรุปเจ้าหน้าที่
   // และป็อปอัปคำแนะนำของผู้ป่วยด้วย ถ้าใช้ selector กว้างๆ อาจหยิบสำเนาแทนตัวต้นฉบับ
-  const prepBundle = prepBundleHtml();
+  const prepBundle = prepSectionHtml();
   try { sessionStorage.setItem('regSummaryHtml', html); } catch(e) {}
   try { sessionStorage.setItem('regSummaryTitle', modalTitle); } catch(e) {}
   try { sessionStorage.setItem('regPrepHtml', prepBundle); } catch(e) {}
@@ -7002,19 +7011,68 @@ function closeProgDetailOutside(e) {
 
 // ─── ป็อปอัปคำแนะนำก่อนตรวจ สำหรับผู้รับบริการ ────────────────────────────────
 // เนื้อหายกมาจากบล็อกต้นฉบับใน #successModal ตอนเปิด (ไม่ก๊อปข้อความมาเขียนซ้ำ)
-// ── ชุดคำแนะนำที่ผู้รับบริการต้องเห็น = กล่อง "ขั้นตอนการเข้ารับบริการ" + "การเตรียมตัวก่อนตรวจ" ──
-// เพิ่ม 2026-08-29: เดิมทุกจุดหยิบเฉพาะ .prep-section ทำให้กล่องขั้นตอนที่เพิ่งเพิ่มโผล่แค่ในใบสรุป
-// หลังกดส่งฟอร์มเท่านั้น — ปุ่มลอย "คำแนะนำก่อนตรวจ" / หน้าแบบประเมิน / หน้าพิมพ์ ไม่เห็นเลย
-// ⚠ ถ้าเพิ่มบล็อกคำแนะนำใหม่อีกในอนาคต ให้เติมที่นี่ที่เดียว ทุกจุดจะได้ตามไปเอง
-function prepBundleHtml() {
-  const flow = document.querySelector('#successModal .flow-section');
-  const prep = document.querySelector('#successModal .prep-section');
-  if (!prep) return '';
-  return (flow ? flow.outerHTML : '') + prep.outerHTML;
+// ── 2 กล่องนี้ "แยกกันคนละปุ่ม" ตามที่เจ้าของสั่ง 2026-08-29 ──────────────────────
+// เคยลองรวมไว้ในป็อปอัปเดียวกันแล้วเจ้าของสั่งให้แยกออกจากกัน
+// ⚠ ต้นฉบับของทั้งคู่อยู่ใน #successModal (ใบสรุปหลังส่งฟอร์ม) — ที่อื่นเป็นสำเนาที่ก๊อปไปแสดง
+//   ถ้าเพิ่มบล็อกใหม่ทำนองนี้อีก ต้องไล่ดูทุกจุดที่ก๊อปใบสรุปไปแสดง (ปุ่มลอย/หน้าพิมพ์/regPrepHtml)
+function flowSectionHtml() {
+  const el = document.querySelector('#successModal .flow-section');
+  return el ? el.outerHTML : '';
+}
+function prepSectionHtml() {
+  const el = document.querySelector('#successModal .prep-section');
+  return el ? el.outerHTML : '';
+}
+
+// ── ป็อปอัป "ขั้นตอนการเข้ารับบริการ" (ปุ่มลอยด้านบน) ──
+function openFlowModal() {
+  const html = flowSectionHtml();
+  const body = document.getElementById('flowModalBody');
+  if (!html || !body) return;
+  body.innerHTML = html;
+  document.getElementById('flowModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFlowModal() {
+  document.getElementById('flowModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function closeFlowOutside(e) {
+  if (e.target && e.target.id === 'flowModal') closeFlowModal();
+}
+
+// พิมพ์เฉพาะขั้นตอน — โครงเดียวกับ printPrepOnly() ทุกประการ (collectPrepCss() เก็บกฎ .flow- ให้แล้ว)
+function printFlowOnly() {
+  let src = flowSectionHtml();
+  if (!src) return;
+  // หน้าต่างที่เปิดด้วย window.open('') มี base URL เป็น about:blank → src แบบ relative จะหาไฟล์ไม่เจอ
+  // ต้องแทนด้วย URL เต็มที่เบราว์เซอร์แปลงให้แล้วใน DOM จริง
+  const imgEl = document.querySelector('#successModal .flow-section img');
+  if (imgEl) src = src.replace('src="service_steps.jpg"', 'src="' + imgEl.src + '"');
+  const w = window.open('', '_blank');
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
+    return;
+  }
+  w.document.write('<!DOCTYPE html><html><head>'
+    + '<meta charset="utf-8"><title>ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
+    + '<style>'
+    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:0 auto;max-width:720px}'
+    + collectPrepCss()
+    + '.prep-section,.flow-section{page-break-before:auto!important;break-before:auto!important;margin:0!important}'
+    + '@page{margin:12mm}'
+    + '</style></head><body>'
+    + src
+    + '<' + 'script>window.onload=function(){window.print();}<\/' + 'script>'
+    + '</body></html>');
+  w.document.close();
 }
 
 function openPrepModal() {
-  const html = prepBundleHtml();
+  const html = prepSectionHtml();
   const body = document.getElementById('prepModalBody');
   if (!html || !body) return;
   body.innerHTML = html;
@@ -7036,7 +7094,7 @@ function closePrepOutside(e) {
 // (ใช้ window.print() ตรงๆ ไม่ได้ เพราะจะพิมพ์ทั้งหน้าฟอร์มออกมาด้วย)
 // วิธีปิดเอกสาร/สั่งพิมพ์ให้ตรงกับ printStaffSummary() เป๊ะ (ผ่านการทดสอบพิมพ์จริงกับผู้ใช้มาแล้ว)
 function printPrepOnly() {
-  const src = prepBundleHtml();
+  const src = prepSectionHtml();
   if (!src) return;
   const w = window.open('', '_blank');
   // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
@@ -7496,34 +7554,11 @@ function printStaffSummary() {
     </div>
     <div class="modal-summary" id="modalSummaryCard"></div>
 
-    <!-- ─── ขั้นตอนการเข้ารับบริการ (จากใบของหน่วย ฉบับล่าสุด 2026-08-28) ─── -->
+    <!-- ─── ขั้นตอนการเข้ารับบริการ — ใช้ภาพจากใบต้นฉบับของหน่วยตรงๆ (เจ้าของสั่ง 2026-08-29) ─── -->
     <div class="flow-section">
       <div class="flow-box">
-        <div class="flow-title">🧭 ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี</div>
-        <ol class="flow-list">
-          <li><span class="flow-n">1</span><span>ลงทะเบียนและคัดกรอง <span class="flow-where">— สว. ชั้น 1</span></span></li>
-          <li><span class="flow-n">2</span><span>ให้ข้อมูลโปรแกรม <span class="flow-where">— สว. ชั้น 1</span></span></li>
-          <li><span class="flow-n">3</span><span>ประเมินสัญญาณชีพ <span class="flow-where">— สว. ชั้น 1</span></span></li>
-          <li><span class="flow-n">4</span><span>เจาะเลือด <span class="flow-where">— สว. ชั้น 1</span></span></li>
-          <li><span class="flow-n">5</span><span><strong>ตรวจตามขั้นตอนโปรแกรม</strong>
-            <ul class="flow-sub">
-            <li><span class="flow-n">5.1</span><span>เอกซเรย์ปอด <span class="flow-where">— สว. ชั้น 2</span></span></li>
-            <li><span class="flow-n">5.2</span><span>อัลตราซาวด์ช่องท้อง <span class="flow-where">— สว. ชั้น 1 ห้องเบอร์ 7</span></span></li>
-            <li><span class="flow-n">5.3</span><span>คลื่นไฟฟ้าหัวใจ <span class="flow-where">— สว. ชั้น 1 (ข้างห้องเจาะเลือด)</span></span></li>
-            </ul>
-            <div class="flow-extra-label">กรณีซื้อตรวจเพิ่ม</div>
-            <ul class="flow-sub">
-            <li><span class="flow-n">5.4</span><span>วัดองค์ประกอบร่างกาย <span class="flow-where">— สว. ชั้น 1</span></span></li>
-            <li><span class="flow-n">5.5</span><span>ตรวจภายใน <span class="flow-where">— ห้องนรีเวช เบอร์ 2 (จ–ศ) · คลินิกเฉพาะทาง (อา)</span></span></li>
-            <li><span class="flow-n">5.6</span><span>ตรวจมวลกระดูก <span class="flow-where">— ชั้นใต้ดิน (จ–ศ)</span></span></li>
-            <li><span class="flow-n">5.7</span><span>ตรวจมะเร็งเต้านม <span class="flow-where">— สว. ชั้น 2 (ช่วงบ่าย จ–ศ)</span></span></li>
-            </ul>
-          </span></li>
-          <li><span class="flow-n">6</span><span>คืนเอกสารและรอพบแพทย์</span></li>
-          <li><span class="flow-n">7</span><span>จุดจำหน่าย <span class="flow-where">— สว. ชั้น 1</span></span></li>
-          <li><span class="flow-n">8</span><span>การเงิน <span class="flow-where">— สว. ชั้น 1</span></span></li>
-          <li><span class="flow-n">9</span><span>ฉีดวัคซีน <span class="flow-where">(วัคซีนสามารถปรึกษาขณะพบแพทย์)</span></span></li>
-        </ol>
+        <img src="service_steps.jpg" class="flow-img" alt="ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี หน่วยคลินิกตรวจสุขภาพ ศูนย์บริการทางการแพทย์ชั้นเลิศ">
+        <div class="flow-pdf"><a href="service_steps.pdf" target="_blank" rel="noopener">📄 เปิดไฟล์ PDF ต้นฉบับ (ขยายดูชัดขึ้น)</a></div>
       </div>
     </div>
 
@@ -7748,6 +7783,11 @@ function printStaffSummary() {
 </div>
 
 
+<!-- ─── Service Steps Floating Button (อยู่เหนือปุ่มคำแนะนำ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
+<button class="flow-fab" onclick="openFlowModal()" title="ดูขั้นตอนการเข้ารับบริการตรวจสุขภาพ">
+  🧭 <span>ขั้นตอนการเข้ารับบริการ</span>
+</button>
+
 <!-- ─── Prep Instructions Floating Button (ผู้รับบริการ) ─── -->
 <button class="prep-fab" onclick="openPrepModal()" title="ดูคำแนะนำการเตรียมตัวก่อนตรวจสุขภาพ">
   📋 <span>คำแนะนำก่อนตรวจ</span>
@@ -7757,6 +7797,24 @@ function printStaffSummary() {
 <button class="staff-fab" onclick="openStaffSearch()" title="ค้นหาใบสรุปผู้ลงทะเบียน">
   🔍 <span>ค้นหาใบสรุป</span>
 </button>
+
+<!-- ─── ป็อปอัปขั้นตอนการเข้ารับบริการ (แยกจากคำแนะนำก่อนตรวจ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
+<div class="modal-overlay" id="flowModal" style="display:none" onclick="closeFlowOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">🧭 ขั้นตอนการเข้ารับบริการ</div>
+        <div class="modal-subtitle">ตรวจสุขภาพประจำปี — หน่วยคลินิกตรวจสุขภาพ SMC</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeFlowModal()" title="ปิด">✕</button>
+    </div>
+    <div id="flowModalBody"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn-modal-print" onclick="printFlowOnly()">🖨 พิมพ์ขั้นตอน</button>
+      <button type="button" class="btn-modal-close" onclick="closeFlowModal()">ปิด</button>
+    </div>
+  </div>
+</div>
 
 <!-- ─── ป็อปอัปคำแนะนำก่อนตรวจ (ผู้รับบริการเปิดดูเองได้ตลอด ไม่ต้องลงทะเบียนก่อน) ─── -->
 <div class="modal-overlay" id="prepModal" style="display:none" onclick="closePrepOutside(event)">
