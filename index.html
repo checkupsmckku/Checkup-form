@@ -6864,10 +6864,10 @@ function showSuccessModal(data) {
   const modalTitle = document.getElementById('modalMainTitle')?.textContent || 'ส่งแบบฟอร์มเรียบร้อยแล้ว!';
   // ระบุ #successModal ให้ชัด — หลัง 2026-08-18 มี .prep-section สำเนาอยู่ในใบสรุปเจ้าหน้าที่
   // และป็อปอัปคำแนะนำของผู้ป่วยด้วย ถ้าใช้ selector กว้างๆ อาจหยิบสำเนาแทนตัวต้นฉบับ
-  const prepEl = document.querySelector('#successModal .prep-section');
+  const prepBundle = prepBundleHtml();
   try { sessionStorage.setItem('regSummaryHtml', html); } catch(e) {}
   try { sessionStorage.setItem('regSummaryTitle', modalTitle); } catch(e) {}
-  try { sessionStorage.setItem('regPrepHtml', prepEl ? prepEl.outerHTML : ''); } catch(e) {}
+  try { sessionStorage.setItem('regPrepHtml', prepBundle); } catch(e) {}
   // ใช้ชื่อหลังแก้ไข (โหมด HN) ถ้ามี — ให้หน้าแบบประเมินแสดงชื่อตรงกับที่บันทึกลงชีตจริง
   // ส่งวันที่นัดหมายต่อให้ survey.html ด้วย เพื่อบันทึกลงชีต 'แบบประเมิน' (เพิ่ม 2026-08-18)
   try { sessionStorage.setItem('regServiceDate', data.serviceDate || document.getElementById('serviceDate')?.value || ''); } catch(e) {}
@@ -7002,11 +7002,22 @@ function closeProgDetailOutside(e) {
 
 // ─── ป็อปอัปคำแนะนำก่อนตรวจ สำหรับผู้รับบริการ ────────────────────────────────
 // เนื้อหายกมาจากบล็อกต้นฉบับใน #successModal ตอนเปิด (ไม่ก๊อปข้อความมาเขียนซ้ำ)
+// ── ชุดคำแนะนำที่ผู้รับบริการต้องเห็น = กล่อง "ขั้นตอนการเข้ารับบริการ" + "การเตรียมตัวก่อนตรวจ" ──
+// เพิ่ม 2026-08-29: เดิมทุกจุดหยิบเฉพาะ .prep-section ทำให้กล่องขั้นตอนที่เพิ่งเพิ่มโผล่แค่ในใบสรุป
+// หลังกดส่งฟอร์มเท่านั้น — ปุ่มลอย "คำแนะนำก่อนตรวจ" / หน้าแบบประเมิน / หน้าพิมพ์ ไม่เห็นเลย
+// ⚠ ถ้าเพิ่มบล็อกคำแนะนำใหม่อีกในอนาคต ให้เติมที่นี่ที่เดียว ทุกจุดจะได้ตามไปเอง
+function prepBundleHtml() {
+  const flow = document.querySelector('#successModal .flow-section');
+  const prep = document.querySelector('#successModal .prep-section');
+  if (!prep) return '';
+  return (flow ? flow.outerHTML : '') + prep.outerHTML;
+}
+
 function openPrepModal() {
-  const src = document.querySelector('#successModal .prep-section');
+  const html = prepBundleHtml();
   const body = document.getElementById('prepModalBody');
-  if (!src || !body) return;
-  body.innerHTML = src.outerHTML;
+  if (!html || !body) return;
+  body.innerHTML = html;
   document.getElementById('prepModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
@@ -7025,7 +7036,7 @@ function closePrepOutside(e) {
 // (ใช้ window.print() ตรงๆ ไม่ได้ เพราะจะพิมพ์ทั้งหน้าฟอร์มออกมาด้วย)
 // วิธีปิดเอกสาร/สั่งพิมพ์ให้ตรงกับ printStaffSummary() เป๊ะ (ผ่านการทดสอบพิมพ์จริงกับผู้ใช้มาแล้ว)
 function printPrepOnly() {
-  const src = document.querySelector('#successModal .prep-section');
+  const src = prepBundleHtml();
   if (!src) return;
   const w = window.open('', '_blank');
   // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
@@ -7042,10 +7053,10 @@ function printPrepOnly() {
     // หน้าต่างนี้มี "บล็อกคำแนะนำ" อยู่อย่างเดียว จึงต้องล้างกฎขึ้นหน้าใหม่ที่ยกมาจาก @media print
     // ของหน้าเว็บ (ที่นั่นหน้าแรกเป็นใบสรุป คำแนะนำจึงต้องขึ้นหน้าใหม่) ถ้าไม่ล้าง จะได้หน้าเปล่านำ 1 หน้า
     // → รวมเป็น 2 หน้าทั้งที่เนื้อหาพอดีหน้าเดียว
-    + '.prep-section{page-break-before:auto!important;break-before:auto!important;margin:0!important}'
+    + '.prep-section,.flow-section{page-break-before:auto!important;break-before:auto!important;margin:0!important}'
     + '@page{margin:12mm}'
     + '</style></head><body>'
-    + src.outerHTML
+    + src
     + '<script>window.onload=function(){window.print();}<\/script>'
     + '</body></html>');
   w.document.close();
@@ -7378,7 +7389,7 @@ function showStaffSummary(idx) {
 // ทำแบบนี้แทนการก๊อป CSS ไปแปะ เพราะกฎชุดนี้มี 50+ ข้อและถูกแก้บ่อย — ดึงสดจึงไม่มีวันตกรุ่น
 function collectPrepCss() {
   var out = '';
-  var wanted = /\.prep-|\.contact-mini-card|\.female-only-card|\.sr-prep-wrap/;
+  var wanted = /\.flow-|\.prep-|\.contact-mini-card|\.female-only-card|\.sr-prep-wrap/;
   var sheets = document.styleSheets;
   for (var i = 0; i < sheets.length; i++) {
     var rules;
