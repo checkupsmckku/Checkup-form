@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>กระดานบันทึกสถิติบริการหน้าเคาน์เตอร์ | Checkup SMC KKU</title>
+<title>กระดานบันทึกสถิติบริการ check up SMC | Checkup SMC KKU</title>
 <style>
   :root {
     --primary: #2D3481;
@@ -223,7 +223,7 @@
 <div id="gateScreen">
   <div class="gate-wrap">
     <div class="card">
-      <h1>กระดานบันทึกสถิติบริการหน้าเคาน์เตอร์</h1>
+      <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
       <p class="muted">Checkup SMC KKU — ไม่เก็บชื่อ / HN / เลขบัตรประชาชน หรือข้อมูลระบุตัวผู้รับบริการใด ๆ</p>
 
       <div id="gateStepKey">
@@ -247,7 +247,7 @@
   <header class="topbar">
     <div class="wrap">
       <div>
-        <h1>สถิติบริการหน้าเคาน์เตอร์</h1>
+        <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
         <div>จุดบริการ: <span class="point-name" id="hdrPointName"></span></div>
       </div>
       <button class="btn secondary small no-print" id="btnChangePoint">เปลี่ยนจุดบริการ</button>
@@ -263,6 +263,11 @@
     <!-- ---------- TAB: บันทึกบริการ ---------- -->
     <section id="tabLog">
       <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ 0 คน · ยอดเงินรวม 0 บาท</div>
+
+      <div id="editBanner" class="warning-box" hidden style="margin-bottom:10px;">
+        ✏️ กำลังแก้ไขรายการเวลา <b id="editBannerTime"></b>
+        <button type="button" class="btn small secondary no-print" id="btnCancelEdit" style="margin-left:8px;">ยกเลิกการแก้ไข</button>
+      </div>
 
       <form id="logForm" class="card">
         <!-- ตรวจสุขภาพ -->
@@ -282,7 +287,29 @@
             <label class="opt-btn"><input type="radio" name="gender" value="female"> หญิง</label>
           </div>
 
-          <label class="opt-btn" style="margin-top:10px;"><input type="checkbox" id="chkPap"> Pap smear (+200 บาท)</label>
+          <div id="pelvicSection" style="margin-top:10px;" hidden>
+            <label class="field-label">ตรวจภายใน</label>
+            <div class="row" id="pelvicButtons">
+              <label class="opt-btn"><input type="radio" name="pelvic" value="no" checked> ไม่ตรวจภายใน</label>
+              <label class="opt-btn"><input type="radio" name="pelvic" value="pap"> Pap smear <span class="opt-price" data-pelvic="pap"></span></label>
+              <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep"> Thinprep <span class="opt-price" data-pelvic="thinprep"></span></label>
+              <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep_hpv"> Thinprep + HPV <span class="opt-price" data-pelvic="thinprep_hpv"></span></label>
+            </div>
+          </div>
+
+          <label class="field-label" for="patientName" style="margin-top:10px;">ชื่อ-นามสกุลผู้รับบริการ (ไม่บังคับ)</label>
+          <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
+
+          <label class="field-label" for="patientHn">HN (ไม่บังคับ)</label>
+          <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
+
+          <label class="field-label" for="deliveryMethod">ช่องทางรับผล (ไม่บังคับ)</label>
+          <select id="deliveryMethod">
+            <option value="">ไม่ระบุ</option>
+            <option value="รอรับด้วยตนเอง">รอรับด้วยตนเอง</option>
+            <option value="ส่งทางไปรษณีย์">ส่งทางไปรษณีย์</option>
+            <option value="ส่งทาง E-mail">ส่งทาง E-mail</option>
+          </select>
 
           <details class="list-fold" id="extrasDetails">
             <summary>ตรวจเพิ่ม (เลือกแล้ว <span id="extrasCount">0</span> รายการ) ▸</summary>
@@ -372,7 +399,8 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwiIHjTJ49hoYav3y
    ========================================================================= */
 var PRICE_DEFAULTS = {
   DF: 200, PE: 200, NEEDLE: 24, MARKUP_PERCENT: 10,
-  PAP: 200, MEDCERT_FIRST: 120, MEDCERT_NEXT: 20
+  PAP: 200, PAP_THINPREP: 700, PAP_THINPREP_HPV: 2020,
+  MEDCERT_FIRST: 120, MEDCERT_NEXT: 20
 };
 
 var PROGRAMS_DEFAULT = {
@@ -497,13 +525,19 @@ function calcVaccineTotal(vaccineCodes, checkupChecked, vaccinesData, priceConst
   return base + Math.round(base * markup / 100);
 }
 
-function calcCheckupTotal(program, gender, pap, programsData, priceConsts) {
+/* pelvic: 'no' | 'pap' | 'thinprep' | 'thinprep_hpv' — ราคาต้องอ่านจาก priceConsts (STATE.prices) เสมอ ห้ามใช้เลขตายตัว
+   gender ที่นี่ยังเป็นค่าโดเมนของ DOM ('male'/'female') ไม่ใช่ภาษาไทย — แปลงเป็นไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น */
+function calcCheckupTotal(program, gender, pelvic, programsData, priceConsts) {
   if (!program || !gender) return 0;
   var key = (gender === 'male') ? 'male' : 'female';
   var progRow = programsData ? programsData[program] : null;
   var progPrice = (progRow && typeof progRow[key] === 'number') ? progRow[key] : 0;
-  var papPrice = (priceConsts && typeof priceConsts.PAP === 'number') ? priceConsts.PAP : PRICE_DEFAULTS.PAP;
-  return progPrice + (pap ? papPrice : 0);
+  var pelvicPriceCode = (pelvic === 'pap') ? 'PAP' : (pelvic === 'thinprep') ? 'PAP_THINPREP' : (pelvic === 'thinprep_hpv') ? 'PAP_THINPREP_HPV' : null;
+  var pelvicPrice = 0;
+  if (pelvicPriceCode) {
+    pelvicPrice = (priceConsts && typeof priceConsts[pelvicPriceCode] === 'number') ? priceConsts[pelvicPriceCode] : (PRICE_DEFAULTS[pelvicPriceCode] || 0);
+  }
+  return progPrice + pelvicPrice;
 }
 
 function calcExtraTotal(testIds, testsData) {
@@ -538,8 +572,14 @@ var STATE = {
   prices: Object.assign({}, PRICE_DEFAULTS),
   programs: PROGRAMS_DEFAULT,
   vaccines: VACCINES_DEFAULT,
-  tests: TESTS_DEFAULT
+  tests: TESTS_DEFAULT,
+  editingId: '' // recordId ที่กำลังแก้ไขอยู่ ('' = โหมดบันทึกรายใหม่ปกติ)
 };
+
+/* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
+   (ค่าที่ Apps Script เทียบอยู่คือ 'ชาย'/'หญิง' — เดิมส่ง 'female' ตรง ๆ ทำให้ยอดตรวจสุขภาพเป็น 0 เงียบ ๆ) */
+function genderToThai(g) { return g === 'male' ? 'ชาย' : (g === 'female' ? 'หญิง' : ''); }
+function genderFromThai(g) { return g === 'ชาย' ? 'male' : (g === 'หญิง' ? 'female' : ''); }
 
 /* =========================================================================
    5. เรียก API
@@ -724,6 +764,10 @@ function getSelectedGender() {
   var el = document.querySelector('input[name="gender"]:checked');
   return el ? el.value : '';
 }
+function getSelectedPelvic() {
+  var el = document.querySelector('input[name="pelvic"]:checked');
+  return el ? el.value : 'no';
+}
 function getCheckedExtraIds() {
   var out = [];
   document.querySelectorAll('#extrasList input[type="checkbox"]:checked').forEach(function (cb) {
@@ -773,6 +817,29 @@ function updateProgramLabels() {
   });
 }
 
+/* เพศชาย หรือ ยังไม่ติ๊กตรวจสุขภาพ ต้องห้ามเลือกตรวจภายในเด็ดขาด — ซ่อนบล็อกทั้งก้อนด้วย [hidden] จริง ๆ
+   และ "รีเซ็ตค่ากลับเป็น no จริง ๆ" (ไม่ใช่แค่ซ่อนด้วย CSS) กันบั๊กพันธุ์เดียวกับที่เคยเกิดใน index.html
+   ที่ค่าซึ่งมองไม่เห็นถูกส่งขึ้นชีตต่อ */
+function updatePelvicSection(checkupOn, gender) {
+  var section = qs('pelvicSection');
+  if (!section) return;
+  var show = !!(checkupOn && gender === 'female');
+  section.hidden = !show;
+  if (!show) {
+    document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === 'no'); });
+  }
+}
+
+function updatePelvicPriceLabels() {
+  ['pap', 'thinprep', 'thinprep_hpv'].forEach(function (code) {
+    var el = document.querySelector('.opt-price[data-pelvic="' + code + '"]');
+    if (!el) return;
+    var priceCode = (code === 'pap') ? 'PAP' : (code === 'thinprep') ? 'PAP_THINPREP' : 'PAP_THINPREP_HPV';
+    var price = (STATE.prices && typeof STATE.prices[priceCode] === 'number') ? STATE.prices[priceCode] : PRICE_DEFAULTS[priceCode];
+    el.textContent = '(+' + money(price) + ' บ.)';
+  });
+}
+
 function updateVaccinePriceBanner(checkupOn) {
   var banner = qs('vaccinePriceBanner');
   if (!banner) return;
@@ -811,7 +878,10 @@ function recalcTotals() {
   var checkupOn = qs('chkCheckup').checked;
   var program = checkupOn ? getSelectedProgram() : '';
   var gender = checkupOn ? getSelectedGender() : '';
-  var pap = checkupOn && qs('chkPap').checked;
+
+  updatePelvicSection(checkupOn, gender); // ซ่อน/แสดง + บังคับ 'no' จริงเมื่อไม่ควรเลือกได้ (ชาย/ไม่ตรวจสุขภาพ)
+  var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
+
   var extraIds = checkupOn ? getCheckedExtraIds() : [];
 
   var vaccineOn = qs('chkVaccine').checked;
@@ -822,7 +892,7 @@ function recalcTotals() {
   var nDriver = medOn ? (parseInt(qs('medCertDriver').value, 10) || 0) : 0;
   var nCert = n5 + nDriver;
 
-  var checkupTotal = calcCheckupTotal(program, gender, pap, STATE.programs, STATE.prices);
+  var checkupTotal = calcCheckupTotal(program, gender, pelvic, STATE.programs, STATE.prices);
   var extraTotal = calcExtraTotal(extraIds, STATE.tests);
   var vaccineTotal = calcVaccineTotal(vaccineCodes, checkupOn, STATE.vaccines, STATE.prices);
   var medCertTotal = calcMedCertTotal(nCert, STATE.prices);
@@ -839,6 +909,7 @@ function recalcTotals() {
 
   updateVaccinePriceBanner(checkupOn);
   updateProgramLabels();
+  updatePelvicPriceLabels();
 
   validateForm({ checkupOn: checkupOn, program: program, gender: gender, vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert, extraIds: extraIds });
 
@@ -849,9 +920,12 @@ function onChkCheckupChange() {
   var on = qs('chkCheckup').checked;
   qs('checkupBody').hidden = !on;
   if (!on) {
-    qs('chkPap').checked = false;
     document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = false; });
     document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = false; });
+    document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === 'no'); });
+    qs('patientName').value = '';
+    qs('patientHn').value = '';
+    qs('deliveryMethod').value = '';
   }
   applyExtrasFilter();
   recalcTotals();
@@ -881,11 +955,73 @@ function resetLogForm() {
   qs('checkupBody').hidden = true;
   qs('vaccineBody').hidden = true;
   qs('medCertBody').hidden = true;
+  document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === 'no'); });
+  qs('patientName').value = '';
+  qs('patientHn').value = '';
+  qs('deliveryMethod').value = '';
   document.querySelectorAll('#extrasList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
   applyExtrasFilter();
   applyVaccineFilter();
+  exitEditMode();
   recalcTotals();
+}
+
+/* =========================================================================
+   7.1 โหมดแก้ไขบันทึกที่ลงไปแล้ว
+   ========================================================================= */
+function exitEditMode() {
+  STATE.editingId = '';
+  qs('btnSubmitLog').textContent = 'บันทึก';
+  qs('editBanner').hidden = true;
+}
+
+function enterEditMode(rec) {
+  STATE.editingId = rec.recordId;
+
+  var hasCheckup = !!rec.program;
+  qs('chkCheckup').checked = hasCheckup;
+  qs('checkupBody').hidden = !hasCheckup;
+  document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = hasCheckup && (r.value === String(rec.program)); });
+  var genderVal = genderFromThai(rec.gender);
+  document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = hasCheckup && (r.value === genderVal); });
+
+  updatePelvicSection(hasCheckup, genderVal);
+  document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
+
+  qs('patientName').value = rec.patientName || '';
+  qs('patientHn').value = rec.patientHn || '';
+  qs('deliveryMethod').value = rec.deliveryMethod || '';
+
+  var extraIds = (rec.extraIds || []).map(String);
+  document.querySelectorAll('#extrasList input[type="checkbox"]').forEach(function (cb) {
+    cb.checked = extraIds.indexOf(cb.value) !== -1;
+  });
+
+  var vaccineCodes = rec.vaccineCodes || [];
+  var vaccineOn = vaccineCodes.length > 0;
+  qs('chkVaccine').checked = vaccineOn;
+  qs('vaccineBody').hidden = !vaccineOn;
+  document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) {
+    cb.checked = vaccineCodes.indexOf(cb.value) !== -1;
+  });
+
+  var medOn = (rec.medCertCount || 0) > 0;
+  qs('chkMedCert').checked = medOn;
+  qs('medCertBody').hidden = !medOn;
+  qs('medCert5').value = rec.medCert5 || 0;
+  qs('medCertDriver').value = rec.medCertDriver || 0;
+
+  applyExtrasFilter();
+  applyVaccineFilter();
+  recalcTotals();
+
+  qs('btnSubmitLog').textContent = 'บันทึกการแก้ไข';
+  qs('editBannerTime').textContent = rec.time || '';
+  qs('editBanner').hidden = false;
+
+  qs('logForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast('กำลังแก้ไขรายการ — แก้ค่าที่ต้องการแล้วกด "บันทึกการแก้ไข"');
 }
 
 function onSubmitLog(e) {
@@ -895,37 +1031,46 @@ function onSubmitLog(e) {
 
   var checkupOn = qs('chkCheckup').checked;
   var program = checkupOn ? getSelectedProgram() : '';
-  var gender = checkupOn ? getSelectedGender() : '';
-  var pap = checkupOn && qs('chkPap').checked;
+  var genderDom = checkupOn ? getSelectedGender() : '';
+  var gender = genderToThai(genderDom); // ชีตต้องเก็บภาษาไทยเสมอ ('ชาย'/'หญิง') ไม่ใช่ 'male'/'female'
+  var pelvic = (checkupOn && genderDom === 'female') ? getSelectedPelvic() : 'no';
   var extraIds = checkupOn ? getCheckedExtraIds() : [];
   var vaccineCodes = qs('chkVaccine').checked ? getCheckedVaccineCodes() : [];
   var medOn = qs('chkMedCert').checked;
   var medCert5 = medOn ? (parseInt(qs('medCert5').value, 10) || 0) : 0;
   var medCertDriver = medOn ? (parseInt(qs('medCertDriver').value, 10) || 0) : 0;
+  var patientName = checkupOn ? (qs('patientName').value || '').trim() : '';
+  var patientHn = checkupOn ? (qs('patientHn').value || '').trim() : '';
+  var deliveryMethod = checkupOn ? (qs('deliveryMethod').value || '') : '';
 
+  var isEdit = !!STATE.editingId;
   var payload = {
     staffKey: STATE.staffKey,
     point: STATE.point,
     program: program,
     gender: gender,
-    pap: !!pap,
+    pelvic: pelvic,
+    patientName: patientName,
+    patientHn: patientHn,
+    deliveryMethod: deliveryMethod,
     tests: extraIds,
     vaccines: vaccineCodes,
     medCert5: medCert5,
     medCertDriver: medCertDriver
   };
+  if (isEdit) payload.recordId = STATE.editingId;
 
   btn.disabled = true;
-  btn.textContent = 'กำลังบันทึก...';
+  btn.textContent = isEdit ? 'กำลังบันทึกการแก้ไข...' : 'กำลังบันทึก...';
   qs('formError').hidden = true;
 
-  apiCall('log', payload).then(function (resp) {
-    btn.textContent = 'บันทึก';
+  apiCall(isEdit ? 'edit' : 'log', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
-      showToast('✔ บันทึกสำเร็จ');
-      resetLogForm();
+      showToast(isEdit ? '✔ บันทึกการแก้ไขสำเร็จ' : '✔ บันทึกสำเร็จ');
+      resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
       loadToday();
     } else {
+      btn.textContent = isEdit ? 'บันทึกการแก้ไข' : 'บันทึก';
       var errEl = qs('formError');
       errEl.textContent = '❌ ' + ((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่');
       errEl.hidden = false;
@@ -944,10 +1089,13 @@ function todayStr() {
 function summarizeRecordText(rec) {
   var parts = [];
   if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
-  if (rec.pap) parts.push('Pap smear');
+  if (rec.pelvicLabel) parts.push(rec.pelvicLabel);
   if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
   if (rec.vaccineCount) parts.push('วัคซีน ' + rec.vaccineCount + ' เข็ม');
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
+  if (rec.patientName || rec.patientHn) {
+    parts.push('ผู้รับบริการ: ' + [rec.patientName, rec.patientHn].filter(Boolean).join(' / '));
+  }
   return parts.length ? parts.join(' · ') : '-';
 }
 
@@ -955,7 +1103,10 @@ function recordGrandTotal(rec) {
   return (rec && rec.totals && typeof rec.totals.grand === 'number') ? rec.totals.grand : 0;
 }
 
+var LAST_TODAY_RECORDS = []; // เก็บผลลัพธ์ today ล่าสุดไว้ใช้ตอนกด "แก้ไข" (ไม่ต้องยิง API ซ้ำ)
+
 function renderTodayList(records) {
+  LAST_TODAY_RECORDS = records || [];
   var wrap = qs('todayList');
   wrap.innerHTML = '';
   if (!records || records.length === 0) {
@@ -977,7 +1128,8 @@ function renderTodayList(records) {
     if (cancelled) {
       html += '<div class="cancelled-tag">ยกเลิกแล้ว</div>';
     } else {
-      html += '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '" style="margin-top:6px;">ยกเลิก</button>';
+      html += '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '" style="margin-top:6px;">แก้ไข</button> ' +
+        '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '" style="margin-top:6px;">ยกเลิก</button>';
     }
     div.innerHTML = html;
     wrap.appendChild(div);
@@ -986,8 +1138,20 @@ function renderTodayList(records) {
   wrap.querySelectorAll('button[data-record-id]').forEach(function (btn) {
     btn.addEventListener('click', function () { onCancelRecord(btn.getAttribute('data-record-id'), btn); });
   });
+  wrap.querySelectorAll('button[data-edit-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onEditRecordClick(btn.getAttribute('data-edit-id')); });
+  });
 
   qs('todaySummaryBar').textContent = 'วันนี้ให้บริการ ' + totalPeople + ' คน · ยอดเงินรวม ' + money(totalMoney) + ' บาท';
+}
+
+function onEditRecordClick(recordId) {
+  var rec = null;
+  for (var i = 0; i < LAST_TODAY_RECORDS.length; i++) {
+    if (LAST_TODAY_RECORDS[i].recordId === recordId) { rec = LAST_TODAY_RECORDS[i]; break; }
+  }
+  if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชรายการวันนี้'); return; }
+  enterEditMode(rec);
 }
 
 function loadToday() {
@@ -1109,9 +1273,19 @@ function renderReport(summary) {
     var row = programs[String(p)] || {};
     html += '<tr><td>โปรแกรม ' + p + '</td><td>' + numOr0(row['ชาย']) + '</td><td>' + numOr0(row['หญิง']) + '</td></tr>';
   });
+  html += '</tbody></table></div>';
+
+  // ตรวจภายใน — แยกตามชนิด (summary.checkup.papByType: {pap, thinprep, thinprep_hpv}) + papMoney
+  var papByType = checkup.papByType || {};
+  var PELVIC_TYPE_LABELS = { pap: 'Pap smear', thinprep: 'Thinprep', thinprep_hpv: 'Thinprep + HPV' };
+  html += '<div class="scroll-x" style="margin-top:8px;"><table class="report-table"><thead><tr><th>ตรวจภายใน</th><th>จำนวน</th></tr></thead><tbody>';
+  ['pap', 'thinprep', 'thinprep_hpv'].forEach(function (code) {
+    html += '<tr><td>' + escHtml(PELVIC_TYPE_LABELS[code]) + '</td><td>' + numOr0(papByType[code]) + '</td></tr>';
+  });
   html += '</tbody></table></div>' +
-    '<div class="line" style="margin-top:8px;">จำนวน Pap smear: ' + numOr0(checkup.papCount) + ' ราย</div>' +
-    '<div class="line">ยอดเงินหมวดตรวจสุขภาพ: ' + money(numOr0(checkup.money)) + ' บาท</div></div>';
+    '<div class="line" style="margin-top:8px;">จำนวนตรวจภายในรวมทุกชนิด: ' + numOr0(checkup.papCount) + ' ราย</div>' +
+    '<div class="line">ยอดเงินตรวจภายใน: ' + money(numOr0(checkup.papMoney)) + ' บาท</div>' +
+    '<div class="line">ยอดเงินหมวดตรวจสุขภาพ (รวมตรวจภายใน): ' + money(numOr0(checkup.money)) + ' บาท</div></div>';
 
   // ตรวจเพิ่ม — summary.extra.items (object map), summary.extra.money
   var extra = summary.extra || {};
@@ -1197,16 +1371,17 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('chkCheckup').addEventListener('change', onChkCheckupChange);
   qs('chkVaccine').addEventListener('change', onChkVaccineChange);
   qs('chkMedCert').addEventListener('change', onChkMedCertChange);
-  qs('chkPap').addEventListener('change', recalcTotals);
   document.querySelectorAll('input[name="program"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
   document.querySelectorAll('input[name="gender"]').forEach(function (r) {
     r.addEventListener('change', function () { applyExtrasFilter(); recalcTotals(); });
   });
+  document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
   qs('medCert5').addEventListener('input', recalcTotals);
   qs('medCertDriver').addEventListener('input', recalcTotals);
   qs('extrasSearch').addEventListener('input', applyExtrasFilter);
   qs('vaccineSearch').addEventListener('input', applyVaccineFilter);
   qs('logForm').addEventListener('submit', onSubmitLog);
+  qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); });
 
   document.querySelectorAll('.tab-btn').forEach(function (b) {
     b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
