@@ -1926,6 +1926,14 @@
     .flow-section { padding: 10px 16px 0; }
     .flow-box { padding: 6px; }
     .flow-pdf { display: none; }   /* ลิงก์กดไม่ได้บนกระดาษ */
+    /* service_steps.jpg เป็นภาพยาว 970×2542 px (สูงกว่ากระดาษ A4 เกือบ 2 เท่า)
+       ถ้าปล่อยให้ width:100% ตามกฎบนจอ จะเรนเดอร์ออกมาสูง ~456 mm ในขณะที่หน้ากระดาษเหลือแค่ ~273 mm
+       และ **เบราว์เซอร์ตัดรูปข้ามหน้าไม่ได้** จึงดันรูปทั้งใบไปหน้าที่ 2 → หน้าแรกว่าง แล้วรูปยังโดนตัดท้ายอีก
+       (เจ้าของแจ้ง 2026-08-30 · วัดจริงด้วย harness/t23_print_blocks.js)
+       ⇒ จำกัดที่ "ความสูง" แล้วให้ความกว้างไหลตามสัดส่วนเอง = ได้ครบทั้งใบในหน้าเดียว
+       ⚠ 255mm เผื่อกรณีขอบหนาสุดไว้แล้ว (หน้าต่างพิมพ์เฉพาะขั้นตอนใช้ @page margin 12mm ⇒ เหลือ 273mm)
+         ถ้าเปลี่ยนรูปเป็นสัดส่วนอื่น ให้รัน t23 ตรวจซ้ำ */
+    .flow-img { max-height: 255mm; width: auto; max-width: 100%; margin: 0 auto; }
     .prep-section { padding: 10px 16px; font-size: 11px; }
     .prep-main-title { margin-bottom: 6px; padding: 8px 14px; }
     .prep-grid { gap: 8px; margin-bottom: 6px; }
@@ -7024,6 +7032,25 @@ function prepSectionHtml() {
   return el ? el.outerHTML : '';
 }
 
+// หน้าต่างที่เปิดด้วย window.open('') มี base URL เป็น about:blank → src แบบ relative หารูปไม่เจอ
+// (ชัดเจนมากตอนเปิดไฟล์แบบ file:// — รูปหายทั้งใบ) แก้โดยแทนด้วย URL เต็มที่เบราว์เซอร์
+// แปลงให้แล้วใน DOM จริง · ทำเป็นตัวเดียวใช้ร่วมกัน เพราะเดิมมีเฉพาะ printFlowOnly()
+// ส่วน printPrepOnly() ไม่มี ทั้งที่มีรูปกระป๋อง/กล่อง 2 ใบเหมือนกัน (พบ 2026-08-30)
+function absolutizeImgs(html, scopeSel) {
+  document.querySelectorAll(scopeSel + ' img').forEach(function (im) {
+    const raw = im.getAttribute('src');
+    if (!raw || /^(https?:|file:|data:|\/\/)/i.test(raw)) return;
+    html = html.split('src="' + raw + '"').join('src="' + im.src + '"');
+  });
+  return html;
+}
+
+// รีเซ็ตเดียวกับที่หน้าเว็บใช้ (บรรทัดแรกสุดของ <style>) — หน้าต่างพิมพ์เปิดมาเป็นเอกสารเปล่า
+// จึงไม่มีรีเซ็ตนี้ติดไปด้วย แล้วค่า default ของเบราว์เซอร์ก็โผล่กลับมา:
+// <figure> ได้ margin 1em 40px · <p>/<ol> ได้ระยะห่างของตัวเอง · box-sizing กลับเป็น content-box
+// ⇒ หน้าพิมพ์เพี้ยนไปจากที่เห็นบนจอทั้งที่ CSS ของบล็อกถูกยกไปครบแล้ว
+const PRINT_RESET_CSS = '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}';
+
 // ── ป็อปอัป "ขั้นตอนการเข้ารับบริการ" (ปุ่มลอยด้านบน) ──
 function openFlowModal() {
   const html = flowSectionHtml();
@@ -7047,10 +7074,7 @@ function closeFlowOutside(e) {
 function printFlowOnly() {
   let src = flowSectionHtml();
   if (!src) return;
-  // หน้าต่างที่เปิดด้วย window.open('') มี base URL เป็น about:blank → src แบบ relative จะหาไฟล์ไม่เจอ
-  // ต้องแทนด้วย URL เต็มที่เบราว์เซอร์แปลงให้แล้วใน DOM จริง
-  const imgEl = document.querySelector('#successModal .flow-section img');
-  if (imgEl) src = src.replace('src="service_steps.jpg"', 'src="' + imgEl.src + '"');
+  src = absolutizeImgs(src, '#successModal .flow-section');
   const w = window.open('', '_blank');
   if (!w) {
     showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
@@ -7060,6 +7084,7 @@ function printFlowOnly() {
     + '<meta charset="utf-8"><title>ขั้นตอนการเข้ารับบริการตรวจสุขภาพประจำปี</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>'
+    + PRINT_RESET_CSS
     + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:0 auto;max-width:720px}'
     + collectPrepCss()
     + '.prep-section,.flow-section{page-break-before:auto!important;break-before:auto!important;margin:0!important}'
@@ -7094,8 +7119,9 @@ function closePrepOutside(e) {
 // (ใช้ window.print() ตรงๆ ไม่ได้ เพราะจะพิมพ์ทั้งหน้าฟอร์มออกมาด้วย)
 // วิธีปิดเอกสาร/สั่งพิมพ์ให้ตรงกับ printStaffSummary() เป๊ะ (ผ่านการทดสอบพิมพ์จริงกับผู้ใช้มาแล้ว)
 function printPrepOnly() {
-  const src = prepSectionHtml();
+  let src = prepSectionHtml();
   if (!src) return;
+  src = absolutizeImgs(src, '#successModal .prep-section');
   const w = window.open('', '_blank');
   // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
   if (!w) {
@@ -7106,6 +7132,7 @@ function printPrepOnly() {
     + '<meta charset="utf-8"><title>การเตรียมตัวก่อนตรวจสุขภาพ</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>'
+    + PRINT_RESET_CSS
     + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:0 auto;max-width:720px}'
     + collectPrepCss()
     // หน้าต่างนี้มี "บล็อกคำแนะนำ" อยู่อย่างเดียว จึงต้องล้างกฎขึ้นหน้าใหม่ที่ยกมาจาก @media print
@@ -7447,7 +7474,12 @@ function showStaffSummary(idx) {
 // ทำแบบนี้แทนการก๊อป CSS ไปแปะ เพราะกฎชุดนี้มี 50+ ข้อและถูกแก้บ่อย — ดึงสดจึงไม่มีวันตกรุ่น
 function collectPrepCss() {
   var out = '';
-  var wanted = /\.flow-|\.prep-|\.contact-mini-card|\.female-only-card|\.sr-prep-wrap/;
+  // ⚠ นี่คือ "รายชื่อคลาสที่อนุญาต" ที่ต้องเติมเองทุกครั้งที่เพิ่มคลาสใหม่ในบล็อกคำแนะนำ/ขั้นตอน
+  //   ลืมเติม = กฎ CSS ของคลาสนั้นหายไปจากหน้าพิมพ์เงียบ ๆ ไม่มี error ให้เห็น
+  //   เจอมาแล้ว 2 ครั้ง: `.flow-` (2026-08-29) และ `.stool-` (2026-08-30 — รูปกระป๋อง/กล่อง
+  //   เก็บอุจจาระพิมพ์ออกมาที่ขนาดเต็มของไฟล์ 224×289 px และหลุด display:flex จนเรียงลงมาแทนที่จะอยู่ข้างกัน)
+  //   ⇒ harness/t23_print_blocks.js หมวด C ไล่ทุกคลาสในบล็อกให้แล้ว ถ้าหลุดจะ FAIL ทันที — รันด้วยทุกครั้งที่แก้บล็อกนี้
+  var wanted = /\.flow-|\.prep-|\.stool-|\.contact-mini-card|\.female-only-card|\.sr-prep-wrap/;
   var sheets = document.styleSheets;
   for (var i = 0; i < sheets.length; i++) {
     var rules;
