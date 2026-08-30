@@ -331,7 +331,8 @@
         <!-- ส่งตรวจพิเศษ (รอบ 4) — ติดตามการส่ง/กลับมาแล้วเท่านั้น ไม่คิดเงิน -->
         <label class="section-toggle"><input type="checkbox" id="chkSpecial"> ส่งตรวจพิเศษ (ติดตามการส่ง)</label>
         <div class="section-body" id="specialBody" hidden>
-          <p class="muted">ติ๊กเพื่อบันทึกว่าส่งไปตรวจแล้ว / กลับมาแล้วเท่านั้น — ไม่คิดเงิน ต้องกรอกชื่อ-นามสกุลและ HN ด้านบนด้วย</p>
+          <p class="muted">ติ๊กเพื่อบันทึกว่าส่งไปตรวจแล้ว / กลับมาแล้วเท่านั้น — ไม่คิดเงิน ต้องกรอกชื่อ-นามสกุลและ HN ด้านบนด้วย
+            · BMD และ MMG มีช่องติ๊กเพิ่ม "ส่ง line แล้ว" ก่อนช่อง "ส่งไปแล้ว"/"กลับมาแล้ว" (InBody มีแค่ 2 ช่องเดิม)</p>
           <div id="specialCheckupList"></div>
         </div>
 
@@ -374,6 +375,8 @@
           </div>
 
           <h3 style="margin:14px 0 4px;">ส่งตรวจเพิ่มเติม (ไม่คิดเงิน)</h3>
+          <p class="muted">ติ๊กเพื่อบันทึกสถานะการส่ง 3 ขั้นอิสระต่อกัน: "คีย์ consult แล้ว" → "ส่งไปแล้ว" → "กลับมาแล้ว" —
+            ไม่คิดเงิน ทั้ง 3 ช่องติ๊กเป็นอิสระจากกัน (ไม่มีติ๊กไหนบังคับติ๊กไหนอัตโนมัติ) <strong>ต้องกรอกชื่อ-นามสกุลและ HN ด้านบนของฟอร์มด้วย</strong></p>
           <div id="specialMedcertList"></div>
         </div>
 
@@ -497,14 +500,16 @@ var TESTS_DEFAULT = [
 var SERVICE_POINTS_DEFAULT = ['จุดบริการที่ 1'];
 
 // ส่งตรวจพิเศษ (รอบ 4) — ติดตามการส่ง/กลับมาแล้วเท่านั้น ไม่คิดเงินเลย
-// ⚠ ต้องตรงกับ SPECIAL_SENDS ใน สถิติบริการ.js เป๊ะทั้ง id/name/group/ลำดับ
+// ⚠ ต้องตรงกับ SPECIAL_SENDS ใน สถิติบริการ.js เป๊ะทั้ง id/name/group/prepLabel/ลำดับ
+// รอบ 5 (2026-08-30): เพิ่ม prepLabel — ป้ายของช่องติ๊กที่ 3 "การเตรียมส่ง" (คีย์ consult / ส่ง line)
+// prepLabel === null แปลว่ารายการนั้นไม่มีช่องติ๊กที่ 3 เลย (มีแค่ inbody)
 var SPECIAL_SENDS = [
-  { id: 'inbody', name: 'InBody (วิเคราะห์องค์ประกอบร่างกาย)', group: 'checkup' },
-  { id: 'bmd', name: 'BMD (ตรวจมวลกระดูก)', group: 'checkup' },
-  { id: 'mmg', name: 'MMG (แมมโมแกรม)', group: 'checkup' },
-  { id: 'vision3d', name: 'ตรวจสายตาสามมิติ', group: 'medcert' },
-  { id: 'ent', name: 'ตรวจหูคอจมูก', group: 'medcert' },
-  { id: 'ent_hearing', name: 'ตรวจหูคอจมูก + การได้ยิน', group: 'medcert' }
+  { id: 'inbody', name: 'InBody (วิเคราะห์องค์ประกอบร่างกาย)', group: 'checkup', prepLabel: null },
+  { id: 'bmd', name: 'BMD (ตรวจมวลกระดูก)', group: 'checkup', prepLabel: 'ส่ง line แล้ว' },
+  { id: 'mmg', name: 'MMG (แมมโมแกรม)', group: 'checkup', prepLabel: 'ส่ง line แล้ว' },
+  { id: 'vision3d', name: 'ตรวจสายตาสามมิติ', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
+  { id: 'ent', name: 'ตรวจหูคอจมูก', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
+  { id: 'ent_hearing', name: 'ตรวจหูคอจมูก + การได้ยิน', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' }
 ];
 
 // รายชื่อเจ้าหน้าที่ตั้งต้น — ใช้ก่อนโหลด config สำเร็จเท่านั้น หลังจากนั้นใช้รายชื่อจาก action=config (resp.staff) เสมอ
@@ -848,16 +853,21 @@ function buildVaccineList() {
   applyVaccineFilter();
 }
 
-/* ส่งตรวจพิเศษ (รอบ 4) — สร้างรายการจาก SPECIAL_SENDS คงที่ (ไม่ได้มาจาก config เหมือนวัคซีน/ตรวจเพิ่ม)
+/* ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5) — สร้างรายการจาก SPECIAL_SENDS คงที่ (ไม่ได้มาจาก config เหมือนวัคซีน/ตรวจเพิ่ม)
    แยก 2 กลุ่มลงคนละกล่อง: group 'checkup' -> #specialCheckupList, group 'medcert' -> #specialMedcertList
-   แต่ละรายการมี checkbox อิสระ 2 อัน: sp_sent_<id> (ส่งแล้ว) / sp_back_<id> (กลับมาแล้ว) */
+   แต่ละรายการมี checkbox อิสระสูงสุด 3 อัน (ซ้าย -> ขวา): sp_prep_<id> (การเตรียมส่ง — มีเฉพาะรายการที่ prepLabel ไม่ใช่ null)
+   / sp_sent_<id> (ส่งไปแล้ว) / sp_back_<id> (กลับมาแล้ว) */
 function buildSpecialRow(item) {
   var row = document.createElement('div');
   row.className = 'check-row special-row';
   row.setAttribute('data-special-id', item.id);
+  var prepHtml = (item.prepLabel != null)
+    ? '<label class="sp-check"><input type="checkbox" id="sp_prep_' + escHtml(item.id) + '"> ' + escHtml(item.prepLabel) + '</label>'
+    : '';
   row.innerHTML =
     '<span class="item-name">' + escHtml(item.name) + '</span>' +
-    '<label class="sp-check"><input type="checkbox" id="sp_sent_' + escHtml(item.id) + '"> ส่งแล้ว</label>' +
+    prepHtml +
+    '<label class="sp-check"><input type="checkbox" id="sp_sent_' + escHtml(item.id) + '"> ส่งไปแล้ว</label>' +
     '<label class="sp-check"><input type="checkbox" id="sp_back_' + escHtml(item.id) + '"> กลับมาแล้ว</label>';
   return row;
 }
@@ -872,7 +882,7 @@ function buildSpecialSendsUI() {
     if (!wrap) return;
     wrap.appendChild(buildSpecialRow(item));
   });
-  // ติ๊ก "กลับมาแล้ว" -> ต้องติ๊ก "ส่งแล้ว" ให้อัตโนมัติ · เอาติ๊ก "ส่งแล้ว" ออก -> "กลับมาแล้ว" ต้องหลุดตามด้วย
+  // ติ๊ก "กลับมาแล้ว" -> ต้องติ๊ก "ส่งไปแล้ว" ให้อัตโนมัติ · เอาติ๊ก "ส่งไปแล้ว" ออก -> "กลับมาแล้ว" ต้องหลุดตามด้วย
   SPECIAL_SENDS.forEach(function (item) {
     var sentCb = qs('sp_sent_' + item.id);
     var backCb = qs('sp_back_' + item.id);
@@ -883,6 +893,15 @@ function buildSpecialSendsUI() {
     });
     sentCb.addEventListener('change', function () {
       if (!sentCb.checked) backCb.checked = false;
+      recalcTotals();
+    });
+  });
+  // การเตรียมส่ง (รอบ 5) — ช่องติ๊กอิสระล้วน ๆ ไม่ผูกกับ "ส่งไปแล้ว"/"กลับมาแล้ว" ในทางใดทางหนึ่งเลย
+  // (คีย์/ส่ง line เป็นขั้นก่อนส่งจริงตามธรรมชาติ แต่บางครั้งพนักงานเตรียมไว้ก่อนโดยยังไม่ส่ง หรือส่งโดยไม่ได้คีย์ไว้ล่วงหน้า)
+  SPECIAL_SENDS.forEach(function (item) {
+    var prepCb = qs('sp_prep_' + item.id);
+    if (!prepCb) return;
+    prepCb.addEventListener('change', function () {
       recalcTotals();
     });
   });
@@ -900,9 +919,16 @@ function getSpecialBackIds() {
     return cb && cb.checked;
   }).map(function (item) { return item.id; });
 }
+function getSpecialPrepIds() {
+  return SPECIAL_SENDS.filter(function (item) {
+    var cb = qs('sp_prep_' + item.id);
+    return cb && cb.checked;
+  }).map(function (item) { return item.id; });
+}
 function clearSpecialGroup(group) {
   SPECIAL_SENDS.filter(function (item) { return item.group === group; }).forEach(function (item) {
-    var sentCb = qs('sp_sent_' + item.id), backCb = qs('sp_back_' + item.id);
+    var prepCb = qs('sp_prep_' + item.id), sentCb = qs('sp_sent_' + item.id), backCb = qs('sp_back_' + item.id);
+    if (prepCb) prepCb.checked = false;
     if (sentCb) sentCb.checked = false;
     if (backCb) backCb.checked = false;
   });
@@ -1010,12 +1036,12 @@ function validateForm(ctx) {
   var msg = '';
 
   var hasAnything = ctx.checkupOn || ctx.vaccineCodes.length > 0 || ctx.nCert > 0 ||
-                    ctx.labCount > 0 || ctx.labAmount > 0 || ctx.specialSentIds.length > 0;
+                    ctx.labCount > 0 || ctx.labAmount > 0 || ctx.specialSentIds.length > 0 || ctx.specialPrepIds.length > 0;
   if (!hasAnything) {
     msg = 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
   } else if (ctx.checkupOn && (!ctx.program || !ctx.gender)) {
     msg = 'ติ๊ก "ตรวจสุขภาพ" แล้วต้องเลือกโปรแกรมและเพศให้ครบก่อนบันทึก';
-  } else if (ctx.specialSentIds.length > 0 && (!ctx.patientName || !ctx.patientHn)) {
+  } else if ((ctx.specialSentIds.length > 0 || ctx.specialPrepIds.length > 0) && (!ctx.patientName || !ctx.patientHn)) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
   }
 
@@ -1050,9 +1076,10 @@ function recalcTotals() {
   var labAmount = medOn ? Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0) : 0;
 
   // ส่งตรวจพิเศษ — อ่านจาก checkbox จริงตรง ๆ (ไม่ผูกกับ chkSpecial/chkMedCert เพราะติ๊กถูกเคลียร์เองแล้วตอนปิดหมวด)
-  // ⚠ ห้ามเอา specialSentIds/specialBackIds เข้าสูตรเงินใด ๆ ทั้งสิ้น — ไม่คิดเงิน เป็นแค่ช่องติดตาม
+  // ⚠ ห้ามเอา specialSentIds/specialBackIds/specialPrepIds เข้าสูตรเงินใด ๆ ทั้งสิ้น — ไม่คิดเงิน เป็นแค่ช่องติดตาม
   var specialSentIds = getSpecialSentIds();
   var specialBackIds = getSpecialBackIds();
+  var specialPrepIds = getSpecialPrepIds();
 
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim();
@@ -1076,7 +1103,7 @@ function recalcTotals() {
   updateProgramLabels();
   updatePelvicPriceLabels();
 
-  validateForm({ checkupOn: checkupOn, program: program, gender: gender, vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert, extraIds: extraIds, labCount: labCount, labAmount: labAmount, specialSentIds: specialSentIds, patientName: patientName, patientHn: patientHn });
+  validateForm({ checkupOn: checkupOn, program: program, gender: gender, vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert, extraIds: extraIds, labCount: labCount, labAmount: labAmount, specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, patientName: patientName, patientHn: patientHn });
 
   return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
 }
@@ -1186,18 +1213,25 @@ function enterEditMode(rec) {
     cb.checked = vaccineCodes.indexOf(cb.value) !== -1;
   });
 
-  // ส่งตรวจพิเศษ (รอบ 4) — โหลดติ๊กกลับจาก rec.specialSent/rec.specialBack (array ของ id)
+  // ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5) — โหลดติ๊กกลับจาก rec.specialSent/rec.specialBack/rec.specialPrep (array ของ id)
   var specialSentIds = rec.specialSent || [];
   var specialBackIds = rec.specialBack || [];
+  var specialPrepIds = rec.specialPrep || [];
   SPECIAL_SENDS.forEach(function (item) {
-    var sentCb = qs('sp_sent_' + item.id), backCb = qs('sp_back_' + item.id);
+    var prepCb = qs('sp_prep_' + item.id), sentCb = qs('sp_sent_' + item.id), backCb = qs('sp_back_' + item.id);
+    if (prepCb) prepCb.checked = specialPrepIds.indexOf(item.id) !== -1;
     if (sentCb) sentCb.checked = specialSentIds.indexOf(item.id) !== -1;
     if (backCb) backCb.checked = specialBackIds.indexOf(item.id) !== -1;
   });
-  var specialCheckupOn = SPECIAL_SENDS.some(function (item) { return item.group === 'checkup' && specialSentIds.indexOf(item.id) !== -1; });
+  // เปิดหมวดอัตโนมัติเมื่อมีรายการติ๊ก "ส่งแล้ว" หรือ "การเตรียมส่ง" ของกลุ่มนั้น (อย่างใดอย่างหนึ่งก็พอ)
+  var specialCheckupOn = SPECIAL_SENDS.some(function (item) {
+    return item.group === 'checkup' && (specialSentIds.indexOf(item.id) !== -1 || specialPrepIds.indexOf(item.id) !== -1);
+  });
   qs('chkSpecial').checked = specialCheckupOn;
   qs('specialBody').hidden = !specialCheckupOn;
-  var specialMedcertOn = SPECIAL_SENDS.some(function (item) { return item.group === 'medcert' && specialSentIds.indexOf(item.id) !== -1; });
+  var specialMedcertOn = SPECIAL_SENDS.some(function (item) {
+    return item.group === 'medcert' && (specialSentIds.indexOf(item.id) !== -1 || specialPrepIds.indexOf(item.id) !== -1);
+  });
 
   var labCount = rec.medCertLabCount || 0;
   var labAmount = rec.medCertLabAmount || 0;
@@ -1244,6 +1278,7 @@ function onSubmitLog(e) {
   var deliveryMethod = checkupOn ? (qs('deliveryMethod').value || '') : '';
   var specialSentIds = getSpecialSentIds();
   var specialBackIds = getSpecialBackIds();
+  var specialPrepIds = getSpecialPrepIds();
 
   var isEdit = !!STATE.editingId;
   var payload = {
@@ -1263,7 +1298,8 @@ function onSubmitLog(e) {
     medCertLabCount: medCertLabCount,
     medCertLabAmount: medCertLabAmount,
     specialSent: specialSentIds,
-    specialBack: specialBackIds
+    specialBack: specialBackIds,
+    specialPrep: specialPrepIds
   };
   if (isEdit) payload.recordId = STATE.editingId;
 
@@ -1301,6 +1337,7 @@ function summarizeRecordText(rec) {
   if (rec.vaccineCount) parts.push('วัคซีน ' + rec.vaccineCount + ' เข็ม');
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
   if (rec.medCertLabCount) parts.push('ใบรับรองมี lab ' + rec.medCertLabCount + ' ใบ');
+  if (rec.specialPrepItems) parts.push('คีย์ consult/ส่ง line: ' + rec.specialPrepItems);
   if (rec.specialSentItems) parts.push('ส่งตรวจ: ' + rec.specialSentItems);
   if (rec.specialBackItems) parts.push('กลับมาแล้ว: ' + rec.specialBackItems);
   if (rec.patientName || rec.patientHn) {
@@ -1322,17 +1359,19 @@ function renderSpecialTodaySummary(records) {
   var body = qs('specialTodaySummaryBody');
   if (!body) return;
   var counts = {};
-  SPECIAL_SENDS.forEach(function (item) { counts[item.id] = { sent: 0, back: 0 }; });
+  SPECIAL_SENDS.forEach(function (item) { counts[item.id] = { prep: 0, sent: 0, back: 0 }; });
   (records || []).forEach(function (rec) {
     if (rec.status === 'ยกเลิก') return;
+    (rec.specialPrep || []).forEach(function (id) { if (counts[id]) counts[id].prep++; });
     (rec.specialSent || []).forEach(function (id) { if (counts[id]) counts[id].sent++; });
     (rec.specialBack || []).forEach(function (id) { if (counts[id]) counts[id].back++; });
   });
   var lines = [];
   SPECIAL_SENDS.forEach(function (item) {
     var c = counts[item.id];
-    if (c.sent !== 0 || c.back !== 0) {
-      lines.push('<div class="line"><span>' + escHtml(item.name) + '</span><span>ส่ง ' + c.sent + ' · กลับ ' + c.back + '</span></div>');
+    if (c.prep !== 0 || c.sent !== 0 || c.back !== 0) {
+      var prepPart = (item.prepLabel != null) ? (escHtml(item.prepLabel) + ' ' + c.prep + ' · ') : '';
+      lines.push('<div class="line"><span>' + escHtml(item.name) + '</span><span>' + prepPart + 'ส่ง ' + c.sent + ' · กลับ ' + c.back + '</span></div>');
     }
   });
   body.innerHTML = lines.length ? lines.join('') : '<p class="muted">ยังไม่มีการส่งตรวจพิเศษวันนี้</p>';
@@ -1556,14 +1595,15 @@ function renderReport(summary) {
     '<div class="line">ยอดเงินใบรับรองมี lab: ' + money(numOr0(medcert.labMoney)) + ' บาท</div>' +
     '<div class="line">ยอดเงินหมวดใบรับรอง: ' + money(numOr0(medcert.money)) + ' บาท</div></div>';
 
-  // ส่งตรวจพิเศษ — summary.special.items (object map {id: {sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
+  // ส่งตรวจพิเศษ — summary.special.items (object map {id: {prep, sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
   var special = summary.special || { items: {} };
   var specialItems = special.items || {};
   html += '<div class="card"><h2>ส่งตรวจพิเศษ</h2><div class="scroll-x"><table class="report-table"><thead><tr>' +
-    '<th>รายการ</th><th>ส่งแล้ว</th><th>กลับมาแล้ว</th></tr></thead><tbody>';
+    '<th>รายการ</th><th>คีย์ consult / ส่ง line</th><th>ส่งไปแล้ว</th><th>กลับมาแล้ว</th></tr></thead><tbody>';
   SPECIAL_SENDS.forEach(function (item) {
-    var row = specialItems[item.id] || { sent: 0, back: 0 };
-    html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.sent) + '</td><td>' + numOr0(row.back) + '</td></tr>';
+    var row = specialItems[item.id] || { prep: 0, sent: 0, back: 0 };
+    var prepCell = (item.prepLabel != null) ? numOr0(row.prep) : '—';
+    html += '<tr><td>' + escHtml(item.name) + '</td><td>' + prepCell + '</td><td>' + numOr0(row.sent) + '</td><td>' + numOr0(row.back) + '</td></tr>';
   });
   html += '</tbody></table></div></div>';
 
