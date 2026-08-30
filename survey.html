@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>แบบประเมินความพึงพอใจ - หน่วยคลินิกตรวจสุขภาพ SMC</title>
+<title>แบบประเมินความพึงพอใจการลงทะเบียนออนไลน์ - หน่วยคลินิกตรวจสุขภาพ SMC</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -161,7 +161,7 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
 
 <div class="wrap">
-  <!-- ── แบบประเมิน ── -->
+  <!-- ── แบบประเมินความพึงพอใจการลงทะเบียนออนไลน์ ── -->
   <div id="surveyScreen">
     <div class="pagehead">
     <div class="brandbar">
@@ -184,8 +184,15 @@
         <path d="M42 42 Q45 45 48 42" fill="none" stroke="#BA7517" stroke-width="1.3" stroke-linecap="round"/>
       </svg>
       <div class="hero-text">
-        <h1>แบบประเมินความพึงพอใจ</h1>
-        <p>แบบบันทึกข้อมูลลงทะเบียนตรวจสุขภาพประจำปีออนไลน์<br>สำหรับหน่วยงานองค์กร หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></p>
+        <!-- ชื่อหน้า + โครงหัวเว็บ ให้คล้องกับ survey2.html (เจ้าของสั่ง 2026-08-30)
+             แพตเทิร์นเดียวกัน: <h1> ชื่อเต็มที่บอกว่าประเมิน "ช่วงไหน" · <p> บรรทัดบริบท + ชื่อหน่วยงาน · <p class="time">
+             survey1 = ประเมินตอนลงทะเบียน · survey2 = ประเมินตอนมารับบริการ — อ่านคู่กันแล้วต้องแยกออกทันที
+             ⚠ บรรทัดบริบทของ survey1 ใช้ "ชื่อจริงของ index.html" ไม่ใช่ประโยคเชิญชวนแบบ survey2
+                เพราะผู้ตอบเพิ่งกรอกฟอร์มนั้นมาหมาด ๆ ต้องเห็นชื่อเดียวกับที่เพิ่งเห็น
+             ⚠ ห้ามลอก "· ตอบแบบไม่ระบุตัวตน" จาก survey2 มาใส่ — survey1 ส่งชื่อ-นามสกุลที่ยกมาจาก
+                การลงทะเบียนขึ้นชีตด้วย (ดู submitSurvey) เขียนแบบนั้นจะเป็นข้อความเท็จ -->
+        <h1>แบบประเมินความพึงพอใจการลงทะเบียนออนไลน์</h1>
+        <p>แบบบันทึกข้อมูลตรวจสุขภาพประจำปี (สำหรับหน่วยงานเท่านั้น)<br>หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></p>
         <p class="time">ใช้เวลาประมาณ 1 นาที</p>
       </div>
     </div>
