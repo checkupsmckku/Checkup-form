@@ -1943,26 +1943,31 @@
        ⚠ 255mm เผื่อกรณีขอบหนาสุดไว้แล้ว (หน้าต่างพิมพ์เฉพาะขั้นตอนใช้ @page margin 12mm ⇒ เหลือ 273mm)
          ถ้าเปลี่ยนรูปเป็นสัดส่วนอื่น ให้รัน t23 ตรวจซ้ำ */
     .flow-img { max-height: 255mm; width: auto; max-width: 100%; margin: 0 auto; }
-    .prep-section { padding: 10px 16px; font-size: 11px; }
-    .prep-main-title { margin-bottom: 6px; padding: 8px 14px; }
-    .prep-grid { gap: 8px; margin-bottom: 6px; }
+    /* ── รีดความสูงให้ "คำแนะนำก่อนตรวจ" ลงกระดาษหน้าเดียว (เจ้าของสั่ง 2026-08-31) ──
+       ก่อนแก้: เนื้อหารวม 296 mm บนพื้นที่พิมพ์ 273 mm ⇒ ล้นไปหน้าที่ 2 ราว 23 mm
+       ตัวเลขทุกค่าที่นี่ "ใช้เฉพาะตอนพิมพ์" — ระยะห่างบนจอที่เจ้าของเห็นชอบแล้วไม่ถูกแตะเลย
+       ⚠ วัดซ้ำด้วย harness/t23_print_blocks.js ทุกครั้งที่แก้ค่าพวกนี้ (มันวัดเป็นมิลลิเมตรจริง) */
+    .prep-section { padding: 8px 14px; font-size: 11px; }
+    .prep-main-title { margin-bottom: 4px; padding: 5px 12px; }
+    .prep-grid { gap: 5px; margin-bottom: 3px; }
     .prep-card { padding: 0; }
-    .prep-card-header { padding: 5px 10px; }
-    .prep-card-body { padding: 5px 10px 6px; font-size: 10.5px; }
-    .prep-card-body p, .prep-card-body li { font-size: 10.5px; line-height: 1.35; margin: 2px 0; }
-    .prep-highlight { padding: 4px 10px; font-size: 10.5px; margin-bottom: 4px !important; }
-    .stool-photos { gap: 8px; margin-top: 5px; }
+    .prep-card-header { padding: 4px 8px; }
+    .prep-card-body { padding: 4px 8px 4px; font-size: 10.5px; }
+    .prep-card-body p, .prep-card-body li { font-size: 10.5px; line-height: 1.25; margin: 1px 0; }
+    .prep-card-body ol, .prep-highlight ol { margin-top: 4px !important; }
+    .prep-highlight { padding: 3px 8px; font-size: 10.5px; margin-bottom: 3px !important; }
+    .stool-photos { gap: 8px; margin-top: 4px; }
     .stool-photos figure { flex: 0 1 96px; }
-    .stool-photos img { height: 84px; }
-    .stool-photos figcaption { font-size: 9.5px; margin-top: 2px; }
-    .prep-note-box { padding: 5px 10px; margin-top: 4px !important; }
-    .prep-info-row { gap: 6px; margin: 6px 0; }
-    .prep-info-card { padding: 6px 10px; }
-    .prep-info-title { font-size: 11px; margin-bottom: 3px; padding-bottom: 3px; }
-    .prep-remark { font-size: 10px; padding: 5px 10px; margin: 4px 0; }
-    .prep-contact { padding: 8px 14px; margin-top: 6px; }
-    .prep-contact-title { font-size: 12.5px !important; margin-bottom: 6px !important; }
-    .prep-happiness { font-size: 13px !important; margin-top: 6px !important; }
+    .stool-photos img { height: 60px; }
+    .stool-photos figcaption { font-size: 9px; margin-top: 2px; }
+    .prep-note-box { padding: 3px 8px; margin-top: 3px !important; }
+    .prep-info-row { gap: 6px; margin: 4px 0; }
+    .prep-info-card { padding: 4px 8px; }
+    .prep-info-title { font-size: 10.5px; margin-bottom: 2px; padding-bottom: 2px; }
+    .prep-remark { font-size: 9.5px; padding: 4px 8px; margin: 3px 0; }
+    .prep-contact { padding: 5px 12px; margin-top: 3px; }
+    .prep-contact-title { font-size: 12px !important; margin-bottom: 4px !important; }
+    .prep-happiness { font-size: 12px !important; margin-top: 4px !important; }
 
     /* ── ย่อการ์ดติดต่อ ลดความสูงรวม เพื่อให้ติดหน้าเดียวกับ prep-section ──
        การเรียงแนวนอนอยู่ที่ inline style ของ markup แล้ว ที่นี่แค่ห้ามตกบรรทัดตอนพิมพ์ ── */
@@ -6219,7 +6224,7 @@ const STEP_GATES = [
     msg:'กรุณาเลือก "โปรแกรมตรวจสุขภาพ" ในหัวข้อที่ 2 ก่อน จึงจะเลือกรายการตรวจเพิ่มเติมได้',
     focus:'#programGrid' }
 ];
-const HN_STEP_MSG = 'กรุณาเลือกก่อนว่าท่านมี HN (เลขบัตรประจำตัวโรงพยาบาล) หรือไม่ จึงจะกรอกข้อมูลส่วนบุคคลได้';
+const HN_STEP_MSG = 'กรุณาระบุว่าท่านมี หมายเลขผู้ป่วย (HN) หรือไม่';
 
 function applyStepLocks() {
   STEP_GATES.forEach(gate => {
@@ -8018,14 +8023,14 @@ function printStaffSummary() {
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
       <div class="modal-header-text">
-        <div class="modal-title" style="font-size:17px">⚠ กรุณากรอกตามลำดับ</div>
-        <div class="modal-subtitle">ยังกรอกส่วนนี้ไม่ได้ เพราะต้องตอบข้อก่อนหน้าให้ครบก่อน</div>
+        <div class="modal-title" style="font-size:17px">⚠ กรุณาดำเนินการตามลำดับ</div>
+        <div class="modal-subtitle">ยังไม่สามารถดำเนินการได้ เนื่องจากต้องตอบคำถามก่อนหน้าให้ครบถ้วน</div>
       </div>
       <button class="modal-close-btn" onclick="closeStepLockModal()" title="ปิด">✕</button>
     </div>
     <div style="padding:20px 24px;font-size:14.5px;line-height:1.6;color:var(--text,#333)" id="stepLockMsg"></div>
     <div class="modal-footer">
-      <button type="button" class="btn-modal-print" onclick="closeStepLockModal()">เข้าใจแล้ว ไปกรอกข้อก่อนหน้า</button>
+      <button type="button" class="btn-modal-print" onclick="closeStepLockModal()">รับทราบ ไปยังคำถามก่อนหน้า</button>
     </div>
   </div>
 </div>
