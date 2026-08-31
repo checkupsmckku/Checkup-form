@@ -301,7 +301,11 @@
     <button class="done-btn" onclick="window.print()" style="background:#1D9E75;margin-top:12px">📥 บันทึก / พิมพ์ใบสรุป</button>
     <div class="hint" style="margin-top:6px;line-height:1.55">แตะแล้วเลือก <strong>"บันทึกเป็น PDF"</strong> (Save as PDF) เพื่อเก็บไว้ในเครื่อง
       หรือเลือกเครื่องพิมพ์เพื่อพิมพ์ลงกระดาษ — <strong>แนะนำให้บันทึกไว้ก่อนปิดหน้านี้</strong></div>
-    <button class="done-btn" onclick="window.location.href='index.html'" style="margin-top:8px">กลับหน้าหลัก</button>
+    <!-- ⚠ ตั้งใจให้ผู้ใช้ "กดเอง" ไม่เด้งกลับอัตโนมัติ (ตัดสินใจ 2026-08-31) — เลิกส่งอีเมลยืนยันแล้ว
+         ใบสรุปบนหน้านี้จึงเป็นสำเนาเดียวที่ผู้รับบริการมี ถ้าเด้งกลับเองก่อนเขากด "บันทึกเป็น PDF"
+         ใบสรุปหายทันที และคำแนะนำก่อนตรวจที่อยู่ใต้ใบสรุปก็ยังอ่านไม่จบ
+         (ถ้าวันหลังเปลี่ยนเป็นแท็บเล็ตกลางที่เคาน์เตอร์ ค่อยทำเป็นนับถอยหลัง + ปุ่มยกเลิกการนับ) -->
+    <button class="done-btn" onclick="window.location.href='index.html'" style="margin-top:8px">🏠 กลับหน้าลงทะเบียน (ลงทะเบียนคนถัดไป)</button>
   </div>
 </div>
 

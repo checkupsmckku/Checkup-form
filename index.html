@@ -111,26 +111,14 @@
   .header-inner {
     max-width: 900px;
     margin: 0 auto;
-    padding: 20px 24px 30px;
+    /* ⚠ ระยะบน 32px (เดิม 20px) — ชดเชยความสูงของ .header-badge ที่ถูกตัดออกเมื่อ 2026-08-31
+       (ป้าย ~26px + margin-bottom 16px) ถ้าคงไว้ที่ 20px หัวเรื่องจะชิดขอบบนจนดูหัวหนักท้ายเบา */
+    padding: 32px 24px 30px;
     position: relative;
     z-index: 1;
     text-align: center;          /* เจ้าของสั่งจัดกึ่งกลาง 2026-08-28 */
   }
-  .header-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(39,174,96,0.25);
-    border: 1px solid rgba(39,174,96,0.45);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-  .header-badge svg { width: 14px; height: 14px; }
+  /* .header-badge ถูกลบทั้งกฎเมื่อ 2026-08-31 พร้อมกับตัว element (ดูคอมเมนต์ในส่วน <header>) */
   h1.form-title {
     font-size: clamp(18px, 3vw, 26px);
     font-weight: 700;
@@ -2176,15 +2164,19 @@
        · มือถือ/จอสัมผัส: แตะเท่านั้น — ไม่ผูก hover เลย (ไม่งั้นแตะครั้งแรกจะกลายเป็น hover ค้าง)
      ⚠ .staff-fab (ปุ่มเจ้าหน้าที่ มุมขวาล่าง) ไม่ได้อยู่ในกลุ่มนี้ และห้ามเอาเข้ามา
        — คนละกลุ่มผู้ใช้ ถ้าเอาไปซ่อนรวมกัน เจ้าหน้าที่ต้องกด 2 ครั้งทุกครั้ง */
+  /* เดสก์ท็อป = ปุ่มยาวมีข้อความ (เจ้าของสั่ง 2026-08-31 รอบสี่ หลังลองของจริงแล้วเห็นว่าไอคอนล้วนเดาไม่ออก)
+     มือถือ = วงกลมไอคอนล้วน (ทับค่าในบล็อก ≤600px ท้ายไฟล์) */
   .info-fab-toggle {
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
     position: fixed; bottom: 24px; left: 24px;
-    width: 52px; height: 52px; border-radius: 50%;
+    padding: 12px 20px; border-radius: 50px;
     background: #00575E; color: #fff; border: none;
     box-shadow: 0 4px 18px rgba(0,0,0,.28);
-    z-index: 901; cursor: pointer; font-size: 22px;
+    z-index: 901; cursor: pointer;
+    font-size: 14px; font-weight: 700; font-family: inherit;
     transition: background .2s, transform .15s;
   }
+  .info-fab-toggle .info-fab-icon { font-size: 17px; line-height: 1; }
   .info-fab-toggle:hover { background: #00787f; }
   .info-fab-group .flow-fab, .info-fab-group .prep-fab, .info-fab-group .mine-fab {
     opacity: 0; visibility: hidden; pointer-events: none;
@@ -2215,29 +2207,31 @@
   @media (max-width: 600px) {
     .info-fab-scrim { display: block; }
     body.info-fab-open .info-fab-scrim { opacity: 1; visibility: visible; pointer-events: auto; }
-    /* ⚠ ปุ่มลอยตัวอื่นมี z-index สูงกว่าฉากหลัง (back-to-top/bottom = 999, staff-fab = 900)
-       ถ้าไม่หรี่ไปด้วย จะกลายเป็นของชิ้นเดียวในจอที่ยังสว่างจ้าอยู่เหนือฉากที่หรี่แล้ว ดูเหมือนหน้าจอเสีย
-       (เห็นชัดจากภาพหน้าจอจริงที่ 390px: ปุ่มเจ้าหน้าที่สีน้ำเงินเด่นแข่งกับเมนูที่เพิ่งกางออก)
-       ⚠ หรี่เฉพาะ "ตอนเมนูเปิด" และเฉพาะ ≤600px — เดสก์ท็อปปุ่มเจ้าหน้าที่ต้องอยู่ครบเหมือนเดิมตลอด */
-    body.info-fab-open .back-to-top, body.info-fab-open .back-to-bottom,
-    body.info-fab-open .staff-fab {
+    /* ⚠ back-to-top/back-to-bottom มี z-index 999 = สูงกว่าฉากหลัง (899) ถ้าไม่หรี่ไปด้วย
+       จะเป็นของชิ้นเดียวในจอที่ยังสว่างจ้าอยู่เหนือฉากที่หรี่แล้ว ดูเหมือนหน้าจอเสีย
+       (เห็นจากภาพหน้าจอจริงที่ 390px ไม่ได้เห็นจากเทสต์ — เทสต์วัดตัวเลขผ่านหมดแต่ภาพยังน่าเกลียด)
+       ⚠ .staff-fab ไม่อยู่ในรายการนี้แล้ว เพราะกลายเป็นรายการที่ 4 ของเมนูไปแล้ว (ดูด้านล่าง) */
+    body.info-fab-open .back-to-top, body.info-fab-open .back-to-bottom {
       opacity: 0; pointer-events: none; transition: opacity .2s;
     }
 
-    /* ปุ่มในเมนู: จากปุ่มยาว → วงกลมไอคอน + ป้ายชื่อ */
-    .info-fab-group .fab-item {
+    /* ปุ่มในเมนู: จากปุ่มยาว → วงกลมไอคอน + ป้ายชื่อ
+       ⚠ ใช้ `.fab-item` ลอย ๆ ไม่ผูกกับ `.info-fab-group` เพราะ `.staff-fab` อยู่ "นอก" กลุ่มใน DOM
+         แต่ต้องหน้าตาเหมือนกันทุกอย่าง */
+    .fab-item {
       background: none; box-shadow: none; padding: 0; border-radius: 0;
-      gap: 10px; left: 28px;   /* 24 + (52-44)/2 = จุดศูนย์กลางวงกลมตรงกับปุ่มกลมพอดี */
+      gap: 10px; left: 28px; right: auto;   /* 24 + (52-44)/2 = จุดศูนย์กลางวงกลมตรงกับปุ่มกลมพอดี */
     }
-    .info-fab-group .fab-item .fab-ic {
+    .fab-item .fab-ic {
       width: 44px; height: 44px; border-radius: 50%; flex: 0 0 44px;
       display: flex; align-items: center; justify-content: center;
       font-size: 19px; box-shadow: 0 4px 14px rgba(0,0,0,.28);
     }
-    .info-fab-group .mine-fab .fab-ic { background: #6A4FB6; }
-    .info-fab-group .flow-fab .fab-ic { background: #2E7D46; }
-    .info-fab-group .prep-fab .fab-ic { background: #00575E; }
-    .info-fab-group .fab-item .fab-label {
+    .mine-fab  .fab-ic { background: #6A4FB6; }
+    .flow-fab  .fab-ic { background: #2E7D46; }
+    .prep-fab  .fab-ic { background: #00575E; }
+    .staff-fab .fab-ic { background: var(--primary,#001D3D); }
+    .fab-item .fab-label {
       background: #fff; color: #1a1a2e;
       padding: 7px 12px; border-radius: 8px;
       font-size: 13.5px; font-weight: 700; white-space: nowrap;
@@ -2246,6 +2240,29 @@
     /* ระยะห่างแนวตั้งใหม่: วงกลมสูง 44px เว้นช่วงละ 56px (เดิม 88/140/192 คิดจากปุ่มยาวสูง ~43px) */
     .info-fab-group.open .flow-fab { bottom: 144px; }
     .info-fab-group.open .mine-fab { bottom: 200px; }
+
+    /* ── ปุ่มเจ้าหน้าที่ = รายการที่ 4 ของเมนู เฉพาะมือถือ (เจ้าของสั่ง 2026-08-31 รอบสี่) ──
+       ปิดเมนูอยู่ = ไม่เห็นปุ่มนี้เลย · เดสก์ท็อปไม่เกี่ยว ยังลอยมุมขวาล่างตลอดเหมือนเดิม
+       ⚠ ห้ามย้าย .staff-fab เข้าไปใน #infoFabGroup จริง ๆ — hover ของเดสก์ท็อปผูกไว้ที่ "ตัวกลุ่ม"
+         ถ้าย้ายเข้าไป การชี้เมาส์ที่ปุ่มเจ้าหน้าที่มุมขวาล่างจะทำให้เมนูฝั่งซ้ายกางเอง
+       ⇒ ใช้ sibling combinator แทน — .staff-fab ต้องอยู่ "ถัดจาก" #infoFabGroup ในไฟล์เสมอ ห้ามสลับที่ */
+    .info-fab-group ~ .staff-fab {
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(10px); transition: .18s;
+      bottom: 256px;
+    }
+    .info-fab-group.open ~ .staff-fab {
+      opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+      transition-delay: .12s;
+    }
+
+    /* ปุ่มหลัก: มือถือกลับเป็นวงกลมไอคอนล้วน (เดสก์ท็อปเป็นปุ่มยาวมีข้อความ) */
+    .info-fab-toggle {
+      width: 52px; height: 52px; border-radius: 50%;
+      padding: 0; font-size: 22px;
+    }
+    .info-fab-toggle .info-fab-icon { font-size: 22px; }
+    .info-fab-toggle-label { display: none; }
     /* กางไล่ทีละใบจากล่างขึ้นบน ให้เห็นว่าเป็นเมนูที่คลี่ออกมาจากปุ่มกลม */
     .info-fab-group.open .prep-fab { transition-delay: 0s; }
     .info-fab-group.open .flow-fab { transition-delay: .04s; }
@@ -2289,10 +2306,9 @@
   </div>
 
   <div class="header-inner">
-    <div class="header-badge">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-      SMC — คลินิกตรวจสุขภาพ
-    </div>
+    <!-- ป้าย "SMC — คลินิกตรวจสุขภาพ" ถูกตัดออกเมื่อ 2026-08-31 (เจ้าของสั่ง)
+         ข้อความซ้ำกับ .header-sub ที่อยู่ใต้หัวเรื่องอยู่แล้ว และไอคอนในป้ายเป็นรูป ▶ (ปุ่มเล่นวิดีโอ)
+         ซึ่งสื่อผิดความหมายกับคลินิก — ระยะบนของ .header-inner ถูกเพิ่มชดเชยแล้ว ไม่ต้องใส่กลับ -->
     <h1 class="form-title">แบบบันทึกข้อมูลตรวจสุขภาพประจำปี<br>(สำหรับหน่วยงานเท่านั้น)</h1>
     <div class="header-sub">หน่วยคลินิกตรวจสุขภาพ SMC <span style="white-space:nowrap">ศูนย์บริการทางการแพทย์ชั้นเลิศ</span> <span style="white-space:nowrap">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</span></div>
     <div class="header-meta">
@@ -7624,6 +7640,7 @@ function printPrepOnly() {
 
 // ─── Staff Search ──────────────────────────────────────────────────────────────
 function openStaffSearch() {
+  closeInfoFab();   // บนมือถือปุ่มนี้เป็นรายการที่ 4 ของเมนู — กดแล้วเมนูต้องยุบเหมือนอีก 3 ปุ่ม
   document.getElementById('staffSearchModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
   const keyEl = document.getElementById('staffSearchKey');
@@ -8381,7 +8398,7 @@ function printStaffSummary() {
 <button class="info-fab-toggle" id="infoFabToggle" type="button"
         aria-expanded="false" aria-controls="infoFabGroup"
         aria-label="เปิดเมนูข้อมูลและใบสรุป" onclick="toggleInfoFab(event)">
-  <span class="info-fab-icon" aria-hidden="true">📋</span>
+  <span class="info-fab-icon" aria-hidden="true">📋</span><span class="info-fab-toggle-label">ข้อมูลและใบสรุป</span>
 </button>
 
 <!-- ─── Prep Instructions Floating Button (ผู้รับบริการ) ─── -->
@@ -8403,8 +8420,8 @@ function printStaffSummary() {
 <!-- ─── Staff Search Floating Button ─── -->
 <!-- ⚠ ข้อความปุ่มต้องบอกชัดว่าเป็นของเจ้าหน้าที่ (เจ้าของสั่ง 2026-08-31) — ฝั่งซ้ายมีปุ่มม่วง
      "ใบสรุปของฉัน" ของผู้รับบริการอยู่แล้ว ถ้าเขียนแค่ "ค้นหาใบสรุป" คนไข้จะกดผิดปุ่ม -->
-<button class="staff-fab" onclick="openStaffSearch()" title="ค้นหาใบสรุปผู้ลงทะเบียน (สำหรับเจ้าหน้าที่ ต้องใช้รหัสผ่าน)">
-  🔍 <span>ค้นหาใบสรุปสำหรับเจ้าหน้าที่</span>
+<button class="staff-fab fab-item" onclick="openStaffSearch()" title="ค้นหาใบสรุปผู้ลงทะเบียน (สำหรับเจ้าหน้าที่ ต้องใช้รหัสผ่าน)">
+  <span class="fab-ic" aria-hidden="true">🔍</span><span class="fab-label">ค้นหาใบสรุปสำหรับเจ้าหน้าที่</span>
 </button>
 
 <!-- ─── ป็อปอัปขั้นตอนการเข้ารับบริการ (แยกจากคำแนะนำก่อนตรวจ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
