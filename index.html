@@ -582,11 +582,60 @@
     font-size: 12px;
   }
   .pap-info-box.show { display: block; }
+  /* ป้าย "แตะเพื่อดูรายละเอียด" ใช้เฉพาะมือถือ — บนจอใหญ่ตารางแสดงครบอยู่แล้ว */
+  .pap-tap-hint { display: none; }
   .pap-info-table-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   .pap-info-table-scroll .pap-info-table { min-width: 480px; }
+
+  @media (max-width: 600px) {
+    /* ตาราง PAP บนมือถือ: เดิม min-width 480px ในกล่อง overflow-x ⇒ จอ 390px เห็นแค่ 259px
+       หายไปทางขวา 221px (46%) และไม่มีสัญญาณว่าเลื่อนได้ ผู้ใช้ต้องหมุนจอถึงจะเห็น
+       (เจ้าของแจ้ง 2026-08-31) ⇒ แปลงเป็น "การ์ดเรียงลง" ไม่ต้องเลื่อนแนวนอนอีก */
+    .pap-info-table-scroll { overflow-x: visible; }
+    .pap-info-table-scroll .pap-info-table { min-width: 0; }
+    .pap-info-table, .pap-info-table tbody, .pap-info-table tr, .pap-info-table td { display: block; width: 100%; }
+    .pap-info-table thead { display: none; }
+    .pap-info-table tr { border:1px solid #BBDEFB; border-radius:8px; margin-bottom:8px; overflow:hidden; }
+    /* ⚠ ใช้ float ไม่ใช่ flex สำหรับป้ายกำกับ — ช่องแรกของแต่ละแถวมี <strong> + <br> + <span>
+       ถ้าใช้ flex ลูกแต่ละตัวจะกลายเป็น flex item แยกกัน <br> ถูกละทิ้ง ชื่อกับคำอธิบายจะถูกดันไป
+       อยู่คนละคอลัมน์ในบรรทัดเดียวกัน (เห็นจากภาพหน้าจอตอนทดสอบ 2026-08-31) */
+    .pap-info-table td { display:block; overflow:hidden; text-align:right;
+      border:0; border-bottom:1px dashed #BBDEFB; padding:7px 10px; }
+    .pap-info-table td:last-child { border-bottom:0; }
+    .pap-info-table td::before { content: attr(data-label); float:left; width:40%;
+      text-align:left; font-weight:700; color:#0D47A1; }
+    .pap-info-table td:first-child { text-align:right; }
+    /* ── แตะแถวเพื่อกางรายละเอียด (เจ้าของสั่ง 2026-08-31) ─────────────────────
+       เจ้าของเสนอ 2 ทาง: "บอกให้หมุนจอ" หรือ "แตะแล้วขยายรายละเอียด" + ขอให้ใช้ง่ายและทันสมัย
+       ⇒ เลือกทางที่ 2 เพราะไม่ต้องหมุนจอเลย และย่อกล่องให้สั้นลงมากบนมือถือ
+       เดสก์ท็อปไม่ได้รับผลใด ๆ (คลาส .pap-accordion ใส่ให้จาก JS แต่กฎทั้งหมดอยู่ใน @media นี้) */
+    .pap-tap-hint {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-top: 8px; padding: 5px 12px; border-radius: 999px;
+      background: #E3F2FD; color: #0D47A1; font-size: 12px; font-weight: 700;
+      border: 1px solid #BBDEFB;
+    }
+    /* หัวการ์ด = ช่องแรกของแถว แตะได้ · ช่องที่เหลือซ่อนไว้จนกว่าจะแตะ */
+    .pap-accordion tr { cursor: pointer; }
+    .pap-accordion td:not(:first-child) { display: none; }
+    .pap-accordion tr.pap-open td:not(:first-child) { display: block; }
+    .pap-accordion td:first-child {
+      position: relative; padding-right: 34px; text-align: left;
+      border-bottom: 0; font-size: 13px;
+    }
+    .pap-accordion td:first-child::before { content: none; }   /* ไม่ต้องมีป้าย 'ชนิดของการตรวจ' ซ้ำ */
+    .pap-accordion td:first-child::after {
+      content: '⌄'; position: absolute; right: 12px; top: 50%;
+      transform: translateY(-60%); font-size: 18px; font-weight: 700; color: #0D47A1;
+      transition: transform .18s ease;
+    }
+    .pap-accordion tr.pap-open td:first-child::after { transform: translateY(-40%) rotate(180deg); }
+    .pap-accordion tr.pap-open td:first-child { border-bottom: 1px dashed #BBDEFB; }
+    .pap-accordion tr.pap-open { box-shadow: 0 2px 10px rgba(13,71,161,.10); }
+  }
 
 
   /* ─── Included Items Banner ─── */
@@ -2105,6 +2154,32 @@
     .prep-fab, .staff-fab, .flow-fab { padding: 11px 14px; font-size: 13px; }
     .flow-fab { bottom: 70px; }
   }
+
+  /* ── ปุ่มลอยคำแนะนำ/ขั้นตอน เป็นแบบ Tap-Triggered บนมือถือ (เจ้าของสั่ง 2026-08-31) ──
+     เหตุผล: บนจอ 390px ปุ่ม .flow-fab + .prep-fab กินแถบล่างของจอตลอดเวลาที่เลื่อนอ่าน
+     บังหัวข้อ section "รายการตรวจเพิ่มเติม (ชำระเงินเอง)" ⇒ ยุบรวมเป็นปุ่มกลมเดียว กดแล้วค่อยกางออก
+     บน >600px ต้องเหมือนเดิมเป๊ะ — ปุ่มสลับซ่อนอยู่ ปุ่มเดิม 2 ตัวแสดงตามปกติ */
+  .info-fab-toggle { display: none; }
+  @media (max-width: 600px) {
+    .info-fab-toggle {
+      display: flex; align-items: center; justify-content: center;
+      position: fixed; bottom: 24px; left: 24px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #00575E; color: #fff; border: none;
+      box-shadow: 0 4px 18px rgba(0,0,0,.28);
+      z-index: 901; cursor: pointer; font-size: 22px;
+    }
+    .info-fab-group .flow-fab, .info-fab-group .prep-fab {
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transform: translateY(10px); transition: .18s;
+    }
+    .info-fab-group.open .prep-fab { bottom: 88px; }
+    .info-fab-group.open .flow-fab { bottom: 140px; }
+    .info-fab-group.open .flow-fab, .info-fab-group.open .prep-fab {
+      opacity: 1; visibility: visible; pointer-events: auto; transform: none;
+    }
+  }
+  @media print { .info-fab-toggle { display: none !important; } }
 </style>
 </head>
 <body>
@@ -2866,6 +2941,9 @@
         <!-- PAP Smear Info Box -->
         <div class="pap-info-box" id="papInfoBox">
           <div class="pap-info-title">ℹ️ เกณฑ์การตรวจคัดกรองมะเร็งปากมดลูก (Papanicolaou smear)</div>
+          <!-- ป้ายบอกวิธีใช้บนมือถือ (เจ้าของสั่ง 2026-08-31) — ซ่อนบนเดสก์ท็อปด้วย CSS
+               เพราะบนจอใหญ่ตารางแสดงครบทุกคอลัมน์อยู่แล้ว ไม่มีอะไรให้กาง -->
+          <div class="pap-tap-hint">👆 แตะแต่ละแถวเพื่อดูรายละเอียด</div>
           <div class="pap-info-table-scroll" style="margin-top:10px">
           <table class="pap-info-table">
             <thead>
@@ -2879,34 +2957,34 @@
             </thead>
             <tbody>
               <tr>
-                <td style="background:#BBDEFB">
+                <td data-label="ชนิดของการตรวจ" style="background:#BBDEFB">
                   <strong>PAP SMEAR</strong><br>
                   <span style="font-weight:400;font-size:11.5px">ตรวจหาเซลล์ผิดปกติ</span>
                 </td>
-                <td>Cytology<br>conventional</td>
-                <td>เริ่ม 25<br>จนถึง 65 ปี</td>
-                <td>56.4%</td>
-                <td>ทุก 2 ปี</td>
+                <td data-label="แบบตรวจ">Cytology<br>conventional</td>
+                <td data-label="เกณฑ์อายุ">เริ่ม 25<br>จนถึง 65 ปี</td>
+                <td data-label="ความแม่นยำ">56.4%</td>
+                <td data-label="ระยะห่างการตรวจ">ทุก 2 ปี</td>
               </tr>
               <tr>
-                <td style="background:#EDE7F6">
+                <td data-label="ชนิดของการตรวจ" style="background:#EDE7F6">
                   <strong>Thin-Prep</strong><br>
                   <span style="font-weight:400;font-size:11.5px">น้ำยารักษาสภาพเซลล์</span>
                 </td>
-                <td>cytology ด้วย liquid-based</td>
-                <td>25–65 ปี</td>
-                <td>78%</td>
-                <td>ทุก 2 ปี</td>
+                <td data-label="แบบตรวจ">cytology ด้วย liquid-based</td>
+                <td data-label="เกณฑ์อายุ">25–65 ปี</td>
+                <td data-label="ความแม่นยำ">78%</td>
+                <td data-label="ระยะห่างการตรวจ">ทุก 2 ปี</td>
               </tr>
               <tr>
-                <td style="background:#FCE4EC">
+                <td data-label="ชนิดของการตรวจ" style="background:#FCE4EC">
                   <strong>Thin-Prep+HPV</strong><br>
                   <span style="font-weight:400;font-size:11.5px">หาเชื้อ HPV</span>
                 </td>
-                <td>(Co-testing)<br>ด้วย liquid-based: HPV+Cytology</td>
-                <td>25–65 ปี</td>
-                <td>97–100%</td>
-                <td>ทุก 5 ปี</td>
+                <td data-label="แบบตรวจ">(Co-testing)<br>ด้วย liquid-based: HPV+Cytology</td>
+                <td data-label="เกณฑ์อายุ">25–65 ปี</td>
+                <td data-label="ความแม่นยำ">97–100%</td>
+                <td data-label="ระยะห่างการตรวจ">ทุก 5 ปี</td>
               </tr>
             </tbody>
           </table>
@@ -2916,14 +2994,14 @@
           <table class="pap-info-table">
             <tbody>
               <tr>
-                <td>เคยตรวจคัดกรอง PAP</td>
-                <td>ผลปกติอย่างน้อย 3 ครั้งติดต่อกัน</td>
-                <td>สามารถเว้นการตรวจได้</td>
+                <td data-label="การตรวจที่เคยทำ">เคยตรวจคัดกรอง PAP</td>
+                <td data-label="เงื่อนไข">ผลปกติอย่างน้อย 3 ครั้งติดต่อกัน</td>
+                <td data-label="คำแนะนำ">สามารถเว้นการตรวจได้</td>
               </tr>
               <tr>
-                <td>เคยตรวจคัดกรอง HPV</td>
-                <td>ผลปกติอย่างน้อย 2 ครั้งติดต่อกัน</td>
-                <td>สามารถเว้นการตรวจได้</td>
+                <td data-label="การตรวจที่เคยทำ">เคยตรวจคัดกรอง HPV</td>
+                <td data-label="เงื่อนไข">ผลปกติอย่างน้อย 2 ครั้งติดต่อกัน</td>
+                <td data-label="คำแนะนำ">สามารถเว้นการตรวจได้</td>
               </tr>
             </tbody>
           </table>
@@ -3647,9 +3725,38 @@ window.onload = function() {
   applyHnLock();
   applyStepLocks();
   initStepLockClickTrap();
+  initPapAccordion();
 };
 
 // ─── Scroll Spy: อัปเดต active step อัตโนมัติเมื่อ scroll ───────────────────
+
+// ─── ตาราง PAP บนมือถือ: แตะแถวเพื่อกางรายละเอียด (เจ้าของสั่ง 2026-08-31) ────────
+// เจ้าของเสนอ 2 ทาง — "ขึ้นข้อความให้หมุนจอ" หรือ "แตะแล้วขยายรายละเอียด" และขอให้ใช้ง่าย/ทันสมัย
+// ⇒ เลือกแบบแตะกาง: ไม่ต้องหมุนจอเลย และการ์ดสั้นลงเหลือเฉพาะชื่อชนิดการตรวจจนกว่าจะแตะ
+// ⚠ ใส่คลาส .pap-accordion เฉพาะ "ตารางหลัก" (ตารางแรก) เท่านั้น — ตารางที่ 2 (หากอายุเกิน 65 ปี)
+//   มีแค่ 3 ช่องต่อแถวและสั้นอยู่แล้ว กางทิ้งไว้อ่านง่ายกว่า
+// กฎ CSS ทั้งหมดอยู่ใน @media (max-width:600px) ⇒ เดสก์ท็อปไม่ได้รับผลอะไรแม้จะมีคลาสนี้ติดอยู่
+function initPapAccordion() {
+  const table = document.querySelector('#papInfoBox .pap-info-table');
+  if (!table || table.classList.contains('pap-accordion')) return;
+  table.classList.add('pap-accordion');
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    const head = tr.querySelector('td:first-child');
+    if (!head) return;
+    head.setAttribute('role', 'button');
+    head.setAttribute('tabindex', '0');
+    head.setAttribute('aria-expanded', 'false');
+    const toggle = () => {
+      const open = tr.classList.toggle('pap-open');
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    tr.addEventListener('click', toggle);
+    head.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  });
+}
+
 function initBackToTop() {
   const btn = document.getElementById('backToTop');
   if (!btn) return;
@@ -7180,8 +7287,44 @@ function absolutizeImgs(html, scopeSel) {
 // ⇒ หน้าพิมพ์เพี้ยนไปจากที่เห็นบนจอทั้งที่ CSS ของบล็อกถูกยกไปครบแล้ว
 const PRINT_RESET_CSS = '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}';
 
+// ปุ่มลอยคำแนะนำ/ขั้นตอนบนมือถือเป็นแบบ tap-triggered (เจ้าของสั่ง 2026-08-31)
+// เหตุผล: บนจอ 390px ปุ่ม 2 ตัวนี้กินแถบล่างของจอและบังเนื้อหาฟอร์มตลอดเวลาที่เลื่อนอ่าน
+let _infoFabOutsideBound = false;
+function toggleInfoFab(e) {
+  if (e) e.stopPropagation();
+  const group = document.getElementById('infoFabGroup');
+  const toggle = document.getElementById('infoFabToggle');
+  if (!group || !toggle) return;
+  const open = group.classList.toggle('open');
+  toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const icon = toggle.querySelector('.info-fab-icon');
+  if (icon) icon.textContent = open ? '✕' : '📋';
+  if (open && !_infoFabOutsideBound) {
+    _infoFabOutsideBound = true;
+    document.addEventListener('click', function(ev) {
+      const g = document.getElementById('infoFabGroup');
+      if (g && g.classList.contains('open') && !g.contains(ev.target)) closeInfoFab();
+    });
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Escape') closeInfoFab();
+    });
+  }
+}
+function closeInfoFab() {
+  const group = document.getElementById('infoFabGroup');
+  const toggle = document.getElementById('infoFabToggle');
+  if (!group || !group.classList.contains('open')) return;
+  group.classList.remove('open');
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', 'false');
+    const icon = toggle.querySelector('.info-fab-icon');
+    if (icon) icon.textContent = '📋';
+  }
+}
+
 // ── ป็อปอัป "ขั้นตอนการเข้ารับบริการ" (ปุ่มลอยด้านบน) ──
 function openFlowModal() {
+  closeInfoFab();
   const html = flowSectionHtml();
   const body = document.getElementById('flowModalBody');
   if (!html || !body) return;
@@ -7226,6 +7369,7 @@ function printFlowOnly() {
 }
 
 function openPrepModal() {
+  closeInfoFab();
   const html = prepSectionHtml();
   const body = document.getElementById('prepModalBody');
   if (!html || !body) return;
@@ -7944,6 +8088,8 @@ function printStaffSummary() {
 </div>
 
 
+<!-- ─── กลุ่มปุ่มลอยคำแนะนำ/ขั้นตอน (Tap-Triggered บนมือถือ ≤600px — เจ้าของสั่ง 2026-08-31) ─── -->
+<div class="info-fab-group" id="infoFabGroup">
 <!-- ─── Service Steps Floating Button (อยู่เหนือปุ่มคำแนะนำ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
 <button class="flow-fab" onclick="openFlowModal()" title="ดูขั้นตอนการเข้ารับบริการตรวจสุขภาพ">
   🧭 <span>ขั้นตอนการเข้ารับบริการ</span>
@@ -7953,6 +8099,13 @@ function printStaffSummary() {
 <button class="prep-fab" onclick="openPrepModal()" title="ดูคำแนะนำการเตรียมตัวก่อนตรวจสุขภาพ">
   📋 <span>คำแนะนำก่อนตรวจ</span>
 </button>
+
+<button class="info-fab-toggle" id="infoFabToggle" type="button"
+        aria-expanded="false" aria-controls="infoFabGroup"
+        aria-label="เปิดเมนูคำแนะนำและขั้นตอน" onclick="toggleInfoFab(event)">
+  <span class="info-fab-icon" aria-hidden="true">📋</span>
+</button>
+</div>
 
 <!-- ─── Staff Search Floating Button ─── -->
 <button class="staff-fab" onclick="openStaffSearch()" title="ค้นหาใบสรุปผู้ลงทะเบียน">
