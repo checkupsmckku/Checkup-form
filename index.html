@@ -1556,6 +1556,15 @@
   }
   @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
 
+  /* ─── Step Lock (2026-08-31): กันการกรอกข้ามลำดับ + เด้ง pop-up บอกเหตุผล ─── */
+  .form-section.step-locked { position: relative; }
+  .step-lock-overlay { position:absolute; inset:0; z-index:6; background:rgba(255,255,255,.6); cursor:not-allowed; border-radius:inherit; }
+  .step-lock-bar { display:flex; gap:8px; align-items:flex-start; background:#FEF3E2; border:1.5px solid #F0A64A;
+    color:#B26A00; font-size:13px; font-weight:700; border-radius:8px; padding:9px 12px; margin-bottom:12px; line-height:1.5; }
+  /* ช่องที่ถูกล็อกด้วย HN: ปล่อยคลิกทะลุไปหา #sec1 เพื่อให้ตัวดักคลิกเปิด pop-up ได้
+     (element ที่ disabled จะไม่ยิง click event เอง) */
+  #sec1 [data-hnlock="1"] { pointer-events: none; }
+
   .modal-box {
     background: #fff;
     border-radius: 20px;
@@ -2190,7 +2199,7 @@
       <div class="section-body">
 
         <!-- ── 1.0 วันที่เข้ารับบริการ ── -->
-        <div class="field-group" style="margin-bottom:16px;max-width:300px">
+        <div class="field-group" data-nohnlock="1" style="margin-bottom:16px;max-width:300px">
           <label>📅 วันที่นัดหมายเข้ารับบริการ <span class="req">*</span></label>
           <!-- Calendar picker overlay: display DD/MM/YYYY, store YYYY-MM-DD -->
           <div style="position:relative;width:100%">
@@ -2206,7 +2215,7 @@
         </div>
 
         <!-- ── 1.1 หน่วยงาน / สถานะ / สิทธิ์ชำระเงิน ── -->
-        <div class="org-question-block">
+        <div class="org-question-block" data-nohnlock="1">
           <div class="org-question-label">
             <span class="org-q-icon">🏢</span>
             <span>ข้อมูลหน่วยงาน</span>
@@ -2248,7 +2257,7 @@
         </div>
 
         <!-- ── เพศ ── -->
-        <div class="field-group" style="margin-bottom:14px">
+        <div class="field-group" data-nohnlock="1" style="margin-bottom:14px">
           <label>เพศ <span class="req">*</span></label>
           <div class="gender-group">
             <div class="gender-btn">
@@ -2268,7 +2277,7 @@
           <label class="radio-inline"><input type="radio" name="hnStatus" value="has" onchange="onHnStatusChange(true)"> มี</label>
           <label class="radio-inline"><input type="radio" name="hnStatus" value="none" onchange="onHnStatusChange(false)"> ไม่มี / ไม่แน่ใจ</label>
         </div>
-        <div class="field-hint" id="hnLockHint" style="display:none;color:#E67E22;font-size:12px;font-weight:600;margin-bottom:8px">⚠ กรุณาเลือกก่อนว่าท่านมี HN หรือไม่ จึงจะกรอกข้อมูลส่วนอื่นได้</div>
+        <div class="field-hint" id="hnLockHint" style="display:none;color:#E67E22;font-size:12px;font-weight:600;margin-bottom:8px">⚠ กรุณาเลือกก่อนว่าท่านมี HN หรือไม่ จึงจะกรอกข้อมูลส่วนบุคคลด้านล่างได้</div>
         <!-- HN input (shown when มี) -->
         <div id="hnBlock" style="display:none;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px">
@@ -3496,7 +3505,7 @@
             3. ยินยอมให้โรงพยาบาลศรีนครินทร์ใช้ข้อมูลการตรวจเพื่อประโยชน์ทางการแพทย์
           </div>
           <label class="consent-check">
-            <input type="checkbox" id="consentCheck" required>
+            <input type="checkbox" id="consentCheck" data-error-label="ยอมรับข้อตกลง" required>
             <span>ข้าพเจ้ายืนยันว่าได้อ่านและยอมรับข้อตกลงข้างต้นทุกประการ</span>
           </label>
         </div>
@@ -3631,6 +3640,8 @@ window.onload = function() {
   initBackToTop();
   initBackToBottom();
   applyHnLock();
+  applyStepLocks();
+  initStepLockClickTrap();
 };
 
 // ─── Scroll Spy: อัปเดต active step อัตโนมัติเมื่อ scroll ───────────────────
@@ -3796,6 +3807,7 @@ function onGenderChange() {
   // คำถามตั้งครรภ์ขึ้นกับเพศโดยตรง (เพิ่ม 2026-08-27)
   updatePregnancyBlock();
   calcTotal();
+  applyStepLocks();
 }
 
 // ─── Prefix options by gender ─────────────────────────────────────────────────
@@ -3971,6 +3983,12 @@ function updateBmdFemaleOnly() {
 
 // ─── Program Change ───────────────────────────────────────────────────────────
 function onProgramChange(num) {
+  // Step Lock (2026-08-31): ยังไม่เลือกเพศ → เลือกโปรแกรมไม่ได้ (ราคาบางโปรแกรมขึ้นกับเพศ)
+  if (!document.querySelector('input[name="gender"]:checked')) {
+    openStepLockModal(STEP_GATES[0].msg, STEP_GATES[0].focus);
+    document.querySelectorAll('input[name="program"]').forEach(r => r.checked = false);
+    return;
+  }
   selectedProgram = num;
   // Update card styles
   for (let i = 1; i <= 4; i++) {
@@ -3981,6 +3999,7 @@ function onProgramChange(num) {
   // Update included tests
   updateIncludedTests();
   calcTotal();
+  applyStepLocks();
 }
 
 function updateIncludedTests() {
@@ -4952,6 +4971,10 @@ function validateAndScrollToError() {
   const form = document.getElementById('healthForm');
   const required = form.querySelectorAll('[required]');
   for (const field of required) {
+    // ข้ามช่องที่ถูก disable อยู่ (2026-08-31) — ผู้ใช้กรอกไม่ได้จริงๆ เช่นช่องข้อมูลส่วนบุคคล
+    // ที่ applyHnLock() ล็อกไว้จนกว่าจะเลือกสถานะ HN ถ้าไม่ข้าม จะเด้ง "กรุณากรอก: คำนำหน้าชื่อ"
+    // แล้วเลื่อนไปหาช่องที่พิมพ์ไม่ได้ แทนที่จะบอกว่า "เลือกสถานะ HN ก่อน" (ข้อ 4 ด้านล่าง)
+    if (field.disabled) continue;
     // ข้าม hidden fields
     if (field.offsetParent === null) continue;
     const isEmpty = (field.type === 'checkbox')
@@ -5970,6 +5993,7 @@ function resetForm() {
   // updateBmdBlock() ด้านบนในฟังก์ชันนี้) — form.reset() เคลียร์ hnStatus radio กลับเป็น "ยังไม่เลือก"
   // แต่ไม่ได้ enable/disable อะไรเอง ต้องล็อกฟอร์มใหม่ที่นี่ ไม่งั้นแบบฟอร์มถัดไปจะเริ่มแบบไม่ล็อก
   applyHnLock();
+  applyStepLocks();
 }
 
 // ─── Org / Dept Helpers ──────────────────────────────────────────────────────
@@ -6141,12 +6165,13 @@ function toggleHN(hasHN) {
 
   // ล็อกฟอร์มใหม่ตามสถานะ HN ปัจจุบัน (เพิ่ม 2026-08-28) — ดู applyHnLock()
   applyHnLock();
+  applyStepLocks();
 }
 
-// ─── HN Lock: ล็อกฟอร์มทั้งหมดจนกว่าจะเลือกสถานะ HN (เพิ่ม 2026-08-28) ──────────
+// ─── HN Lock: ล็อกเฉพาะบล็อก "ข้อมูลส่วนบุคคล" (#sec1) จนกว่าจะเลือกสถานะ HN (เพิ่ม 2026-08-28 · แคบลงเหลือ #sec1 เมื่อ 2026-08-31) ─
 // เหตุผล: เดิม toggleHN() แค่ซ่อน/แสดงบล็อกด้วย display:none แต่ไม่ได้ล้างค่า และ handleSubmit()
 // อ่าน .value ของทุกช่องโดยไม่ดูโหมด → สลับโหมดแล้วข้อมูลที่มองไม่เห็นแล้วยังถูกส่งขึ้นชีตเงียบๆ
-// วิธีแก้: (1) ล็อกฟอร์มทั้งหมดจนกว่าจะเลือกสถานะ HN กันการกรอกก่อนเลือกโหมด
+// วิธีแก้: (1) ล็อกบล็อกข้อมูลส่วนบุคคลจนกว่าจะเลือกสถานะ HN กันการกรอกก่อนเลือกโหมด (ยกเว้นวันที่/หน่วยงาน/เพศ ที่ไม่ผูกกับโหมด HN)
 //         (2) เตือนก่อนล้างเมื่อสลับโหมดแล้วมีข้อมูลที่จะถูกซ่อน (ดู onHnStatusChange ด้านล่าง)
 // ⚠ ต้องแตะเฉพาะ element ที่ฟังก์ชันนี้เป็นคน disable เอง (แท็กด้วย data-hnlock="1") ห้าม enable
 // ช่องที่ถูก disable ไว้ด้วยเหตุผลอื่น (เช่น #bmdMenopauseAge/#bmdHysterectomyAge ที่ disabled ตายตัวใน HTML)
@@ -6158,8 +6183,15 @@ function applyHnLock() {
   const checked = document.querySelector('input[name="hnStatus"]:checked');
 
   if (!checked) {
-    form.querySelectorAll('input, select, textarea, button').forEach(el => {
+    // ⚠ ล็อกเฉพาะ "ข้อมูลส่วนบุคคล" (#sec1) เท่านั้น (เจ้าของสั่ง 2026-08-31) — ส่วนที่เหลือของฟอร์ม
+    // (เลือกโปรแกรม/รายการเพิ่มเติม/แบบสอบถาม ฯลฯ) กรอกได้เลยไม่ต้องรอเลือก HN
+    const zone = document.getElementById('sec1') || form;
+    zone.querySelectorAll('input, select, textarea, button').forEach(el => {
       if (hnGroup && hnGroup.contains(el)) return;
+      // ช่องที่ต้องกรอกได้ทันทีโดยไม่ต้องเลือก HN ก่อน (เจ้าของสั่ง 2026-08-31):
+      // วันที่นัดหมาย · ข้อมูลหน่วยงาน/สถานะ/สิทธิ์ชำระเงิน · เพศ — ทั้ง 3 ก้อนอยู่ "เหนือ" ปุ่มเลือก HN
+      // และไม่ได้ถูกซ่อน/แสดงตามโหมด HN เลย จึงไม่มีเหตุผลที่จะล็อก (แท็กไว้ที่ HTML ด้วย data-nohnlock)
+      if (el.closest('[data-nohnlock]')) return;
       if (el.disabled) return; // ถูก disable ไว้ด้วยเหตุผลอื่นอยู่แล้ว — ห้ามแตะ ห้ามแท็ก
       el.disabled = true;
       el.dataset.hnlock = '1';
@@ -6172,6 +6204,98 @@ function applyHnLock() {
     });
     if (hint) hint.style.display = 'none';
   }
+}
+
+// ─── Step Lock (2026-08-31): บังคับลำดับการกรอกตามที่เจ้าของสั่ง ──────────────
+// ยังไม่เลือกเพศ → เลือกโปรแกรมไม่ได้ · ยังไม่เลือกโปรแกรม → เลือกรายการเพิ่มเติมไม่ได้
+// ⚠ ใช้ overlay ครอบทั้ง section ไม่ใช่ disable ทีละ control — เพราะ updateIncludedTests()
+//   กับ updateTestGenderFilter() เซ็ต .disabled ของ checkbox รายการตรวจเองอยู่แล้ว ถ้าไปแย่งกันตั้ง
+//   จะปลดล็อกให้กันเองโดยไม่ตั้งใจ
+const STEP_GATES = [
+  { sec:'sec2', ok:() => !!document.querySelector('input[name="gender"]:checked'),
+    msg:'กรุณาเลือก "เพศ" ในหัวข้อที่ 1 ให้เรียบร้อยก่อน จึงจะเลือกโปรแกรมตรวจสุขภาพได้ (ราคาบางโปรแกรมขึ้นกับเพศ)',
+    focus:'.gender-group' },
+  { sec:'sec3', ok:() => !!document.querySelector('input[name="program"]:checked'),
+    msg:'กรุณาเลือก "โปรแกรมตรวจสุขภาพ" ในหัวข้อที่ 2 ก่อน จึงจะเลือกรายการตรวจเพิ่มเติมได้',
+    focus:'#programGrid' }
+];
+const HN_STEP_MSG = 'กรุณาเลือกก่อนว่าท่านมี HN (เลขบัตรประจำตัวโรงพยาบาล) หรือไม่ จึงจะกรอกข้อมูลส่วนบุคคลได้';
+
+function applyStepLocks() {
+  STEP_GATES.forEach(gate => {
+    const sec = document.getElementById(gate.sec);
+    if (!sec) return;
+    const body = sec.querySelector('.section-body');
+    if (gate.ok()) {
+      sec.classList.remove('step-locked');
+      const overlay = sec.querySelector('.step-lock-overlay');
+      if (overlay) overlay.remove();
+      const bar = document.getElementById('steplock-bar-' + gate.sec);
+      if (bar) bar.remove();
+    } else {
+      sec.classList.add('step-locked');
+      if (!sec.querySelector('.step-lock-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'step-lock-overlay';
+        overlay.onclick = () => openStepLockModal(gate.msg, gate.focus);
+        sec.appendChild(overlay);
+      }
+      if (body && !document.getElementById('steplock-bar-' + gate.sec)) {
+        const bar = document.createElement('div');
+        bar.className = 'step-lock-bar';
+        bar.id = 'steplock-bar-' + gate.sec;
+        bar.style.position = 'relative';
+        bar.style.zIndex = '7';
+        bar.textContent = '🔒 ' + gate.msg;
+        body.insertBefore(bar, body.firstChild);
+      }
+    }
+  });
+}
+
+let _stepLockFocus = null;
+
+function openStepLockModal(msg, focusSel) {
+  const msgEl = document.getElementById('stepLockMsg');
+  if (msgEl) msgEl.textContent = msg;
+  _stepLockFocus = focusSel;
+  const modal = document.getElementById('stepLockModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeStepLockModal() {
+  const modal = document.getElementById('stepLockModal');
+  if (modal) modal.style.display = 'none';
+  if (_stepLockFocus) {
+    const el = document.querySelector(_stepLockFocus);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.outline = '2px solid #E53935';
+      el.style.borderRadius = '6px';
+      setTimeout(() => el.style.outline = '', 2500);
+    }
+    _stepLockFocus = null;
+  }
+}
+
+function stepLockModalOutside(e) {
+  if (e.target === document.getElementById('stepLockModal')) closeStepLockModal();
+}
+
+let _stepLockClickTrapInit = false;
+function initStepLockClickTrap() {
+  if (_stepLockClickTrapInit) return;
+  _stepLockClickTrapInit = true;
+  const sec1 = document.getElementById('sec1');
+  if (!sec1) return;
+  sec1.addEventListener('click', (e) => {
+    const hnChecked = document.querySelector('input[name="hnStatus"]:checked');
+    if (hnChecked) return;
+    if (!e.target.closest('#sec1 .section-body')) return;
+    if (e.target.closest('[data-nohnlock]')) return;
+    if (e.target.closest('#hnStatusGroup')) return;
+    openStepLockModal(HN_STEP_MSG, '#hnStatusGroup');
+  }, true);
 }
 
 // ─── HN Switch Confirm: เตือนก่อนล้าง เมื่อสลับโหมดแล้วมีข้อมูลที่จะถูกซ่อน (เพิ่ม 2026-08-28) ──
@@ -7885,6 +8009,23 @@ function printStaffSummary() {
     <div class="modal-footer">
       <button type="button" class="btn-modal-close" onclick="cancelHnSwitch()">ยกเลิก</button>
       <button type="button" class="btn-modal-print" onclick="confirmHnSwitch()">ยืนยัน เปลี่ยนโหมด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Step Lock Modal (2026-08-31) — เด้งเมื่อผู้ใช้พยายามกรอกข้ามลำดับ ─── -->
+<div class="modal-overlay" id="stepLockModal" style="display:none" onclick="stepLockModalOutside(event)">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">⚠ กรุณากรอกตามลำดับ</div>
+        <div class="modal-subtitle">ยังกรอกส่วนนี้ไม่ได้ เพราะต้องตอบข้อก่อนหน้าให้ครบก่อน</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeStepLockModal()" title="ปิด">✕</button>
+    </div>
+    <div style="padding:20px 24px;font-size:14.5px;line-height:1.6;color:var(--text,#333)" id="stepLockMsg"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn-modal-print" onclick="closeStepLockModal()">เข้าใจแล้ว ไปกรอกข้อก่อนหน้า</button>
     </div>
   </div>
 </div>
