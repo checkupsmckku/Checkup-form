@@ -198,6 +198,22 @@
     </div>
     </div><!-- /.pagehead -->
 
+    <!-- ── ช่วงอายุ (เจ้าของสั่ง 2026-08-31 — "เผื่อใช้วัดความสามารถในการใช้") ──
+         คนที่กรอกฟอร์มมาแล้วมีอายุติดมาทาง sessionStorage อยู่แล้ว จึง "ไม่ถามซ้ำ"
+         การ์ดนี้จะโผล่เฉพาะคนที่เปิดหน้านี้จากลิงก์/QR ตรง ๆ (ไม่ได้ผ่านการลงทะเบียน)
+         ⇒ ดู initAgeRangeCard() ท้ายไฟล์ · ค่าที่ได้ลงคอลัมน์แยกในชีต ไม่ปนกับคอลัมน์ 'อายุ'
+            ที่เก็บเป็นตัวเลขไว้หาค่าเฉลี่ย -->
+    <div class="card" id="card-ageRange" style="display:none">
+      <div class="q-label">ช่วงอายุของท่าน <span style="font-weight:400;color:#aaa">(ใช้สรุปภาพรวมเท่านั้น)</span></div>
+      <div class="chip-row" id="ageRange">
+        <button type="button" class="chip" data-val="ต่ำกว่า 25 ปี" onclick="pick('ageRange',this)">ต่ำกว่า 25 ปี</button>
+        <button type="button" class="chip" data-val="25–34 ปี" onclick="pick('ageRange',this)">25–34 ปี</button>
+        <button type="button" class="chip" data-val="35–44 ปี" onclick="pick('ageRange',this)">35–44 ปี</button>
+        <button type="button" class="chip" data-val="45–54 ปี" onclick="pick('ageRange',this)">45–54 ปี</button>
+        <button type="button" class="chip" data-val="55 ปีขึ้นไป" onclick="pick('ageRange',this)">55 ปีขึ้นไป</button>
+      </div>
+    </div>
+
     <div class="card" id="card-q1">
       <!-- 2026-08-27 เจ้าของสั่งแก้ — เดิมเขียนว่า "ความพึงพอใจโดยรวม" ลอยๆ ทั้งที่แบบประเมินนี้
            เด้งทันทีหลังกดส่งลงทะเบียน (บางคนกรอกก่อนวันนัดเป็นสัปดาห์) ผู้ตอบจึงยังไม่ได้รับบริการเลย
@@ -343,6 +359,8 @@ async function submitSurvey() {
         serviceDate: sessionStorage.getItem('regServiceDate') || '',
         // อายุ ณ วันลงทะเบียน — ส่งต่อมาจาก index.html เช่นเดียวกับวันที่นัดหมาย
         age: sessionStorage.getItem('regAge') || '',
+        // ช่วงอายุที่ผู้ตอบเลือกเอง — มีค่าเฉพาะคนที่เข้าหน้านี้ตรง ๆ (ไม่ได้ผ่านฟอร์ม)
+        ageRange: answers['ageRange'] || '',
         q1: answers['q1'] || '',
         q2: answers['q2'] || '',
         q3: answers['q3'] || '',
@@ -378,6 +396,19 @@ function showSummary() {
   document.getElementById('summaryScreen').style.display = 'block';
   window.scrollTo(0, 0);
 }
+
+// ── ถามช่วงอายุเฉพาะคนที่ไม่ได้ผ่านหน้าลงทะเบียน (เจ้าของสั่ง 2026-08-31) ──────
+// คนที่มาจากฟอร์มมี regAge ติดมาแล้ว (ตัวเลขจริง) จึงไม่ถามซ้ำให้เสียเวลา
+// ⚠ อ่าน sessionStorage เฉย ๆ ห้าม removeItem ตรงนี้ — submitSurvey() ยังต้องใช้ค่านี้ส่งขึ้นชีต
+function initAgeRangeCard() {
+  var hasAge = false;
+  try { hasAge = !!(sessionStorage.getItem('regAge') || '').trim(); } catch (e) { hasAge = false; }
+  if (hasAge) return;                       // มีอายุจริงอยู่แล้ว → ซ่อนการ์ดไว้เหมือนเดิม
+  var card = document.getElementById('card-ageRange');
+  if (card) card.style.display = '';
+  if (REQUIRED_QUESTIONS.indexOf('ageRange') === -1) REQUIRED_QUESTIONS.unshift('ageRange');
+}
+initAgeRangeCard();
 </script>
 </body>
 </html>
