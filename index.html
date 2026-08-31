@@ -2166,35 +2166,91 @@
      เป็นที่ของ .atwarn-popup (z-index 9998) ถ้าไปวางตรงนั้นจะโดนป็อปอัปเตือนทับ (เจอ 2026-08-19) */
   @media (max-width: 400px) {
     .prep-fab, .staff-fab, .flow-fab { padding: 11px 14px; font-size: 13px; }
-    .flow-fab { bottom: 70px; }
+    .flow-fab { bottom: 70px; } /* ⚠ ไม่มีผลแล้ว: .flow-fab ถูกซ่อนตอนยุบ และตอนกางใช้ .info-fab-group.open .flow-fab (bottom:140px) ซึ่ง specificity สูงกว่า */
   }
 
-  /* ── ปุ่มลอยคำแนะนำ/ขั้นตอน เป็นแบบ Tap-Triggered บนมือถือ (เจ้าของสั่ง 2026-08-31) ──
-     เหตุผล: บนจอ 390px ปุ่ม .flow-fab + .prep-fab กินแถบล่างของจอตลอดเวลาที่เลื่อนอ่าน
-     บังหัวข้อ section "รายการตรวจเพิ่มเติม (ชำระเงินเอง)" ⇒ ยุบรวมเป็นปุ่มกลมเดียว กดแล้วค่อยกางออก
-     บน >600px ต้องเหมือนเดิมเป๊ะ — ปุ่มสลับซ่อนอยู่ ปุ่มเดิม 2 ตัวแสดงตามปกติ */
-  .info-fab-toggle { display: none; }
-  @media (max-width: 600px) {
-    .info-fab-toggle {
-      display: flex; align-items: center; justify-content: center;
-      position: fixed; bottom: 24px; left: 24px;
-      width: 52px; height: 52px; border-radius: 50%;
-      background: #00575E; color: #fff; border: none;
-      box-shadow: 0 4px 18px rgba(0,0,0,.28);
-      z-index: 901; cursor: pointer; font-size: 22px;
-    }
-    .info-fab-group .flow-fab, .info-fab-group .prep-fab, .info-fab-group .mine-fab {
-      opacity: 0; visibility: hidden; pointer-events: none;
-      transform: translateY(10px); transition: .18s;
-    }
-    .info-fab-group.open .prep-fab { bottom: 88px; }
-    .info-fab-group.open .flow-fab { bottom: 140px; }
-    .info-fab-group.open .mine-fab { bottom: 192px; }
-    .info-fab-group.open .flow-fab, .info-fab-group.open .prep-fab, .info-fab-group.open .mine-fab {
-      opacity: 1; visibility: visible; pointer-events: auto; transform: none;
-    }
+  /* ── กลุ่มปุ่มลอย "ข้อมูล/ใบสรุป" = Expandable Button Group ทุกขนาดจอ ──
+     ประวัติ: 2026-08-31 รอบแรกยุบเฉพาะ ≤600px (มือถือ) ส่วนเดสก์ท็อปกาง 3 ปุ่มค้างไว้
+     รอบสองเจ้าของสั่งว่า "ดูเยอะ" ⇒ ยุบเป็นปุ่มกลมเดียวบนเดสก์ท็อปด้วย
+       · เดสก์ท็อป (มีเมาส์จริง): ชี้เมาส์ค้าง = กางเอง + คลิกก็เปิด/ปิดได้ (ดู initInfoFabHover)
+       · มือถือ/จอสัมผัส: แตะเท่านั้น — ไม่ผูก hover เลย (ไม่งั้นแตะครั้งแรกจะกลายเป็น hover ค้าง)
+     ⚠ .staff-fab (ปุ่มเจ้าหน้าที่ มุมขวาล่าง) ไม่ได้อยู่ในกลุ่มนี้ และห้ามเอาเข้ามา
+       — คนละกลุ่มผู้ใช้ ถ้าเอาไปซ่อนรวมกัน เจ้าหน้าที่ต้องกด 2 ครั้งทุกครั้ง */
+  .info-fab-toggle {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; bottom: 24px; left: 24px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #00575E; color: #fff; border: none;
+    box-shadow: 0 4px 18px rgba(0,0,0,.28);
+    z-index: 901; cursor: pointer; font-size: 22px;
+    transition: background .2s, transform .15s;
+  }
+  .info-fab-toggle:hover { background: #00787f; }
+  .info-fab-group .flow-fab, .info-fab-group .prep-fab, .info-fab-group .mine-fab {
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateY(10px); transition: .18s;
+  }
+  .info-fab-group.open .prep-fab { bottom: 88px; }
+  .info-fab-group.open .flow-fab { bottom: 140px; }
+  .info-fab-group.open .mine-fab { bottom: 192px; }
+  .info-fab-group.open .flow-fab, .info-fab-group.open .prep-fab, .info-fab-group.open .mine-fab {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: none;
   }
   @media print { .info-fab-toggle { display: none !important; } }
+
+  /* ── ฉากหลังหรี่ + Floating Action Menu บนสมาร์ตโฟน (เจ้าของสั่ง 2026-08-31 รอบสาม) ──
+     เดสก์ท็อปไม่มีฉากหลัง (display:none) และยังเป็นปุ่มยาวเหมือนเดิมทุกอย่าง
+     ⚠ ไม่ล็อกการเลื่อนหน้า (ไม่แตะ body{overflow}) — บน iOS การล็อก scroll ทำให้เด้งกลับหัวหน้า
+       ฉากหลังกันการกดโดนของข้างหลังอยู่แล้ว และแตะที่ฉากหลัง = ปิดเมนู */
+  .info-fab-scrim {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,25,30,.45);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .2s, visibility .2s;
+    z-index: 899;   /* ต่ำกว่าปุ่ม (900) และปุ่มกลม (901) แต่สูงกว่าเนื้อหาหน้า */
+  }
+  @media print { .info-fab-scrim { display: none !important; } }
+
+  @media (max-width: 600px) {
+    .info-fab-scrim { display: block; }
+    body.info-fab-open .info-fab-scrim { opacity: 1; visibility: visible; pointer-events: auto; }
+    /* ⚠ ปุ่มลอยตัวอื่นมี z-index สูงกว่าฉากหลัง (back-to-top/bottom = 999, staff-fab = 900)
+       ถ้าไม่หรี่ไปด้วย จะกลายเป็นของชิ้นเดียวในจอที่ยังสว่างจ้าอยู่เหนือฉากที่หรี่แล้ว ดูเหมือนหน้าจอเสีย
+       (เห็นชัดจากภาพหน้าจอจริงที่ 390px: ปุ่มเจ้าหน้าที่สีน้ำเงินเด่นแข่งกับเมนูที่เพิ่งกางออก)
+       ⚠ หรี่เฉพาะ "ตอนเมนูเปิด" และเฉพาะ ≤600px — เดสก์ท็อปปุ่มเจ้าหน้าที่ต้องอยู่ครบเหมือนเดิมตลอด */
+    body.info-fab-open .back-to-top, body.info-fab-open .back-to-bottom,
+    body.info-fab-open .staff-fab {
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+
+    /* ปุ่มในเมนู: จากปุ่มยาว → วงกลมไอคอน + ป้ายชื่อ */
+    .info-fab-group .fab-item {
+      background: none; box-shadow: none; padding: 0; border-radius: 0;
+      gap: 10px; left: 28px;   /* 24 + (52-44)/2 = จุดศูนย์กลางวงกลมตรงกับปุ่มกลมพอดี */
+    }
+    .info-fab-group .fab-item .fab-ic {
+      width: 44px; height: 44px; border-radius: 50%; flex: 0 0 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; box-shadow: 0 4px 14px rgba(0,0,0,.28);
+    }
+    .info-fab-group .mine-fab .fab-ic { background: #6A4FB6; }
+    .info-fab-group .flow-fab .fab-ic { background: #2E7D46; }
+    .info-fab-group .prep-fab .fab-ic { background: #00575E; }
+    .info-fab-group .fab-item .fab-label {
+      background: #fff; color: #1a1a2e;
+      padding: 7px 12px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 700; white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,.22);
+    }
+    /* ระยะห่างแนวตั้งใหม่: วงกลมสูง 44px เว้นช่วงละ 56px (เดิม 88/140/192 คิดจากปุ่มยาวสูง ~43px) */
+    .info-fab-group.open .flow-fab { bottom: 144px; }
+    .info-fab-group.open .mine-fab { bottom: 200px; }
+    /* กางไล่ทีละใบจากล่างขึ้นบน ให้เห็นว่าเป็นเมนูที่คลี่ออกมาจากปุ่มกลม */
+    .info-fab-group.open .prep-fab { transition-delay: 0s; }
+    .info-fab-group.open .flow-fab { transition-delay: .04s; }
+    .info-fab-group.open .mine-fab { transition-delay: .08s; }
+  }
 </style>
 </head>
 <body>
@@ -7385,19 +7441,27 @@ function absolutizeImgs(html, scopeSel) {
 // ⇒ หน้าพิมพ์เพี้ยนไปจากที่เห็นบนจอทั้งที่ CSS ของบล็อกถูกยกไปครบแล้ว
 const PRINT_RESET_CSS = '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}';
 
-// ปุ่มลอยคำแนะนำ/ขั้นตอนบนมือถือเป็นแบบ tap-triggered (เจ้าของสั่ง 2026-08-31)
-// เหตุผล: บนจอ 390px ปุ่ม 2 ตัวนี้กินแถบล่างของจอและบังเนื้อหาฟอร์มตลอดเวลาที่เลื่อนอ่าน
+// กลุ่มปุ่มลอยข้อมูล/ใบสรุป = ยุบ-กาง ทุกขนาดจอ (เจ้าของสั่ง 2026-08-31 รอบสอง: "ดูเยอะ")
+// เดสก์ท็อปกางด้วย hover ได้ด้วย — แต่ต้องหน่วงตอนปิด เพราะระหว่างปุ่มกลม (bottom 24–76)
+// กับปุ่มแรกที่กางออก (bottom 88) มีช่องว่าง 12px ที่ไม่มี element ⇒ เมาส์ผ่านช่องนี้จะยิง
+// mouseleave ทันทีแล้วเมนูหุบใส่หน้าผู้ใช้ระหว่างเลื่อนไปกด
 let _infoFabOutsideBound = false;
-function toggleInfoFab(e) {
-  if (e) e.stopPropagation();
+let _infoFabCloseTimer = null;
+const INFO_FAB_HOVER_CLOSE_MS = 260;
+
+function openInfoFab(by) {
   const group = document.getElementById('infoFabGroup');
   const toggle = document.getElementById('infoFabToggle');
   if (!group || !toggle) return;
-  const open = group.classList.toggle('open');
-  toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  clearTimeout(_infoFabCloseTimer);
+  group.classList.add('open');
+  document.body.classList.add('info-fab-open'); // เปิดฉากหลังหรี่ + ซ่อน back-to-top/bottom บนมือถือ (≤600px เท่านั้นผ่าน CSS)
+  // จำว่าเปิดมาด้วยวิธีไหน: เปิดด้วยคลิกแล้วห้ามหุบเองตอนเมาส์ออก (ผู้ใช้ตั้งใจเปิดค้าง)
+  group.dataset.openBy = by || 'click';
+  toggle.setAttribute('aria-expanded', 'true');
   const icon = toggle.querySelector('.info-fab-icon');
-  if (icon) icon.textContent = open ? '✕' : '📋';
-  if (open && !_infoFabOutsideBound) {
+  if (icon) icon.textContent = '✕';
+  if (!_infoFabOutsideBound) {
     _infoFabOutsideBound = true;
     document.addEventListener('click', function(ev) {
       const g = document.getElementById('infoFabGroup');
@@ -7408,17 +7472,57 @@ function toggleInfoFab(e) {
     });
   }
 }
+
 function closeInfoFab() {
+  clearTimeout(_infoFabCloseTimer);
   const group = document.getElementById('infoFabGroup');
   const toggle = document.getElementById('infoFabToggle');
   if (!group || !group.classList.contains('open')) return;
+  document.body.classList.remove('info-fab-open');
   group.classList.remove('open');
+  delete group.dataset.openBy;
   if (toggle) {
     toggle.setAttribute('aria-expanded', 'false');
     const icon = toggle.querySelector('.info-fab-icon');
     if (icon) icon.textContent = '📋';
   }
 }
+
+function toggleInfoFab(e) {
+  if (e) e.stopPropagation();
+  const group = document.getElementById('infoFabGroup');
+  if (!group) return;
+  if (group.classList.contains('open')) {
+    // เมาส์จริงที่เลื่อนเข้าไปคลิกปุ่มกลมจะยิง mouseenter (เปิดด้วย hover) ไปก่อนเสมอ แล้ว 'click'
+    // ค่อยตามมาทีหลัง ถ้า toggle ตรงๆ ตอนนี้กลุ่มจะถูกปิดทันทีที่คลิก (คลิกไม่เคยเปิดค้างได้จริงบนเดสก์ท็อป)
+    // ⇒ ถ้าเปิดอยู่เพราะ hover ให้ "อัปเกรด" เป็นคลิกค้างแทนการปิด, ปิดจริงเฉพาะตอนคลิกซ้ำครั้งที่สอง
+    if (group.dataset.openBy === 'hover') {
+      clearTimeout(_infoFabCloseTimer);
+      group.dataset.openBy = 'click';
+    } else {
+      closeInfoFab();
+    }
+  } else {
+    openInfoFab('click');
+  }
+}
+
+// ผูก hover เฉพาะเครื่องที่มีเมาส์จริง — จอสัมผัสจะได้พฤติกรรม "แตะ" ล้วนเหมือนเดิม
+function initInfoFabHover() {
+  const group = document.getElementById('infoFabGroup');
+  if (!group) return;
+  if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  group.addEventListener('mouseenter', function() {
+    clearTimeout(_infoFabCloseTimer);
+    if (!group.classList.contains('open')) openInfoFab('hover');
+  });
+  group.addEventListener('mouseleave', function() {
+    if (group.dataset.openBy !== 'hover') return;
+    clearTimeout(_infoFabCloseTimer);
+    _infoFabCloseTimer = setTimeout(closeInfoFab, INFO_FAB_HOVER_CLOSE_MS);
+  });
+}
+window.addEventListener('DOMContentLoaded', initInfoFabHover);
 
 // ── ป็อปอัป "ขั้นตอนการเข้ารับบริการ" (ปุ่มลอยด้านบน) ──
 function openFlowModal() {
@@ -8266,27 +8370,33 @@ function printStaffSummary() {
 </div>
 
 
-<!-- ─── กลุ่มปุ่มลอยคำแนะนำ/ขั้นตอน (Tap-Triggered บนมือถือ ≤600px — เจ้าของสั่ง 2026-08-31) ─── -->
-<div class="info-fab-group" id="infoFabGroup">
-<!-- ─── "ใบสรุปของฉัน" Floating Button (ผู้รับบริการค้นใบสรุปของตัวเอง — เจ้าของสั่ง 2026-08-31) ─── -->
-<button class="mine-fab" onclick="openMySummary()" title="ค้นหาใบสรุปการลงทะเบียนของท่าน">
-  🔎 <span>ใบสรุปของฉัน</span>
-</button>
+<!-- ฉากหลังหรี่ของ Floating Action Menu (เฉพาะ ≤600px) — ⚠ ต้องอยู่ "นอก" #infoFabGroup
+     เพราะตัวดักคลิกนอกกลุ่มใช้ g.contains(ev.target) ถ้าวางไว้ในกลุ่ม แตะฉากหลังแล้วเมนูจะไม่ปิด -->
+<div class="info-fab-scrim" id="infoFabScrim" aria-hidden="true"></div>
 
-<!-- ─── Service Steps Floating Button (อยู่เหนือปุ่มคำแนะนำ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
-<button class="flow-fab" onclick="openFlowModal()" title="ดูขั้นตอนการเข้ารับบริการตรวจสุขภาพ">
-  🧭 <span>ขั้นตอนการเข้ารับบริการ</span>
+<!-- ─── กลุ่มปุ่มลอยข้อมูล/ใบสรุป (Expandable Button Group ทุกขนาดจอ — เจ้าของสั่ง 2026-08-31 รอบสอง) ─── -->
+<!-- ⚠ ลำดับลูกใน DOM ตั้งใจเรียงตาม tab order: toggle ก่อน แล้วไล่จากปุ่มล่างขึ้นบน (prep → flow → mine)
+     ห้ามสลับ — ไม่งั้นกด Tab จากปุ่มกลมแล้วจะวิ่งออกนอกกลุ่มแทนที่จะไล่เข้าเมนู -->
+<div class="info-fab-group" id="infoFabGroup">
+<button class="info-fab-toggle" id="infoFabToggle" type="button"
+        aria-expanded="false" aria-controls="infoFabGroup"
+        aria-label="เปิดเมนูข้อมูลและใบสรุป" onclick="toggleInfoFab(event)">
+  <span class="info-fab-icon" aria-hidden="true">📋</span>
 </button>
 
 <!-- ─── Prep Instructions Floating Button (ผู้รับบริการ) ─── -->
-<button class="prep-fab" onclick="openPrepModal()" title="ดูคำแนะนำการเตรียมตัวก่อนตรวจสุขภาพ">
-  📋 <span>คำแนะนำก่อนตรวจ</span>
+<button class="prep-fab fab-item" onclick="openPrepModal()" title="ดูคำแนะนำการเตรียมตัวก่อนตรวจสุขภาพ">
+  <span class="fab-ic" aria-hidden="true">📋</span><span class="fab-label">คำแนะนำก่อนตรวจ</span>
 </button>
 
-<button class="info-fab-toggle" id="infoFabToggle" type="button"
-        aria-expanded="false" aria-controls="infoFabGroup"
-        aria-label="เปิดเมนูคำแนะนำและขั้นตอน" onclick="toggleInfoFab(event)">
-  <span class="info-fab-icon" aria-hidden="true">📋</span>
+<!-- ─── Service Steps Floating Button (อยู่เหนือปุ่มคำแนะนำ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
+<button class="flow-fab fab-item" onclick="openFlowModal()" title="ดูขั้นตอนการเข้ารับบริการตรวจสุขภาพ">
+  <span class="fab-ic" aria-hidden="true">🧭</span><span class="fab-label">ขั้นตอนการเข้ารับบริการ</span>
+</button>
+
+<!-- ─── "ใบสรุปของฉัน" Floating Button (ผู้รับบริการค้นใบสรุปของตัวเอง — เจ้าของสั่ง 2026-08-31) ─── -->
+<button class="mine-fab fab-item" onclick="openMySummary()" title="ค้นหาใบสรุปการลงทะเบียนของท่าน">
+  <span class="fab-ic" aria-hidden="true">🔎</span><span class="fab-label">ใบสรุปของฉัน</span>
 </button>
 </div>
 
