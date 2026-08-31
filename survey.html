@@ -278,7 +278,13 @@
       <div id="summaryContent"></div>
     </div>
     <div id="prepContent"></div>
-    <button class="done-btn" onclick="window.print()" style="background:#1D9E75;margin-top:12px">🖨️ พิมพ์ใบสรุป</button>
+    <!-- ── ช่องทางเก็บใบสรุปของผู้รับบริการ (เจ้าของสั่ง 2026-08-31) ──
+         เลิกส่งอีเมลยืนยันการลงทะเบียนแล้ว ใบสรุปจึงต้องให้ผู้รับบริการเก็บเองจากหน้านี้
+         ใช้หน้าต่างพิมพ์ของเบราว์เซอร์ซึ่งมีตัวเลือก "บันทึกเป็น PDF" อยู่แล้วทุกเครื่อง (iOS/Android/PC)
+         ⇒ ไม่ต้องพึ่ง library ภายนอก และข้อมูลผู้ป่วยไม่ถูกส่งออกนอกเครื่องเลย -->
+    <button class="done-btn" onclick="window.print()" style="background:#1D9E75;margin-top:12px">📥 บันทึก / พิมพ์ใบสรุป</button>
+    <div class="hint" style="margin-top:6px;line-height:1.55">แตะแล้วเลือก <strong>"บันทึกเป็น PDF"</strong> (Save as PDF) เพื่อเก็บไว้ในเครื่อง
+      หรือเลือกเครื่องพิมพ์เพื่อพิมพ์ลงกระดาษ — <strong>แนะนำให้บันทึกไว้ก่อนปิดหน้านี้</strong></div>
     <button class="done-btn" onclick="window.location.href='index.html'" style="margin-top:8px">กลับหน้าหลัก</button>
   </div>
 </div>

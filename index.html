@@ -2147,6 +2147,20 @@
   .flow-fab:hover { background:#3B9A58; transform:translateY(-2px); }
   @media print { .flow-fab { display:none !important; } }
   @media print { .prep-fab { display:none !important; } }
+
+  /* ปุ่มลอย "ใบสรุปของฉัน" — ผู้รับบริการค้นใบสรุปของตัวเองด้วยเลขบัตร+วันเกิด (เจ้าของสั่ง 2026-08-31)
+     เลียนแบบ .flow-fab ทุกอย่าง เปลี่ยนแค่สี + ตำแหน่ง (ซ้อนขึ้นไปจาก .flow-fab อีกชั้น) */
+  .mine-fab {
+    position:fixed; bottom:128px; left:24px;
+    background:#6A4FB6; color:#fff;
+    border:none; border-radius:50px;
+    padding:12px 20px; font-size:14px; font-weight:700;
+    cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,0.28);
+    z-index:900; display:flex; align-items:center; gap:6px;
+    transition:background 0.2s,transform 0.15s; font-family:inherit;
+  }
+  .mine-fab:hover { background:#7E5FD0; transform:translateY(-2px); }
+  @media print { .mine-fab { display:none !important; } }
   /* จอแคบ (≤400px): .prep-fab (ซ้าย) + .staff-fab (ขวา) รวมกันกว้างเกินจอ — วัดที่ 360px ชนกัน 7px
      ย่อทั้งคู่ให้อยู่แถวเดียวกันได้ แทนการยกขึ้นอีกแถว เพราะช่วง bottom 80–124px
      เป็นที่ของ .atwarn-popup (z-index 9998) ถ้าไปวางตรงนั้นจะโดนป็อปอัปเตือนทับ (เจอ 2026-08-19) */
@@ -2169,13 +2183,14 @@
       box-shadow: 0 4px 18px rgba(0,0,0,.28);
       z-index: 901; cursor: pointer; font-size: 22px;
     }
-    .info-fab-group .flow-fab, .info-fab-group .prep-fab {
+    .info-fab-group .flow-fab, .info-fab-group .prep-fab, .info-fab-group .mine-fab {
       opacity: 0; visibility: hidden; pointer-events: none;
       transform: translateY(10px); transition: .18s;
     }
     .info-fab-group.open .prep-fab { bottom: 88px; }
     .info-fab-group.open .flow-fab { bottom: 140px; }
-    .info-fab-group.open .flow-fab, .info-fab-group.open .prep-fab {
+    .info-fab-group.open .mine-fab { bottom: 192px; }
+    .info-fab-group.open .flow-fab, .info-fab-group.open .prep-fab, .info-fab-group.open .mine-fab {
       opacity: 1; visibility: visible; pointer-events: auto; transform: none;
     }
   }
@@ -2467,13 +2482,14 @@
           </div>
         </div>
 
-        <!-- ── อีเมลติดต่อ (ไม่บังคับ) — ใช้ส่งใบยืนยันการลงทะเบียนกลับให้ผู้ป่วย ── -->
+        <!-- ── อีเมลติดต่อ (ไม่บังคับ) ── เจ้าของสั่งเลิกส่งอีเมลยืนยันการลงทะเบียนเมื่อ 2026-08-31
+             ⇒ ตัดข้อความ "ระบบจะส่งใบยืนยัน…" ใต้ช่องนี้ออกแล้ว (เป็นข้อความเท็จทันทีที่เลิกส่ง)
+             ช่องนี้ยังเก็บไว้และยังลงคอลัมน์เดิมในชีต ผู้รับบริการเก็บใบสรุปเองจากหน้า survey.html แทน -->
         <!-- อยู่นอก fullInfoSection โดยตั้งใจ ให้กรอกได้ทั้งโหมด "มี HN" และ "ไม่มี HN" -->
         <div class="field-grid" style="margin-bottom:14px">
           <div class="field-group">
             <label>อีเมล (ถ้ามี)</label>
-            <input type="email" id="contactEmail" placeholder="example@email.com">
-            <div class="field-hint">ระบบจะส่ง<strong>ใบยืนยันการลงทะเบียน</strong>ไปให้ทางอีเมลนี้ (ไม่ใช่ผลตรวจ) — ไม่กรอกก็ลงทะเบียนได้ตามปกติ</div>
+            <input type="email" id="contactEmail" placeholder="example@email.com" onchange="onContactEmailChange()">
           </div>
         </div>
 
@@ -3334,6 +3350,12 @@
 
             <!-- ── ส่งทาง E-mail: Detail ── -->
             <div id="papEmailDetail" style="display:none">
+              <!-- ใช้อีเมลเดียวกับช่อง "อีเมล (ถ้ามี)" ในส่วนที่ 1 (เจ้าของสั่ง 2026-08-31) —
+                   ช่องนั้นอยู่นอก #fullInfoSection จึงกรอกได้ทั้งโหมด "มี HN" และ "ไม่มี HN" -->
+              <button type="button" class="btn-copy-addr" style="margin-bottom:10px"
+                onclick="copyContactEmailTo('papResultEmail', 'papResultEmailConfirm')">
+                📧 ใช้อีเมลเดียวกับที่กรอกไว้ในส่วนที่ 1
+              </button>
               <div class="field-grid cols-2">
                 <div class="field-group">
                   <label>E-mail สำหรับรับผลตรวจภายใน <span class="req">*</span></label>
@@ -3547,6 +3569,12 @@
               <span class="tl-icon">🔬</span>
               <span>ท่านเลือก <strong>ตรวจภายใน</strong> — ผลตรวจภายในจะจัดส่งพร้อมกับผลตรวจสุขภาพไปยัง<strong>อีเมลเดียวกัน</strong>นี้</span>
             </div>
+              <!-- ใช้อีเมลเดียวกับช่อง "อีเมล (ถ้ามี)" ในส่วนที่ 1 (เจ้าของสั่ง 2026-08-31) —
+                   ช่องนั้นอยู่นอก #fullInfoSection จึงกรอกได้ทั้งโหมด "มี HN" และ "ไม่มี HN" -->
+              <button type="button" class="btn-copy-addr" style="margin-bottom:10px"
+                onclick="copyContactEmailTo('resultEmail', 'resultEmailConfirm')">
+                📧 ใช้อีเมลเดียวกับที่กรอกไว้ในส่วนที่ 1
+              </button>
             <div class="field-grid cols-2">
               <div class="field-group">
                 <label>E-mail สำหรับรับผลตรวจ <span class="req">*</span></label>
@@ -4668,6 +4696,64 @@ function copyPersonalInfo() {
   if (ln) document.getElementById('postRecipientLast').value = ln;
   if (phone) document.getElementById('postPhone').value      = phone;
   showToast('✅ คัดลอกข้อมูลเรียบร้อยแล้ว');
+}
+
+
+// ─── คัดลอกอีเมลจากส่วนที่ 1 มาใส่ช่องรับผลตรวจ (เจ้าของสั่ง 2026-08-31) ──────────
+// ที่มา: เลิกส่งอีเมลยืนยันการลงทะเบียนแล้ว แต่ช่อง "อีเมล (ถ้ามี)" ยังเก็บไว้ทั้ง 2 โหมด
+// (#contactEmail อยู่นอก #fullInfoSection จึงกรอกได้ทั้ง "มี HN" และ "ไม่มี HN")
+// ⇒ ถ้าผู้รับบริการกรอกไว้แล้ว และเลือกรับผลทางอีเมล ให้กดปุ่มเดียวเติมได้เลย ไม่ต้องพิมพ์ซ้ำ 2 ช่อง
+// ใช้ร่วมกันทั้งผลตรวจสุขภาพ (resultEmail) และผลตรวจภายใน (papResultEmail)
+// ⚠ ต้อง dispatch event 'input' ด้วย เพราะช่องยืนยันมี oninput="checkEmailMatch()" / "checkPapEmailMatch()"
+//   ที่ต้องทำงานต่อ ไม่งั้นข้อความ "อีเมลตรงกัน" จะไม่อัปเดตทั้งที่ค่าตรงกันแล้ว
+
+// ─── เติมอีเมลรับผลตรวจให้อัตโนมัติ (เจ้าของสั่ง 2026-08-31) ────────────────────
+// เจ้าของถามว่า "auto เติมให้เองเลยได้ไหม" ⇒ ใช่ แต่ต้องกันเขียนทับของที่ผู้ใช้พิมพ์เอง
+// เงื่อนไขเข้ม 3 ข้อ ถึงจะเติม:
+//   1. #contactEmail ในส่วนที่ 1 มีค่าและรูปแบบเป็นอีเมลจริง
+//   2. ช่องปลายทาง "ว่างทั้งคู่" (ทั้งช่องหลักและช่องยืนยัน) — ถ้ามีอะไรอยู่แล้วไม่แตะเลย
+//   3. ผู้ใช้เลือกรับผลทางอีเมลอยู่จริง (เรียกจาก onDeliveryChange/onPapDeliveryChange เท่านั้น)
+// ปุ่ม "📧 ใช้อีเมลเดียวกับ…" ยังอยู่ สำหรับกรณีลบทิ้งแล้วอยากเอากลับ หรือเปลี่ยนอีเมลด้านบนทีหลัง
+function autoFillResultEmail(mainId, confirmId) {
+  const src = (document.getElementById('contactEmail')?.value || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(src)) return false;
+  const m = document.getElementById(mainId), c = document.getElementById(confirmId);
+  if (!m || !c) return false;
+  if ((m.value || '').trim() !== '' || (c.value || '').trim() !== '') return false;
+  [m, c].forEach(el => {
+    el.value = src;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  showToast('✅ เติมอีเมล ' + src + ' จากส่วนที่ 1 ให้อัตโนมัติ — แก้ไขได้');
+  return true;
+}
+
+// ผู้ใช้เลือก "รับผลทางอีเมล" ไว้ก่อน แล้วค่อยย้อนขึ้นไปกรอกอีเมลในส่วนที่ 1 ทีหลัง
+// → เติมให้ตอนออกจากช่อง (change ไม่ใช่ input จะได้ไม่เด้ง toast ทุกตัวอักษร)
+function onContactEmailChange() {
+  const emailDetail    = document.getElementById('emailDetail');
+  const papEmailDetail = document.getElementById('papEmailDetail');
+  if (emailDetail && emailDetail.style.display !== 'none') autoFillResultEmail('resultEmail', 'resultEmailConfirm');
+  if (papEmailDetail && papEmailDetail.style.display !== 'none') autoFillResultEmail('papResultEmail', 'papResultEmailConfirm');
+}
+
+function copyContactEmailTo(mainId, confirmId) {
+  const src = (document.getElementById('contactEmail')?.value || '').trim();
+  if (!src) {
+    showToast('⚠ ยังไม่ได้กรอกอีเมลในส่วนที่ 1 (ช่อง "อีเมล (ถ้ามี)")');
+    const c = document.getElementById('contactEmail');
+    if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => c.focus(), 400); }
+    return;
+  }
+  [mainId, confirmId].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = src;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  showToast('✅ ใช้อีเมล ' + src + ' แล้ว');
 }
 
 function copyAllFromSection1() {
@@ -6798,6 +6884,8 @@ function onDeliveryChange(method) {
   // Show/hide details
   document.getElementById('postDetail').style.display = method === 'post' ? 'block' : 'none';
   document.getElementById('emailDetail').style.display = method === 'email' ? 'block' : 'none';
+  // เติมอีเมลจากส่วนที่ 1 ให้อัตโนมัติเมื่อ "เพิ่งเลือก" รับผลทางอีเมล (เจ้าของสั่ง 2026-08-31)
+  if (method === 'email') autoFillResultEmail('resultEmail', 'resultEmailConfirm');
 
   currentDeliveryMethod = method;
   updatePickupPapDetail();
@@ -6908,6 +6996,8 @@ function onPapDeliveryChange(method) {
 
   // Show/hide details
   document.getElementById('papEmailDetail').style.display = method === 'email' ? 'block' : 'none';
+  // เติมอีเมลจากส่วนที่ 1 ให้อัตโนมัติเมื่อ "เพิ่งเลือก" รับผลตรวจภายในทางอีเมล (เจ้าของสั่ง 2026-08-31)
+  if (method === 'email') autoFillResultEmail('papResultEmail', 'papResultEmailConfirm');
   document.getElementById('papPostDetail').style.display  = method === 'post'  ? 'block' : 'none';
   document.getElementById('papCallDetail').style.display  = method === 'call'  ? 'block' : 'none';
 }
@@ -7526,6 +7616,86 @@ async function doStaffSearch() {
   }
 }
 
+// ─── "ใบสรุปของฉัน" — ผู้รับบริการค้นใบสรุปของตัวเองด้วยเลขบัตรประชาชน+วันเกิด (เจ้าของสั่ง 2026-08-31) ───
+// ต่างจาก Staff Search: ไม่มีรหัสผ่านเจ้าหน้าที่ ต้องกรอกเลขบัตร+วันเกิดตรงกันทั้งคู่ (2 ปัจจัย) เพราะเลขบัตร
+// ประชาชนอย่างเดียวไม่ใช่ความลับ ฝั่ง Apps Script (action:'mysearch') จะคืนเฉพาะฟิลด์ที่ไม่อ่อนไหวเท่านั้น
+// ⚠ ห้ามเก็บเลขบัตร/วันเกิดลง sessionStorage/localStorage เด็ดขาด (ต่างจากรหัสเจ้าหน้าที่ที่เก็บได้) —
+//   ล้างค่าในช่องทั้งสองและผลลัพธ์ทิ้งทุกครั้งที่เปิด/ปิดป็อปอัป ไม่ให้ค้างอยู่บนหน้าจอ
+const MY_SUMMARY_NOT_FOUND_MSG = 'ไม่พบใบสรุปที่ตรงกับข้อมูลที่กรอก กรุณาตรวจสอบเลขบัตรประชาชนและวันเกิดอีกครั้ง';
+
+function openMySummary() {
+  closeInfoFab();
+  document.getElementById('mySummaryIdCard').value = '';
+  document.getElementById('mySummaryDob').value = '';
+  document.getElementById('mySummaryResult').innerHTML = '';
+  document.getElementById('mySummaryModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('mySummaryIdCard').focus(), 200);
+}
+function closeMySummary() {
+  document.getElementById('mySummaryModal').style.display = 'none';
+  document.body.style.overflow = '';
+  // ล้างค่าในช่องและผลลัพธ์ทิ้งทุกครั้งที่ปิด — ห้ามค้างข้อมูลที่กรอกไว้บนหน้าจอ
+  document.getElementById('mySummaryIdCard').value = '';
+  document.getElementById('mySummaryDob').value = '';
+  document.getElementById('mySummaryResult').innerHTML = '';
+}
+function mySummaryOutside(e) {
+  if (e.target === document.getElementById('mySummaryModal')) closeMySummary();
+}
+
+async function doMySummarySearch() {
+  const idCard = (document.getElementById('mySummaryIdCard').value || '').trim();
+  const dob    = (document.getElementById('mySummaryDob').value || '').trim();
+  const btn    = document.getElementById('mySummaryBtn');
+  const result = document.getElementById('mySummaryResult');
+
+  // รูปแบบผิด → ข้อความเดียวกับ "ไม่พบ" เสมอ (กันการไล่เดาว่าเลขบัตรไหนมีอยู่ในระบบ)
+  if (idCard.length !== 13 || !/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) {
+    result.innerHTML = '<div style="padding:12px 4px;color:var(--text-muted);font-size:13.5px">' + escHtml(MY_SUMMARY_NOT_FOUND_MSG) + '</div>';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = '⏳ กำลังค้นหา...';
+  result.innerHTML = '';
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'mysearch', idCard: idCard, dob: dob }),
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    const raw = await res.text();
+    let json = null;
+    try { json = JSON.parse(raw); } catch(parseErr) { json = null; }
+
+    const items = (json && json.status === 'ok') ? (json.results || []) : [];
+    if (!items.length) {
+      result.innerHTML = '<div style="padding:12px 4px;color:var(--text-muted);font-size:13.5px">' + escHtml(MY_SUMMARY_NOT_FOUND_MSG) + '</div>';
+      return;
+    }
+
+    result.innerHTML = items.map(function(r) {
+      return '<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:12px">'
+        + '<div style="font-weight:700;font-size:15px;color:var(--primary-dark)">' + escHtml(r.name || '—') + '</div>'
+        + '<div style="font-size:13.5px;color:var(--text,#333);margin-top:8px;line-height:1.8">'
+        + '<div>วันที่นัดหมาย: ' + escHtml(r.serviceDate || '—') + '</div>'
+        + '<div>โปรแกรม: ' + escHtml(r.program || '—') + '</div>'
+        + '<div>รายการเพิ่มเติม: ' + escHtml(r.additionalItems || '—') + '</div>'
+        + '<div>ยอดรวม: ' + escHtml(r.total || '—') + ' บาท</div>'
+        + '</div></div>';
+    }).join('')
+      + '<div style="margin-top:14px;text-align:right">'
+      + '<button type="button" onclick="window.print()" style="padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit">📥 บันทึก / พิมพ์ใบสรุป</button>'
+      + '</div>';
+
+  } catch(err) {
+    result.innerHTML = '<div style="padding:12px 4px;color:var(--text-muted);font-size:13.5px">' + escHtml(MY_SUMMARY_NOT_FOUND_MSG) + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'ค้นหา';
+  }
+}
+
 // รายการเพิ่มเติมถูกเก็บคั่นด้วย " | "; ข้อมูลเก่าคั่นด้วย ", " ซึ่งอาจถูกตัดผิดตรงเลขราคาที่มีจุลภาค (เช่น "1,275 บาท")
 // จึงต้องเชื่อมชิ้นที่ถูกตัดผิดกลับเข้าด้วยกันสำหรับข้อมูลรูปแบบเก่า
 function parseAdditionalItems(str) {
@@ -8090,6 +8260,11 @@ function printStaffSummary() {
 
 <!-- ─── กลุ่มปุ่มลอยคำแนะนำ/ขั้นตอน (Tap-Triggered บนมือถือ ≤600px — เจ้าของสั่ง 2026-08-31) ─── -->
 <div class="info-fab-group" id="infoFabGroup">
+<!-- ─── "ใบสรุปของฉัน" Floating Button (ผู้รับบริการค้นใบสรุปของตัวเอง — เจ้าของสั่ง 2026-08-31) ─── -->
+<button class="mine-fab" onclick="openMySummary()" title="ค้นหาใบสรุปการลงทะเบียนของท่าน">
+  🔎 <span>ใบสรุปของฉัน</span>
+</button>
+
 <!-- ─── Service Steps Floating Button (อยู่เหนือปุ่มคำแนะนำ ตามที่เจ้าของสั่ง 2026-08-29) ─── -->
 <button class="flow-fab" onclick="openFlowModal()" title="ดูขั้นตอนการเข้ารับบริการตรวจสุขภาพ">
   🧭 <span>ขั้นตอนการเข้ารับบริการ</span>
@@ -8219,6 +8394,46 @@ function printStaffSummary() {
       <div id="staffSearchStatus" style="margin-top:8px;font-size:13px;color:var(--text-muted)"></div>
     </div>
     <div id="staffSearchResults" style="overflow-y:auto;padding:0 20px 20px;flex:1"></div>
+  </div>
+</div>
+
+<!-- ─── "ใบสรุปของฉัน" Modal (ผู้รับบริการค้นใบสรุปของตัวเองด้วยเลขบัตร+วันเกิด — เจ้าของสั่ง 2026-08-31)
+     ⚠ ต่างจาก Staff Search: ไม่มีรหัสผ่าน ต้องกรอกเลขบัตร+วันเกิดตรงกันทั้งคู่ และห้ามเก็บค่า 2 ช่องนี้
+     ลง sessionStorage/localStorage เด็ดขาด (ต่างจากรหัสเจ้าหน้าที่ที่เก็บได้) — ล้างทุกครั้งที่ปิด/เปิดใหม่ ─── -->
+<div class="modal-overlay" id="mySummaryModal" style="display:none" onclick="mySummaryOutside(event)">
+  <div class="modal-box" style="max-width:520px;max-height:85vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">🔎 ค้นหาใบสรุปของฉัน</div>
+        <div class="modal-subtitle">กรอกเลขบัตรประชาชนและวันเกิดของท่าน</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeMySummary()">✕</button>
+    </div>
+    <div style="padding:16px 20px;flex-shrink:0">
+      <div style="margin-bottom:10px">
+        <input type="text" id="mySummaryIdCard"
+          placeholder="เลขบัตรประชาชน 13 หลัก"
+          inputmode="numeric" maxlength="13"
+          autocomplete="off"
+          oninput="this.value=this.value.replace(/\D/g,'').slice(0,13)"
+          style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;box-sizing:border-box"
+          onkeydown="if(event.key==='Enter') document.getElementById('mySummaryDob').focus()">
+      </div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="mySummaryDob"
+          placeholder="วันเกิด วว/ดด/ปปปป (พ.ศ.)"
+          inputmode="numeric" maxlength="10"
+          autocomplete="off"
+          oninput="formatDobBE(this)"
+          style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit"
+          onkeydown="if(event.key==='Enter') doMySummarySearch()">
+        <button onclick="doMySummarySearch()" id="mySummaryBtn"
+          style="padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">
+          ค้นหา
+        </button>
+      </div>
+    </div>
+    <div id="mySummaryResult" style="overflow-y:auto;padding:0 20px 20px;flex:1"></div>
   </div>
 </div>
 
