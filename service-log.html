@@ -221,6 +221,10 @@
   }
   .menu-card .menu-icon { font-size: 34px; line-height: 1; }
   .menu-card:active { background: var(--gray-pale); }
+  .menu-card .menu-icon svg { width: 44px; height: 44px; display: block; margin: 0 auto; }
+  .svc-title-icon { display: inline-flex; align-items: center; }
+  .svc-title-icon svg { width: 28px; height: 28px; display: block; }
+  table.sp-people-table td, table.sp-people-table th { text-align: left; white-space: normal; }
 
   .draft-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
   .draft-strip .draft-text { flex: 1 1 240px; font-weight: 600; }
@@ -314,13 +318,28 @@
         </div>
       </div>
 
-      <h2 style="margin-top:4px;">เลือกบริการ</h2>
+      <h2 style="margin-top:4px;">บริการ</h2>
       <div class="menu-grid">
         <button type="button" class="menu-card" data-target="svcCheckup"><span class="menu-icon">🩺</span>ตรวจสุขภาพ</button>
-        <button type="button" class="menu-card" data-target="svcMedcert"><span class="menu-icon">📄</span>ใบรับรองแพทย์</button>
+        <button type="button" class="menu-card" data-target="svcMedcertGen"><span class="menu-icon">📄</span>ใบรับรองแพทย์ทั่วไป</button>
+        <button type="button" class="menu-card" data-target="svcMedcertLab"><span class="menu-icon">🧾</span>ใบรับรองแพทย์มี Lab</button>
         <button type="button" class="menu-card" data-target="svcVaccine"><span class="menu-icon">💉</span>วัคซีน</button>
-        <button type="button" class="menu-card" data-target="svcSpecial"><span class="menu-icon">🔬</span>ส่งตรวจพิเศษ</button>
+      </div>
+
+      <h2 style="margin-top:20px;">ส่งตรวจพิเศษ</h2>
+      <div class="menu-grid">
+        <button type="button" class="menu-card" data-target="svcSpecial" data-special="inbody"><span class="menu-icon" id="menuIcon_inbody"></span><span class="menu-card-label" id="menuLabel_inbody"></span></button>
+        <button type="button" class="menu-card" data-target="svcSpecial" data-special="bmd"><span class="menu-icon" id="menuIcon_bmd"></span><span class="menu-card-label" id="menuLabel_bmd"></span></button>
+        <button type="button" class="menu-card" data-target="svcSpecial" data-special="mmg"><span class="menu-icon" id="menuIcon_mmg"></span><span class="menu-card-label" id="menuLabel_mmg"></span></button>
+        <button type="button" class="menu-card" data-target="svcSpecial" data-special="vision3d"><span class="menu-icon" id="menuIcon_vision3d"></span><span class="menu-card-label" id="menuLabel_vision3d"></span></button>
+        <button type="button" class="menu-card" data-target="svcSpecial" data-special="ent"><span class="menu-icon" id="menuIcon_ent"></span><span class="menu-card-label" id="menuLabel_ent"></span></button>
+        <button type="button" class="menu-card" data-target="svcSpecial" data-special="ent_hearing"><span class="menu-icon" id="menuIcon_ent_hearing"></span><span class="menu-card-label" id="menuLabel_ent_hearing"></span></button>
+      </div>
+
+      <h2 style="margin-top:20px;">รายการ / รายงาน</h2>
+      <div class="menu-grid">
         <button type="button" class="menu-card" data-target="today"><span class="menu-icon">📋</span>รายการวันนี้</button>
+        <button type="button" class="menu-card" data-target="spTable"><span class="menu-icon">🗂</span>ตารางรวมส่งตรวจพิเศษ</button>
         <button type="button" class="menu-card" data-target="report"><span class="menu-icon">📊</span>รายงานรายเดือน</button>
       </div>
     </div>
@@ -337,27 +356,28 @@
       <form id="logForm" class="card no-print">
         <div class="svc-header">
           <button type="button" class="btn secondary small" data-back-menu>← กลับเมนู</button>
+          <span id="svcTitleIcon" class="svc-title-icon" hidden></span>
           <h2 id="svcTitle"></h2>
         </div>
 
         <!-- การ์ดผู้รับบริการ — ชุดเดียวในไฟล์ ใช้ร่วมกันทุกเมนู เพราะ "1 แถว = 1 คน" (รอบ 6) -->
         <div id="personCard">
-          <!-- รอบ 6 (แก้เพิ่ม): หน้าส่งตรวจพิเศษ "ไม่มีคิว" (เจ้าของ: ไว้เช็คยอดว่ามีกี่คน ส่งคนไข้ไปทำหรือยัง)
-               ⇒ ครอบด้วย #queueRow แล้ว showScreen() จะซ่อนทั้งแถวเมื่ออยู่หน้า svcSpecial โดยไม่ล้างค่าคิวที่กรอกไว้ -->
+          <!-- รอบ 6/7: หน้าส่งตรวจพิเศษ "ไม่มีคิว" ⇒ showScreen() ซ่อนทั้งแถวโดยไม่ล้างค่าคิวที่กรอกไว้ -->
           <div id="queueRow">
-            <label class="field-label" for="queueSelect">คิว</label>
+            <label class="field-label" for="queueSelect" id="queueLabel">คิว</label>
             <select id="queueSelect"></select>
           </div>
 
-          <label class="field-label" for="patientName">ชื่อ-นามสกุลผู้รับบริการ</label>
-          <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
-
-          <label class="field-label" for="patientHn">HN</label>
-          <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
-
           <label class="field-label" for="barcodeInput">สแกนบาร์โค้ด</label>
           <input type="text" id="barcodeInput" autocomplete="off" placeholder="คลิกช่องนี้แล้วยิงบาร์โค้ด ระบบจะเติมชื่อและ HN ให้เอง">
+          <p class="muted" id="barcodeHint" style="margin:2px 0 0;">(ไม่บังคับ) ยิงบาร์โค้ดแล้วระบบเติม HN/ชื่อ ให้เอง</p>
           <div class="muted barcode-raw" id="barcodeRaw"></div>
+
+          <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
+          <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
+
+          <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
+          <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
         </div>
 
         <!-- ===== 1) ตรวจสุขภาพ ===== -->
@@ -390,9 +410,9 @@
           <label class="field-label" for="checkupAmount" style="margin-top:10px;">ราคาตรวจสุขภาพ (กรอกเอง)</label>
           <input type="number" id="checkupAmount" min="0" step="1" inputmode="numeric" placeholder="กรอกยอดเงินที่เก็บจริง">
 
-          <label class="field-label" for="deliveryMethod" style="margin-top:10px;">ช่องทางรับผล (ไม่บังคับ)</label>
+          <label class="field-label" for="deliveryMethod" style="margin-top:10px;">ช่องทางรับผล *</label>
           <select id="deliveryMethod">
-            <option value="">ไม่ระบุ</option>
+            <option value="">— เลือกช่องทางรับผล —</option>
             <option value="รอรับด้วยตนเอง">รอรับด้วยตนเอง</option>
             <option value="ส่งทางไปรษณีย์">ส่งทางไปรษณีย์</option>
             <option value="ส่งทาง E-mail">ส่งทาง E-mail</option>
@@ -404,8 +424,8 @@
           <p class="muted" id="legacyExtraInfo" hidden></p>
         </section>
 
-        <!-- ===== 2) ใบรับรองแพทย์ ===== -->
-        <section id="svcMedcert" hidden>
+        <!-- ===== 2a) ใบรับรองแพทย์ทั่วไป (รอบ 7, B5) ===== -->
+        <section id="svcMedcertGen" hidden>
           <div class="row">
             <div>
               <label class="field-label" for="medCert5">สุขภาพดี 5 โรค (จำนวนใบ)</label>
@@ -416,7 +436,13 @@
               <input type="number" id="medCertDriver" min="0" step="1" value="0">
             </div>
           </div>
-          <div class="row" style="margin-top:8px;">
+          <p class="muted" id="medCertGenAmount" style="margin-top:8px;font-weight:700;">คิดเงินอัตโนมัติ: 0 บาท</p>
+        </section>
+
+        <!-- ===== 2b) ใบรับรองแพทย์มี Lab (รอบ 7, B5) — ราคาไม่ตายตัว กรอกเอง ===== -->
+        <section id="svcMedcertLab" hidden>
+          <p class="muted">ใบรับรองมี lab คิดราคาไม่ตายตัว ต้องกรอกยอดที่เก็บจริงเอง</p>
+          <div class="row">
             <div>
               <label class="field-label" for="medCertLabCount">ใบรับรองมี lab (จำนวนใบ)</label>
               <input type="number" id="medCertLabCount" min="0" step="1" value="0">
@@ -440,10 +466,18 @@
           </details>
         </section>
 
-        <!-- ===== 4) ส่งตรวจพิเศษ — ส่วนที่ 1: บันทึกของคนปัจจุบัน (รวมทั้ง 6 รายการไว้ที่นี่ที่เดียว รอบ 6) ===== -->
+        <!-- ===== 4) ส่งตรวจพิเศษ (รอบ 7, B6) ===== -->
         <section id="svcSpecial" hidden>
-          <p class="muted">ติ๊กเพื่อบันทึกว่าคีย์ consult/ส่ง line แล้ว · ส่งไปตรวจแล้ว · กลับมาแล้ว — ไม่คิดเงิน ต้องกรอกชื่อ-นามสกุลและ HN ด้านบนด้วย</p>
+          <p class="muted">กรอก HN และชื่อ-สกุล แล้วติ๊กสถานะอย่างน้อย 1 ช่อง จึงจะบันทึกได้</p>
           <div id="specialSendsList"></div>
+
+          <div id="svcSpecialPeopleWrap" style="margin-top:18px;border-top:1px solid var(--border);padding-top:12px;">
+            <div class="svc-header" style="margin-bottom:6px;">
+              <h3 id="svcSpecialPeopleHeading" style="margin:0;">ยอดเข้ารับบริการวันนี้: 0 คน</h3>
+              <button type="button" class="btn secondary small no-print" id="btnSpPeopleRefresh">🔄 รีเฟรช</button>
+            </div>
+            <div id="svcSpecialPeopleListWrap"></div>
+          </div>
         </section>
 
         <div class="totals-box">
@@ -459,23 +493,6 @@
         <!-- ปุ่มบันทึกจริง — ซ่อนไว้ (ใช้ sticky bar/แถบร่างแทนบนจอ) แต่ยังเป็นตัวเก็บสถานะ disabled ของฟอร์ม -->
         <button type="submit" class="btn block" id="btnSubmitLog" hidden disabled>บันทึก</button>
       </form>
-
-      <!-- ===== ส่งตรวจพิเศษ — ส่วนที่ 2: ตารางรายชื่อรายวัน (นอกฟอร์ม แสดงเฉพาะหน้าส่งตรวจพิเศษ) ===== -->
-      <div id="svcSpecialTable" hidden>
-        <div class="card no-print">
-          <h2 style="margin-top:0;">ตารางรายชื่อส่งตรวจพิเศษรายวัน</h2>
-          <label class="field-label" for="spDate">วันที่</label>
-          <input type="date" id="spDate">
-          <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:600;">
-            <input type="checkbox" id="spAllPoints" checked style="width:18px;height:18px;"> ทุกจุดบริการ
-          </label>
-          <div class="row" style="margin-top:10px;">
-            <button type="button" class="btn" id="btnSpLoad">ดูรายชื่อ</button>
-            <button type="button" class="btn secondary" id="btnSpPrint">🖨 พิมพ์</button>
-          </div>
-        </div>
-        <div id="spTableWrap"></div>
-      </div>
     </div>
 
     <div class="sticky-bar no-print" id="stickyBar">
@@ -524,6 +541,26 @@
       <div id="reportContent"></div>
     </div>
   </section>
+
+  <!-- ---------- ตารางรวมส่งตรวจพิเศษ (รอบ 7, B8 — แยกจากฟอร์มออกมาเป็นหน้าจอของตัวเอง) ---------- -->
+  <div id="spTableScreen" style="display:none;">
+    <div class="wrap">
+      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับเมนู</button>
+      <div class="card no-print">
+        <h2 style="margin-top:0;">ตารางรวมส่งตรวจพิเศษ</h2>
+        <label class="field-label" for="spDate">วันที่</label>
+        <input type="date" id="spDate">
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-weight:600;">
+          <input type="checkbox" id="spAllPoints" checked style="width:18px;height:18px;"> ทุกจุดบริการ
+        </label>
+        <div class="row" style="margin-top:10px;">
+          <button type="button" class="btn" id="btnSpLoad">ดูรายชื่อ</button>
+          <button type="button" class="btn secondary" id="btnSpPrint">🖨 พิมพ์</button>
+        </div>
+      </div>
+      <div id="spTableWrap"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -604,9 +641,9 @@ var SERVICE_POINTS_DEFAULT = ['จุดบริการที่ 1'];
 // เลขคิว (รอบ 6) — prefix ต่อเมนู ตามที่เจ้าของสั่ง (C/M/V)
 // ⚠ แก้เพิ่ม (0.2.1): หน้าส่งตรวจพิเศษ "ไม่มีคิว" (เจ้าของ: ไว้เช็คยอดว่ามีกี่คน ส่งคนไข้ไปทำหรือยัง)
 // ⇒ svcSpecial ไม่มี prefix เลย — ห้ามเพิ่มกลับเข้ามา ไม่งั้น buildQueueOptions()/showScreen() จะไปแตะ/ล้างค่าคิวของหน้านี้อีก
-var QUEUE_PREFIX = { svcCheckup: 'C', svcMedcert: 'M', svcVaccine: 'V' };
-var SVC_SCREENS = ['svcCheckup', 'svcMedcert', 'svcVaccine', 'svcSpecial'];
-var SVC_TITLES = { svcCheckup: 'ตรวจสุขภาพ', svcMedcert: 'ใบรับรองแพทย์', svcVaccine: 'วัคซีน', svcSpecial: 'ส่งตรวจพิเศษ' };
+var QUEUE_PREFIX = { svcCheckup: 'C', svcMedcertGen: 'M', svcMedcertLab: 'M', svcVaccine: 'V' };
+var SVC_SCREENS = ['svcCheckup', 'svcMedcertGen', 'svcMedcertLab', 'svcVaccine', 'svcSpecial'];
+var SVC_TITLES = { svcCheckup: 'ตรวจสุขภาพ', svcMedcertGen: 'ใบรับรองแพทย์ทั่วไป', svcMedcertLab: 'ใบรับรองแพทย์มี Lab', svcVaccine: 'วัคซีน' };
 
 // ส่งตรวจพิเศษ (รอบ 4) — ติดตามการส่ง/กลับมาแล้วเท่านั้น ไม่คิดเงินเลย
 // ⚠ ต้องตรงกับ SPECIAL_SENDS ใน สถิติบริการ.js เป๊ะทั้ง id/name/group/prepLabel/ลำดับ
@@ -620,6 +657,26 @@ var SPECIAL_SENDS = [
   { id: 'ent', name: 'ตรวจหูคอจมูก', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
   { id: 'ent_hearing', name: 'ตรวจหูคอจมูก + การได้ยิน', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' }
 ];
+
+// รอบ 7 (B7) — สร้างตัวช่วยค้นหาแบบเดียวกับฝั่งเซิร์ฟเวอร์ (SPECIAL_SEND_BY_ID ใน สถิติบริการ.js)
+var SPECIAL_SEND_BY_ID = {};
+SPECIAL_SENDS.forEach(function (s) { SPECIAL_SEND_BY_ID[s.id] = s; });
+
+// รอบ 7 (B6) — ป้ายสถานะใหม่ที่วาดลงหน้าจอ (SPECIAL_SENDS.prepLabel ของเดิมห้ามแก้ เทสต์ test_special_sends.js
+// เทียบทั้งก้อนกับฝั่งเซิร์ฟเวอร์แบบเป๊ะ — นี่คือค่าคงที่ใหม่แยกต่างหากสำหรับข้อความบนจอเท่านั้น)
+var SP_STATUS_LABEL = { prep: 'ส่งรายชื่อแล้ว', sent: 'ส่งผู้รับบริการไปแล้ว', back: 'ผู้รับบริการกลับมาแล้ว' };
+
+// รอบ 7 (B7) — ไอคอน SVG คงที่ (viewBox 0 0 48 48, แสดงผล 44x44) จุดเดียวในไฟล์ที่กำหนดหน้าตาไอคอน
+// ⚠ ถ้าเจ้าของส่งไฟล์ภาพจริงมาให้ทำไอคอนใหม่ ให้เปลี่ยนที่นี่ที่เดียว — เป็นสตริงคงที่ในโค้ด ไม่ได้มาจากผู้ใช้ ยัดด้วย innerHTML ได้
+// ห้ามเอาข้อมูลผู้ใช้มาต่อสตริง SVG เด็ดขาด
+var SPECIAL_ICONS = {
+  inbody: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="38" width="30" height="6" rx="2" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><circle cx="24" cy="35" r="2.2" fill="#2C7BC4"/><circle cx="24" cy="9" r="5" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><path d="M24 14 L24 30 M16 20 L24 23 L32 20 M17 38 L24 30 L31 38" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  bmd: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="13.9" cy="30.1" r="5.2" fill="#2C7BC4"/><circle cx="17.9" cy="34.1" r="5.2" fill="#2C7BC4"/><circle cx="30.1" cy="13.9" r="5.2" fill="#2C7BC4"/><circle cx="34.1" cy="17.9" r="5.2" fill="#2C7BC4"/><rect x="12" y="20.5" width="24" height="7" rx="3.5" fill="#1A1E40" transform="rotate(-45 24 24)"/></svg>',
+  mmg: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="5" width="6" height="38" rx="3" fill="#1A1E40"/><rect x="24" y="20" width="13" height="9" rx="4.5" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><rect x="11" y="15" width="29" height="5" rx="2.5" fill="#1A1E40"/><rect x="11" y="29" width="29" height="5" rx="2.5" fill="#2C7BC4"/><rect x="6" y="5" width="6" height="38" rx="3" fill="#1A1E40"/></svg>',
+  vision3d: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="15" cy="24" r="10" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><circle cx="33" cy="24" r="10" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><line x1="25" y1="24" x2="23" y2="24" stroke="#1A1E40" stroke-width="2"/><circle cx="15" cy="24" r="3.5" fill="#2C7BC4"/><circle cx="33" cy="24" r="3.5" fill="#2C7BC4"/></svg>',
+  ent: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="29" y="27" width="14" height="5.5" rx="2.5" fill="#2C7BC4" transform="rotate(28 29 27)"/><circle cx="42" cy="36" r="3.5" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/></svg>',
+  ent_hearing: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 19 Q33 24 30 29" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M35 15 Q41 24 35 33" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M40 11 Q47 24 40 37" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/></svg>'
+};
 
 // รายชื่อเจ้าหน้าที่ตั้งต้น — ใช้ก่อนโหลด config สำเร็จเท่านั้น หลังจากนั้นใช้รายชื่อจาก action=config (resp.staff) เสมอ
 var STAFF_DEFAULT = [];
@@ -741,7 +798,8 @@ var STATE = {
   // แก้เพิ่ม (0.2.3): ถอดหมวด "ตรวจเพิ่ม" ออกจาก UI ทั้งหมดแล้ว บันทึกใหม่ไม่มีตรวจเพิ่มอีกต่อไป (ส่ง tests: [] เสมอ)
   // แต่แถวเก่าที่เคยมีตรวจเพิ่มต้องไม่หายตอนแก้ไข — enterEditMode() เก็บ id ไว้ที่นี่แล้ว onSubmitLog() ส่งค่านี้กลับไปแทน
   editExtraIds: [],
-  warnings: [] // ข้อความเตือนจากเซิร์ฟเวอร์ (resp.warnings ตอน config) — ไม่บล็อกการใช้งาน แค่โชว์
+  warnings: [], // ข้อความเตือนจากเซิร์ฟเวอร์ (resp.warnings ตอน config) — ไม่บล็อกการใช้งาน แค่โชว์
+  activeSpecialId: '' // รอบ 7 (B7) — รายการส่งตรวจพิเศษที่กำลังเปิดอยู่ในหน้า svcSpecial
 };
 
 /* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
@@ -980,6 +1038,37 @@ function buildQueueOptions(prefix, forceValue) {
   sel.value = current || '';
 }
 
+/* รอบ 7 (B3) — ป้าย/placeholder ของคิว/HN/ชื่อ เปลี่ยนตามหน้าบริการ:
+   ตรวจสุขภาพ = บังคับทั้ง 3 ช่อง · ส่งตรวจพิเศษ = บังคับ HN/ชื่อ (ไม่มีคิว) · หน้าอื่น = ไม่บังคับทั้งหมด */
+function updatePersonCardLabels(screenName) {
+  var queueLabelEl = qs('queueLabel');
+  var hnLabelEl = qs('patientHnLabel');
+  var nameLabelEl = qs('patientNameLabel');
+  var hnEl = qs('patientHn');
+  var nameEl = qs('patientName');
+  var reqPh = 'บังคับกรอก', normalPh = 'ไม่บังคับกรอก';
+
+  if (screenName === 'svcCheckup') {
+    if (queueLabelEl) queueLabelEl.textContent = 'คิว *';
+    if (hnLabelEl) hnLabelEl.textContent = 'HN *';
+    if (nameLabelEl) nameLabelEl.textContent = 'ชื่อ-นามสกุลผู้รับบริการ *';
+    if (hnEl) hnEl.placeholder = reqPh;
+    if (nameEl) nameEl.placeholder = reqPh;
+  } else if (screenName === 'svcSpecial') {
+    if (queueLabelEl) queueLabelEl.textContent = 'คิว';
+    if (hnLabelEl) hnLabelEl.textContent = 'HN *';
+    if (nameLabelEl) nameLabelEl.textContent = 'ชื่อ-นามสกุลผู้รับบริการ *';
+    if (hnEl) hnEl.placeholder = reqPh;
+    if (nameEl) nameEl.placeholder = reqPh;
+  } else {
+    if (queueLabelEl) queueLabelEl.textContent = 'คิว';
+    if (hnLabelEl) hnLabelEl.textContent = 'HN';
+    if (nameLabelEl) nameLabelEl.textContent = 'ชื่อ-นามสกุลผู้รับบริการ';
+    if (hnEl) hnEl.placeholder = normalPh;
+    if (nameEl) nameEl.placeholder = normalPh;
+  }
+}
+
 /* =========================================================================
    6.2 สแกนบาร์โค้ด (รอบ 6) — ปรับ pattern ที่นี่จุดเดียวเมื่อรู้รูปแบบบาร์โค้ดจริง
    ========================================================================= */
@@ -1026,14 +1115,15 @@ function buildSpecialRow(item) {
   var row = document.createElement('div');
   row.className = 'check-row special-row';
   row.setAttribute('data-special-id', item.id);
+  row.id = 'sp_row_' + item.id;
   var prepHtml = (item.prepLabel != null)
-    ? '<label class="sp-check"><input type="checkbox" id="sp_prep_' + escHtml(item.id) + '"> ' + escHtml(item.prepLabel) + '</label>'
+    ? '<label class="sp-check"><input type="checkbox" id="sp_prep_' + escHtml(item.id) + '"> ' + escHtml(SP_STATUS_LABEL.prep) + '</label>'
     : '';
   row.innerHTML =
     '<span class="item-name">' + escHtml(item.name) + '</span>' +
     prepHtml +
-    '<label class="sp-check"><input type="checkbox" id="sp_sent_' + escHtml(item.id) + '"> ส่งไปแล้ว</label>' +
-    '<label class="sp-check"><input type="checkbox" id="sp_back_' + escHtml(item.id) + '"> กลับมาแล้ว</label>';
+    '<label class="sp-check"><input type="checkbox" id="sp_sent_' + escHtml(item.id) + '"> ' + escHtml(SP_STATUS_LABEL.sent) + '</label>' +
+    '<label class="sp-check"><input type="checkbox" id="sp_back_' + escHtml(item.id) + '"> ' + escHtml(SP_STATUS_LABEL.back) + '</label>';
   return row;
 }
 
@@ -1066,6 +1156,16 @@ function buildSpecialSendsUI() {
     prepCb.addEventListener('change', function () {
       recalcTotals();
     });
+  });
+}
+
+/* รอบ 7 (B1) — เติมไอคอน/ชื่อของ 6 การ์ดเมนูส่งตรวจพิเศษ จาก SPECIAL_SENDS + SPECIAL_ICONS (single source of truth) */
+function buildSpecialMenuCards() {
+  SPECIAL_SENDS.forEach(function (item) {
+    var iconEl = qs('menuIcon_' + item.id);
+    if (iconEl && SPECIAL_ICONS[item.id]) iconEl.innerHTML = SPECIAL_ICONS[item.id];
+    var labelEl = qs('menuLabel_' + item.id);
+    if (labelEl) labelEl.textContent = item.name;
   });
 }
 
@@ -1211,12 +1311,29 @@ function validateForm(ctx) {
 
   var hasAnything = ctx.checkupOn || ctx.vaccineOn || ctx.nCert > 0 ||
                     ctx.labCount > 0 || ctx.labAmount > 0 || ctx.specialOn;
+
+  // B4 (รอบ 7, เจ้าของสั่งข้อ 0.1): ตรวจสุขภาพบังคับกรอกทุกช่อง (คิว/HN/ชื่อ-สกุล/เพศ/ราคา/ช่องทางรับผล)
+  // ⚠ บังคับแค่ฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — แถวเก่าจำนวนมากไม่มีคิว/HN ถ้าเซิร์ฟเวอร์บังคับด้วย
+  //   จะแก้ไขแถวเก่าไม่ได้เลย (ผลข้างเคียงที่ยอมรับแล้ว: แก้แถวเก่าที่ไม่มีข้อมูลครบต้องเติมให้ครบก่อนถึงจะบันทึกได้)
+  var checkupMissing = [];
+  if (ctx.checkupOn) {
+    if (!ctx.queue) checkupMissing.push('คิว');
+    if (!ctx.patientHn) checkupMissing.push('HN');
+    if (!ctx.patientName) checkupMissing.push('ชื่อ-สกุล');
+    if (ctx.checkupAmountNum === null) checkupMissing.push('ราคา');
+    if (!ctx.deliveryMethod) checkupMissing.push('ช่องทางรับผล');
+  }
+
   if (!hasAnything) {
     msg = 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
   } else if (ctx.checkupOn && !ctx.gender) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
-  } else if (ctx.checkupOn && ctx.checkupAmountNum === null) {
-    msg = 'กรุณากรอกราคาตรวจสุขภาพ';
+  } else if (ctx.checkupOn && checkupMissing.length) {
+    msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
+  } else if (ctx.labCount > 0 && ctx.labAmount <= 0) {
+    msg = 'กรุณากรอกยอดเงินใบรับรองมี lab';
+  } else if (ctx.labAmount > 0 && ctx.labCount <= 0) {
+    msg = 'กรุณากรอกจำนวนใบของใบรับรองมี lab';
   } else if (ctx.specialOn && (!ctx.patientName || !ctx.patientHn)) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
   }
@@ -1288,6 +1405,9 @@ function recalcTotals() {
   var labCount = medNums.labCount;
   var labAmount = medNums.labAmount;
 
+  var medCertGenAmountEl = qs('medCertGenAmount');
+  if (medCertGenAmountEl) medCertGenAmountEl.textContent = 'คิดเงินอัตโนมัติ: ' + money(calcMedCertTotal(nCert, STATE.prices)) + ' บาท';
+
   // ส่งตรวจพิเศษ — อ่านจาก checkbox จริงตรง ๆ
   // ⚠ ห้ามเอา specialSentIds/specialBackIds/specialPrepIds เข้าสูตรเงินใด ๆ ทั้งสิ้น — ไม่คิดเงิน เป็นแค่ช่องติดตาม
   var specialSentIds = getSpecialSentIds();
@@ -1297,6 +1417,8 @@ function recalcTotals() {
 
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim();
+  var queue = (qs('queueSelect') ? qs('queueSelect').value : '') || '';
+  var deliveryMethod = (qs('deliveryMethod') ? qs('deliveryMethod').value : '') || '';
 
   var checkupAmountNum = getCheckupAmountNum();
   var checkupTotal = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
@@ -1326,7 +1448,8 @@ function recalcTotals() {
     vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert,
     extraIds: extraIds, labCount: labCount, labAmount: labAmount,
     specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn,
-    patientName: patientName, patientHn: patientHn
+    patientName: patientName, patientHn: patientHn,
+    queue: queue, deliveryMethod: deliveryMethod
   });
 
   return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
@@ -1420,9 +1543,23 @@ function enterEditMode(rec) {
 
   applyVaccineFilter();
 
-  // เลือกหน้าแรกที่มีข้อมูล: ตรวจสุขภาพ -> ใบรับรอง -> วัคซีน -> ส่งตรวจพิเศษ (B9)
-  var target = hasCheckup ? 'svcCheckup' : (medOn ? 'svcMedcert' : (vaccineOn ? 'svcVaccine' : (specialOn ? 'svcSpecial' : 'svcCheckup')));
-  showScreen(target);
+  // เลือกหน้าแรกที่มีข้อมูล (รอบ 7, B9): ตรวจสุขภาพ -> ใบรับรองทั่วไป -> ใบรับรองมี Lab -> วัคซีน -> ส่งตรวจพิเศษ
+  var hasGen = (rec.medCert5 || 0) > 0 || (rec.medCertDriver || 0) > 0;
+  var hasLab = labCount > 0 || labAmount > 0;
+  var target = hasCheckup ? 'svcCheckup' :
+    (hasGen ? 'svcMedcertGen' :
+    (hasLab ? 'svcMedcertLab' :
+    (vaccineOn ? 'svcVaccine' :
+    (specialOn ? 'svcSpecial' : 'svcCheckup'))));
+
+  var firstSpecialId = '';
+  if (target === 'svcSpecial') {
+    for (var si = 0; si < SPECIAL_SENDS.length; si++) {
+      var sid = SPECIAL_SENDS[si].id;
+      if (specialPrepIds.indexOf(sid) !== -1 || specialSentIds.indexOf(sid) !== -1 || specialBackIds.indexOf(sid) !== -1) { firstSpecialId = sid; break; }
+    }
+  }
+  showScreen(target, firstSpecialId);
   // แก้เพิ่ม (0.2.1): svcSpecial ไม่มีคิว — ถ้าเป้าหมายคือหน้านั้น ห้ามแตะ queueSelect เลย (showScreen() ซ่อนแถวให้แล้ว)
   var editQueuePrefix = QUEUE_PREFIX[target];
   if (editQueuePrefix) buildQueueOptions(editQueuePrefix, rec.queue || '');
@@ -1498,6 +1635,8 @@ function onSubmitLog(e) {
       showToast(isEdit ? '✔ บันทึกการแก้ไขสำเร็จ' : '✔ บันทึกสำเร็จ');
       resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
       loadToday();
+      // รอบ 7 (B6): แคชรายชื่อวันนี้ของหน้าส่งตรวจพิเศษต้องสดหลังบันทึกสำเร็จ — ยิงเฉพาะตอนที่เคยเปิดหน้านั้นแล้วเท่านั้น
+      if (STATE.activeSpecialId) loadSpecialPeopleToday();
       showScreen('menu');
     } else {
       btn.textContent = isEdit ? 'บันทึกการแก้ไข' : 'บันทึก';
@@ -1550,6 +1689,7 @@ function recordGrandTotal(rec) {
 }
 
 var LAST_TODAY_RECORDS = []; // เก็บผลลัพธ์ today ล่าสุดไว้ใช้ตอนกด "แก้ไข" (ไม่ต้องยิง API ซ้ำ)
+var SP_PEOPLE_RECORDS = []; // รอบ 7 (B6) — แคชรายชื่อวันนี้ของหน้าส่งตรวจพิเศษ (ทุกจุดบริการ) ไว้ใช้ตอนกดปุ่มสถานะ
 
 /* สรุปส่งตรวจพิเศษ "แยกรายวัน" (รอบ 4) — คำนวณจาก records ที่ handleToday_ คืนมา (เฉพาะจุดบริการที่เลือกอยู่)
    นับเฉพาะแถวที่ไม่ใช่สถานะ "ยกเลิก" ทุกรายการที่ยอดไม่เป็น 0 แสดงเป็น "<ชื่อ> ส่ง n · กลับ n" */
@@ -1657,7 +1797,9 @@ function ensureSpDateDefault() {
   if (el && !el.value) el.value = todayStr();
 }
 
-var SP_STAGE_LABEL = { back: 'กลับแล้ว', sent: 'ส่งแล้ว', prep: 'เตรียม' };
+// รอบ 7 (B8): คำในตารางรวมต้องสื่อความเดียวกับปุ่มสถานะบนกระดานรายไอคอน (SP_STATUS_LABEL)
+// ไม่งั้นของสิ่งเดียวกันถูกเรียก 2 ชื่อในระบบเดียว — ในตารางใช้คำสั้นกว่าได้ แต่ต้องเป็นคำเดียวกัน
+var SP_STAGE_LABEL = { back: 'กลับมาแล้ว', sent: 'ส่งแล้ว', prep: 'ส่งรายชื่อแล้ว' };
 
 /* ขั้นที่ไปถึงไกลสุดของรายการหนึ่ง ๆ ในแถวเดียว: กลับแล้ว > ส่งแล้ว > เตรียม > — */
 function specialStageFor(rec, id) {
@@ -1665,6 +1807,138 @@ function specialStageFor(rec, id) {
   if ((rec.specialSent || []).indexOf(id) !== -1) return 'sent';
   if ((rec.specialPrep || []).indexOf(id) !== -1) return 'prep';
   return '';
+}
+
+/* รอบ 7 (B6) — รายชื่อผู้เข้ารับบริการวันนี้ของรายการส่งตรวจพิเศษที่กำลังเปิดอยู่ (ทุกจุดบริการ) + ปุ่มติ๊กสถานะ */
+function loadSpecialPeopleToday() {
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: todayStr(), allPoints: true }).then(function (resp) {
+    SP_PEOPLE_RECORDS = (resp && resp.status === 'ok') ? (resp.records || []) : [];
+    renderSpecialPeopleList();
+  });
+}
+
+function specialPeopleRowsForActive() {
+  var activeId = STATE.activeSpecialId;
+  return (SP_PEOPLE_RECORDS || []).filter(function (rec) {
+    return rec.status !== 'ยกเลิก' && specialStageFor(rec, activeId) !== '';
+  });
+}
+
+function renderSpecialPeopleList() {
+  var activeId = STATE.activeSpecialId;
+  var item = SPECIAL_SEND_BY_ID[activeId];
+  var itemName = item ? item.name : '';
+  var rows = specialPeopleRowsForActive();
+  var headingEl = qs('svcSpecialPeopleHeading');
+  if (headingEl) headingEl.textContent = 'ยอดเข้ารับบริการวันนี้ — ' + itemName + ': ' + rows.length + ' คน';
+
+  var wrap = qs('svcSpecialPeopleListWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (rows.length === 0) {
+    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้รับบริการของรายการนี้วันนี้</p>';
+    return;
+  }
+
+  var stages = (item && item.prepLabel != null) ? ['prep', 'sent', 'back'] : ['sent', 'back'];
+  var table = document.createElement('table');
+  table.className = 'report-table sp-people-table';
+  var thead = document.createElement('thead');
+  var headRow = document.createElement('tr');
+  ['คิว', 'ชื่อ-สกุล', 'HN', 'เวลา', 'สถานะ'].forEach(function (h) {
+    var th = document.createElement('th');
+    th.textContent = h;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  rows.forEach(function (rec) {
+    var tr = document.createElement('tr');
+    [rec.queue || '—', rec.patientName || '', rec.patientHn || '', rec.time || ''].forEach(function (v) {
+      var td = document.createElement('td');
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    var statusTd = document.createElement('td');
+    var btnRow = document.createElement('div');
+    btnRow.className = 'row sp-status-btns';
+    stages.forEach(function (stage) {
+      var fieldKey = 'special' + stage.charAt(0).toUpperCase() + stage.slice(1);
+      var active = (rec[fieldKey] || []).indexOf(activeId) !== -1;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn small' + (active ? '' : ' secondary');
+      btn.textContent = (active ? '✓ ' : '') + SP_STATUS_LABEL[stage];
+      btn.addEventListener('click', (function (rec, stage, btnRow) {
+        return function () { onSpecialStatusClick(rec, stage, btnRow); };
+      })(rec, stage, btnRow));
+      btnRow.appendChild(btn);
+    });
+    statusTd.appendChild(btnRow);
+    tr.appendChild(statusTd);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  var scrollWrap = document.createElement('div');
+  scrollWrap.className = 'scroll-x';
+  scrollWrap.appendChild(table);
+  wrap.appendChild(scrollWrap);
+}
+
+function onSpecialStatusClick(rec, stage, btnRowEl) {
+  var activeId = STATE.activeSpecialId;
+  var prep = (rec.specialPrep || []).slice();
+  var sent = (rec.specialSent || []).slice();
+  var back = (rec.specialBack || []).slice();
+
+  function toggle(arr, id) {
+    var i = arr.indexOf(id);
+    if (i === -1) arr.push(id); else arr.splice(i, 1);
+    return arr;
+  }
+
+  if (stage === 'prep') {
+    prep = toggle(prep, activeId);
+  } else if (stage === 'sent') {
+    var wasSent = sent.indexOf(activeId) !== -1;
+    sent = toggle(sent, activeId);
+    if (wasSent) { var bi = back.indexOf(activeId); if (bi !== -1) back.splice(bi, 1); }
+  } else if (stage === 'back') {
+    var wasBack = back.indexOf(activeId) !== -1;
+    back = toggle(back, activeId);
+    if (!wasBack && sent.indexOf(activeId) === -1) sent.push(activeId);
+  }
+
+  if (btnRowEl && btnRowEl.children) {
+    Array.prototype.forEach.call(btnRowEl.children, function (b) { b.disabled = true; });
+  }
+
+  apiCall('specialStatus', {
+    staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
+    specialPrep: prep, specialSent: sent, specialBack: back
+  }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      rec.specialPrep = resp.specialPrep || [];
+      rec.specialSent = resp.specialSent || [];
+      rec.specialBack = resp.specialBack || [];
+      for (var i = 0; i < SP_PEOPLE_RECORDS.length; i++) {
+        if (SP_PEOPLE_RECORDS[i].recordId === rec.recordId) {
+          SP_PEOPLE_RECORDS[i].specialPrep = rec.specialPrep;
+          SP_PEOPLE_RECORDS[i].specialSent = rec.specialSent;
+          SP_PEOPLE_RECORDS[i].specialBack = rec.specialBack;
+          break;
+        }
+      }
+      renderSpecialPeopleList();
+      showToast('อัปเดตสถานะแล้ว');
+    } else {
+      showToast('❌ ' + ((resp && resp.message) ? resp.message : 'อัปเดตไม่สำเร็จ'));
+      loadSpecialPeopleToday();
+    }
+  });
 }
 
 function renderSpDailyTable(records, dateStr) {
@@ -1927,12 +2201,12 @@ function loadReport() {
 /* =========================================================================
    10. หน้าเมนู / สลับหน้าจอ (รอบ 6) — เลิกใช้แท็บ 2 อัน แทนด้วยเมนู -> หน้าบริการ
    ========================================================================= */
-function showScreen(name) {
-  var outerMap = { menu: 'menuScreen', today: 'todayScreen', report: 'tabReport' };
+function showScreen(name, specialId) {
+  var outerMap = { menu: 'menuScreen', today: 'todayScreen', report: 'tabReport', spTable: 'spTableScreen' };
   var isSvc = SVC_SCREENS.indexOf(name) !== -1;
   var outerName = isSvc ? 'svcFormWrap' : (outerMap[name] || 'menuScreen');
 
-  ['menuScreen', 'svcFormWrap', 'todayScreen', 'tabReport'].forEach(function (id) {
+  ['menuScreen', 'svcFormWrap', 'todayScreen', 'tabReport', 'spTableScreen'].forEach(function (id) {
     var el = qs(id);
     if (el) el.style.display = (id === outerName) ? 'block' : 'none';
   });
@@ -1942,20 +2216,43 @@ function showScreen(name) {
       var el = qs(id);
       if (el) el.hidden = (id !== name);
     });
-    var tableEl = qs('svcSpecialTable');
-    if (tableEl) tableEl.hidden = (name !== 'svcSpecial');
     var titleEl = qs('svcTitle');
-    if (titleEl) titleEl.textContent = SVC_TITLES[name] || '';
-    // แก้เพิ่ม (0.2.1): svcSpecial ไม่มีคิว — ซ่อนทั้งแถว #queueRow และห้ามแตะ queueSelect เลย (ไม่ล้าง ไม่ build ใหม่)
+    var titleIconEl = qs('svcTitleIcon');
     var queueRowEl = qs('queueRow');
-    if (queueRowEl) queueRowEl.hidden = (name === 'svcSpecial');
-    var prefix = QUEUE_PREFIX[name];
-    if (prefix) buildQueueOptions(prefix);
-    if (name === 'svcSpecial') ensureSpDateDefault();
+
+    if (name === 'svcSpecial') {
+      var validIds = SPECIAL_SENDS.map(function (s) { return s.id; });
+      var chosen = specialId;
+      if (validIds.indexOf(chosen) === -1) chosen = STATE.activeSpecialId;
+      if (validIds.indexOf(chosen) === -1) chosen = 'inbody';
+      STATE.activeSpecialId = chosen;
+
+      var item = SPECIAL_SEND_BY_ID[chosen];
+      if (titleEl) titleEl.textContent = item ? item.name : '';
+      if (titleIconEl) { titleIconEl.hidden = false; titleIconEl.innerHTML = SPECIAL_ICONS[chosen] || ''; }
+      if (queueRowEl) queueRowEl.hidden = true; // svcSpecial ไม่มีคิว — ห้ามแตะ queueSelect เลย ไม่ล้าง ไม่ build ใหม่
+
+      // แสดงเฉพาะแถวของรายการที่เลือก — อีก 5 แถวยังอยู่ใน DOM แค่ hidden (ห้ามลบ/uncheck ค่าที่ติ๊กไว้)
+      SPECIAL_SENDS.forEach(function (s) {
+        var rowEl = qs('sp_row_' + s.id);
+        if (rowEl) rowEl.hidden = (s.id !== chosen);
+      });
+
+      loadSpecialPeopleToday();
+    } else {
+      if (titleEl) titleEl.textContent = SVC_TITLES[name] || '';
+      if (titleIconEl) { titleIconEl.hidden = true; titleIconEl.innerHTML = ''; }
+      if (queueRowEl) queueRowEl.hidden = false;
+      var prefix = QUEUE_PREFIX[name];
+      if (prefix) buildQueueOptions(prefix);
+    }
+
+    updatePersonCardLabels(name);
   }
 
   if (name === 'today') loadToday();
   if (name === 'menu') recalcTotals();
+  if (name === 'spTable') { ensureSpDateDefault(); loadSpDailyTable(); }
 
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
 }
@@ -1978,6 +2275,7 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('patientName').addEventListener('input', recalcTotals);
   qs('patientHn').addEventListener('input', recalcTotals);
   qs('checkupAmount').addEventListener('input', recalcTotals);
+  qs('deliveryMethod').addEventListener('change', recalcTotals);
   qs('barcodeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyBarcode(); } });
   qs('medCert5').addEventListener('input', recalcTotals);
   qs('medCertDriver').addEventListener('input', recalcTotals);
@@ -1988,7 +2286,10 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); showScreen('menu'); });
 
   document.querySelectorAll('.menu-card[data-target]').forEach(function (b) {
-    b.addEventListener('click', function () { showScreen(b.getAttribute('data-target')); });
+    b.addEventListener('click', function () {
+      var special = b.getAttribute('data-special');
+      showScreen(b.getAttribute('data-target'), special || undefined);
+    });
   });
   document.querySelectorAll('[data-back-menu]').forEach(function (b) {
     b.addEventListener('click', function () { showScreen('menu'); });
@@ -2000,6 +2301,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   qs('btnSpLoad').addEventListener('click', loadSpDailyTable);
   qs('btnSpPrint').addEventListener('click', function () { window.print(); });
+  qs('btnSpPeopleRefresh').addEventListener('click', loadSpecialPeopleToday);
+
+  buildSpecialMenuCards();
 
   qs('btnLoadReport').addEventListener('click', loadReport);
   qs('btnPrintReport').addEventListener('click', function () { window.print(); });
