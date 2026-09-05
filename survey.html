@@ -138,7 +138,7 @@
   @media print {
     body { background: #fff !important; padding: 0 !important; }
     .wrap { max-width: 100% !important; }
-    #surveyScreen, .done-btn, .loading-overlay { display: none !important; }
+    #surveyScreen, .done-btn, .loading-overlay, #noPrintHelp { display: none !important; }
     #summaryScreen { display: block !important; }
     .summary-header .check { background: #1D9E75 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .summary-card { box-shadow: none !important; border: 1px solid #ccc !important; }
@@ -298,9 +298,22 @@
          เลิกส่งอีเมลยืนยันการลงทะเบียนแล้ว ใบสรุปจึงต้องให้ผู้รับบริการเก็บเองจากหน้านี้
          ใช้หน้าต่างพิมพ์ของเบราว์เซอร์ซึ่งมีตัวเลือก "บันทึกเป็น PDF" อยู่แล้วทุกเครื่อง (iOS/Android/PC)
          ⇒ ไม่ต้องพึ่ง library ภายนอก และข้อมูลผู้ป่วยไม่ถูกส่งออกนอกเครื่องเลย -->
-    <button class="done-btn" onclick="window.print()" style="background:#1D9E75;margin-top:12px">📥 บันทึก / พิมพ์ใบสรุป</button>
+    <button class="done-btn" onclick="printSummarySheet()" style="background:#1D9E75;margin-top:12px">📥 บันทึก / พิมพ์ใบสรุป</button>
     <div class="hint" style="margin-top:6px;line-height:1.55">แตะแล้วเลือก <strong>"บันทึกเป็น PDF"</strong> (Save as PDF) เพื่อเก็บไว้ในเครื่อง
       หรือเลือกเครื่องพิมพ์เพื่อพิมพ์ลงกระดาษ — <strong>แนะนำให้บันทึกไว้ก่อนปิดหน้านี้</strong></div>
+    <!-- ─── กล่องช่วยเหลือเมื่อเบราว์เซอร์ในแอป (LINE ฯลฯ) สั่งพิมพ์ไม่ได้ (เพิ่ม 2026-09-05) ───
+         ซ่อนอยู่ตอนแรกด้วย style.display (ไม่ใช้ attribute hidden — กันปัญหา specificity เดิมของโปรเจกต์)
+         printSummarySheet() จะเปิดกล่องนี้แทนถ้าตรวจพบว่า window.print() ใช้งานไม่ได้ -->
+    <div id="noPrintHelp" style="display:none;margin-top:10px;padding:12px 14px;background:#FFF3E0;border:1.5px solid #FFB74D;border-radius:10px;font-size:13px;line-height:1.6;color:#5D4037">
+      <div style="font-weight:700;margin-bottom:6px">⚠ เบราว์เซอร์ในแอปนี้สั่งพิมพ์ไม่ได้</div>
+      <ol style="margin:0 0 8px;padding-left:20px">
+        <li>แตะปุ่ม ⋯ หรือ ⋮ ที่มุมล่างขวาของหน้าจอ</li>
+        <li>เลือก "เปิดใน Safari" หรือ "เปิดด้วยเบราว์เซอร์อื่น"</li>
+        <li>กดปุ่มพิมพ์อีกครั้ง</li>
+      </ol>
+      <div style="margin-bottom:6px"><strong>สำคัญ:</strong> ถ้าปิดหน้านี้ไปแล้ว ใบสรุปจะไม่อยู่ในหน้านี้อีก แต่ไม่หายไปไหน — กลับมาที่หน้าลงทะเบียนแล้วกดปุ่ม "🔎 ใบสรุปของฉัน" ค้นด้วยเลขบัตรประชาชนและวันเกิดได้ตลอด</div>
+      <div>แนะนำให้จับภาพหน้าจอ (screenshot) เก็บไว้ก่อนได้เช่นกัน</div>
+    </div>
     <!-- ⚠ ตั้งใจให้ผู้ใช้ "กดเอง" ไม่เด้งกลับอัตโนมัติ (ตัดสินใจ 2026-08-31) — เลิกส่งอีเมลยืนยันแล้ว
          ใบสรุปบนหน้านี้จึงเป็นสำเนาเดียวที่ผู้รับบริการมี ถ้าเด้งกลับเองก่อนเขากด "บันทึกเป็น PDF"
          ใบสรุปหายทันที และคำแนะนำก่อนตรวจที่อยู่ใต้ใบสรุปก็ยังอ่านไม่จบ
@@ -313,6 +326,27 @@
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc5qBcd2UgrxFUPvAo3VQUFjdOIyBmu85ZDv0rY75vpaQYARJer-s/exec';
 var answers = {};
 var REQUIRED_QUESTIONS = ['q1', 'q2', 'q3', 'q4', 'q5'];
+
+// ─── เบราว์เซอร์ในแอปสั่งพิมพ์ไม่ได้ ─────────────────────────────────────────
+// ก๊อปมาจาก isInAppBrowser() ใน index.html — 2 ไฟล์นี้ไม่มี JS ร่วมกันเลย ถ้าแก้ตรรกะต้องแก้คู่กันทั้ง 2 ที่
+// iOS WKWebView (ลิงก์ที่เปิดจากในแอป LINE/Facebook/IG) ไม่ทำ window.print() และไม่ throw error
+function isInAppBrowser() {
+  var ua = navigator.userAgent || '';
+  if (/\bLine\//i.test(ua) || /FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|\bTwitter\b|OKApp/i.test(ua)) return true;
+  var iOSLike = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (iOSLike && (!/Safari\//.test(ua) || /CriOS|FxiOS|EdgiOS/.test(ua))) return true;
+  return false;
+}
+
+function showNoPrintHelp() {
+  var box = document.getElementById('noPrintHelp');
+  if (box) box.style.display = 'block';
+}
+
+function printSummarySheet() {
+  if (isInAppBrowser()) { showNoPrintHelp(); return; }
+  window.print();
+}
 
 function pick(qid, btn) {
   document.getElementById(qid).querySelectorAll('button').forEach(function(b){ b.classList.remove('active'); });

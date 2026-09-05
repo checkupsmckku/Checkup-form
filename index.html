@@ -1947,7 +1947,25 @@
     .modal-box { box-shadow: none; border-radius: 0; max-width: 100%; }
     .modal-footer, .modal-close-btn, .progdetail-overlay { display: none !important; }
     body > * { display: none; }
-    .modal-overlay { display: block !important; }
+    /* เดิม .modal-overlay{display:block!important} ทับ style="display:none" ของป็อปอัปที่ปิดอยู่ทุกตัว
+       (ตอนนี้มี 8 ตัว) ⇒ สั่งพิมพ์ 1 ครั้งได้ป็อปอัปที่ปิดอยู่ติดมาด้วยหมด (วัดจริง 2026-09-05 ได้ 5 หน้า)
+       แก้ให้พิมพ์เฉพาะตัวที่ถูกแท็ก .print-open ผ่าน printModal() เท่านั้น */
+    .modal-overlay.print-open { display: block !important; }
+
+    /* ป็อปอัป "ใบสรุปของฉัน": บนกระดาษต้องเหลือเฉพาะใบสรุป — ไม่เอาช่องกรอกเลขบัตร/วันเกิด และปุ่ม */
+    #mySummaryModal .my-summary-form, #mySummaryModal .my-summary-actions { display: none !important; }
+    #mySummaryModal .modal-box { max-height: none !important; display: block !important; }
+    /* padding 0 20px ของกล่องผลลัพธ์ทำให้ใบสรุปเยื้องขวาจากหัวเอกสาร 20px บนกระดาษ → ตัดทิ้งตอนพิมพ์ */
+    #mySummaryResult { overflow: visible !important; max-height: none !important; padding: 0 !important; }
+    /* หัวกระดาษต้องเป็นหัวเอกสาร ไม่ใช่หัวของช่องค้นหา (พบตอนตรวจงาน SPEC A ด้วยการพิมพ์จริงเป็น PDF) */
+    #mySummaryModal .modal-header { display: none !important; }
+    #mySummaryModal .print-doc-head { display: block !important; padding: 0 0 10px; border-bottom: 2px solid #001D3D; margin-bottom: 14px; }
+    #mySummaryModal .pdh-org { font-weight: 800; font-size: 15px; color: #001D3D; }
+    #mySummaryModal .pdh-org2 { font-size: 12px; color: #555; }
+    #mySummaryModal .pdh-title { font-size: 16px; font-weight: 700; margin-top: 8px; color: #00575E; }
+    #mySummaryModal .modal-box { max-width: 100% !important; padding: 0 !important; }
+    /* รูป "บันทึกเป็นรูปภาพ" ไม่ต้องมีในกระดาษ — ซ้ำกับใบสรุปที่พิมพ์อยู่แล้ว */
+    #mySummaryImg, #mySummaryImgHint { display: none !important; }
 
     /* ── Page 1: summary card ── */
     .modal-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -3826,6 +3844,16 @@ window.onload = function() {
   applyStepLocks();
   initStepLockClickTrap();
   initPapAccordion();
+  // เตรียมฟอนต์ไว้ล่วงหน้าให้ buildMySummaryCanvas() วาดด้วย Sarabun/Noto Sans Thai ได้ทันที
+  // ⚠ ห้าม await document.fonts.ready ในตัว handler ที่ผู้ใช้กด (saveMySummaryImage) — จะทำให้
+  //   user activation หมดอายุแล้ว navigator.share() บน iOS ถูกปฏิเสธ จึงเตรียมไว้ที่นี่แทน
+  try {
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('700 20px Sarabun');
+      document.fonts.load('400 14px Sarabun');
+      document.fonts.load('700 20px "Noto Sans Thai"');
+    }
+  } catch (e) {}
 };
 
 // ─── Scroll Spy: อัปเดต active step อัตโนมัติเมื่อ scroll ───────────────────
@@ -5192,6 +5220,104 @@ function showToast(msg) {
   toast.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ─── เบราว์เซอร์ในแอปสั่งพิมพ์ไม่ได้ ─────────────────────────────────────────
+// iOS WKWebView (ลิงก์ที่เปิดจากในแอป LINE/Facebook/IG) **ไม่ทำ window.print() และไม่ throw error**
+// เปิดหน้าต่างใหม่ด้วย window.open ก็ไม่ได้ ⇒ เดิมกดปุ่มพิมพ์แล้วเงียบสนิท ผู้ใช้ไม่รู้ว่าเกิดอะไรขึ้น
+// (ผู้ใช้แจ้งจริง 2026-09-05: iPad เปิดจากลิงก์ใน LINE)
+function isInAppBrowser() {
+  const ua = navigator.userAgent || '';
+  if (/\bLine\//i.test(ua) || /FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|\bTwitter\b|OKApp/i.test(ua)) return true;
+  const iOSLike = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // iOS: เบราว์เซอร์ทุกตัวที่ไม่ใช่ Safari แท้ ๆ ใช้ WKWebView ซึ่งสั่งพิมพ์เองไม่ได้
+  //      Safari แท้จะมี token "Safari/" ใน UA ส่วน WKWebView ในแอปไม่มี
+  //      Chrome/Firefox/Edge บน iOS (CriOS/FxiOS/EdgiOS) ก็สั่งพิมพ์จาก JS ไม่ได้เช่นกัน
+  if (iOSLike && (!/Safari\//.test(ua) || /CriOS|FxiOS|EdgiOS/.test(ua))) return true;
+  return false;
+}
+
+// คืน true ถ้าพิมพ์ต่อได้เลย, คืน false พร้อมเปิดกล่องอธิบายวิธีทำถ้าพิมพ์ไม่ได้
+function ensureCanPrint(opts) {
+  if (!isInAppBrowser()) return true;
+  openNoPrintHelp(opts || {});
+  return false;
+}
+
+// ─── พิมพ์เฉพาะป็อปอัปที่เปิดอยู่ ────────────────────────────────────────────
+// เดิม @media print สั่ง .modal-overlay{display:block!important} ซึ่งทับ style="display:none"
+// ของป็อปอัปที่ปิดอยู่ทั้ง 8 ตัว ⇒ สั่งพิมพ์ 1 ครั้งได้กระดาษ 5 หน้า (วัดจริง 2026-09-05)
+// ⚠ ถ้าเพิ่มป็อปอัปใหม่ที่ต้องพิมพ์ได้ ให้เรียกผ่านฟังก์ชันนี้ ห้ามเรียก window.print() ตรง ๆ
+function printModal(id, context) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  if (!ensureCanPrint({ context: context })) return;
+  box.classList.add('print-open');
+  const cleanup = function() {
+    box.classList.remove('print-open');
+    window.removeEventListener('afterprint', cleanup);
+  };
+  window.addEventListener('afterprint', cleanup);
+  // Safari/iOS ไม่ยิง afterprint ทุกกรณี → กันคลาสค้างด้วยเวลาสำรอง (ยาวพอให้กล่องพิมพ์ทำงานจบก่อน)
+  setTimeout(cleanup, 60000);
+  window.print();
+}
+
+// ─── กล่องช่วยเหลือเมื่อเบราว์เซอร์ในแอปสั่งพิมพ์ไม่ได้ ──────────────────────
+function openNoPrintHelp(opts) {
+  opts = opts || {};
+  const ua = navigator.userAgent || '';
+  const iOSLike = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const safariBtn = document.getElementById('noPrintSafariBtn');
+  if (safariBtn) safariBtn.style.display = iOSLike ? '' : 'none';
+  const note = document.getElementById('noPrintSummaryNote');
+  if (note) note.style.display = (opts.context === 'summary') ? 'block' : 'none';
+  document.getElementById('noPrintModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+// true ถ้ายังมี .modal-overlay ตัวอื่น (ไม่ใช่ excludeId) ที่ computed display ไม่ใช่ 'none' อยู่
+// ใช้กันบั๊ก: กล่องช่วยเหลือนี้มักถูกเปิดซ้อนบนป็อปอัปอื่นที่ยังเปิดอยู่ (เช่น #mySummaryModal)
+// ⇒ ปิดกล่องช่วยเหลือแล้วคืน overflow ตรง ๆ จะทำให้พื้นหลังเลื่อนได้ทั้งที่ป็อปอัปนั้นยังค้างอยู่
+function _anyOtherModalOpen(excludeId) {
+  const overlays = document.querySelectorAll('.modal-overlay');
+  for (let i = 0; i < overlays.length; i++) {
+    const el = overlays[i];
+    if (el.id === excludeId) continue;
+    if (getComputedStyle(el).display !== 'none') return true;
+  }
+  return false;
+}
+function closeNoPrintHelp() {
+  document.getElementById('noPrintModal').style.display = 'none';
+  document.body.style.overflow = _anyOtherModalOpen('noPrintModal') ? 'hidden' : '';
+}
+function noPrintModalOutside(e) {
+  if (e.target === document.getElementById('noPrintModal')) closeNoPrintHelp();
+}
+// ⚠ สคีมนี้ไม่ได้ผลทุกแอป (บางแอปในแอปเพิกเฉยต่อ x-safari-) ⇒ ห้ามพึ่งอย่างเดียว มีขั้นตอนอธิบายคู่กันเสมอ
+function openInSafariFromHelp() {
+  try { location.href = 'x-safari-' + location.href; } catch(e) {}
+}
+function copyNoPrintLink() {
+  const url = location.href;
+  try {
+    navigator.clipboard.writeText(url).then(function(){ showToast('คัดลอกลิงก์แล้ว'); }, function(){ copyNoPrintLinkFallback(url); });
+  } catch(e) {
+    copyNoPrintLinkFallback(url);
+  }
+}
+function copyNoPrintLinkFallback(url) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('คัดลอกลิงก์แล้ว');
+  } catch(e) {}
 }
 
 // แปลงข้อความให้ปลอดภัยก่อนต่อเข้า HTML string (innerHTML / หน้าต่างพิมพ์)
@@ -7564,6 +7690,7 @@ function closeFlowOutside(e) {
 function printFlowOnly() {
   let src = flowSectionHtml();
   if (!src) return;
+  if (!ensureCanPrint()) return;
   src = absolutizeImgs(src, '#successModal .flow-section');
   const w = window.open('', '_blank');
   if (!w) {
@@ -7612,6 +7739,7 @@ function closePrepOutside(e) {
 function printPrepOnly() {
   let src = prepSectionHtml();
   if (!src) return;
+  if (!ensureCanPrint()) return;
   src = absolutizeImgs(src, '#successModal .prep-section');
   const w = window.open('', '_blank');
   // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
@@ -7751,12 +7879,16 @@ async function doStaffSearch() {
 // ⚠ ห้ามเก็บเลขบัตร/วันเกิดลง sessionStorage/localStorage เด็ดขาด (ต่างจากรหัสเจ้าหน้าที่ที่เก็บได้) —
 //   ล้างค่าในช่องทั้งสองและผลลัพธ์ทิ้งทุกครั้งที่เปิด/ปิดป็อปอัป ไม่ให้ค้างอยู่บนหน้าจอ
 const MY_SUMMARY_NOT_FOUND_MSG = 'ไม่พบใบสรุปที่ตรงกับข้อมูลที่กรอก กรุณาตรวจสอบเลขบัตรประชาชนและวันเกิดอีกครั้ง';
+// ผลลัพธ์ดิบ (name/serviceDate/program/additionalItems/total เท่านั้น — ไม่มีข้อมูลอ่อนไหวปนมา)
+// เก็บไว้ให้ saveMySummaryImage(i) วาดรูปได้โดยไม่ต้องยิงค้นหาซ้ำ — ต้องล้างทิ้งทุกครั้งที่เปิด/ปิดป็อปอัป
+let mySummaryRecords = [];
 
 function openMySummary() {
   closeInfoFab();
   document.getElementById('mySummaryIdCard').value = '';
   document.getElementById('mySummaryDob').value = '';
   document.getElementById('mySummaryResult').innerHTML = '';
+  mySummaryRecords = [];
   document.getElementById('mySummaryModal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('mySummaryIdCard').focus(), 200);
@@ -7768,6 +7900,7 @@ function closeMySummary() {
   document.getElementById('mySummaryIdCard').value = '';
   document.getElementById('mySummaryDob').value = '';
   document.getElementById('mySummaryResult').innerHTML = '';
+  mySummaryRecords = [];
 }
 function mySummaryOutside(e) {
   if (e.target === document.getElementById('mySummaryModal')) closeMySummary();
@@ -7799,12 +7932,19 @@ async function doMySummarySearch() {
     try { json = JSON.parse(raw); } catch(parseErr) { json = null; }
 
     const items = (json && json.status === 'ok') ? (json.results || []) : [];
+    mySummaryRecords = items; // ให้ saveMySummaryImage(i) วาดรูปได้โดยไม่ต้องยิงค้นหาซ้ำ (B1)
     if (!items.length) {
       result.innerHTML = '<div style="padding:12px 4px;color:var(--text-muted);font-size:13.5px">' + escHtml(MY_SUMMARY_NOT_FOUND_MSG) + '</div>';
       return;
     }
 
-    result.innerHTML = items.map(function(r) {
+    // ปุ่ม "📷 บันทึกเป็นรูปภาพ" ต้องรู้ index ของรายการที่ตรงกับการ์ดตัวเอง — ถ้ามีรายการเดียว (กรณีปกติ)
+    // ปุ่มนี้อยู่ในกล่องปุ่มรวมท้ายผลลัพธ์ (index 0) ได้เลย ถ้ามีหลายรายการต้องมีปุ่มต่อการ์ดแยกกันแทน
+    // เพราะกล่องปุ่มรวมมีปุ่มเดียวไม่พอบอกว่าจะบันทึกรูปของรายการไหน
+    const IMG_BTN_STYLE = 'padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit';
+    const PRINT_BTN_STYLE = 'padding:9px 18px;background:#fff;color:var(--primary);border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit';
+
+    result.innerHTML = items.map(function(r, i) {
       return '<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:12px">'
         + '<div style="font-weight:700;font-size:15px;color:var(--primary-dark)">' + escHtml(r.name || '—') + '</div>'
         + '<div style="font-size:13.5px;color:var(--text,#333);margin-top:8px;line-height:1.8">'
@@ -7812,10 +7952,15 @@ async function doMySummarySearch() {
         + '<div>โปรแกรม: ' + escHtml(r.program || '—') + '</div>'
         + '<div>รายการเพิ่มเติม: ' + escHtml(r.additionalItems || '—') + '</div>'
         + '<div>ยอดรวม: ' + escHtml(r.total || '—') + ' บาท</div>'
-        + '</div></div>';
+        + '</div>'
+        + (items.length > 1
+            ? '<div style="margin-top:10px;text-align:right"><button type="button" onclick="saveMySummaryImage(' + i + ')" style="' + IMG_BTN_STYLE + '">📷 บันทึกเป็นรูปภาพ</button></div>'
+            : '')
+        + '</div>';
     }).join('')
-      + '<div style="margin-top:14px;text-align:right">'
-      + '<button type="button" onclick="window.print()" style="padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit">📥 บันทึก / พิมพ์ใบสรุป</button>'
+      + '<div class="my-summary-actions" style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+      + (items.length === 1 ? '<button type="button" onclick="saveMySummaryImage(0)" style="' + IMG_BTN_STYLE + '">📷 บันทึกเป็นรูปภาพ</button>' : '')
+      + '<button type="button" onclick="printModal(\'mySummaryModal\',\'summary\')" style="' + PRINT_BTN_STYLE + '">🖨 พิมพ์ใบสรุป</button>'
       + '</div>';
 
   } catch(err) {
@@ -7842,6 +7987,243 @@ function parseAdditionalItems(str) {
     }
   }
   return merged;
+}
+
+// ─── "📷 บันทึกเป็นรูปภาพ" ในป็อปอัป "ใบสรุปของฉัน" ────────────────────────────
+// ทำไม: ผู้รับบริการส่วนใหญ่เปิดเว็บนี้จากลิงก์ใน LINE (in-app browser บน iOS) ซึ่ง window.print()
+// ใช้ไม่ได้เลย (ดู isInAppBrowser()) ⇒ วาดใบสรุปเป็นรูป PNG เองด้วย <canvas> แล้วให้กดค้าง/แชร์เก็บไว้
+// ในเครื่องแทน ไม่ต้องออกจากแอปเลย — ห้ามวาดข้อมูลอ่อนไหว (เลขบัตร/วันเกิด/HN/ที่อยู่/เบอร์/อีเมล) ลงรูป
+// เพราะ backend ของ action:'mysearch' ไม่ได้ส่งมาให้อยู่แล้ว (ดู CLAUDE.md "ค้นใบสรุป — มี 2 ทาง")
+const MY_SUMMARY_IMG_W = 560;     // ความกว้างเชิงตรรกะของรูป (px)
+const MY_SUMMARY_IMG_SCALE = 2;   // วาดที่ scale 2 ให้คมบนจอมือถือ (canvas.width จริง = 1120)
+const MY_SUMMARY_IMG_PAD_X = 24;  // ระยะขอบซ้าย/ขวา
+const MY_SUMMARY_FONT = "'Sarabun','Noto Sans Thai',sans-serif";
+// เก็บความกว้างของทุกบรรทัดที่วาดจริงไว้ให้เทสต์ตรวจว่าไม่มีบรรทัดไหนล้นขอบ (harness/t34_summary_image.js)
+window.__mySummaryLineWidths = [];
+
+// ตัดบรรทัดด้วยการวัดจริง (ctx.measureText) ห้ามตัดด้วยจำนวนตัวอักษรตายตัว — ตัดที่ช่องว่างก่อน
+// ถ้าคำเดียวยังกว้างเกิน (พบบ่อยกับข้อความไทยที่ไม่มีช่องว่างเลย) ค่อยตัดเป็นรายตัวอักษรแทน
+function _mySummaryWrapText(ctx, text, maxWidth) {
+  text = (text === undefined || text === null || String(text).trim() === '') ? '—' : String(text);
+  const tokens = text.split(/(\s+)/);
+  const lines = [];
+  let line = '';
+  function pushLine(l) { const t = l.replace(/\s+$/, ''); if (t !== '') lines.push(t); }
+  for (let ti = 0; ti < tokens.length; ti++) {
+    const tok = tokens[ti];
+    if (tok === '') continue;
+    const candidate = line + tok;
+    if (ctx.measureText(candidate).width <= maxWidth) { line = candidate; continue; }
+    if (ctx.measureText(tok).width <= maxWidth) {
+      pushLine(line);
+      line = tok.replace(/^\s+/, '');
+      continue;
+    }
+    // คำ/ชิ้นนี้เองก็ยังกว้างเกิน maxWidth → ตัดเป็นรายตัวอักษร
+    pushLine(line);
+    let sub = '';
+    for (let ci = 0; ci < tok.length; ci++) {
+      const ch = tok[ci];
+      const subCandidate = sub + ch;
+      if (ctx.measureText(subCandidate).width > maxWidth && sub.length > 0) {
+        lines.push(sub);
+        sub = ch;
+      } else {
+        sub = subCandidate;
+      }
+    }
+    line = sub;
+  }
+  pushLine(line);
+  return lines.length ? lines : ['—'];
+}
+
+// วาดบรรทัดเดียวแล้วบันทึกความกว้างจริงไว้ให้เทสต์ตรวจ (window.__mySummaryLineWidths)
+function _mySummaryDrawLine(ctx, text, x, y, font, color) {
+  ctx.font = font;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  window.__mySummaryLineWidths.push(ctx.measureText(text).width);
+}
+
+// วันเวลาปัจจุบันแบบไทย (พ.ศ.) สำหรับพิมพ์ท้ายรูป "บันทึกเมื่อ …" — เป็นเวลาที่กดบันทึก ไม่ใช่ข้อมูลอ่อนไหว
+function _mySummarySavedAtStr(d) {
+  const pad2 = function(n) { return (n < 10 ? '0' : '') + n; };
+  return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + (d.getFullYear() + 543)
+    + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+
+// คืน canvas element ที่วาดใบสรุปของ rec ({name, serviceDate, program, additionalItems, total}) เสร็จแล้ว
+// ⚠ ต้องวัดเนื้อหาก่อนแล้วค่อยตั้ง canvas.width/height เพราะการตั้งขนาดล้าง context ทิ้งทันที
+function buildMySummaryCanvas(rec) {
+  rec = rec || {};
+  const W = MY_SUMMARY_IMG_W, SCALE = MY_SUMMARY_IMG_SCALE, PAD_X = MY_SUMMARY_IMG_PAD_X;
+  const contentW = W - PAD_X * 2;
+  const FONT = MY_SUMMARY_FONT;
+  window.__mySummaryLineWidths = [];
+
+  const name = (rec.name === undefined || rec.name === null || String(rec.name).trim() === '') ? '—' : String(rec.name).trim();
+  const serviceDate = (rec.serviceDate === undefined || rec.serviceDate === null || String(rec.serviceDate).trim() === '') ? '—' : String(rec.serviceDate).trim();
+  const program = (rec.program === undefined || rec.program === null || String(rec.program).trim() === '') ? '—' : String(rec.program).trim();
+  let totalStr = (rec.total === undefined || rec.total === null || String(rec.total).trim() === '') ? '—' : String(rec.total).trim();
+  // ชีตเก็บยอดรวมเป็นเลขดิบ ("8939") แต่ทุกที่บนหน้าเว็บแสดงแบบมีจุลภาค ("8,939")
+  // ใบสรุปที่ผู้ป่วยเก็บไว้ต้องอ่านให้เหมือนกัน ไม่งั้นดูเหมือนคนละยอดกับที่เห็นบนจอ
+  if (/^\d[\d,]*(\.\d+)?$/.test(totalStr)) {
+    const totalNum = Number(totalStr.replace(/,/g, ''));
+    if (isFinite(totalNum)) totalStr = totalNum.toLocaleString('en-US');
+  }
+  const itemsList = (rec.additionalItems && String(rec.additionalItems).trim() !== '') ? parseAdditionalItems(String(rec.additionalItems)) : [];
+  const savedAt = _mySummarySavedAtStr(new Date());
+
+  // canvas ชั่วคราวไว้แค่วัดข้อความ (ไม่ผูกกับขนาดจริง — measureText ขึ้นกับ font เท่านั้น)
+  const mcv = document.createElement('canvas');
+  const mctx = mcv.getContext('2d');
+
+  const HEAD_H = 76;
+  const cmds = []; // { text, x, y, font, color, align }
+  let y = HEAD_H + 34;
+
+  function addBlock(text, font, color, lineGap) {
+    mctx.font = font;
+    const lines = _mySummaryWrapText(mctx, text, contentW);
+    lines.forEach(function(l) {
+      cmds.push({ text: l, x: PAD_X, y: y, font: font, color: color, align: 'left' });
+      y += lineGap;
+    });
+    return lines.length;
+  }
+
+  mctx.font = '700 19px ' + FONT;
+  const headLine1 = _mySummaryWrapText(mctx, 'หน่วยคลินิกตรวจสุขภาพ SMC', contentW);
+  mctx.font = '400 11.5px ' + FONT;
+  const headLine2 = _mySummaryWrapText(mctx, 'ศูนย์บริการทางการแพทย์ชั้นเลิศ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น', contentW);
+
+  addBlock('ใบสรุปการลงทะเบียนตรวจสุขภาพประจำปี', '700 17px ' + FONT, '#001D3D', 24);
+  y += 12;
+  addBlock(name, '700 20px ' + FONT, '#111111', 27);
+  y += 8;
+  addBlock('วันที่นัดหมาย: ' + serviceDate, '400 14px ' + FONT, '#333333', 21);
+  addBlock('โปรแกรม: ' + program, '400 14px ' + FONT, '#333333', 21);
+  y += 12;
+
+  if (itemsList.length) {
+    addBlock('รายการเพิ่มเติม', '700 14px ' + FONT, '#001D3D', 21);
+    y += 4;
+    itemsList.forEach(function(it) { addBlock('•  ' + it, '400 13.5px ' + FONT, '#333333', 20); });
+    y += 8;
+  }
+
+  const totalBoxY = y;
+  const totalBoxH = 50;
+  y += totalBoxH + 20;
+
+  const dividerY = y;
+  y += 20;
+  addBlock('โปรดนำใบสรุปนี้มาแสดงในวันเข้ารับบริการ', '400 11.5px ' + FONT, '#888888', 18);
+  addBlock('บันทึกเมื่อ ' + savedAt, '400 11.5px ' + FONT, '#888888', 18);
+  y += 8;
+
+  const H = Math.ceil(y);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(W * SCALE);
+  canvas.height = Math.round(H * SCALE);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // 1. แถบหัว
+  ctx.fillStyle = '#001D3D';
+  ctx.fillRect(0, 0, W, HEAD_H);
+  ctx.textAlign = 'center';
+  let hy = 32;
+  headLine1.forEach(function(l) { _mySummaryDrawLine(ctx, l, W / 2, hy, '700 19px ' + FONT, '#ffffff'); hy += 20; });
+  hy = 54;
+  headLine2.forEach(function(l) { _mySummaryDrawLine(ctx, l, W / 2, hy, '400 11.5px ' + FONT, '#ffffff'); hy += 15; });
+  ctx.textAlign = 'left';
+
+  // 2-6. หัวเรื่อง/ชื่อ/วันที่/โปรแกรม/รายการเพิ่มเติม
+  cmds.forEach(function(c) {
+    ctx.textAlign = c.align;
+    _mySummaryDrawLine(ctx, c.text, c.x, c.y, c.font, c.color);
+  });
+  ctx.textAlign = 'left';
+
+  // 7. กล่องยอดรวม
+  ctx.fillStyle = '#E8F5F7';
+  ctx.fillRect(PAD_X, totalBoxY, contentW, totalBoxH);
+  ctx.textAlign = 'left';
+  _mySummaryDrawLine(ctx, 'ยอดรวม', PAD_X + 14, totalBoxY + totalBoxH / 2 + 6, '700 15px ' + FONT, '#00575E');
+  ctx.textAlign = 'right';
+  _mySummaryDrawLine(ctx, totalStr + ' บาท', PAD_X + contentW - 14, totalBoxY + totalBoxH / 2 + 6, '700 16px ' + FONT, '#00575E');
+  ctx.textAlign = 'left';
+
+  // 8. เส้นคั่น
+  ctx.strokeStyle = '#dddddd';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD_X, dividerY);
+  ctx.lineTo(W - PAD_X, dividerY);
+  ctx.stroke();
+
+  return canvas;
+}
+
+// กดปุ่ม "📷 บันทึกเป็นรูปภาพ" ของรายการที่ i ใน mySummaryRecords
+// ⚠ ต้องทำงานแบบ synchronous ทั้งหมด (ห้าม await ก่อนเรียก navigator.share) ไม่งั้น user activation
+//   จะหมดอายุแล้ว navigator.share() บน iOS จะถูกปฏิเสธ
+function saveMySummaryImage(i) {
+  try {
+    const rec = mySummaryRecords[i];
+    if (!rec) return;
+
+    const canvas = buildMySummaryCanvas(rec);
+    const dataUrl = canvas.toDataURL('image/png');
+
+    // แสดงรูปในหน้าเสมอ — ทางสำรองที่ใช้ได้แน่นอนบนเบราว์เซอร์ในแอป iOS (กดค้างที่รูปแล้วบันทึกได้เลย)
+    const result = document.getElementById('mySummaryResult');
+    let img = document.getElementById('mySummaryImg');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'mySummaryImg';
+      img.style.cssText = 'width:100%;border:1px solid var(--border);border-radius:10px;margin-top:12px';
+      result.appendChild(img);
+    }
+    img.src = dataUrl;
+    let hint = document.getElementById('mySummaryImgHint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = 'mySummaryImgHint';
+      hint.style.cssText = 'text-align:center;color:var(--text-muted);font-size:12.5px;margin-top:6px';
+      hint.textContent = 'กดค้างที่รูป แล้วเลือก "บันทึกรูปภาพ" เพื่อเก็บไว้ในเครื่อง';
+      result.appendChild(hint);
+    }
+
+    // แปลง dataURL → Blob → File แบบ sync (atob ไม่ใช่ async) เพื่อให้ยังอยู่ในบริบทของการกดปุ่ม
+    const b64 = dataUrl.split(',')[1];
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let k = 0; k < binary.length; k++) bytes[k] = binary.charCodeAt(k);
+    const blob = new Blob([bytes], { type: 'image/png' });
+    const file = new File([blob], 'ใบสรุปตรวจสุขภาพ.png', { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // เบราว์เซอร์ที่รองรับ Web Share API แบบไฟล์ (Android Chrome, iOS Safari ใหม่ ๆ) — ใช้ทางลัดนี้ก่อน
+      navigator.share({ files: [file], title: 'ใบสรุปการลงทะเบียนตรวจสุขภาพ' }).catch(function(){});
+    } else if (!isInAppBrowser()) {
+      // เดสก์ท็อป/เบราว์เซอร์ปกติที่ดาวน์โหลดไฟล์ได้ตรง ๆ
+      const a = document.createElement('a');
+      a.download = 'ใบสรุปตรวจสุขภาพ.png';
+      a.href = dataUrl;
+      a.click();
+    }
+    // เบราว์เซอร์ในแอป iOS ที่ไม่มี navigator.canShare → ไม่ต้องทำอะไรเพิ่ม ผู้ใช้กดค้างที่รูปเอาเอง
+
+    img.scrollIntoView({ block: 'nearest' });
+  } catch (e) {
+    showToast('บันทึกรูปไม่สำเร็จ กรุณาจับภาพหน้าจอแทน');
+  }
 }
 
 function showStaffSummary(idx) {
@@ -8094,6 +8476,7 @@ function printStaffSummary() {
       + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
       + '<div class="sr-test-item" style="font-size:12.5px;color:#555;margin-top:10px">หากมีข้อสงสัยกรุณาติดต่อแพทย์ประจำบ้านหรืออาจารย์แพทย์</div>'
     : '';
+  if (!ensureCanPrint()) return;
   const w = window.open('', '_blank');
   // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
   if (!w) {
@@ -8363,7 +8746,7 @@ function printStaffSummary() {
     </div>
     <!-- /.prep-section -->
     <div class="modal-footer">
-      <button type="button" class="btn-modal-print" onclick="window.print()">🖨 พิมพ์ใบสรุป</button>
+      <button type="button" class="btn-modal-print" onclick="printModal('successModal')">🖨 พิมพ์ใบสรุป</button>
       <button type="button" class="btn-modal-new" onclick="closeModalAndReset()">📝 ส่งแบบฟอร์มใหม่</button>
       <button type="button" class="btn-modal-close" onclick="closeModal()">ปิด</button>
     </div>
@@ -8546,7 +8929,15 @@ function printStaffSummary() {
       </div>
       <button class="modal-close-btn" onclick="closeMySummary()">✕</button>
     </div>
-    <div style="padding:16px 20px;flex-shrink:0">
+    <!-- หัวเอกสารสำหรับ "พิมพ์ลงกระดาษ" เท่านั้น — .modal-header ข้างบนเป็นหัวของช่องค้นหา ไม่ใช่หัวเอกสาร
+         ซ่อนด้วย inline style="display:none" แล้วปลดด้วย !important ใน @media print เท่านั้น
+         (ห้ามใช้ [hidden]/attribute — แพ้กฎ display ของไฟล์เอง) -->
+    <div class="print-doc-head" style="display:none">
+      <div class="pdh-org">หน่วยคลินิกตรวจสุขภาพ SMC · ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>
+      <div class="pdh-org2">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</div>
+      <div class="pdh-title">ใบสรุปการลงทะเบียนตรวจสุขภาพประจำปี</div>
+    </div>
+    <div class="my-summary-form" style="padding:16px 20px;flex-shrink:0">
       <div style="margin-bottom:10px">
         <input type="text" id="mySummaryIdCard"
           placeholder="เลขบัตรประชาชน 13 หลัก"
@@ -8594,6 +8985,34 @@ function printStaffSummary() {
         style="padding:9px 20px;border:1.5px solid var(--border);border-radius:9px;background:#fff;cursor:pointer;font-size:14px;font-family:inherit">
         ปิด
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── No-Print Help Modal (เพิ่ม 2026-09-05) — เบราว์เซอร์ในแอป (LINE/FB/IG ฯลฯ) สั่งพิมพ์ไม่ได้ ─── -->
+<div class="modal-overlay" id="noPrintModal" style="display:none" onclick="noPrintModalOutside(event)">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-title" style="font-size:17px">📄 เบราว์เซอร์นี้สั่งพิมพ์ไม่ได้</div>
+        <div class="modal-subtitle">ท่านกำลังเปิดหน้านี้จากเบราว์เซอร์ในแอป (เช่น LINE) ซึ่งไม่รองรับการสั่งพิมพ์/บันทึกเป็น PDF</div>
+      </div>
+      <button class="modal-close-btn" onclick="closeNoPrintHelp()" title="ปิด">✕</button>
+    </div>
+    <div style="padding:20px 24px;font-size:14px;line-height:1.7;color:var(--text,#333)">
+      <ol style="margin:0 0 14px;padding-left:20px">
+        <li>แตะปุ่ม ⋯ หรือ ⋮ ที่มุมล่างขวาของหน้าจอ</li>
+        <li>เลือก "เปิดใน Safari" หรือ "เปิดด้วยเบราว์เซอร์อื่น"</li>
+        <li>กดปุ่มพิมพ์อีกครั้ง</li>
+      </ol>
+      <div id="noPrintSummaryNote" style="display:none;font-size:13.5px;color:var(--text-muted,#6B7280);border-top:1px solid var(--border,#e2e2e2);padding-top:12px">
+        หรือถ้าไม่สะดวก ท่านสามารถกลับมาค้นใบสรุปของท่านเองภายหลังได้ที่ปุ่ม "🔎 ใบสรุปของฉัน" หน้าแรก โดยใช้เลขบัตรประชาชนและวันเกิด
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-modal-close" id="noPrintSafariBtn" style="display:none" onclick="openInSafariFromHelp()">🧭 เปิดใน Safari</button>
+      <button type="button" class="btn-modal-close" onclick="copyNoPrintLink()">📋 คัดลอกลิงก์</button>
+      <button type="button" class="btn-modal-print" onclick="closeNoPrintHelp()">ปิด</button>
     </div>
   </div>
 </div>
