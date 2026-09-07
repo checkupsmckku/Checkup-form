@@ -296,6 +296,25 @@
   .cu-card .cu-sign { margin-top: 2px; }
   .cu-card .cu-sign .cu-sig-line { min-width: 30mm; }
   @media (max-width: 620px) { .cu-cards { grid-template-columns: 1fr; } }
+
+  /* รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager */
+  .sp-board-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+  @media (min-width: 640px) { .sp-board-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 900px) { .sp-board-grid { grid-template-columns: repeat(5, 1fr); } }
+  .sp-board-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+    font-family: inherit;
+  }
+  .sp-board-card-icon svg { width: 32px; height: 32px; display: block; }
+  .sp-board-card-name { font-weight: 700; }
+  .sp-board-card-line { font-size: 14px; }
+  .sp-board-card-line.sp-board-warn { color: var(--danger); font-weight: 700; }
+  .sp-board-person-card { margin-top: 10px; }
+  .sp-board-name { font-size: 20px; font-weight: 700; }
+  .sp-board-hn { color: var(--text-muted); }
+  .sp-board-status { margin: 4px 0; font-weight: 600; }
+
   @media print {
     header.topbar, .no-print { display: none !important; }
     body { background: #fff; padding: 0; }
@@ -403,6 +422,8 @@
         <!-- รอบ 8 (B7) — ใบรายชื่อผู้รับบริการตรวจสุขภาพรายวัน สำหรับพิมพ์ + ช่องลายเซ็นรับเอกสาร -->
         <button type="button" class="menu-card" data-target="checkupTable"><span class="menu-icon">🩺</span>รายชื่อตรวจสุขภาพรายวัน</button>
         <button type="button" class="menu-card" data-target="report"><span class="menu-icon">📊</span>รายงานรายเดือน</button>
+        <!-- รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager -->
+        <button type="button" class="menu-card" data-target="spBoard"><span class="menu-icon">📣</span>รวมรายชื่อส่งตรวจพิเศษ</button>
       </div>
     </div>
   </div>
@@ -623,6 +644,45 @@
       <div id="cuCardsWrap" hidden></div>
     </div>
   </div>
+
+  <!-- ---------- รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager (SPEC_รอบ9.md หัวข้อ 3.2/3.3) ---------- -->
+  <div id="spBoardScreen" style="display:none;">
+    <div class="wrap">
+      <button type="button" class="btn secondary small" data-back-menu style="margin-bottom:10px;">← กลับเมนู</button>
+
+      <div id="spBoardLayer1">
+        <div class="card">
+          <h2 id="spBoardDashHeading" style="margin-top:0;">รวมรายชื่อส่งตรวจพิเศษ</h2>
+          <label class="field-label" for="spBoardDate">วันที่</label>
+          <div class="row">
+            <input type="date" id="spBoardDate">
+            <button type="button" class="btn secondary small" id="btnSpBoardRefresh">🔄 รีเฟรช</button>
+          </div>
+        </div>
+        <!-- ⚠ ยิง today ไม่สำเร็จแล้ววาดการ์ดเป็น 0 ทุกช่องเงียบ ๆ = manager อ่านว่า "วันนี้ไม่มีใครลงชื่อ"
+             แล้วไม่ส่งไลน์ → กล่องนี้ต้องขึ้นทุกครั้งที่โหลดไม่สำเร็จ (แบบแผนเดียวกับ loadToday()) -->
+        <p id="spBoardError" class="error-box" hidden></p>
+        <div class="sp-board-grid" id="spBoardCardsGrid"></div>
+      </div>
+
+      <div id="spBoardLayer2" hidden>
+        <button type="button" class="btn secondary small" id="spBoardBackBtn">← กลับ</button>
+        <div class="row" id="spBoardSwitchBar" style="margin-top:8px;"></div>
+        <h2 id="spBoardHeading" style="margin-top:10px;"></h2>
+        <div class="row" id="spBoardBulkRow">
+          <button type="button" class="btn small" id="btnSpBoardBulkPrep">✔ ติ๊กว่าส่งรายชื่อแล้วทั้งชุด</button>
+        </div>
+        <!-- ⚠ ปุ่มโหมดแคปต้องอยู่ *นอก* #spBoardBulkRow — toggleSpBoardCapMode() ซ่อนแถวนั้นทั้งแถว
+             ถ้าย้ายปุ่มนี้กลับเข้าไปข้างใน ผู้ใช้จะเข้าโหมดแคปแล้ว **ออกไม่ได้** (เจอจริงตอนตรวจ 2026-09-06:
+             ตัวปุ่มเอง hidden=false แต่พ่อถูกซ่อน เทสต์ที่ดูแค่ property ของปุ่มจึงผ่านทั้งที่ของจริงพัง) -->
+        <div class="row" id="spBoardCapRow">
+          <button type="button" class="btn small secondary" id="btnSpBoardCap">🖼 โหมดแคป</button>
+        </div>
+        <div class="muted" id="spBoardBulkStatus"></div>
+        <div id="spBoardPeopleWrap"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -739,6 +799,56 @@ var SPECIAL_ICONS = {
   ent: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="29" y="27" width="14" height="5.5" rx="2.5" fill="#2C7BC4" transform="rotate(28 29 27)"/><circle cx="42" cy="36" r="3.5" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/></svg>',
   ent_hearing: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 19 Q33 24 30 29" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M35 15 Q41 24 35 33" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M40 11 Q47 24 40 37" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/></svg>'
 };
+
+// รอบ 9 ก้อน A (SPEC_รอบ9.md หัวข้อ 3.2) — กระดานงานค้างของ manager
+// เฉพาะรายการที่มีขั้น "ส่งรายชื่อ" (prepLabel != null) เท่านั้น — inbody (prepLabel:null) จึงไม่โผล่ในกระดานนี้
+// โดยอัตโนมัติ ไม่ต้องลบ id 'inbody' ออกจาก SPECIAL_SENDS (ห้ามลบเด็ดขาด — ดูเหตุผลใน SPEC_รอบ9.md ข้อ 2.3)
+var SP_BOARD_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel != null; });
+var SP_BOARD_SHORT_LABEL = { mmg: 'MMG', bmd: 'BMD', ent: 'ENT', ent_hearing: 'ENT+ยิน', vision3d: 'ตา' };
+
+// นิยาม 3 ตัวเลขตาม SPEC หัวข้อ 3.2 เป๊ะ — ห้ามตีความเอง ห้าม union specialReg ซ้ำ (เซิร์ฟเวอร์ทำให้แล้ว)
+function spBoardCounts(records) {
+  var counts = {};
+  SP_BOARD_ITEMS.forEach(function (item) { counts[item.id] = { reg: 0, notSent: 0, notBack: 0 }; });
+  (records || []).forEach(function (rec) {
+    if (rec.status === 'ยกเลิก') return;
+    var reg = rec.specialReg || [], prep = rec.specialPrep || [], sent = rec.specialSent || [], back = rec.specialBack || [];
+    SP_BOARD_ITEMS.forEach(function (item) {
+      var id = item.id;
+      if (reg.indexOf(id) !== -1) {
+        counts[id].reg++;
+        if (prep.indexOf(id) === -1) counts[id].notSent++;
+      }
+      if (sent.indexOf(id) !== -1 && back.indexOf(id) === -1) counts[id].notBack++;
+    });
+  });
+  return counts;
+}
+
+function spBoardPeopleForActive(records, activeId) {
+  return (records || []).filter(function (rec) {
+    return rec.status !== 'ยกเลิก' && (rec.specialReg || []).indexOf(activeId) !== -1;
+  });
+}
+
+// เรียง: ยังไม่ส่งรายชื่อ (ไม่อยู่ใน specialPrep) ขึ้นก่อน แล้วกลุ่มที่ส่งแล้ว · ภายในกลุ่มเรียงเวลาเก่า->ใหม่
+function spBoardSortPeople(rows, activeId) {
+  return (rows || []).slice().sort(function (a, b) {
+    var ga = (a.specialPrep || []).indexOf(activeId) !== -1 ? 1 : 0;
+    var gb = (b.specialPrep || []).indexOf(activeId) !== -1 ? 1 : 0;
+    if (ga !== gb) return ga - gb;
+    return String(a.time || '').localeCompare(String(b.time || ''));
+  });
+}
+
+// ป้ายสถานะไล่จากขั้นที่ไปไกลสุด: back > sent > prep(ส่งรายชื่อแล้ว) > ยังไม่ส่งรายชื่อ
+function spBoardStatusLabel(rec, activeId) {
+  var sent = rec.specialSent || [], back = rec.specialBack || [], prep = rec.specialPrep || [];
+  if (back.indexOf(activeId) !== -1) return { icon: '✅', text: 'กลับมาแล้ว' };
+  if (sent.indexOf(activeId) !== -1) return { icon: '🚶', text: 'ส่งตัวไปแล้ว' };
+  if (prep.indexOf(activeId) !== -1) return { icon: '✅', text: 'ส่งรายชื่อแล้ว' };
+  return { icon: '⏳', text: 'ยังไม่ส่งรายชื่อ' };
+}
 
 // รายชื่อเจ้าหน้าที่ตั้งต้น — ใช้ก่อนโหลด config สำเร็จเท่านั้น หลังจากนั้นใช้รายชื่อจาก action=config (resp.staff) เสมอ
 var STAFF_DEFAULT = [];
@@ -2088,7 +2198,248 @@ function onSpecialStatusClick(rec, stage, btnRowEl) {
   });
 }
 
+/* =========================================================================
+   7.1 กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager (รอบ 9 ก้อน A — SPEC_รอบ9.md หัวข้อ 3.2/3.3)
+   ⚠ state ของหน้านี้ (SP_BOARD_*) แยกขาดจาก SP_PEOPLE_RECORDS/STATE.activeSpecialId ของหน้า svcSpecial เดิม
+   ========================================================================= */
+var SP_BOARD_RECORDS = [];
+var SP_BOARD_ACTIVE_ID = '';
+var SP_BOARD_CAP_MODE = false;
 
+function loadSpBoard() {
+  var dateEl = qs('spBoardDate');
+  if (dateEl && !dateEl.value) dateEl.value = todayStr();
+  var dateStr = (dateEl && dateEl.value) || todayStr();
+  var headEl = qs('spBoardDashHeading');
+  if (headEl) headEl.textContent = 'ส่งตรวจพิเศษ · ' + formatThaiDate(dateStr) + ' · ทุกจุด';
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
+    // ⚠ ห้ามกลืน error เงียบ — กระดาน 0 ทุกช่องหน้าตาเหมือน "วันนี้ไม่มีใครลงชื่อ" เป๊ะ
+    //    apiCall() ไม่เคย reject (จับ error คืนเป็น {status:'error'}) ⇒ ต้องเช็ค status เองที่นี่
+    var loadOk = !!(resp && resp.status === 'ok');
+    var errEl = qs('spBoardError');
+    if (errEl) {
+      errEl.textContent = loadOk ? '' : ('❌ โหลดข้อมูลไม่สำเร็จ — ตัวเลขข้างล่างยังไม่ใช่ของจริง กด 🔄 รีเฟรชอีกครั้ง' +
+        (resp && resp.message ? ' (' + resp.message + ')' : ''));
+      errEl.hidden = loadOk;
+    }
+    SP_BOARD_RECORDS = loadOk ? (resp.records || []) : [];
+    renderSpBoardCards();
+    var l2 = qs('spBoardLayer2');
+    if (l2 && !l2.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
+  });
+}
+
+function renderSpBoardCards() {
+  var counts = spBoardCounts(SP_BOARD_RECORDS);
+  var grid = qs('spBoardCardsGrid');
+  if (!grid) return;
+  var html = '';
+  SP_BOARD_ITEMS.forEach(function (item) {
+    var c = counts[item.id] || { reg: 0, notSent: 0, notBack: 0 };
+    var notSentClass = c.notSent > 0 ? 'sp-board-warn' : 'muted';
+    html += '<button type="button" class="sp-board-card" data-sp-board-id="' + escHtml(item.id) + '">' +
+      '<span class="sp-board-card-icon">' + (SPECIAL_ICONS[item.id] || '') + '</span>' +
+      '<span class="sp-board-card-name">' + escHtml(item.name) + '</span>' +
+      '<span class="sp-board-card-line">ลงชื่อไว้ <b>' + c.reg + '</b></span>' +
+      '<span class="sp-board-card-line ' + notSentClass + '">⏳ ยังไม่ส่ง <b>' + c.notSent + '</b></span>' +
+      '<span class="sp-board-card-line">🚶 ยังไม่กลับ <b>' + c.notBack + '</b></span>' +
+      '</button>';
+  });
+  grid.innerHTML = html;
+}
+
+function openSpBoardCategory(id) {
+  SP_BOARD_ACTIVE_ID = id;
+  if (SP_BOARD_CAP_MODE) toggleSpBoardCapMode();
+  var l1 = qs('spBoardLayer1'), l2 = qs('spBoardLayer2');
+  if (l1) l1.hidden = true;
+  if (l2) l2.hidden = false;
+  renderSpBoardSwitchBar();
+  renderSpPeopleCards(id);
+}
+
+function closeSpBoardCategory() {
+  if (SP_BOARD_CAP_MODE) toggleSpBoardCapMode();
+  var l1 = qs('spBoardLayer1'), l2 = qs('spBoardLayer2');
+  if (l2) l2.hidden = true;
+  if (l1) l1.hidden = false;
+}
+
+function renderSpBoardSwitchBar() {
+  var bar = qs('spBoardSwitchBar');
+  if (!bar) return;
+  var counts = spBoardCounts(SP_BOARD_RECORDS);
+  bar.innerHTML = '';
+  SP_BOARD_ITEMS.forEach(function (item) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    var active = item.id === SP_BOARD_ACTIVE_ID;
+    btn.className = 'btn small' + (active ? '' : ' secondary');
+    btn.textContent = (SP_BOARD_SHORT_LABEL[item.id] || item.name) + ' ' + ((counts[item.id] || {}).reg || 0);
+    btn.setAttribute('data-sp-board-switch', item.id);
+    btn.addEventListener('click', function () { openSpBoardCategory(item.id); });
+    bar.appendChild(btn);
+  });
+  bar.hidden = SP_BOARD_CAP_MODE;
+}
+
+function renderSpPeopleCards(id) {
+  if (!id) return;
+  var item = SPECIAL_SEND_BY_ID[id];
+  var rows = spBoardSortPeople(spBoardPeopleForActive(SP_BOARD_RECORDS, id), id);
+  var headingEl = qs('spBoardHeading');
+  var dateStr = (qs('spBoardDate') && qs('spBoardDate').value) || todayStr();
+  if (headingEl) headingEl.textContent = (item ? item.name : '') + ' · ' + formatThaiDate(dateStr) + ' · รวม ' + rows.length + ' คน';
+
+  var wrap = qs('spBoardPeopleWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (!rows.length) {
+    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้ลงชื่อของประเภทนี้วันนี้</p>';
+    return;
+  }
+  rows.forEach(function (rec, idx) {
+    var card = document.createElement('div');
+    card.className = 'card sp-board-person-card';
+    var label = spBoardStatusLabel(rec, id);
+    var isSent = (rec.specialSent || []).indexOf(id) !== -1;
+    var isBack = (rec.specialBack || []).indexOf(id) !== -1;
+    card.innerHTML =
+      '<div class="sp-board-name">' + (idx + 1) + '. ' + escHtml(rec.patientName || '') + '</div>' +
+      '<div class="sp-board-hn">HN ' + escHtml(rec.patientHn || '—') + '</div>' +
+      '<div class="sp-board-status">' + label.icon + ' ' + escHtml(label.text) + '</div>';
+
+    var btnRow = document.createElement('div');
+    btnRow.className = 'row sp-board-status-btns';
+    btnRow.hidden = SP_BOARD_CAP_MODE;
+
+    var sentBtn = document.createElement('button');
+    sentBtn.type = 'button';
+    sentBtn.className = 'btn small' + (isSent ? '' : ' secondary');
+    sentBtn.textContent = (isSent ? '✓ ' : '') + 'ส่งตัวไปแล้ว';
+    sentBtn.addEventListener('click', function () { onSpBoardStatusClick(rec, 'sent', btnRow); });
+    btnRow.appendChild(sentBtn);
+
+    var backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn small' + (isBack ? '' : ' secondary');
+    backBtn.textContent = (isBack ? '✓ ' : '') + 'กลับมาแล้ว';
+    backBtn.disabled = !isSent; // กติกา 3.3.4 — กดไม่ได้ถ้ายังไม่ "ส่งตัวไปแล้ว"
+    backBtn.addEventListener('click', function () { onSpBoardStatusClick(rec, 'back', btnRow); });
+    btnRow.appendChild(backBtn);
+
+    card.appendChild(btnRow);
+    wrap.appendChild(card);
+  });
+}
+
+function onSpBoardStatusClick(rec, stage, btnRowEl) {
+  var id = SP_BOARD_ACTIVE_ID;
+  var sent = (rec.specialSent || []).slice();
+  var back = (rec.specialBack || []).slice();
+  function toggle(arr, v) { var i = arr.indexOf(v); if (i === -1) arr.push(v); else arr.splice(i, 1); return arr; }
+  if (stage === 'sent') {
+    var wasSent = sent.indexOf(id) !== -1;
+    sent = toggle(sent, id);
+    if (wasSent) { var bi = back.indexOf(id); if (bi !== -1) back.splice(bi, 1); }
+  } else if (stage === 'back') {
+    var wasBack = back.indexOf(id) !== -1;
+    back = toggle(back, id);
+    if (!wasBack && sent.indexOf(id) === -1) sent.push(id);
+  }
+  if (btnRowEl && btnRowEl.children) {
+    Array.prototype.forEach.call(btnRowEl.children, function (b) { b.disabled = true; });
+  }
+  apiCall('specialStatus', {
+    staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
+    specialPrep: rec.specialPrep || [], specialSent: sent, specialBack: back,
+    specialReg: rec.specialReg || []
+  }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      rec.specialPrep = resp.specialPrep || rec.specialPrep || [];
+      rec.specialSent = resp.specialSent || [];
+      rec.specialBack = resp.specialBack || [];
+      rec.specialReg = resp.specialReg || rec.specialReg || [];
+      for (var i = 0; i < SP_BOARD_RECORDS.length; i++) {
+        if (SP_BOARD_RECORDS[i].recordId === rec.recordId) {
+          SP_BOARD_RECORDS[i].specialPrep = rec.specialPrep;
+          SP_BOARD_RECORDS[i].specialSent = rec.specialSent;
+          SP_BOARD_RECORDS[i].specialBack = rec.specialBack;
+          SP_BOARD_RECORDS[i].specialReg = rec.specialReg;
+          break;
+        }
+      }
+      renderSpBoardCards();
+      renderSpBoardSwitchBar();
+      renderSpPeopleCards(id);
+      showToast('อัปเดตสถานะแล้ว');
+    } else {
+      showToast('❌ ' + ((resp && resp.message) ? resp.message : 'อัปเดตไม่สำเร็จ'));
+      renderSpPeopleCards(id);
+    }
+  });
+}
+
+function bulkMarkPrep(id) {
+  var rows = spBoardPeopleForActive(SP_BOARD_RECORDS, id).filter(function (rec) {
+    return (rec.specialPrep || []).indexOf(id) === -1;
+  });
+  var btn = qs('btnSpBoardBulkPrep');
+  var statusEl = qs('spBoardBulkStatus');
+  if (!rows.length) { showToast('ทุกคนส่งรายชื่อแล้ว'); return; }
+  if (btn) btn.disabled = true;
+  var total = rows.length, failed = [];
+  function next(i) {
+    if (i >= rows.length) {
+      if (btn) btn.disabled = false;
+      // SPEC_รอบ9.md 3.4 — ตอนจบต้องบอกด้วยว่า "ใคร" ที่ไม่สำเร็จ ไม่ใช่แค่จำนวน
+      // (ใช้ textContent ⇒ ชื่อคนไข้ไม่ต้องผ่าน escHtml และห้ามเปลี่ยนไปใช้ innerHTML)
+      var failNames = failed.map(function (r) {
+        return r.patientName || (r.patientHn ? 'HN ' + r.patientHn : '(ไม่ทราบชื่อ)');
+      }).join(', ');
+      if (statusEl) statusEl.textContent = 'สำเร็จ ' + (total - failed.length) + ' · ล้มเหลว ' + failed.length +
+        (failed.length ? ' — ' + failNames + ' (กดปุ่มซ้ำเพื่อลองใหม่เฉพาะคนที่ยังไม่สำเร็จ)' : '');
+      renderSpBoardCards();
+      renderSpBoardSwitchBar();
+      renderSpPeopleCards(id);
+      return;
+    }
+    var rec = rows[i];
+    if (statusEl) statusEl.textContent = 'กำลังติ๊ก ' + (i + 1) + '/' + total;
+    var prep = (rec.specialPrep || []).slice();
+    prep.push(id);
+    apiCall('specialStatus', {
+      staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
+      specialPrep: prep, specialSent: rec.specialSent || [], specialBack: rec.specialBack || [],
+      specialReg: rec.specialReg || []
+    }).then(function (resp) {
+      if (resp && resp.status === 'ok') {
+        var newPrep = resp.specialPrep || prep;
+        for (var j = 0; j < SP_BOARD_RECORDS.length; j++) {
+          if (SP_BOARD_RECORDS[j].recordId === rec.recordId) { SP_BOARD_RECORDS[j].specialPrep = newPrep; break; }
+        }
+      } else {
+        failed.push(rec);
+      }
+      next(i + 1);
+    });
+  }
+  next(0);
+}
+
+function toggleSpBoardCapMode() {
+  SP_BOARD_CAP_MODE = !SP_BOARD_CAP_MODE;
+  var backBtn = qs('spBoardBackBtn'), switchBar = qs('spBoardSwitchBar'), bulkRow = qs('spBoardBulkRow');
+  if (backBtn) backBtn.hidden = SP_BOARD_CAP_MODE;
+  // ปุ่ม "← กลับเมนู" ของหน้านี้ก็ต้องหายไปจากภาพแคปด้วย (SPEC_รอบ9.md 3.3.5 = ซ่อน "ทุกปุ่ม")
+  var backMenuBtn = document.querySelector('#spBoardScreen [data-back-menu]');
+  if (backMenuBtn) backMenuBtn.hidden = SP_BOARD_CAP_MODE;
+  if (switchBar) switchBar.hidden = SP_BOARD_CAP_MODE;
+  if (bulkRow) bulkRow.hidden = SP_BOARD_CAP_MODE;
+  document.querySelectorAll('.sp-board-status-btns').forEach(function (row) { row.hidden = SP_BOARD_CAP_MODE; });
+  var toggleBtn = qs('btnSpBoardCap');
+  if (toggleBtn) toggleBtn.textContent = SP_BOARD_CAP_MODE ? '✕ ออกจากโหมดแคป' : '🖼 โหมดแคป';
+}
 
 /* =========================================================================
    8.1 ใบรายชื่อผู้รับบริการ "ตรวจสุขภาพ" รายวันสำหรับพิมพ์ (รอบ 8, B7)
@@ -2468,11 +2819,11 @@ function loadReport() {
    10. หน้าเมนู / สลับหน้าจอ (รอบ 6) — เลิกใช้แท็บ 2 อัน แทนด้วยเมนู -> หน้าบริการ
    ========================================================================= */
 function showScreen(name, specialId) {
-  var outerMap = { menu: 'menuScreen', today: 'todayScreen', report: 'tabReport', checkupTable: 'checkupTableScreen' };
+  var outerMap = { menu: 'menuScreen', today: 'todayScreen', report: 'tabReport', checkupTable: 'checkupTableScreen', spBoard: 'spBoardScreen' };
   var isSvc = SVC_SCREENS.indexOf(name) !== -1;
   var outerName = isSvc ? 'svcFormWrap' : (outerMap[name] || 'menuScreen');
 
-  ['menuScreen', 'svcFormWrap', 'todayScreen', 'tabReport', 'checkupTableScreen'].forEach(function (id) {
+  ['menuScreen', 'svcFormWrap', 'todayScreen', 'tabReport', 'checkupTableScreen', 'spBoardScreen'].forEach(function (id) {
     var el = qs(id);
     if (el) el.style.display = (id === outerName) ? 'block' : 'none';
   });
@@ -2530,6 +2881,13 @@ function showScreen(name, specialId) {
   if (name === 'today') loadToday();
   if (name === 'menu') recalcTotals();
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable(); } // รอบ 8 (B7)
+  if (name === 'spBoard') { // รอบ 9 (ก้อน A)
+    SP_BOARD_CAP_MODE = false;
+    var spL1 = qs('spBoardLayer1'), spL2 = qs('spBoardLayer2');
+    if (spL1) spL1.hidden = false;
+    if (spL2) spL2.hidden = true;
+    loadSpBoard();
+  }
 
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
 }
@@ -2589,6 +2947,18 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnLoadReport').addEventListener('click', loadReport);
   qs('btnPrintReport').addEventListener('click', function () { window.print(); });
   initReportMonthPicker();
+
+  // รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager
+  qs('btnSpBoardRefresh').addEventListener('click', loadSpBoard);
+  qs('spBoardDate').addEventListener('change', loadSpBoard);
+  qs('spBoardBackBtn').addEventListener('click', closeSpBoardCategory);
+  qs('btnSpBoardBulkPrep').addEventListener('click', function () { bulkMarkPrep(SP_BOARD_ACTIVE_ID); });
+  qs('btnSpBoardCap').addEventListener('click', toggleSpBoardCapMode);
+  qs('spBoardCardsGrid').addEventListener('click', function (e) {
+    var target = e.target;
+    while (target && target !== qs('spBoardCardsGrid') && !target.getAttribute('data-sp-board-id')) target = target.parentElement;
+    if (target && target.getAttribute && target.getAttribute('data-sp-board-id')) openSpBoardCategory(target.getAttribute('data-sp-board-id'));
+  });
 
   tryRestoreSession();
 });
