@@ -217,27 +217,9 @@
   #gateScreen .gate-wrap { max-width: 420px; margin: 40px auto; padding: 12px; }
   #gateScreen .card { text-align: center; }
 
-  /* ===== รอบ 6: หน้าเมนู 4 บริการ + คิว + สีโปรแกรม + sticky bar ===== */
-  .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
-  @media (min-width: 640px) { .menu-grid { grid-template-columns: repeat(3, 1fr); } }
-  .menu-card {
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    padding: 22px 10px; min-height: 110px; font-weight: 700; font-size: 16px; color: var(--text);
-    cursor: pointer; text-align: center;
-  }
-  .menu-card .menu-icon { font-size: 34px; line-height: 1; }
-  .menu-card:active { background: var(--gray-pale); }
-  .menu-card .menu-icon svg { width: 44px; height: 44px; display: block; margin: 0 auto; }
-  .svc-title-icon { display: inline-flex; align-items: center; }
-  .svc-title-icon svg { width: 28px; height: 28px; display: block; }
-  table.sp-people-table td, table.sp-people-table th { text-align: left; white-space: normal; }
-
+  /* ===== รอบ 6: คิว + สีโปรแกรม + sticky bar (การ์ดเมนู/หัวข้อ svc เดิมถูกลบทิ้งในรอบ 9 ก้อน B — ดู .log-panel-* แทน) ===== */
   .draft-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
   .draft-strip .draft-text { flex: 1 1 240px; font-weight: 600; }
-
-  .svc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-  .svc-header h2 { margin: 0; }
 
   #svcFormWrap { padding-bottom: 78px; }
   .sticky-bar {
@@ -315,6 +297,47 @@
   .sp-board-hn { color: var(--text-muted); }
   .sp-board-status { margin: 4px 0; font-weight: 600; }
 
+  /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่ */
+  .wrap-log { max-width: 1400px; margin: 0 auto; padding: 12px; padding-bottom: 90px; }
+  .log-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .log-col { display: flex; flex-direction: column; gap: 12px; }
+  /* จุดตัดจอกว้าง/จอแคบ — ทดสอบจริงที่ 390px และ 1440px แล้ว ใช้ 1100px (ดูรายงานตรวจรับ) */
+  @media (min-width: 1100px) {
+    .log-grid { grid-template-columns: repeat(3, 1fr); align-items: start; }
+  }
+
+  .log-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .log-panel-head {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: none; border: none; padding: 14px 16px; font-size: 17px; font-weight: 700; color: var(--text);
+    cursor: pointer; text-align: left;
+  }
+  .log-panel-head-static {
+    padding: 14px 16px; font-size: 17px; font-weight: 700; color: var(--text);
+  }
+  .log-panel-title { flex: 1 1 auto; }
+  .log-panel-summary { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .log-panel-arrow { font-size: 13px; color: var(--text-muted); }
+  .log-panel-body { padding: 0 16px 16px; }
+  /* ⚠ ใช้ attribute data-collapsed ไม่ใช่ [hidden] — [hidden] ชนะ media query เสมอ (ดูกฎ [hidden] ด้านบน) */
+  .log-panel[data-collapsed="1"] .log-panel-body { display: none; }
+  @media (min-width: 1100px) {
+    /* จอกว้างไม่มีทางพับได้ ไม่ต้องใช้ JS ฟัง resize — override ตรงนี้ชนะ data-collapsed เสมอ */
+    .log-panel-body { display: block !important; }
+    .log-panel-head { cursor: default; }
+    .log-panel-arrow { display: none; }
+  }
+
+  .log-lock-bar {
+    background: #FFF3E0; color: #A85700; border: 1px solid #F0C040; border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; font-weight: 600; margin-bottom: 10px;
+  }
+  .log-lock-wrap { position: relative; }
+  .log-lock-overlay {
+    position: absolute; inset: 0; z-index: 5; cursor: not-allowed;
+    background: rgba(244, 245, 251, .75); border-radius: 8px;
+  }
+
   @media print {
     header.topbar, .no-print { display: none !important; }
     body { background: #fff; padding: 0; }
@@ -381,199 +404,225 @@
     <div class="wrap">
       <div>
         <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
-        <div>จุดบริการ: <span class="point-name" id="hdrPointName"></span> · ผู้บันทึก: <span class="point-name" id="hdrStaffName"></span></div>
+        <div>จุดบริการ: <span class="point-name" id="hdrPointName"></span> · ผู้บันทึก: <select id="hdrStaffSelect"></select></div>
       </div>
       <button class="btn secondary small no-print" id="btnChangePoint">เปลี่ยนจุด/ผู้บันทึก</button>
     </div>
-  </header>
-
-  <!-- ---------- เมนูหลัก (รอบ 6) ---------- -->
-  <div id="menuScreen">
-    <div class="wrap">
-      <div class="card draft-strip" id="draftStrip" hidden>
-        <div class="draft-text" id="draftText"></div>
-        <div class="row" style="flex:0 0 auto;">
-          <button type="button" class="btn small no-print" id="btnDraftSave">💾 บันทึก</button>
-          <button type="button" class="btn small secondary no-print" id="btnDraftClear">🗑 ล้างร่าง</button>
-        </div>
-      </div>
-
-      <h2 style="margin-top:4px;">บริการ</h2>
-      <div class="menu-grid">
-        <button type="button" class="menu-card" data-target="svcCheckup"><span class="menu-icon">🩺</span>ตรวจสุขภาพ</button>
-        <button type="button" class="menu-card" data-target="svcMedcertGen"><span class="menu-icon">📄</span>ใบรับรองแพทย์ทั่วไป</button>
-        <button type="button" class="menu-card" data-target="svcMedcertLab"><span class="menu-icon">🧾</span>ใบรับรองแพทย์มี Lab</button>
-        <button type="button" class="menu-card" data-target="svcVaccine"><span class="menu-icon">💉</span>วัคซีน</button>
-      </div>
-
-      <h2 style="margin-top:20px;">ส่งตรวจพิเศษ</h2>
-      <div class="menu-grid">
-        <button type="button" class="menu-card" data-target="svcSpecial" data-special="inbody"><span class="menu-icon" id="menuIcon_inbody"></span><span class="menu-card-label" id="menuLabel_inbody"></span></button>
-        <button type="button" class="menu-card" data-target="svcSpecial" data-special="bmd"><span class="menu-icon" id="menuIcon_bmd"></span><span class="menu-card-label" id="menuLabel_bmd"></span></button>
-        <button type="button" class="menu-card" data-target="svcSpecial" data-special="mmg"><span class="menu-icon" id="menuIcon_mmg"></span><span class="menu-card-label" id="menuLabel_mmg"></span></button>
-        <button type="button" class="menu-card" data-target="svcSpecial" data-special="vision3d"><span class="menu-icon" id="menuIcon_vision3d"></span><span class="menu-card-label" id="menuLabel_vision3d"></span></button>
-        <button type="button" class="menu-card" data-target="svcSpecial" data-special="ent"><span class="menu-icon" id="menuIcon_ent"></span><span class="menu-card-label" id="menuLabel_ent"></span></button>
-        <button type="button" class="menu-card" data-target="svcSpecial" data-special="ent_hearing"><span class="menu-icon" id="menuIcon_ent_hearing"></span><span class="menu-card-label" id="menuLabel_ent_hearing"></span></button>
-      </div>
-
-      <h2 style="margin-top:20px;">รายการ / รายงาน</h2>
-      <div class="menu-grid">
-        <button type="button" class="menu-card" data-target="today"><span class="menu-icon">📋</span>รายการวันนี้</button>
-        <!-- รอบ 8 (B7) — ใบรายชื่อผู้รับบริการตรวจสุขภาพรายวัน สำหรับพิมพ์ + ช่องลายเซ็นรับเอกสาร -->
-        <button type="button" class="menu-card" data-target="checkupTable"><span class="menu-icon">🩺</span>รายชื่อตรวจสุขภาพรายวัน</button>
-        <button type="button" class="menu-card" data-target="report"><span class="menu-icon">📊</span>รายงานรายเดือน</button>
-        <!-- รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager -->
-        <button type="button" class="menu-card" data-target="spBoard"><span class="menu-icon">📣</span>รวมรายชื่อส่งตรวจพิเศษ</button>
+    <!-- รอบ 9 (ก้อน B) — แถบลิงก์บนสุด แทนที่เมนูการ์ดที่ถูกยกเลิก (SPEC_รอบ9.md หัวข้อ 4.1/4.2) -->
+    <div class="wrap no-print" style="padding-top:0;">
+      <div class="row" style="gap:6px;flex-wrap:wrap;">
+        <button type="button" class="btn secondary small nav-link" data-target="today">📋 รายการวันนี้</button>
+        <button type="button" class="btn secondary small nav-link" data-target="checkupTable">🩺 รายชื่อตรวจสุขภาพรายวัน</button>
+        <button type="button" class="btn secondary small nav-link" data-target="report">📊 รายงานรายเดือน</button>
+        <button type="button" class="btn secondary small nav-link" data-target="spBoard">📣 รวมรายชื่อส่งตรวจพิเศษ</button>
       </div>
     </div>
-  </div>
+  </header>
 
-  <!-- ---------- หน้าฟอร์มบันทึกบริการ — ร่างเดียวใช้ร่วมกันทุกเมนู (รอบ 6) ---------- -->
+  <!-- ---------- หน้าบันทึกบริการ — แผงเดียวเห็นครบ (รอบ 9 ก้อน B, SPEC_รอบ9.md หัวข้อ 4) ---------- -->
   <div id="svcFormWrap" style="display:none;">
-    <div class="wrap">
+    <div class="wrap-log">
       <div id="editBanner" class="warning-box no-print" hidden style="margin-bottom:10px;">
         ✏️ กำลังแก้ไขรายการเวลา <b id="editBannerTime"></b>
         <button type="button" class="btn small secondary no-print" id="btnCancelEdit" style="margin-left:8px;">ยกเลิกการแก้ไข</button>
+        <div id="editBannerMergeNote" class="no-print" hidden style="margin-top:6px;font-weight:600;"></div>
       </div>
 
-      <form id="logForm" class="card no-print">
-        <div class="svc-header">
-          <button type="button" class="btn secondary small" data-back-menu>← กลับเมนู</button>
-          <span id="svcTitleIcon" class="svc-title-icon" hidden></span>
-          <h2 id="svcTitle"></h2>
+      <form id="logForm" class="log-grid no-print">
+        <!-- คอลัมน์ 1: ผู้รับบริการ + ตรวจสุขภาพ -->
+        <div class="log-col">
+          <!-- แผง "ผู้รับบริการ" — ห้ามพับ (ต้องเห็นตลอด) -->
+          <section class="log-panel" id="panelPerson">
+            <div class="log-panel-head-static"><span class="log-panel-title">ผู้รับบริการ</span></div>
+            <div class="log-panel-body">
+              <!-- แถบร่าง (เดิมอยู่หน้าเมนูที่ถูกลบ) — ยุบบทบาทมาไว้ในแผงนี้ (SPEC 4.3) -->
+              <div class="card draft-strip" id="draftStrip" hidden style="margin-bottom:10px;">
+                <div class="draft-text" id="draftText"></div>
+              </div>
+              <div id="personCard">
+                <div id="queueRow">
+                  <label class="field-label" for="queueSelect" id="queueLabel">คิว</label>
+                  <select id="queueSelect"></select>
+                </div>
+
+                <label class="field-label" for="barcodeInput">สแกนบาร์โค้ด</label>
+                <input type="text" id="barcodeInput" autocomplete="off" placeholder="คลิกช่องนี้แล้วยิงบาร์โค้ด ระบบจะเติมชื่อและ HN ให้เอง">
+                <p class="muted" id="barcodeHint" style="margin:2px 0 0;">(ไม่บังคับ) ยิงบาร์โค้ดแล้วระบบเติม HN/ชื่อ ให้เอง</p>
+                <div class="muted barcode-raw" id="barcodeRaw"></div>
+
+                <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
+                <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
+
+                <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
+                <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
+              </div>
+            </div>
+          </section>
+
+          <!-- แผง "ตรวจสุขภาพ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) -->
+          <section class="log-panel" id="panelCheckup" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelCheckup">
+              <span class="log-panel-title">ตรวจสุขภาพ</span>
+              <span class="log-panel-summary" id="panelCheckupSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <div class="log-lock-bar" id="checkupLockBar" hidden>🔒 กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกตรวจสุขภาพได้</div>
+              <div class="log-lock-wrap" id="checkupLockWrap">
+                <section id="svcCheckup">
+                  <label class="field-label">เพศ</label>
+                  <div class="row" id="genderButtons">
+                    <label class="opt-btn"><input type="radio" name="gender" value="male"> ชาย</label>
+                    <label class="opt-btn"><input type="radio" name="gender" value="female"> หญิง</label>
+                  </div>
+
+                  <label class="field-label">โปรแกรม</label>
+                  <div class="row" id="progButtons">
+                    <label class="opt-btn prog-btn prog-c1"><input type="radio" name="program" value="1"><span class="prog-check"></span> โปรแกรม 1 <span class="opt-price" data-prog="1"></span></label>
+                    <label class="opt-btn prog-btn prog-c2"><input type="radio" name="program" value="2"><span class="prog-check"></span> โปรแกรม 2 <span class="opt-price" data-prog="2"></span></label>
+                    <label class="opt-btn prog-btn prog-c3"><input type="radio" name="program" value="3"><span class="prog-check"></span> โปรแกรม 3 <span class="opt-price" data-prog="3"></span></label>
+                    <label class="opt-btn prog-btn prog-c4"><input type="radio" name="program" value="4"><span class="prog-check"></span> โปรแกรม 4 <span class="opt-price" data-prog="4"></span></label>
+                    <label class="opt-btn prog-btn prog-pea"><input type="radio" name="program" value="pea"><span class="prog-check"></span> การไฟฟ้าเรียกเก็บ <span class="opt-price" data-prog="pea"></span></label>
+                  </div>
+
+                  <div id="pelvicSection" style="margin-top:10px;" hidden>
+                    <label class="field-label">ตรวจภายใน</label>
+                    <div class="row" id="pelvicButtons">
+                      <label class="opt-btn"><input type="radio" name="pelvic" value="no" checked> ไม่ตรวจภายใน</label>
+                      <label class="opt-btn"><input type="radio" name="pelvic" value="pap"> Pap smear <span class="opt-price" data-pelvic="pap"></span></label>
+                      <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep"> Thinprep <span class="opt-price" data-pelvic="thinprep"></span></label>
+                      <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep_hpv"> Thinprep + HPV <span class="opt-price" data-pelvic="thinprep_hpv"></span></label>
+                    </div>
+                  </div>
+
+                  <label class="field-label" for="checkupAmount">ราคาตรวจสุขภาพ (กรอกเอง)</label>
+                  <input type="number" id="checkupAmount" min="0" step="1" inputmode="numeric" placeholder="กรอกยอดเงินที่เก็บจริง">
+
+                  <label class="field-label" for="deliveryMethod">ช่องทางรับผล *</label>
+                  <select id="deliveryMethod">
+                    <option value="">— เลือกช่องทางรับผล —</option>
+                    <option value="รอรับด้วยตนเอง">รอรับด้วยตนเอง</option>
+                    <option value="ส่งทางไปรษณีย์">ส่งทางไปรษณีย์</option>
+                    <option value="ส่งทาง E-mail">ส่งทาง E-mail</option>
+                    <option value="ส่งทาง Whatsapp">ส่งทาง Whatsapp</option>
+                  </select>
+
+                  <p class="muted" id="legacyExtraInfo" hidden></p>
+
+                  <!-- รอบ 9 (ก้อน B, B5) — InBody ย้ายเข้าแผงตรวจสุขภาพ: id เดิมเป๊ะ (sp_reg_inbody) ไม่มีขั้น prep/sent/back
+                       ⚠ ห้ามเอาไปรวมใน isCheckupOn() — ไม่ใช่เหตุให้บังคับ 7 ช่องของตรวจสุขภาพ -->
+                  <label class="opt-btn" style="margin-top:16px;"><input type="checkbox" id="sp_reg_inbody"> ทำ InBody (วิเคราะห์องค์ประกอบร่างกาย)</label>
+                </section>
+                <div class="log-lock-overlay" id="checkupLockOverlay" hidden></div>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <!-- การ์ดผู้รับบริการ — ชุดเดียวในไฟล์ ใช้ร่วมกันทุกเมนู เพราะ "1 แถว = 1 คน" (รอบ 6) -->
-        <div id="personCard">
-          <!-- รอบ 6/7: หน้าส่งตรวจพิเศษ "ไม่มีคิว" ⇒ showScreen() ซ่อนทั้งแถวโดยไม่ล้างค่าคิวที่กรอกไว้ -->
-          <div id="queueRow">
-            <label class="field-label" for="queueSelect" id="queueLabel">คิว</label>
-            <select id="queueSelect"></select>
-          </div>
+        <!-- คอลัมน์ 2: วัคซีน + ใบรับรองแพทย์ -->
+        <div class="log-col">
+          <section class="log-panel" id="panelVaccine" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelVaccine">
+              <span class="log-panel-title">วัคซีน</span>
+              <span class="log-panel-summary" id="panelVaccineSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <section id="svcVaccine">
+                <div id="vaccinePriceBanner" class="price-banner banner-normal">ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)</div>
+                <details class="list-fold" open>
+                  <summary>รายการวัคซีน (เลือกแล้ว <span id="vaccineCount">0</span> เข็ม) ▸</summary>
+                  <div class="fold-body">
+                    <input type="search" id="vaccineSearch" placeholder="ค้นหาวัคซีน">
+                    <div class="check-list" id="vaccineList"></div>
+                  </div>
+                </details>
+              </section>
+            </div>
+          </section>
 
-          <label class="field-label" for="barcodeInput">สแกนบาร์โค้ด</label>
-          <input type="text" id="barcodeInput" autocomplete="off" placeholder="คลิกช่องนี้แล้วยิงบาร์โค้ด ระบบจะเติมชื่อและ HN ให้เอง">
-          <p class="muted" id="barcodeHint" style="margin:2px 0 0;">(ไม่บังคับ) ยิงบาร์โค้ดแล้วระบบเติม HN/ชื่อ ให้เอง</p>
-          <div class="muted barcode-raw" id="barcodeRaw"></div>
+          <section class="log-panel" id="panelMedcert" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelMedcert">
+              <span class="log-panel-title">ใบรับรองแพทย์</span>
+              <span class="log-panel-summary" id="panelMedcertSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <section id="svcMedcertGen">
+                <label class="field-label" style="margin-top:2px;">ใบรับรองแพทย์ทั่วไป</label>
+                <div class="row">
+                  <div>
+                    <label class="field-label" for="medCert5">สุขภาพดี 5 โรค (จำนวนใบ)</label>
+                    <input type="number" id="medCert5" min="0" step="1" value="0">
+                  </div>
+                  <div>
+                    <label class="field-label" for="medCertDriver">ใบขับขี่ (จำนวนใบ)</label>
+                    <input type="number" id="medCertDriver" min="0" step="1" value="0">
+                  </div>
+                </div>
+                <p class="muted" id="medCertGenAmount" style="margin-top:8px;font-weight:700;">คิดเงินอัตโนมัติ: 0 บาท</p>
+              </section>
 
-          <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
-          <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
-
-          <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
-          <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
+              <section id="svcMedcertLab" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+                <label class="field-label" style="margin-top:2px;">ใบรับรองแพทย์มี Lab</label>
+                <p class="muted">ใบรับรองมี lab คิดราคาไม่ตายตัว ต้องกรอกยอดที่เก็บจริงเอง</p>
+                <div class="row">
+                  <div>
+                    <label class="field-label" for="medCertLabCount">ใบรับรองมี lab (จำนวนใบ)</label>
+                    <input type="number" id="medCertLabCount" min="0" step="1" value="0">
+                  </div>
+                  <div>
+                    <label class="field-label" for="medCertLabAmount">ยอดเงิน (กรอกเอง)</label>
+                    <input type="number" id="medCertLabAmount" min="0" step="1" value="0">
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
         </div>
 
-        <!-- ===== 1) ตรวจสุขภาพ ===== -->
-        <section id="svcCheckup" hidden>
-          <label class="field-label">เพศ</label>
-          <div class="row" id="genderButtons">
-            <label class="opt-btn"><input type="radio" name="gender" value="male"> ชาย</label>
-            <label class="opt-btn"><input type="radio" name="gender" value="female"> หญิง</label>
-          </div>
-
-          <label class="field-label">โปรแกรม</label>
-          <div class="row" id="progButtons">
-            <label class="opt-btn prog-btn prog-c1"><input type="radio" name="program" value="1"><span class="prog-check"></span> โปรแกรม 1 <span class="opt-price" data-prog="1"></span></label>
-            <label class="opt-btn prog-btn prog-c2"><input type="radio" name="program" value="2"><span class="prog-check"></span> โปรแกรม 2 <span class="opt-price" data-prog="2"></span></label>
-            <label class="opt-btn prog-btn prog-c3"><input type="radio" name="program" value="3"><span class="prog-check"></span> โปรแกรม 3 <span class="opt-price" data-prog="3"></span></label>
-            <label class="opt-btn prog-btn prog-c4"><input type="radio" name="program" value="4"><span class="prog-check"></span> โปรแกรม 4 <span class="opt-price" data-prog="4"></span></label>
-            <label class="opt-btn prog-btn prog-pea"><input type="radio" name="program" value="pea"><span class="prog-check"></span> การไฟฟ้าเรียกเก็บ <span class="opt-price" data-prog="pea"></span></label>
-          </div>
-
-          <div id="pelvicSection" style="margin-top:10px;" hidden>
-            <label class="field-label">ตรวจภายใน</label>
-            <div class="row" id="pelvicButtons">
-              <label class="opt-btn"><input type="radio" name="pelvic" value="no" checked> ไม่ตรวจภายใน</label>
-              <label class="opt-btn"><input type="radio" name="pelvic" value="pap"> Pap smear <span class="opt-price" data-pelvic="pap"></span></label>
-              <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep"> Thinprep <span class="opt-price" data-pelvic="thinprep"></span></label>
-              <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep_hpv"> Thinprep + HPV <span class="opt-price" data-pelvic="thinprep_hpv"></span></label>
+        <!-- คอลัมน์ 3: ส่งตรวจพิเศษ + ยอดรวม/บันทึก -->
+        <div class="log-col">
+          <!-- แผง "ส่งตรวจพิเศษ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) · เหลือช่อง "ลงชื่อไว้" อย่างเดียว 5 รายการ (B5) -->
+          <section class="log-panel" id="panelSpecial" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelSpecial">
+              <span class="log-panel-title">ส่งตรวจพิเศษ</span>
+              <span class="log-panel-summary" id="panelSpecialSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <div class="log-lock-bar" id="specialLockBar" hidden>🔒 กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกส่งตรวจพิเศษได้</div>
+              <div class="log-lock-wrap" id="specialLockWrap">
+                <section id="svcSpecial">
+                  <p class="muted">ติ๊กลงชื่อผู้รับบริการที่จะส่งตรวจแต่ละประเภทได้เลย — สถานะ (ส่งรายชื่อ/ส่งตัว/กลับมาแล้ว) มาติ๊กทีหลังได้ที่กระดาน "รวมรายชื่อส่งตรวจพิเศษ" ด้านบน</p>
+                  <div id="specialSendsList"></div>
+                </section>
+                <div class="log-lock-overlay" id="specialLockOverlay" hidden></div>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <label class="field-label" for="checkupAmount">ราคาตรวจสุขภาพ (กรอกเอง)</label>
-          <input type="number" id="checkupAmount" min="0" step="1" inputmode="numeric" placeholder="กรอกยอดเงินที่เก็บจริง">
+          <!-- แผง "ยอดรวม/บันทึก" — ห้ามพับ (ต้องเห็นตลอด) -->
+          <section class="log-panel" id="panelTotals">
+            <div class="log-panel-head-static"><span class="log-panel-title">ยอดรวม / บันทึก</span></div>
+            <div class="log-panel-body">
+              <div class="totals-box" id="totalsBox">
+                <div class="grand"><span>💰 รวม</span><span id="totGrand">0 บาท</span></div>
+              </div>
 
-          <label class="field-label" for="deliveryMethod">ช่องทางรับผล *</label>
-          <select id="deliveryMethod">
-            <option value="">— เลือกช่องทางรับผล —</option>
-            <option value="รอรับด้วยตนเอง">รอรับด้วยตนเอง</option>
-            <option value="ส่งทางไปรษณีย์">ส่งทางไปรษณีย์</option>
-            <option value="ส่งทาง E-mail">ส่งทาง E-mail</option>
-            <option value="ส่งทาง Whatsapp">ส่งทาง Whatsapp</option>
-          </select>
+              <div id="formWarning" class="warning-box" hidden></div>
+              <div id="formError" class="error-box" hidden></div>
 
-          <!-- รอบ 6 (แก้เพิ่ม): ถอดหมวด "ตรวจเพิ่ม" ออกทั้งหมด (เจ้าของ: เอาออกเลย) — บันทึกใหม่ไม่มีตรวจเพิ่มอีกต่อไป
-               แต่แถวเก่าที่เคยมีตรวจเพิ่มต้องไม่หายตอนแก้ไข: enterEditMode() เก็บ id ไว้ใน STATE.editExtraIds
-               แล้วโชว์บรรทัดอ่านอย่างเดียวนี้แทน UI เดิม -->
-          <p class="muted" id="legacyExtraInfo" hidden></p>
-        </section>
+              <div class="row" style="margin-top:10px;">
+                <button type="button" class="btn no-print" id="btnDraftSave">💾 บันทึก</button>
+                <button type="button" class="btn secondary no-print" id="btnDraftClear">🗑 ล้างร่าง</button>
+              </div>
 
-        <!-- ===== 2a) ใบรับรองแพทย์ทั่วไป (รอบ 7, B5) ===== -->
-        <section id="svcMedcertGen" hidden>
-          <div class="row">
-            <div>
-              <label class="field-label" for="medCert5">สุขภาพดี 5 โรค (จำนวนใบ)</label>
-              <input type="number" id="medCert5" min="0" step="1" value="0">
+              <!-- ปุ่มบันทึกจริง — ซ่อนไว้ (ใช้ sticky bar/ปุ่มในแผงนี้แทน) แต่ยังเป็นตัวเก็บสถานะ disabled ของฟอร์ม -->
+              <button type="submit" class="btn block" id="btnSubmitLog" hidden disabled>บันทึก</button>
             </div>
-            <div>
-              <label class="field-label" for="medCertDriver">ใบขับขี่ (จำนวนใบ)</label>
-              <input type="number" id="medCertDriver" min="0" step="1" value="0">
-            </div>
-          </div>
-          <p class="muted" id="medCertGenAmount" style="margin-top:8px;font-weight:700;">คิดเงินอัตโนมัติ: 0 บาท</p>
-        </section>
-
-        <!-- ===== 2b) ใบรับรองแพทย์มี Lab (รอบ 7, B5) — ราคาไม่ตายตัว กรอกเอง ===== -->
-        <section id="svcMedcertLab" hidden>
-          <p class="muted">ใบรับรองมี lab คิดราคาไม่ตายตัว ต้องกรอกยอดที่เก็บจริงเอง</p>
-          <div class="row">
-            <div>
-              <label class="field-label" for="medCertLabCount">ใบรับรองมี lab (จำนวนใบ)</label>
-              <input type="number" id="medCertLabCount" min="0" step="1" value="0">
-            </div>
-            <div>
-              <label class="field-label" for="medCertLabAmount">ยอดเงิน (กรอกเอง)</label>
-              <input type="number" id="medCertLabAmount" min="0" step="1" value="0">
-            </div>
-          </div>
-        </section>
-
-        <!-- ===== 3) วัคซีน ===== -->
-        <section id="svcVaccine" hidden>
-          <div id="vaccinePriceBanner" class="price-banner banner-normal">ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)</div>
-          <details class="list-fold" open>
-            <summary>รายการวัคซีน (เลือกแล้ว <span id="vaccineCount">0</span> เข็ม) ▸</summary>
-            <div class="fold-body">
-              <input type="search" id="vaccineSearch" placeholder="ค้นหาวัคซีน">
-              <div class="check-list" id="vaccineList"></div>
-            </div>
-          </details>
-        </section>
-
-        <!-- ===== 4) ส่งตรวจพิเศษ (รอบ 7, B6) ===== -->
-        <section id="svcSpecial" hidden>
-          <!-- รอบ 8 (B2): เลิกบังคับติ๊กสถานะ — ลงชื่อไว้ก่อนได้เลย เดี๋ยวมาติ๊กสถานะทีหลัง (เจ้าของสั่งข้อ 0.1) -->
-          <p class="muted">กรอก HN และชื่อ-สกุล แล้วกดบันทึกได้เลย — สถานะมาติ๊กทีหลังได้ตลอดที่รายชื่อด้านล่าง</p>
-          <div id="specialSendsList"></div>
-
-          <div id="svcSpecialPeopleWrap" style="margin-top:18px;border-top:1px solid var(--border);padding-top:12px;">
-            <div class="svc-header" style="margin-bottom:6px;">
-              <h3 id="svcSpecialPeopleHeading" style="margin:0;">ยอดเข้ารับบริการวันนี้: 0 คน</h3>
-              <button type="button" class="btn secondary small no-print" id="btnSpPeopleRefresh">🔄 รีเฟรช</button>
-            </div>
-            <div id="svcSpecialPeopleListWrap"></div>
-          </div>
-        </section>
-
-        <div class="totals-box" id="totalsBox">
-          <div class="grand"><span>💰 รวม</span><span id="totGrand">0 บาท</span></div>
+          </section>
         </div>
-
-        <div id="formWarning" class="warning-box" hidden></div>
-        <div id="formError" class="error-box" hidden></div>
-
-        <!-- ปุ่มบันทึกจริง — ซ่อนไว้ (ใช้ sticky bar/แถบร่างแทนบนจอ) แต่ยังเป็นตัวเก็บสถานะ disabled ของฟอร์ม -->
-        <button type="submit" class="btn block" id="btnSubmitLog" hidden disabled>บันทึก</button>
       </form>
     </div>
 
@@ -581,7 +630,6 @@
       <span>ยอดรวมตอนนี้ <b id="stickyTotal">0</b> บาท</span>
       <div class="row" style="flex:0 0 auto;">
         <button type="button" class="btn" id="btnStickySave">💾 บันทึก</button>
-        <button type="button" class="btn secondary" id="btnStickyMenu">➕ เพิ่มบริการอื่น (กลับเมนู)</button>
       </div>
     </div>
   </div>
@@ -589,7 +637,7 @@
   <!-- ---------- รายการวันนี้ ---------- -->
   <div id="todayScreen" style="display:none;">
     <div class="wrap">
-      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับเมนู</button>
+      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
       <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ 0 คน · ยอดเงินรวม 0 บาท</div>
 
       <div class="card" id="specialTodaySummaryCard">
@@ -606,7 +654,7 @@
   <!-- ---------- รายงานรายเดือน ---------- -->
   <section id="tabReport" style="display:none;">
     <div class="wrap">
-      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับเมนู</button>
+      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
       <div class="card no-print">
         <label class="field-label" for="reportMonth">เลือกเดือน</label>
         <input type="month" id="reportMonth">
@@ -627,7 +675,7 @@
   <!-- ---------- รายชื่อตรวจสุขภาพรายวันสำหรับพิมพ์ (รอบ 8, B7) ---------- -->
   <div id="checkupTableScreen" style="display:none;">
     <div class="wrap">
-      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับเมนู</button>
+      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
       <div class="card no-print">
         <h2 style="margin-top:0;">รายชื่อตรวจสุขภาพรายวัน</h2>
         <label class="field-label" for="cuDate">วันที่</label>
@@ -648,7 +696,7 @@
   <!-- ---------- รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager (SPEC_รอบ9.md หัวข้อ 3.2/3.3) ---------- -->
   <div id="spBoardScreen" style="display:none;">
     <div class="wrap">
-      <button type="button" class="btn secondary small" data-back-menu style="margin-bottom:10px;">← กลับเมนู</button>
+      <button type="button" class="btn secondary small" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
 
       <div id="spBoardLayer1">
         <div class="card">
@@ -760,12 +808,9 @@ var TESTS_DEFAULT = [
 
 var SERVICE_POINTS_DEFAULT = ['จุดบริการที่ 1'];
 
-// เลขคิว (รอบ 6) — prefix ต่อเมนู ตามที่เจ้าของสั่ง (C/M/V)
-// ⚠ แก้เพิ่ม (0.2.1): หน้าส่งตรวจพิเศษ "ไม่มีคิว" (เจ้าของ: ไว้เช็คยอดว่ามีกี่คน ส่งคนไข้ไปทำหรือยัง)
-// ⇒ svcSpecial ไม่มี prefix เลย — ห้ามเพิ่มกลับเข้ามา ไม่งั้น buildQueueOptions()/showScreen() จะไปแตะ/ล้างค่าคิวของหน้านี้อีก
-var QUEUE_PREFIX = { svcCheckup: 'C', svcMedcertGen: 'M', svcMedcertLab: 'M', svcVaccine: 'V' };
-var SVC_SCREENS = ['svcCheckup', 'svcMedcertGen', 'svcMedcertLab', 'svcVaccine', 'svcSpecial'];
-var SVC_TITLES = { svcCheckup: 'ตรวจสุขภาพ', svcMedcertGen: 'ใบรับรองแพทย์ทั่วไป', svcMedcertLab: 'ใบรับรองแพทย์มี Lab', svcVaccine: 'วัคซีน' };
+// รอบ 9 (ก้อน B) — เลิกมีหน้าเมนู/สลับหน้าบริการทีละหน้าแล้ว ทุกแผงแสดงพร้อมกันตลอด (SPEC_รอบ9.md หัวข้อ 4.1)
+// ⇒ QUEUE_PREFIX / SVC_SCREENS / SVC_TITLES ของรอบ 6-8 (ผูกกับ "หน้าบริการที่เปิดอยู่") ไม่มีความหมายอีกต่อไป ถูกลบทิ้ง
+// prefix คิวตอนนี้มาจาก draftQueuePrefix() อย่างเดียว (อิงจากบริการที่ "มีอยู่ในร่าง" ไม่ใช่หน้าที่เปิดอยู่)
 
 // ส่งตรวจพิเศษ (รอบ 4) — ติดตามการส่ง/กลับมาแล้วเท่านั้น ไม่คิดเงินเลย
 // ⚠ ต้องตรงกับ SPECIAL_SENDS ใน สถิติบริการ.js เป๊ะทั้ง id/name/group/prepLabel/ลำดับ
@@ -971,8 +1016,12 @@ var STATE = {
   // แต่แถวเก่าที่เคยมีตรวจเพิ่มต้องไม่หายตอนแก้ไข — enterEditMode() เก็บ id ไว้ที่นี่แล้ว onSubmitLog() ส่งค่านี้กลับไปแทน
   editExtraIds: [],
   warnings: [], // ข้อความเตือนจากเซิร์ฟเวอร์ (resp.warnings ตอน config) — ไม่บล็อกการใช้งาน แค่โชว์
-  activeSpecialId: '', // รอบ 7 (B7) — รายการส่งตรวจพิเศษที่กำลังเปิดอยู่ในหน้า svcSpecial
-  currentSvcScreen: '' // รอบ 8 — หน้าบริการที่เปิดอยู่ ใช้เลือก prefix คิวเมื่อยังไม่ได้เลือกบริการใด
+  // รอบ 9 (ก้อน B, B6) — สถานะส่งตรวจพิเศษของแถวที่กำลังแก้ไข ไม่มี element sp_prep_*/sp_sent_*/sp_back_* ให้อ่านจาก DOM
+  // อีกแล้ว (B5 ถอด UI สถานะออกจากหน้าบันทึกทั้งหมด) ⇒ ต้องเก็บสถานะเดิมไว้ที่นี่แล้วส่งกลับตอนบันทึกแก้ไข ไม่งั้น
+  // handleEdit_ ฝั่งเซิร์ฟเวอร์ (ที่เขียนทับคอลัมน์สถานะจาก payload ทุกครั้ง) จะล้างสถานะที่เจ้าหน้าที่ติ๊กไว้แล้วทิ้งเงียบ ๆ
+  editSpecialPrep: [],
+  editSpecialSent: [],
+  editSpecialBack: []
 };
 
 /* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
@@ -1045,6 +1094,21 @@ function applyConfigResponse(resp, staffKey) {
   STATE.staffList = (resp.staff && resp.staff.length) ? resp.staff : STAFF_DEFAULT.slice();
   STATE.warnings = (resp.warnings && resp.warnings.length) ? resp.warnings : [];
   safeSetItem('svcLogStaffKey', staffKey);
+  buildStaffSelect(); // รอบ 9 (ก้อน B, B2) — เผื่อรายชื่อเปลี่ยนหลังโหลด config ใหม่
+}
+
+// รอบ 9 (ก้อน B, B2) — ดรอปดาวน์ผู้บันทึกบนแถบบนสุด เปลี่ยนได้ทันทีไม่ต้องกลับหน้า gate
+function buildStaffSelect() {
+  var sel = qs('hdrStaffSelect');
+  if (!sel) return;
+  sel.innerHTML = '';
+  STATE.staffList.forEach(function (name) {
+    var opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  if (STATE.staffName && STATE.staffList.indexOf(STATE.staffName) !== -1) sel.value = STATE.staffName;
 }
 
 function handleGateKeySubmit(e) {
@@ -1118,13 +1182,13 @@ function enterAppScreen() {
   qs('gateScreen').style.display = 'none';
   qs('appScreen').style.display = 'block';
   qs('hdrPointName').textContent = STATE.point;
-  qs('hdrStaffName').textContent = STATE.staffName;
+  buildStaffSelect();
   buildVaccineList();
   buildSpecialSendsUI();
   updateProgramLabels();
   recalcTotals();
   loadToday();
-  showScreen('menu');
+  showScreen('log'); // รอบ 9 (ก้อน B) — ไม่มีหน้าเมนูอีกแล้ว เข้าหน้าบันทึกทันที
 }
 
 function handleChangePoint() {
@@ -1174,7 +1238,7 @@ function buildVaccineList() {
       '<input type="checkbox" value="' + escHtml(v.code) + '">' +
       '<span class="item-name">' + escHtml(v.name) + '</span>' +
       '<span class="opt-price">' + escHtml(money(Number(v.price))) + ' บ.</span>';
-    row.querySelector('input').addEventListener('change', recalcTotals);
+    row.querySelector('input').addEventListener('change', onServiceFieldChange); // รอบ 9 (B7) — วัคซีนกำหนดบริการ ต้อง sync คิวด้วย
     wrap.appendChild(row);
   });
   applyVaccineFilter();
@@ -1213,58 +1277,47 @@ function buildQueueOptions(prefix, forceValue) {
 
 /* รอบ 7 (B3) — ป้าย/placeholder ของคิว/HN/ชื่อ เปลี่ยนตามหน้าบริการ:
    ตรวจสุขภาพ = บังคับทั้ง 3 ช่อง · ส่งตรวจพิเศษ = บังคับ HN/ชื่อ (ไม่มีคิว) · หน้าอื่น = ไม่บังคับทั้งหมด */
-function updatePersonCardLabels(screenName) {
+/* รอบ 9 (ก้อน B, B7) — ไม่มี "หน้าบริการที่เปิดอยู่" อีกแล้ว ทุกแผงแสดงพร้อมกันตลอด ⇒ ป้าย/placeholder ของ
+   คิว/HN/ชื่อ อ่านจากสถานะร่างเอง แทนพารามิเตอร์ชื่อหน้าเดิม: บังคับ HN+ชื่อ เมื่อ isCheckupOn() หรือ isSpecialOn()
+   เป็นจริง (แผงใดแผงหนึ่งก็พอ) · คิวบังคับเมื่อ isCheckupOn() เท่านั้น (ตามกติกาเดิม) — เรียกจาก recalcTotals() */
+function updatePersonCardLabels() {
   var queueLabelEl = qs('queueLabel');
   var hnLabelEl = qs('patientHnLabel');
   var nameLabelEl = qs('patientNameLabel');
   var hnEl = qs('patientHn');
   var nameEl = qs('patientName');
   var reqPh = 'บังคับกรอก', normalPh = 'ไม่บังคับกรอก';
+  var checkupOn = isCheckupOn();
+  var needPerson = checkupOn || isSpecialOn();
 
-  if (screenName === 'svcCheckup') {
-    if (queueLabelEl) queueLabelEl.textContent = 'คิว *';
-    if (hnLabelEl) hnLabelEl.textContent = 'HN *';
-    if (nameLabelEl) nameLabelEl.textContent = 'ชื่อ-นามสกุลผู้รับบริการ *';
-    if (hnEl) hnEl.placeholder = reqPh;
-    if (nameEl) nameEl.placeholder = reqPh;
-  } else if (screenName === 'svcSpecial') {
-    if (queueLabelEl) queueLabelEl.textContent = 'คิว';
-    if (hnLabelEl) hnLabelEl.textContent = 'HN *';
-    if (nameLabelEl) nameLabelEl.textContent = 'ชื่อ-นามสกุลผู้รับบริการ *';
-    if (hnEl) hnEl.placeholder = reqPh;
-    if (nameEl) nameEl.placeholder = reqPh;
-  } else {
-    if (queueLabelEl) queueLabelEl.textContent = 'คิว';
-    if (hnLabelEl) hnLabelEl.textContent = 'HN';
-    if (nameLabelEl) nameLabelEl.textContent = 'ชื่อ-นามสกุลผู้รับบริการ';
-    if (hnEl) hnEl.placeholder = normalPh;
-    if (nameEl) nameEl.placeholder = normalPh;
-  }
+  if (queueLabelEl) queueLabelEl.textContent = checkupOn ? 'คิว *' : 'คิว';
+  if (hnLabelEl) hnLabelEl.textContent = needPerson ? 'HN *' : 'HN';
+  if (nameLabelEl) nameLabelEl.textContent = needPerson ? 'ชื่อ-นามสกุลผู้รับบริการ *' : 'ชื่อ-นามสกุลผู้รับบริการ';
+  if (hnEl) hnEl.placeholder = needPerson ? reqPh : normalPh;
+  if (nameEl) nameEl.placeholder = needPerson ? reqPh : normalPh;
 }
 
 /* รอบ 8 (แก้เพิ่ม 2026-09-03 ตามคำสั่งเจ้าของ) — prefix ของคิวเป็นของ "แถว" ไม่ใช่ของ "หน้าที่เปิดอยู่"
    เจ้าของ: C = ตรวจสุขภาพ · M = ใบรับรองแพทย์ · V = วัคซีน · และ "ตรวจสุขภาพ + วัคซีน ใช้เป็น C ไปเลย"
-   ⇒ ลำดับความสำคัญ ตรวจสุขภาพ > ใบรับรอง > วัคซีน · ยังไม่เลือกอะไรเลย = ใช้ prefix ของหน้าที่เปิดอยู่
+   ⇒ ลำดับความสำคัญ ตรวจสุขภาพ > ใบรับรอง > วัคซีน · ยังไม่เลือกอะไรเลย = fallback 'C'
    (ตรวจสุขภาพกับใบรับรองแพทย์ "ไม่มาคู่กัน" — เจ้าของยืนยันเอง ⇒ C กับ M ไม่มีทางชนกันในแถวเดียว)
-   🐞 บั๊กที่แก้: เดิมใช้ prefix ของหน้า ทำให้เปิดหน้าใบรับรองแล้วมีคิว C ค้างจากร่างเดิมโผล่ในดรอปดาวน์ */
+   รอบ 9 (ก้อน B, B7): ไม่มี "หน้าบริการที่เปิดอยู่" อีกแล้ว (ทุกแผงแสดงพร้อมกันตลอด) ⇒ fallback เดิมที่อิง
+   QUEUE_PREFIX[STATE.currentSvcScreen] ไม่มีความหมายอีกต่อไป เหลือ fallback ตายตัวเป็น 'C' */
 function draftQueuePrefix() {
   if (isCheckupOn()) return 'C';
   if (isMedOn()) return 'M';
   if (isVaccineOn()) return 'V';
-  return QUEUE_PREFIX[STATE.currentSvcScreen] || 'C';
+  return 'C';
 }
 
 var LAST_QUEUE_PREFIX = '';
 function queuePrefixOf(v) { return String(v || '').replace(/[0-9]+$/, ''); }
-/* เรียกตอนเข้าหน้าบริการ — สร้างดรอปดาวน์ใหม่เฉพาะตอน prefix เปลี่ยนจริง
-   ⚠ หน้าส่งตรวจพิเศษไม่มีคิว ห้ามแตะ queueSelect เลย (กติกาเดิมตั้งแต่รอบ 6)
-   ⚠ ระหว่างโหมดแก้ไขแถวเก่า ห้ามล้างคิว — แถวเก่าอาจมี prefix ที่ไม่ตรงกับกติกาปัจจุบัน */
-// ⚠ เรียกจาก showScreen() ตอนเข้าหน้าบริการเท่านั้น — ห้ามเรียกจาก recalcTotals()
-//    (recalcTotals ถูกเรียกทุก keystroke ถ้าไปสร้างดรอปดาวน์ใหม่ที่นั่นจะล้างคิวที่ผู้ใช้เพิ่งเลือกทิ้งกลางคัน
-//     และ DOM จำลองในเทสต์เก่าก็ไม่ได้ทำ <option> ไว้รองรับ — เจอจริงตอนตรวจ 2026-09-03)
-// บริการในร่างเปลี่ยนได้เฉพาะบนหน้าที่มีช่องของมันอยู่แล้ว ⇒ คำนวณตอนเข้าหน้าก็ครอบคลุมทุกกรณี
+/* รอบ 9 (ก้อน B, B7): เรียกจาก event change/input ของช่องที่กำหนดบริการเท่านั้น — radio program · checkbox วัคซีน ·
+   medCert5/medCertDriver/medCertLabCount/medCertLabAmount · checkbox sp_reg_* — ห้ามเรียกจาก recalcTotals() และ
+   ห้ามเรียกจาก event ของ patientName/patientHn (recalcTotals ถูกเรียกทุก keystroke ถ้าไปสร้างดรอปดาวน์ใหม่ที่นั่น
+   จะล้างคิวที่ผู้ใช้เพิ่งเลือกทิ้งกลางคัน) ⚠ ระหว่างโหมดแก้ไขแถวเก่า ห้ามล้างคิว — แถวเก่าอาจมี prefix ที่ไม่ตรงกับ
+   กติกาปัจจุบัน · queue เป็นช่องที่แสดงตลอด (แผง "ผู้รับบริการ" ไม่ถูกล็อก) จึงเรียกจาก showScreen('log') ได้ด้วย */
 function syncQueuePrefix() {
-  if (STATE.currentSvcScreen === 'svcSpecial') return;
   var sel = qs('queueSelect');
   if (!sel) return;
   var want = draftQueuePrefix();
@@ -1277,6 +1330,27 @@ function syncQueuePrefix() {
   }
   LAST_QUEUE_PREFIX = want;
 }
+
+// รอบ 9 (ก้อน B, B7) — ตัวรวม syncQueuePrefix()+recalcTotals() สำหรับ event ของช่อง "กำหนดบริการ" เท่านั้น
+// (radio program · checkbox วัคซีน · medCert5/medCertDriver/medCertLabCount/medCertLabAmount · checkbox sp_reg_*)
+function onServiceFieldChange() { syncQueuePrefix(); recalcTotals(); }
+
+// รอบ 9 (ก้อน B, B6 ข้อสุดท้าย) — กติกาเดิมของรอบ 8 "ปลดติ๊ก 'ลงชื่อไว้' ไม่ได้ถ้ามีสถานะอยู่แล้ว -> ติ๊กกลับอัตโนมัติ
+// + toast" ต้องยังอยู่ แต่ตอนนี้ไม่มี checkbox สถานะพี่น้อง (sp_prep_*/sp_sent_*/sp_back_*) ให้เช็คแล้ว (B5 ถอดออกหมด)
+// ⇒ เช็คจาก STATE.editSpecial* แทน (มีค่าเฉพาะตอนกำลังแก้ไขแถวเก่าที่เคยมีสถานะติดมาก่อน)
+function hasEditSpecialStatus(id) {
+  return (STATE.editSpecialPrep || []).indexOf(id) !== -1 ||
+    (STATE.editSpecialSent || []).indexOf(id) !== -1 ||
+    (STATE.editSpecialBack || []).indexOf(id) !== -1;
+}
+function guardSpecialRegUncheck(id) {
+  var regCb = qs('sp_reg_' + id);
+  if (regCb && !regCb.checked && hasEditSpecialStatus(id)) {
+    regCb.checked = true;
+    showToast('รายการนี้มีสถานะอยู่แล้ว จึงต้องลงชื่อไว้');
+  }
+}
+function onSpecialRegChange(id) { guardSpecialRegUncheck(id); onServiceFieldChange(); }
 
 /* =========================================================================
    6.2 สแกนบาร์โค้ด (รอบ 6) — ปรับ pattern ที่นี่จุดเดียวเมื่อรู้รูปแบบบาร์โค้ดจริง
@@ -1315,108 +1389,37 @@ function applyBarcode() {
   recalcTotals();
 }
 
-/* ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5, รวมเป็นรายการเดียวรอบ 6, เพิ่มช่อง "ลงชื่อไว้" รอบ 8) — สร้างรายการจาก SPECIAL_SENDS
-   คงที่ (ไม่ได้มาจาก config เหมือนวัคซีน/ตรวจเพิ่ม)
+/* ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5, รวมเป็นรายการเดียวรอบ 6, เพิ่มช่อง "ลงชื่อไว้" รอบ 8, เหลือเฉพาะ "ลงชื่อไว้" รอบ 9 ก้อน B)
+   สร้างรายการจาก SPECIAL_SENDS คงที่ (ไม่ได้มาจาก config เหมือนวัคซีน/ตรวจเพิ่ม)
    ⚠ field `group` ใน SPECIAL_SENDS ยังคงค่าเดิมทุกตัว (ห้ามแก้) เพราะ test_special_sends.js เทียบทั้งก้อนกับฝั่งเซิร์ฟเวอร์แบบเป๊ะ
-   แต่หน้าเว็บรอบ 6 ไม่ใช้ group แยกกล่องอีกต่อไป — รวมทั้ง 6 รายการไว้ในลิสต์เดียวตามลำดับ SPECIAL_SENDS
-   รอบ 8 (B1): แต่ละรายการมี checkbox สูงสุด 4 อัน — sp_reg_<id> (ลงชื่อไว้ ⊇ ทุกสถานะ ขึ้นบรรทัดแรกเดี่ยว ๆ) แล้วตามด้วย
-   แถวสถานะ (sp_prep_<id> ถ้ามี prepLabel / sp_sent_<id> / sp_back_<id>) */
+   รอบ 9 (ก้อน B, B5) — เจ้าของตัดสินแล้ว: แผงนี้เหลือช่อง "ลงชื่อไว้" อย่างเดียว 5 รายการ (ไม่รวม inbody ซึ่งย้ายไปอยู่
+   แผงตรวจสุขภาพแบบ static แล้ว — ดูกล่องเช็คบ็อกซ์ sp_reg_inbody ใน HTML) ⇒ สร้างเฉพาะรายการที่ prepLabel != null
+   (= SP_BOARD_ITEMS ที่มีอยู่แล้ว ห้ามเขียนตัวกรองซ้ำ) ไม่มี element sp_prep_*, sp_sent_*, sp_back_* ในหน้านี้อีกต่อไป —
+   สถานะ (ส่งรายชื่อ/ส่งตัว/กลับมาแล้ว) ย้ายไปติ๊กที่กระดาน spBoard แทน */
 function buildSpecialRow(item) {
-  var row = document.createElement('div');
-  row.className = 'check-row special-row';
+  var row = document.createElement('label');
+  row.className = 'check-row';
   row.setAttribute('data-special-id', item.id);
   row.id = 'sp_row_' + item.id;
-  var prepHtml = (item.prepLabel != null)
-    ? '<label class="sp-check"><input type="checkbox" id="sp_prep_' + escHtml(item.id) + '"> ' + escHtml(SP_STATUS_LABEL.prep) + '</label>'
-    : '';
   row.innerHTML =
-    '<span class="item-name">' + escHtml(item.name) + '</span>' +
-    '<label class="sp-check sp-check-reg"><input type="checkbox" id="sp_reg_' + escHtml(item.id) + '"> ลงชื่อผู้รับบริการรายนี้</label>' +
-    '<span class="sp-status-label">สถานะ:</span>' +
-    prepHtml +
-    '<label class="sp-check"><input type="checkbox" id="sp_sent_' + escHtml(item.id) + '"> ' + escHtml(SP_STATUS_LABEL.sent) + '</label>' +
-    '<label class="sp-check"><input type="checkbox" id="sp_back_' + escHtml(item.id) + '"> ' + escHtml(SP_STATUS_LABEL.back) + '</label>';
+    '<input type="checkbox" id="sp_reg_' + escHtml(item.id) + '">' +
+    '<span class="item-name">' + escHtml(item.name) + '</span>';
   return row;
 }
 
 function buildSpecialSendsUI() {
   var wrap = qs('specialSendsList');
   if (wrap) wrap.innerHTML = '';
-  SPECIAL_SENDS.forEach(function (item) {
+  SP_BOARD_ITEMS.forEach(function (item) {
     if (!wrap) return;
-    wrap.appendChild(buildSpecialRow(item));
-  });
-  SPECIAL_SENDS.forEach(function (item) {
+    var row = buildSpecialRow(item);
+    wrap.appendChild(row);
     var regCb = qs('sp_reg_' + item.id);
-    var prepCb = qs('sp_prep_' + item.id);
-    var sentCb = qs('sp_sent_' + item.id);
-    var backCb = qs('sp_back_' + item.id);
-    if (!regCb || !sentCb || !backCb) return;
-
-    // ติ๊ก "กลับมาแล้ว" -> ต้องติ๊ก "ส่งไปแล้ว" ให้อัตโนมัติ · เอาติ๊ก "ส่งไปแล้ว" ออก -> "กลับมาแล้ว" ต้องหลุดตามด้วย
-    // รอบ 8: ติ๊กสถานะใดก็ตาม -> ต้องติ๊ก "ลงชื่อไว้" (reg) ให้อัตโนมัติเสมอ (กติกาแม่บท reg ⊇ ทุกสถานะ ที่เซิร์ฟเวอร์บังคับอยู่แล้ว
-    // หน้าจอต้องไม่ขัดกับเซิร์ฟเวอร์ ไม่งั้นจอโชว์ว่ายังไม่ลงชื่อ ทั้งที่บันทึกจริงจะมี reg ติดมาด้วยเสมอ)
-    backCb.addEventListener('change', function () {
-      if (backCb.checked) { sentCb.checked = true; regCb.checked = true; }
-      recalcTotals();
-    });
-    sentCb.addEventListener('change', function () {
-      if (!sentCb.checked) backCb.checked = false;
-      if (sentCb.checked) regCb.checked = true;
-      recalcTotals();
-    });
-    // การเตรียมส่ง (รอบ 5) — ช่องติ๊กอิสระล้วน ๆ ไม่ผูกกับ "ส่งไปแล้ว"/"กลับมาแล้ว" ในทางใดทางหนึ่งเลย
-    // (คีย์/ส่ง line เป็นขั้นก่อนส่งจริงตามธรรมชาติ แต่บางครั้งพนักงานเตรียมไว้ก่อนโดยยังไม่ส่ง หรือส่งโดยไม่ได้คีย์ไว้ล่วงหน้า)
-    if (prepCb) {
-      prepCb.addEventListener('change', function () {
-        if (prepCb.checked) regCb.checked = true;
-        recalcTotals();
-      });
-    }
-    // รอบ 8 (B1) — เจ้าหน้าที่ปลดติ๊ก "ลงชื่อไว้" เองได้ (กรณีกดเข้าผิดหน้า) ยกเว้นตอนนี้มีสถานะติ๊กอยู่แล้ว
-    // ⇒ ปลดไม่ได้จริง ต้องติ๊กกลับอัตโนมัติ + เตือน (สอดคล้องกับที่เซิร์ฟเวอร์บังคับ reg ⊇ สถานะเสมออยู่แล้ว)
-    regCb.addEventListener('change', function () {
-      if (!regCb.checked) {
-        var hasStatus = (prepCb && prepCb.checked) || sentCb.checked || backCb.checked;
-        if (hasStatus) {
-          regCb.checked = true;
-          showToast('รายการนี้มีสถานะอยู่แล้ว จึงต้องลงชื่อไว้');
-        }
-      }
-      recalcTotals();
-    });
+    if (regCb) regCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
   });
 }
 
-/* รอบ 7 (B1) — เติมไอคอน/ชื่อของ 6 การ์ดเมนูส่งตรวจพิเศษ จาก SPECIAL_SENDS + SPECIAL_ICONS (single source of truth) */
-function buildSpecialMenuCards() {
-  SPECIAL_SENDS.forEach(function (item) {
-    var iconEl = qs('menuIcon_' + item.id);
-    if (iconEl && SPECIAL_ICONS[item.id]) iconEl.innerHTML = SPECIAL_ICONS[item.id];
-    var labelEl = qs('menuLabel_' + item.id);
-    if (labelEl) labelEl.textContent = item.name;
-  });
-}
-
-function getSpecialSentIds() {
-  return SPECIAL_SENDS.filter(function (item) {
-    var cb = qs('sp_sent_' + item.id);
-    return cb && cb.checked;
-  }).map(function (item) { return item.id; });
-}
-function getSpecialBackIds() {
-  return SPECIAL_SENDS.filter(function (item) {
-    var cb = qs('sp_back_' + item.id);
-    return cb && cb.checked;
-  }).map(function (item) { return item.id; });
-}
-function getSpecialPrepIds() {
-  return SPECIAL_SENDS.filter(function (item) {
-    var cb = qs('sp_prep_' + item.id);
-    return cb && cb.checked;
-  }).map(function (item) { return item.id; });
-}
-// รอบ 8 (B1) — อ่าน "ลงชื่อไว้" จาก DOM ทั้ง 6 รายการ เหมือน getSpecialSentIds()
+// รอบ 8 (B1) — อ่าน "ลงชื่อไว้" จาก DOM ทั้ง 6 รายการ (5 แบบไดนามิกในแผงส่งตรวจพิเศษ + inbody แบบ static ในแผงตรวจสุขภาพ)
 function getSpecialRegIds() {
   return SPECIAL_SENDS.filter(function (item) {
     var cb = qs('sp_reg_' + item.id);
@@ -1588,11 +1591,21 @@ function validateForm(ctx) {
 }
 
 function syncStickyButtons() {
-  var disabled = qs('btnSubmitLog').disabled;
+  var src = qs('btnSubmitLog');
+  var disabled = src.disabled;
+  // #btnSubmitLog ถูก hidden ไว้ ⇒ ป้าย 'บันทึกการแก้ไข' ที่มันถืออยู่ไม่มีใครเห็น ต้องคัดลอกมาที่ปุ่มที่มองเห็นจริงด้วย
+  // ไม่งั้นกล่องยืนยันรวมแถว (ข้อ 4.6) กับแถบโหมดแก้ไขจะสั่งให้กดปุ่มที่ไม่มีอยู่บนจอ
+  var label = '💾 ' + src.textContent;
   ['btnStickySave', 'btnDraftSave'].forEach(function (id) {
     var b = qs(id);
-    if (b) b.disabled = disabled;
+    if (b) { b.disabled = disabled; b.textContent = label; }
   });
+}
+
+/* ป้ายปุ่มบันทึกมีที่เก็บเดียวคือ #btnSubmitLog — ทุกจุดที่เปลี่ยนป้ายต้องผ่านฟังก์ชันนี้ ไม่งั้นปุ่มที่คนกดจริงจะค้างป้ายเก่า */
+function setSubmitLabel(text) {
+  qs('btnSubmitLog').textContent = text;
+  syncStickyButtons();
 }
 
 function draftSummaryParts(ctx) {
@@ -1646,11 +1659,12 @@ function recalcTotals() {
   var medCertGenAmountEl = qs('medCertGenAmount');
   if (medCertGenAmountEl) medCertGenAmountEl.textContent = 'คิดเงินอัตโนมัติ: ' + money(calcMedCertTotal(nCert, STATE.prices)) + ' บาท';
 
-  // ส่งตรวจพิเศษ — อ่านจาก checkbox จริงตรง ๆ
-  // ⚠ ห้ามเอา specialSentIds/specialBackIds/specialPrepIds เข้าสูตรเงินใด ๆ ทั้งสิ้น — ไม่คิดเงิน เป็นแค่ช่องติดตาม
-  var specialSentIds = getSpecialSentIds();
-  var specialBackIds = getSpecialBackIds();
-  var specialPrepIds = getSpecialPrepIds();
+  // ส่งตรวจพิเศษ — รอบ 9 (ก้อน B, B6): ไม่มี element sp_sent_*/sp_back_*/sp_prep_* ให้อ่านจาก DOM อีกแล้ว
+  // (แผงนี้เหลือแค่ช่อง "ลงชื่อไว้") ⇒ สถานะเดิมเก็บอยู่ใน STATE.editSpecial* (ตั้งค่าตอน enterEditMode() เท่านั้น
+  // บันทึกรายใหม่เป็น [] เสมอ) ⚠ ห้ามเอา specialSentIds/specialBackIds/specialPrepIds เข้าสูตรเงินใด ๆ ทั้งสิ้น — ไม่คิดเงิน
+  var specialSentIds = STATE.editSpecialSent || [];
+  var specialBackIds = STATE.editSpecialBack || [];
+  var specialPrepIds = STATE.editSpecialPrep || [];
   var specialOn = isSpecialOn();
 
   var patientName = (qs('patientName').value || '').trim();
@@ -1682,6 +1696,8 @@ function recalcTotals() {
   if (stickyTotalEl) stickyTotalEl.textContent = money(grand);
 
   updateDraftStrip({ checkupOn: checkupOn, vaccineOn: vaccineOn, medOn: medOn, specialOn: specialOn, patientName: patientName, grand: grand });
+  updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
+  updatePanelSummaries({ checkupOn: checkupOn, program: program, vaccineCodes: vaccineCodes, medNums: medNums }); // รอบ 9 (ก้อน B, B3)
 
   validateForm({
     checkupOn: checkupOn, program: program, gender: gender, checkupAmountNum: checkupAmountNum,
@@ -1695,6 +1711,44 @@ function recalcTotals() {
   return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
 }
 
+/* รอบ 9 (ก้อน B, B3) — ป้ายสรุปสดบนหัวกล่องพับของจอแคบ ใช้ค่าจากตรรกะที่มีอยู่แล้วล้วน ๆ (ห้ามเขียนตัวนับใหม่ซ้อน):
+   getCheckedVaccineCodes().length (ผ่าน ctx.vaccineCodes) · getMedCertNums() (ผ่าน ctx.medNums) · isCheckupOn()/ctx.program */
+function updatePanelSummaries(ctx) {
+  var checkupSumEl = qs('panelCheckupSummary');
+  if (checkupSumEl) checkupSumEl.textContent = ctx.checkupOn ? ('โปรแกรม ' + ctx.program) : '—';
+
+  var vaccineSumEl = qs('panelVaccineSummary');
+  if (vaccineSumEl) vaccineSumEl.textContent = ctx.vaccineCodes.length ? (ctx.vaccineCodes.length + ' เข็ม') : '—';
+
+  var medSumEl = qs('panelMedcertSummary');
+  if (medSumEl) {
+    var nGen = ctx.medNums.n5 + ctx.medNums.nDriver;
+    var parts = [];
+    if (nGen > 0) parts.push(nGen + ' ใบ');
+    if (ctx.medNums.labCount > 0) parts.push('lab ' + ctx.medNums.labCount + ' ใบ');
+    medSumEl.textContent = parts.length ? parts.join(' · ') : '—';
+  }
+
+  var spSumEl = qs('panelSpecialSummary');
+  if (spSumEl) {
+    var n = getSpecialRegIds().filter(function (id) { return id !== 'inbody'; }).length;
+    spSumEl.textContent = n > 0 ? (n + ' รายการ') : '—';
+  }
+}
+
+/* รอบ 9 (ก้อน B, B4) — ล็อกแผงตรวจสุขภาพ/ส่งตรวจพิเศษจนกว่าจะกรอก HN + ชื่อครบทั้งคู่ (overlay ครอบทั้งแผง)
+   เรียกจาก: ตอนเข้า showScreen('log') · input ของ patientHn/patientName · resetLogForm() · ท้าย enterEditMode() */
+function applyLogLocks() {
+  var hn = (qs('patientHn').value || '').trim();
+  var name = (qs('patientName').value || '').trim();
+  var unlocked = !!(hn && name);
+  [['checkupLockOverlay', 'checkupLockBar'], ['specialLockOverlay', 'specialLockBar']].forEach(function (pair) {
+    var overlay = qs(pair[0]), bar = qs(pair[1]);
+    if (overlay) overlay.hidden = unlocked;
+    if (bar) bar.hidden = unlocked;
+  });
+}
+
 function resetLogForm() {
   qs('logForm').reset();
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === 'no'); });
@@ -1706,13 +1760,14 @@ function resetLogForm() {
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
-  clearSpecialGroup('checkup');
+  clearSpecialGroup('checkup'); // ครอบ sp_reg_inbody ด้วย (inbody อยู่กลุ่ม checkup ใน SPECIAL_SENDS)
   clearSpecialGroup('medcert');
   // แก้เพิ่ม (0.2.3): ล้างร่างตรวจเพิ่มของแถวเก่าที่อาจค้างจากโหมดแก้ไขก่อนหน้าด้วย
   STATE.editExtraIds = [];
   qs('legacyExtraInfo').hidden = true;
   applyVaccineFilter();
   exitEditMode();
+  applyLogLocks(); // รอบ 9 (ก้อน B, B4) — ล้างร่างแล้ว HN/ชื่อว่าง ต้องกลับไปล็อกทั้ง 2 แผง
   recalcTotals();
 }
 
@@ -1721,12 +1776,20 @@ function resetLogForm() {
    ========================================================================= */
 function exitEditMode() {
   STATE.editingId = '';
-  qs('btnSubmitLog').textContent = 'บันทึก';
+  // รอบ 9 (ก้อน B, B6) — บันทึกรายใหม่ (ไม่ได้แก้ไข) ต้องส่ง array ว่างเสมอ ล้างสถานะส่งตรวจพิเศษที่แถวเก่าค้างไว้ทิ้ง
+  STATE.editSpecialPrep = [];
+  STATE.editSpecialSent = [];
+  STATE.editSpecialBack = [];
+  setSubmitLabel('บันทึก');
   qs('editBanner').hidden = true;
 }
 
 function enterEditMode(rec) {
   STATE.editingId = rec.recordId;
+
+  // รอบ 9 (ก้อน B, ข้อ 4.6) — ล้างข้อความ "รวมแถวแล้ว" ที่อาจค้างจากการรวมแถวครั้งก่อน ไม่ให้หลุดไปโผล่ตอนแก้ไขแถวธรรมดา
+  var mergeNoteElReset = qs('editBannerMergeNote');
+  if (mergeNoteElReset) { mergeNoteElReset.textContent = ''; mergeNoteElReset.hidden = true; }
 
   var hasCheckup = !!rec.program;
   document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = hasCheckup && (r.value === String(rec.program)); });
@@ -1761,24 +1824,21 @@ function enterEditMode(rec) {
     cb.checked = vaccineCodes.indexOf(cb.value) !== -1;
   });
 
-  // ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5) — โหลดติ๊กกลับจาก rec.specialSent/rec.specialBack/rec.specialPrep (array ของ id)
-  // รอบ 8 (B1): เติม rec.specialReg กลับด้วย — ครอบคลุมทั้งรายการที่ลงชื่อไว้เฉยๆ (ไม่มีสถานะเลย) ด้วย
-  var specialSentIds = rec.specialSent || [];
-  var specialBackIds = rec.specialBack || [];
-  var specialPrepIds = rec.specialPrep || [];
-  var specialRegIds = rec.specialReg || [];
+  // ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5) — รอบ 9 (ก้อน B, B6): ไม่มี element sp_prep_*/sp_sent_*/sp_back_* ให้ติ๊กกลับแล้ว
+  // (แผงนี้เหลือแค่ "ลงชื่อไว้") ⇒ เก็บสถานะเดิม (prep/sent/back) ไว้ใน STATE.editSpecial* เฉย ๆ แล้วส่งกลับตอนบันทึก
+  // แก้ไข (onSubmitLog) ไม่งั้นสถานะ "ส่ง line แล้ว/ส่งไปแล้ว/กลับมาแล้ว" ของแถวนั้นจะหายถาวรเงียบ ๆ (handleEdit_ ฝั่ง
+  // เซิร์ฟเวอร์เขียนทับคอลัมน์เหล่านี้จาก payload ทุกครั้ง — ยืนยันจากโค้ดจริง applyBuiltToRow_)
+  STATE.editSpecialPrep = (rec.specialPrep || []).slice();
+  STATE.editSpecialSent = (rec.specialSent || []).slice();
+  STATE.editSpecialBack = (rec.specialBack || []).slice();
+  var specialRegIds = rec.specialReg || []; // รอบ 8 (B1): ครอบคลุมทั้งรายการที่ลงชื่อไว้เฉยๆ (ไม่มีสถานะเลย) ด้วย
   SPECIAL_SENDS.forEach(function (item) {
-    var regCb = qs('sp_reg_' + item.id), prepCb = qs('sp_prep_' + item.id), sentCb = qs('sp_sent_' + item.id), backCb = qs('sp_back_' + item.id);
+    var regCb = qs('sp_reg_' + item.id);
     if (regCb) regCb.checked = specialRegIds.indexOf(item.id) !== -1;
-    if (prepCb) prepCb.checked = specialPrepIds.indexOf(item.id) !== -1;
-    if (sentCb) sentCb.checked = specialSentIds.indexOf(item.id) !== -1;
-    if (backCb) backCb.checked = specialBackIds.indexOf(item.id) !== -1;
   });
-  var specialOn = specialRegIds.length > 0;
 
   var labCount = rec.medCertLabCount || 0;
   var labAmount = rec.medCertLabAmount || 0;
-  var medOn = (rec.medCertCount || 0) > 0 || labCount > 0 || labAmount > 0;
   qs('medCert5').value = rec.medCert5 || 0;
   qs('medCertDriver').value = rec.medCertDriver || 0;
   qs('medCertLabCount').value = labCount;
@@ -1786,35 +1846,73 @@ function enterEditMode(rec) {
 
   applyVaccineFilter();
 
-  // เลือกหน้าแรกที่มีข้อมูล (รอบ 7, B9): ตรวจสุขภาพ -> ใบรับรองทั่วไป -> ใบรับรองมี Lab -> วัคซีน -> ส่งตรวจพิเศษ
-  var hasGen = (rec.medCert5 || 0) > 0 || (rec.medCertDriver || 0) > 0;
-  var hasLab = labCount > 0 || labAmount > 0;
-  var target = hasCheckup ? 'svcCheckup' :
-    (hasGen ? 'svcMedcertGen' :
-    (hasLab ? 'svcMedcertLab' :
-    (vaccineOn ? 'svcVaccine' :
-    (specialOn ? 'svcSpecial' : 'svcCheckup'))));
+  // รอบ 9 (ก้อน B): ไม่มี "หน้าบริการ" ให้เลือกเปิดอีกแล้ว (ทุกแผงแสดงพร้อมกันตลอด) — คงค่าคิวเดิมของแถวไว้เสมอ
+  // แม้ prefix จะไม่ตรงกับกติกาปัจจุบัน (buildQueueOptions มี forceValue รองรับ prepend ตัวเลือกพิเศษให้อยู่แล้ว)
+  buildQueueOptions(draftQueuePrefix(), rec.queue || '');
 
-  var firstSpecialId = '';
-  if (target === 'svcSpecial') {
-    // รอบ 8: ใช้ specialRegIds ตัวเดียวพอ (⊇ prep/sent/back อยู่แล้ว) ครอบคลุมรายการที่ลงชื่อไว้เฉย ๆ ด้วย
-    for (var si = 0; si < SPECIAL_SENDS.length; si++) {
-      var sid = SPECIAL_SENDS[si].id;
-      if (specialRegIds.indexOf(sid) !== -1) { firstSpecialId = sid; break; }
-    }
-  }
-  showScreen(target, firstSpecialId);
-  // แก้เพิ่ม (0.2.1): svcSpecial ไม่มีคิว — ถ้าเป้าหมายคือหน้านั้น ห้ามแตะ queueSelect เลย (showScreen() ซ่อนแถวให้แล้ว)
-  var editQueuePrefix = QUEUE_PREFIX[target];
-  if (editQueuePrefix) buildQueueOptions(editQueuePrefix, rec.queue || '');
-
+  applyLogLocks(); // รอบ 9 (ก้อน B, B4) — แถวเก่ามี HN/ชื่ออยู่แล้วปกติ ⇒ ปลดล็อกทันที
   recalcTotals();
 
-  qs('btnSubmitLog').textContent = 'บันทึกการแก้ไข';
+  setSubmitLabel('บันทึกการแก้ไข');
   qs('editBannerTime').textContent = rec.time || '';
   qs('editBanner').hidden = false;
 
   showToast('กำลังแก้ไขรายการ — แก้ค่าที่ต้องการแล้วกด "บันทึกการแก้ไข"');
+}
+
+// รอบ 9 (ก้อน B, ข้อ 4.6) — รวมร่างปัจจุบันเข้ากับแถวเดิมของวันนี้ที่ HN ตรงกัน แทนการสร้างแถวใหม่
+// เรียกจาก onSubmitLog() เมื่อผู้ใช้ตอบ "ตกลง" ในกล่องยืนยัน — ห้ามยิง API ในฟังก์ชันนี้เด็ดขาด
+// (ปล่อยให้เจ้าหน้าที่ตรวจยอดรวมบนจอก่อน แล้วกด "บันทึกการแก้ไข" เอง ซึ่งจะไหลเข้า action:'edit' เดิมที่มีเทสต์คุมอยู่แล้ว)
+function mergeDraftIntoTodayRecord(rec, draft) {
+  enterEditMode(rec); // เติมค่าแถวเก่าทับฟอร์ม (ล้างร่างปัจจุบันไปก่อน) — STATE.editingId/editExtraIds/editSpecial* ถูกตั้งจาก rec แล้ว ณ จุดนี้
+
+  // ตรวจสุขภาพ: ร่างเลือกโปรแกรมไว้ -> ใช้ของร่างทั้งชุด (ไม่งั้นคงของแถวเก่าที่ enterEditMode ใส่ไว้แล้ว)
+  if (draft.program) {
+    document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = (r.value === draft.program); });
+    document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === draft.genderDom); });
+    updatePelvicSection(true, draft.genderDom);
+    document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (draft.pelvic || 'no')); });
+    qs('checkupAmount').value = String(draft.checkupAmount || 0);
+    qs('deliveryMethod').value = draft.deliveryMethod || '';
+  }
+
+  // วัคซีน: union — ติ๊กของเก่าไว้ (มาจาก enterEditMode แล้ว) แล้วติ๊กของร่างเพิ่ม ห้ามปลดติ๊กของเก่า
+  (draft.vaccineCodes || []).forEach(function (code) {
+    document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) {
+      if (cb.value === code) cb.checked = true;
+    });
+  });
+
+  // ใบรับรองแพทย์: บวกกัน เก่า + ร่าง (ไม่ใช่ทับ)
+  qs('medCert5').value = String((rec.medCert5 || 0) + (draft.medCert5 || 0));
+  qs('medCertDriver').value = String((rec.medCertDriver || 0) + (draft.medCertDriver || 0));
+  qs('medCertLabCount').value = String((rec.medCertLabCount || 0) + (draft.medCertLabCount || 0));
+  qs('medCertLabAmount').value = String((rec.medCertLabAmount || 0) + (draft.medCertLabAmount || 0));
+
+  // sp_reg_* (ลงชื่อไว้ รวม inbody): union
+  (draft.specialRegIds || []).forEach(function (id) {
+    var cb = qs('sp_reg_' + id);
+    if (cb) cb.checked = true;
+  });
+
+  // คิว: ของแถวเก่าถ้าไม่ว่าง (enterEditMode ใส่ไว้แล้ว) · ถ้าแถวเก่าไม่มีคิวแต่ร่างมี -> ใช้ของร่าง
+  if (!(qs('queueSelect').value || '') && draft.queue) {
+    buildQueueOptions(draftQueuePrefix(), draft.queue);
+  }
+
+  // ชื่อผู้รับบริการ: ของแถวเก่าถ้าไม่ว่าง ไม่งั้นของร่าง (HN เท่ากันอยู่แล้วตามเงื่อนไขที่เรียกฟังก์ชันนี้)
+  if (!(qs('patientName').value || '').trim() && draft.patientName) {
+    qs('patientName').value = draft.patientName;
+  }
+
+  applyVaccineFilter();
+  applyLogLocks();
+  recalcTotals();
+
+  var mergeMsg = 'รวมกับแถวเดิมเวลา ' + (rec.time || '') + ' แล้ว — ตรวจยอดรวมแล้วกด "บันทึกการแก้ไข"';
+  var mergeNoteEl = qs('editBannerMergeNote');
+  if (mergeNoteEl) { mergeNoteEl.textContent = mergeMsg; mergeNoteEl.hidden = false; }
+  showToast(mergeMsg);
 }
 
 function onSubmitLog(e) {
@@ -1840,13 +1938,42 @@ function onSubmitLog(e) {
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim();
   var deliveryMethod = checkupOn ? (qs('deliveryMethod').value || '') : '';
-  var specialSentIds = getSpecialSentIds();
-  var specialBackIds = getSpecialBackIds();
-  var specialPrepIds = getSpecialPrepIds();
+  // รอบ 9 (ก้อน B, B6): ไม่มี element sp_sent_*/sp_back_*/sp_prep_* ให้อ่านจาก DOM แล้ว — ส่ง STATE.editSpecial*
+  // กลับไปแทน (มีค่าเฉพาะตอนแก้ไขแถวเก่าที่เคยมีสถานะอยู่ก่อน · บันทึกรายใหม่เป็น [] เสมอเพราะ exitEditMode() ล้างไว้)
+  var specialSentIds = STATE.editSpecialSent || [];
+  var specialBackIds = STATE.editSpecialBack || [];
+  var specialPrepIds = STATE.editSpecialPrep || [];
   var specialRegIds = getSpecialRegIds(); // รอบ 8 (B4)
   var queue = qs('queueSelect').value || '';
 
   var isEdit = !!STATE.editingId;
+
+  // รอบ 9 (ก้อน B, ข้อ 4.6) — HN ตรงกับแถวของวันนี้ (จุดบริการตัวเอง — LAST_TODAY_RECORDS ถูกกรองมาจาก loadToday()
+  // ด้วย point:STATE.point อยู่แล้ว) ที่ยังไม่ถูกยกเลิก -> ถามก่อนว่าจะรวมแถวไหม แยกแถวผิดครั้งเดียว = ยอดวัคซีน
+  // คิดพลาด (calcVaccineTotal ขึ้นกับว่าแถวนั้นมีตรวจสุขภาพหรือไม่) และรายงานนับจำนวนคนซ้ำ
+  if (!isEdit && patientHn) {
+    var existingTodayRec = null;
+    for (var mi = 0; mi < LAST_TODAY_RECORDS.length; mi++) {
+      var mrec = LAST_TODAY_RECORDS[mi];
+      if (String(mrec.patientHn || '').trim() === patientHn && mrec.status !== 'ยกเลิก') { existingTodayRec = mrec; break; }
+    }
+    if (existingTodayRec) {
+      var mergeConfirmMsg = 'HN ' + patientHn + ' (' + (existingTodayRec.patientName || '') + ') บันทึกไว้แล้วเมื่อ ' +
+        (existingTodayRec.time || '') + ' — จะเพิ่มบริการเข้าแถวเดิมไหม?\n\n' +
+        'ตกลง = รวมของเดิมเข้าฟอร์มให้ตรวจก่อน แล้วกด "บันทึกการแก้ไข" อีกครั้ง\n' +
+        'ยกเลิก = บันทึกเป็นแถวใหม่';
+      if (window.confirm(mergeConfirmMsg)) {
+        mergeDraftIntoTodayRecord(existingTodayRec, {
+          program: program, genderDom: genderDom, pelvic: pelvic, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
+          vaccineCodes: vaccineCodes, medCert5: medCert5, medCertDriver: medCertDriver,
+          medCertLabCount: medCertLabCount, medCertLabAmount: medCertLabAmount,
+          specialRegIds: specialRegIds, queue: queue, patientName: patientName
+        });
+        return;
+      }
+    }
+  }
+
   var payload = {
     staffKey: STATE.staffKey,
     staffName: STATE.staffName,
@@ -1873,7 +2000,7 @@ function onSubmitLog(e) {
   if (isEdit) payload.recordId = STATE.editingId;
 
   btn.disabled = true;
-  btn.textContent = isEdit ? 'กำลังบันทึกการแก้ไข...' : 'กำลังบันทึก...';
+  setSubmitLabel(isEdit ? 'กำลังบันทึกการแก้ไข...' : 'กำลังบันทึก...');
   qs('formError').hidden = true;
 
   apiCall(isEdit ? 'edit' : 'log', payload).then(function (resp) {
@@ -1881,11 +2008,9 @@ function onSubmitLog(e) {
       showToast(isEdit ? '✔ บันทึกการแก้ไขสำเร็จ' : '✔ บันทึกสำเร็จ');
       resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
       loadToday();
-      // รอบ 7 (B6): แคชรายชื่อวันนี้ของหน้าส่งตรวจพิเศษต้องสดหลังบันทึกสำเร็จ — ยิงเฉพาะตอนที่เคยเปิดหน้านั้นแล้วเท่านั้น
-      if (STATE.activeSpecialId) loadSpecialPeopleToday();
-      showScreen('menu');
+      showScreen('log');
     } else {
-      btn.textContent = isEdit ? 'บันทึกการแก้ไข' : 'บันทึก';
+      setSubmitLabel(isEdit ? 'บันทึกการแก้ไข' : 'บันทึก');
       var errEl = qs('formError');
       errEl.textContent = '❌ ' + ((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่');
       errEl.hidden = false;
@@ -1935,7 +2060,6 @@ function recordGrandTotal(rec) {
 }
 
 var LAST_TODAY_RECORDS = []; // เก็บผลลัพธ์ today ล่าสุดไว้ใช้ตอนกด "แก้ไข" (ไม่ต้องยิง API ซ้ำ)
-var SP_PEOPLE_RECORDS = []; // รอบ 7 (B6) — แคชรายชื่อวันนี้ของหน้าส่งตรวจพิเศษ (ทุกจุดบริการ) ไว้ใช้ตอนกดปุ่มสถานะ
 
 /* สรุปส่งตรวจพิเศษ "แยกรายวัน" (รอบ 4) — คำนวณจาก records ที่ handleToday_ คืนมา (เฉพาะจุดบริการที่เลือกอยู่)
    นับเฉพาะแถวที่ไม่ใช่สถานะ "ยกเลิก" ทุกรายการที่ยอดไม่เป็น 0 แสดงเป็น "<ชื่อ> ส่ง n · กลับ n" */
@@ -2027,6 +2151,12 @@ function onEditRecordClick(recordId) {
   }
   if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชรายการวันนี้'); return; }
   enterEditMode(rec);
+  // 🐞 รอบ 9 (ก้อน B) — เดิม enterEditMode() จบด้วย showScreen(หน้าบริการ) เอง พอหน้าบริการถูกยุบเป็นแผงเดียว
+  //    การเรียกนั้นถูกถอดออกไปด้วย ⇒ กด "แก้ไข" จากรายการวันนี้แล้ว **ค้างอยู่หน้าเดิม** ฟอร์มถูกเติมค่าอยู่หลังฉาก
+  //    ตอนนี้ให้ตัวเรียก (ที่รู้ว่าผู้ใช้อยู่หน้าไหน) เป็นคนพาไปหน้าบันทึกแทน
+  //    ⚠ ต้องเรียก "หลัง" enterEditMode() เสมอ — syncQueuePrefix() ใน showScreen('log') อ่านค่าคิวที่เพิ่งเติมไว้
+  //      แล้วคง prefix เดิมของแถวไว้ให้ (ถ้าเรียกก่อน ดรอปดาวน์จะถูกสร้างใหม่ทับค่าที่ยังไม่ถูกเติม)
+  showScreen('log');
 }
 
 function loadToday() {
@@ -2053,154 +2183,15 @@ function onCancelRecord(recordId, btnEl) {
   });
 }
 
-/* =========================================================================
-   8.1 ส่งตรวจพิเศษ — ตารางรายชื่อรายวัน (B8 ส่วนที่ 2, รอบ 6)
-   ========================================================================= */
-
-// รอบ 7 (B8): คำในตารางรวมต้องสื่อความเดียวกับปุ่มสถานะบนกระดานรายไอคอน (SP_STATUS_LABEL)
-// ไม่งั้นของสิ่งเดียวกันถูกเรียก 2 ชื่อในระบบเดียว — ในตารางใช้คำสั้นกว่าได้ แต่ต้องเป็นคำเดียวกัน
-
-
-/* รอบ 7 (B6) — รายชื่อผู้เข้ารับบริการวันนี้ของรายการส่งตรวจพิเศษที่กำลังเปิดอยู่ (ทุกจุดบริการ) + ปุ่มติ๊กสถานะ */
-function loadSpecialPeopleToday() {
-  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: todayStr(), allPoints: true }).then(function (resp) {
-    SP_PEOPLE_RECORDS = (resp && resp.status === 'ok') ? (resp.records || []) : [];
-    renderSpecialPeopleList();
-  });
-}
-
-// รอบ 8 (B3): กรองด้วย specialReg ตรง ๆ (ฝั่งเซิร์ฟเวอร์ union ให้แล้ว แถวเก่าที่ยังไม่มีคอลัมน์ reg จึงยังขึ้นครบ
-// เพราะ handleToday_ คำนวณ specialReg แบบ backward-compatible = union(reg, prep, sent, back))
-function specialPeopleRowsForActive() {
-  var activeId = STATE.activeSpecialId;
-  return (SP_PEOPLE_RECORDS || []).filter(function (rec) {
-    return rec.status !== 'ยกเลิก' && (rec.specialReg || []).indexOf(activeId) !== -1;
-  });
-}
-
-function renderSpecialPeopleList() {
-  var activeId = STATE.activeSpecialId;
-  var item = SPECIAL_SEND_BY_ID[activeId];
-  var itemName = item ? item.name : '';
-  var rows = specialPeopleRowsForActive();
-  var headingEl = qs('svcSpecialPeopleHeading');
-  if (headingEl) headingEl.textContent = 'ยอดเข้ารับบริการวันนี้ — ' + itemName + ': ' + rows.length + ' คน';
-
-  var wrap = qs('svcSpecialPeopleListWrap');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  if (rows.length === 0) {
-    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้รับบริการของรายการนี้วันนี้</p>';
-    return;
-  }
-
-  var stages = (item && item.prepLabel != null) ? ['prep', 'sent', 'back'] : ['sent', 'back'];
-  var table = document.createElement('table');
-  table.className = 'report-table sp-people-table';
-  var thead = document.createElement('thead');
-  var headRow = document.createElement('tr');
-  ['คิว', 'ชื่อ-สกุล', 'HN', 'เวลา', 'สถานะ'].forEach(function (h) {
-    var th = document.createElement('th');
-    th.textContent = h;
-    headRow.appendChild(th);
-  });
-  thead.appendChild(headRow);
-  table.appendChild(thead);
-
-  var tbody = document.createElement('tbody');
-  rows.forEach(function (rec) {
-    var tr = document.createElement('tr');
-    [rec.queue || '—', rec.patientName || '', rec.patientHn || '', rec.time || ''].forEach(function (v) {
-      var td = document.createElement('td');
-      td.textContent = v;
-      tr.appendChild(td);
-    });
-    var statusTd = document.createElement('td');
-    var btnRow = document.createElement('div');
-    btnRow.className = 'row sp-status-btns';
-    stages.forEach(function (stage) {
-      var fieldKey = 'special' + stage.charAt(0).toUpperCase() + stage.slice(1);
-      var active = (rec[fieldKey] || []).indexOf(activeId) !== -1;
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn small' + (active ? '' : ' secondary');
-      btn.textContent = (active ? '✓ ' : '') + SP_STATUS_LABEL[stage];
-      btn.addEventListener('click', (function (rec, stage, btnRow) {
-        return function () { onSpecialStatusClick(rec, stage, btnRow); };
-      })(rec, stage, btnRow));
-      btnRow.appendChild(btn);
-    });
-    statusTd.appendChild(btnRow);
-    tr.appendChild(statusTd);
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-
-  var scrollWrap = document.createElement('div');
-  scrollWrap.className = 'scroll-x';
-  scrollWrap.appendChild(table);
-  wrap.appendChild(scrollWrap);
-}
-
-function onSpecialStatusClick(rec, stage, btnRowEl) {
-  var activeId = STATE.activeSpecialId;
-  var prep = (rec.specialPrep || []).slice();
-  var sent = (rec.specialSent || []).slice();
-  var back = (rec.specialBack || []).slice();
-
-  function toggle(arr, id) {
-    var i = arr.indexOf(id);
-    if (i === -1) arr.push(id); else arr.splice(i, 1);
-    return arr;
-  }
-
-  if (stage === 'prep') {
-    prep = toggle(prep, activeId);
-  } else if (stage === 'sent') {
-    var wasSent = sent.indexOf(activeId) !== -1;
-    sent = toggle(sent, activeId);
-    if (wasSent) { var bi = back.indexOf(activeId); if (bi !== -1) back.splice(bi, 1); }
-  } else if (stage === 'back') {
-    var wasBack = back.indexOf(activeId) !== -1;
-    back = toggle(back, activeId);
-    if (!wasBack && sent.indexOf(activeId) === -1) sent.push(activeId);
-  }
-
-  if (btnRowEl && btnRowEl.children) {
-    Array.prototype.forEach.call(btnRowEl.children, function (b) { b.disabled = true; });
-  }
-
-  apiCall('specialStatus', {
-    staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
-    specialPrep: prep, specialSent: sent, specialBack: back,
-    specialReg: rec.specialReg || [] // รอบ 8 (B3) — ส่ง reg ของแถวนี้ไปด้วยทุกครั้ง (เซิร์ฟเวอร์ union กับสถานะที่แก้เองอยู่แล้ว)
-  }).then(function (resp) {
-    if (resp && resp.status === 'ok') {
-      rec.specialPrep = resp.specialPrep || [];
-      rec.specialSent = resp.specialSent || [];
-      rec.specialBack = resp.specialBack || [];
-      rec.specialReg = resp.specialReg || [];
-      for (var i = 0; i < SP_PEOPLE_RECORDS.length; i++) {
-        if (SP_PEOPLE_RECORDS[i].recordId === rec.recordId) {
-          SP_PEOPLE_RECORDS[i].specialPrep = rec.specialPrep;
-          SP_PEOPLE_RECORDS[i].specialSent = rec.specialSent;
-          SP_PEOPLE_RECORDS[i].specialBack = rec.specialBack;
-          SP_PEOPLE_RECORDS[i].specialReg = rec.specialReg;
-          break;
-        }
-      }
-      renderSpecialPeopleList();
-      showToast('อัปเดตสถานะแล้ว');
-    } else {
-      showToast('❌ ' + ((resp && resp.message) ? resp.message : 'อัปเดตไม่สำเร็จ'));
-      loadSpecialPeopleToday();
-    }
-  });
-}
+// รอบ 9 (ก้อน B, B5) — "8.1 ส่งตรวจพิเศษ — ตารางรายชื่อรายวัน" (loadSpecialPeopleToday/specialPeopleRowsForActive/
+// renderSpecialPeopleList/onSpecialStatusClick + #svcSpecialPeopleWrap ทั้งก้อน) ถูกลบทั้งหมดตาม SPEC_รอบ9.md B5 —
+// ความสามารถนี้ย้ายไปอยู่ที่กระดาน spBoard (openSpBoardCategory/renderSpPeopleCards/onSpBoardStatusClick) ที่ขึ้น live
+// แล้วในก้อน A ตัวแปรแคช SP_PEOPLE_RECORDS ก็ถูกลบไปด้วย (แทนที่ด้วย SP_BOARD_RECORDS ของกระดาน spBoard)
 
 /* =========================================================================
    7.1 กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager (รอบ 9 ก้อน A — SPEC_รอบ9.md หัวข้อ 3.2/3.3)
-   ⚠ state ของหน้านี้ (SP_BOARD_*) แยกขาดจาก SP_PEOPLE_RECORDS/STATE.activeSpecialId ของหน้า svcSpecial เดิม
+   ⚠ state ของหน้านี้ (SP_BOARD_*) แยกขาดจาก SP_BOARD_ACTIVE_ID/STATE ของแผงบันทึก (รอบ 9 ก้อน B ถอด UI สถานะ
+   ออกจากหน้าบันทึกทั้งหมดแล้ว — ไม่มี SP_PEOPLE_RECORDS/STATE.activeSpecialId ให้ชนกันอีกต่อไป)
    ========================================================================= */
 var SP_BOARD_RECORDS = [];
 var SP_BOARD_ACTIVE_ID = '';
@@ -2816,70 +2807,26 @@ function loadReport() {
 }
 
 /* =========================================================================
-   10. หน้าเมนู / สลับหน้าจอ (รอบ 6) — เลิกใช้แท็บ 2 อัน แทนด้วยเมนู -> หน้าบริการ
+   10. สลับหน้าจอ (รอบ 6-8: เมนู -> หน้าบริการทีละหน้า · รอบ 9 ก้อน B: เลิกมีหน้าเมนู หน้าบันทึกเป็นหน้าหลัก
+   ชื่อหน้าใหม่ของหน้าบันทึกคือ 'log' — outer element คือ #svcFormWrap ทุกแผงในนั้นแสดงพร้อมกันตลอด ไม่มีการ
+   วน .hidden ของ section ย่อยอีกต่อไป (SPEC_รอบ9.md หัวข้อ 4.1))
    ========================================================================= */
-function showScreen(name, specialId) {
-  var outerMap = { menu: 'menuScreen', today: 'todayScreen', report: 'tabReport', checkupTable: 'checkupTableScreen', spBoard: 'spBoardScreen' };
-  var isSvc = SVC_SCREENS.indexOf(name) !== -1;
-  var outerName = isSvc ? 'svcFormWrap' : (outerMap[name] || 'menuScreen');
+function showScreen(name) {
+  var outerMap = { log: 'svcFormWrap', today: 'todayScreen', report: 'tabReport', checkupTable: 'checkupTableScreen', spBoard: 'spBoardScreen' };
+  var outerName = outerMap[name] || 'svcFormWrap';
 
-  ['menuScreen', 'svcFormWrap', 'todayScreen', 'tabReport', 'checkupTableScreen', 'spBoardScreen'].forEach(function (id) {
+  ['svcFormWrap', 'todayScreen', 'tabReport', 'checkupTableScreen', 'spBoardScreen'].forEach(function (id) {
     var el = qs(id);
     if (el) el.style.display = (id === outerName) ? 'block' : 'none';
   });
 
-  if (isSvc) {
-    SVC_SCREENS.forEach(function (id) {
-      var el = qs(id);
-      if (el) el.hidden = (id !== name);
-    });
-    var titleEl = qs('svcTitle');
-    var titleIconEl = qs('svcTitleIcon');
-    var queueRowEl = qs('queueRow');
-
-    if (name === 'svcSpecial') {
-      var validIds = SPECIAL_SENDS.map(function (s) { return s.id; });
-      var chosen = specialId;
-      if (validIds.indexOf(chosen) === -1) chosen = STATE.activeSpecialId;
-      if (validIds.indexOf(chosen) === -1) chosen = 'inbody';
-      STATE.activeSpecialId = chosen;
-      STATE.currentSvcScreen = name;
-
-      var item = SPECIAL_SEND_BY_ID[chosen];
-      if (titleEl) titleEl.textContent = item ? item.name : '';
-      if (titleIconEl) { titleIconEl.hidden = false; titleIconEl.innerHTML = SPECIAL_ICONS[chosen] || ''; }
-      if (queueRowEl) queueRowEl.hidden = true; // svcSpecial ไม่มีคิว — ห้ามแตะ queueSelect เลย ไม่ล้าง ไม่ build ใหม่
-
-      // แสดงเฉพาะแถวของรายการที่เลือก — อีก 5 แถวยังอยู่ใน DOM แค่ hidden (ห้ามลบ/uncheck ค่าที่ติ๊กไว้)
-      SPECIAL_SENDS.forEach(function (s) {
-        var rowEl = qs('sp_row_' + s.id);
-        if (rowEl) rowEl.hidden = (s.id !== chosen);
-      });
-
-      // รอบ 8 (B1): เปิดหน้าไอคอนไหน ติ๊ก "ลงชื่อไว้" ของรายการนั้นอัตโนมัติเสมอ (จุดประสงค์คือลงชื่อคนที่มาตรวจ
-      // เปิดหน้า -> กรอกชื่อ -> กดบันทึกได้เลย ไม่ต้องติ๊กอะไรเพิ่ม) — ติ๊กให้เฉพาะรายการนี้ ไม่แตะรายการอื่นที่ติ๊กไว้แล้ว
-      var regCbAuto = qs('sp_reg_' + chosen);
-      if (regCbAuto) regCbAuto.checked = true;
-
-      // หน้าส่งตรวจพิเศษไม่คิดเงินเลย ⇒ กล่องยอดเงินไม่มีความหมาย ซ่อนทิ้ง (แถบล่างยังบอกยอดรวมของร่างทั้งใบตามเดิม)
-      var totalsEl = qs("totalsBox"); if (totalsEl) totalsEl.hidden = true;
-      loadSpecialPeopleToday();
-      recalcTotals(); // อัปเดตปุ่มบันทึก/แถบร่างให้ตรงกับการติ๊ก reg อัตโนมัติข้างบน (ตั้ง .checked ตรง ๆ ไม่ยิง change event)
-    } else {
-      if (titleEl) titleEl.textContent = SVC_TITLES[name] || '';
-      if (titleIconEl) { titleIconEl.hidden = true; titleIconEl.innerHTML = ''; }
-      if (queueRowEl) queueRowEl.hidden = false;
-      var totalsEl2 = qs("totalsBox"); if (totalsEl2) totalsEl2.hidden = false;
-      STATE.currentSvcScreen = name;
-      LAST_QUEUE_PREFIX = ''; // บังคับให้สร้างดรอปดาวน์ใหม่เมื่อเข้าหน้าบริการ
-      syncQueuePrefix();
-    }
-
-    updatePersonCardLabels(name);
+  if (name === 'log') {
+    applyLogLocks();
+    syncQueuePrefix();
+    recalcTotals(); // เรียก updatePersonCardLabels()/updatePanelSummaries() ผ่านในตัวอยู่แล้ว
   }
 
   if (name === 'today') loadToday();
-  if (name === 'menu') recalcTotals();
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable(); } // รอบ 8 (B7)
   if (name === 'spBoard') { // รอบ 9 (ก้อน A)
     SP_BOARD_CAP_MODE = false;
@@ -2901,48 +2848,70 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnGatePoint').addEventListener('click', handleGatePointSubmit);
   qs('btnChangePoint').addEventListener('click', handleChangePoint);
 
-  document.querySelectorAll('input[name="program"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
+  // รอบ 9 (ก้อน B, B2) — ดรอปดาวน์ผู้บันทึกบนแถบบนสุด เปลี่ยนได้ทันที ไม่เด้งกลับหน้า gate ไม่ล้างร่างที่กรอกค้างอยู่
+  qs('hdrStaffSelect').addEventListener('change', function () {
+    var val = qs('hdrStaffSelect').value;
+    STATE.staffName = val;
+    safeSetItem('svcLogStaffName', val);
+    showToast('เปลี่ยนผู้บันทึกเป็น ' + val + ' แล้ว');
+  });
+
+  // รอบ 9 (ก้อน B, B7) — radio program/checkbox วัคซีน/medCert*/checkbox sp_reg_* sync คิวด้วย ช่องอื่นไม่ต้อง
+  document.querySelectorAll('input[name="program"]').forEach(function (r) { r.addEventListener('change', onServiceFieldChange); });
   document.querySelectorAll('input[name="gender"]').forEach(function (r) {
     r.addEventListener('change', recalcTotals);
   });
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
   qs('queueSelect').addEventListener('change', recalcTotals);
-  qs('patientName').addEventListener('input', recalcTotals);
-  qs('patientHn').addEventListener('input', recalcTotals);
+  // รอบ 9 (ก้อน B, B4): input ของ patientHn/patientName ต้องปลด/ล็อกแผงด้วยทุกครั้ง (ห้ามเรียก syncQueuePrefix ที่นี่)
+  qs('patientName').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
+  qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
   qs('checkupAmount').addEventListener('input', recalcTotals);
   qs('deliveryMethod').addEventListener('change', recalcTotals);
   qs('barcodeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyBarcode(); } });
-  qs('medCert5').addEventListener('input', recalcTotals);
-  qs('medCertDriver').addEventListener('input', recalcTotals);
-  qs('medCertLabCount').addEventListener('input', recalcTotals);
-  qs('medCertLabAmount').addEventListener('input', recalcTotals);
+  qs('medCert5').addEventListener('input', onServiceFieldChange);
+  qs('medCertDriver').addEventListener('input', onServiceFieldChange);
+  qs('medCertLabCount').addEventListener('input', onServiceFieldChange);
+  qs('medCertLabAmount').addEventListener('input', onServiceFieldChange);
   qs('vaccineSearch').addEventListener('input', applyVaccineFilter);
   qs('logForm').addEventListener('submit', onSubmitLog);
-  qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); showScreen('menu'); });
+  qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); showScreen('log'); });
 
-  document.querySelectorAll('.menu-card[data-target]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var special = b.getAttribute('data-special');
-      showScreen(b.getAttribute('data-target'), special || undefined);
-    });
+  // รอบ 9 (ก้อน B, B5) — checkbox sp_reg_inbody เขียนไว้แบบ static ในแผงตรวจสุขภาพ (ไม่ได้ผ่าน buildSpecialSendsUI())
+  var inbodyReg = qs('sp_reg_inbody');
+  if (inbodyReg) inbodyReg.addEventListener('change', function () { onSpecialRegChange('inbody'); });
+
+  // รอบ 9 (ก้อน B, B1) — แถบลิงก์บนสุดแทนที่การ์ดเมนูเดิม (ตัวดัก click แบบเดิม แค่เปลี่ยนคลาสเป้าหมาย)
+  document.querySelectorAll('.nav-link[data-target]').forEach(function (b) {
+    b.addEventListener('click', function () { showScreen(b.getAttribute('data-target')); });
   });
   document.querySelectorAll('[data-back-menu]').forEach(function (b) {
-    b.addEventListener('click', function () { showScreen('menu'); });
+    b.addEventListener('click', function () { showScreen('log'); });
   });
   qs('btnStickySave').addEventListener('click', triggerSubmit);
-  qs('btnStickyMenu').addEventListener('click', function () { showScreen('menu'); });
   qs('btnDraftSave').addEventListener('click', triggerSubmit);
   qs('btnDraftClear').addEventListener('click', function () { resetLogForm(); showToast('ล้างร่างแล้ว'); });
 
-  qs('btnSpPeopleRefresh').addEventListener('click', loadSpecialPeopleToday);
+  // รอบ 9 (ก้อน B, B3) — กล่องพับได้ของจอแคบ: จอกว้าง (>=1100px) ถูก CSS บังคับเปิดเสมออยู่แล้ว ไม่ต้องฟัง resize
+  document.querySelectorAll('.log-panel-head[data-panel]').forEach(function (head) {
+    head.addEventListener('click', function () {
+      var panel = qs(head.getAttribute('data-panel'));
+      if (!panel) return;
+      panel.setAttribute('data-collapsed', panel.getAttribute('data-collapsed') === '1' ? '0' : '1');
+    });
+  });
+  // รอบ 9 (ก้อน B, B4) — overlay ล็อกแผงต้องรับคลิกได้เอง (คลิกทะลุไปหาช่องข้างในไม่ได้อยู่แล้วเพราะ overlay ครอบทับ)
+  var lockMsg = 'กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกตรวจสุขภาพ/ส่งตรวจพิเศษได้';
+  ['checkupLockOverlay', 'specialLockOverlay'].forEach(function (id) {
+    var overlay = qs(id);
+    if (overlay) overlay.addEventListener('click', function () { showToast(lockMsg); });
+  });
 
   qs('btnCuLoad').addEventListener('click', loadCheckupTable); // รอบ 8 (B7)
   qs('btnCuViewTable').addEventListener('click', function () { setCuView('table'); });
   qs('btnCuViewCard').addEventListener('click', function () { setCuView('card'); });
   setCuView('table');
   qs('btnCuPrint').addEventListener('click', function () { window.print(); });
-
-  buildSpecialMenuCards();
 
   qs('btnLoadReport').addEventListener('click', loadReport);
   qs('btnPrintReport').addEventListener('click', function () { window.print(); });
