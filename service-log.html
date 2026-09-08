@@ -258,9 +258,6 @@
   #svcCheckup .opt-btn { justify-content: flex-start; padding: 12px 12px; }
   .prog-btn input:checked ~ .prog-check::before { content: "✓ "; font-weight: 800; }
 
-  .barcode-raw { min-height: 18px; margin-top: 4px; }
-
-
   /* รอบ 8 (B7) — ช่องลายเซ็นรับเอกสารบนใบพิมพ์รายชื่อตรวจสุขภาพรายวัน: กว้าง/สูงพอเซ็นจริงด้วยปากกาบนกระดาษ */
   .cu-sig-line { display: inline-block; width: 100%; min-width: 35mm; border-bottom: 1px solid #000; }
   /* รอบ 8 (B7 เพิ่มเติม 2026-09-03) — ใบพิมพ์ "แบบการ์ด" ตามภาพที่เจ้าของส่งมา
@@ -385,15 +382,6 @@
         <button class="btn block" id="btnGateKey" style="margin-top:12px;">เข้าสู่ระบบ</button>
         <div id="gateKeyMsg"></div>
       </div>
-
-      <div id="gateStepPoint" hidden>
-        <label class="field-label" for="gatePointSelect">เลือกจุดบริการ</label>
-        <select id="gatePointSelect"></select>
-        <label class="field-label" for="gateStaffSelect" style="margin-top:10px;">เลือกชื่อผู้บันทึก</label>
-        <select id="gateStaffSelect"></select>
-        <div id="gatePointMsg"></div>
-        <button class="btn block" id="btnGatePoint" style="margin-top:12px;">เข้าใช้งาน</button>
-      </div>
     </div>
   </div>
 </div>
@@ -404,9 +392,11 @@
     <div class="wrap">
       <div>
         <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
-        <div>จุดบริการ: <span class="point-name" id="hdrPointName"></span> · ผู้บันทึก: <select id="hdrStaffSelect"></select></div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px;">
+          <span>จุดบริการ: <select id="hdrPointSelect"></select></span>
+          <span>ผู้บันทึก: <select id="hdrStaffSelect"></select></span>
+        </div>
       </div>
-      <button class="btn secondary small no-print" id="btnChangePoint">เปลี่ยนจุด/ผู้บันทึก</button>
     </div>
     <!-- รอบ 9 (ก้อน B) — แถบลิงก์บนสุด แทนที่เมนูการ์ดที่ถูกยกเลิก (SPEC_รอบ9.md หัวข้อ 4.1/4.2) -->
     <div class="wrap no-print" style="padding-top:0;">
@@ -442,13 +432,9 @@
               <div id="personCard">
                 <div id="queueRow">
                   <label class="field-label" for="queueSelect" id="queueLabel">คิว</label>
-                  <select id="queueSelect"></select>
+                  <input type="text" id="queueSelect" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
+                  <datalist id="queueOptions"></datalist>
                 </div>
-
-                <label class="field-label" for="barcodeInput">สแกนบาร์โค้ด</label>
-                <input type="text" id="barcodeInput" autocomplete="off" placeholder="คลิกช่องนี้แล้วยิงบาร์โค้ด ระบบจะเติมชื่อและ HN ให้เอง">
-                <p class="muted" id="barcodeHint" style="margin:2px 0 0;">(ไม่บังคับ) ยิงบาร์โค้ดแล้วระบบเติม HN/ชื่อ ให้เอง</p>
-                <div class="muted barcode-raw" id="barcodeRaw"></div>
 
                 <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
                 <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
@@ -519,8 +505,29 @@
           </section>
         </div>
 
-        <!-- คอลัมน์ 2: วัคซีน + ใบรับรองแพทย์ -->
+        <!-- คอลัมน์ 2: ส่งตรวจพิเศษ (บน) + วัคซีน (ล่าง) -->
         <div class="log-col">
+          <!-- แผง "ส่งตรวจพิเศษ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) · เหลือช่อง "ลงชื่อไว้" อย่างเดียว 5 รายการ (B5)
+               ⚠ ย้ายมาคอลัมน์ 2 เมื่อ 2026-09-08 (เดิมอยู่คอลัมน์ 3) — ตอนนี้อยู่ใต้ panelVaccine หลัง panelMedcert ย้ายไปคอลัมน์ 3 -->
+          <section class="log-panel" id="panelSpecial" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelSpecial">
+              <span class="log-panel-title">ส่งตรวจพิเศษ</span>
+              <span class="log-panel-summary" id="panelSpecialSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <div class="log-lock-bar" id="specialLockBar" hidden>🔒 กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกส่งตรวจพิเศษได้</div>
+              <div class="log-lock-wrap" id="specialLockWrap">
+                <section id="svcSpecial">
+                  <p class="muted">ติ๊กลงชื่อผู้รับบริการที่จะส่งตรวจแต่ละประเภทได้เลย — สถานะ (ส่งรายชื่อ/ส่งตัว/กลับมาแล้ว) มาติ๊กทีหลังได้ที่กระดาน "รวมรายชื่อส่งตรวจพิเศษ" ด้านบน</p>
+                  <div id="specialSendsList"></div>
+                </section>
+                <div class="log-lock-overlay" id="specialLockOverlay" hidden></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- แผง "วัคซีน" — อยู่ใต้ส่งตรวจพิเศษในคอลัมน์กลาง (เจ้าของสั่งลำดับนี้ 2026-09-08) -->
           <section class="log-panel" id="panelVaccine" data-collapsed="1">
             <button type="button" class="log-panel-head" data-panel="panelVaccine">
               <span class="log-panel-title">วัคซีน</span>
@@ -540,7 +547,11 @@
               </section>
             </div>
           </section>
+        </div>
 
+        <!-- คอลัมน์ 3: ใบรับรองแพทย์ + ยอดรวม/บันทึก -->
+        <div class="log-col">
+          <!-- แผง "ใบรับรองแพทย์" — ⚠ ย้ายมาคอลัมน์ 3 เมื่อ 2026-09-08 ตามคำสั่งเจ้าของ (เดิมอยู่คอลัมน์ 2 ใต้วัคซีน) -->
           <section class="log-panel" id="panelMedcert" data-collapsed="1">
             <button type="button" class="log-panel-head" data-panel="panelMedcert">
               <span class="log-panel-title">ใบรับรองแพทย์</span>
@@ -577,28 +588,6 @@
                   </div>
                 </div>
               </section>
-            </div>
-          </section>
-        </div>
-
-        <!-- คอลัมน์ 3: ส่งตรวจพิเศษ + ยอดรวม/บันทึก -->
-        <div class="log-col">
-          <!-- แผง "ส่งตรวจพิเศษ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) · เหลือช่อง "ลงชื่อไว้" อย่างเดียว 5 รายการ (B5) -->
-          <section class="log-panel" id="panelSpecial" data-collapsed="1">
-            <button type="button" class="log-panel-head" data-panel="panelSpecial">
-              <span class="log-panel-title">ส่งตรวจพิเศษ</span>
-              <span class="log-panel-summary" id="panelSpecialSummary">—</span>
-              <span class="log-panel-arrow">▾</span>
-            </button>
-            <div class="log-panel-body">
-              <div class="log-lock-bar" id="specialLockBar" hidden>🔒 กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกส่งตรวจพิเศษได้</div>
-              <div class="log-lock-wrap" id="specialLockWrap">
-                <section id="svcSpecial">
-                  <p class="muted">ติ๊กลงชื่อผู้รับบริการที่จะส่งตรวจแต่ละประเภทได้เลย — สถานะ (ส่งรายชื่อ/ส่งตัว/กลับมาแล้ว) มาติ๊กทีหลังได้ที่กระดาน "รวมรายชื่อส่งตรวจพิเศษ" ด้านบน</p>
-                  <div id="specialSendsList"></div>
-                </section>
-                <div class="log-lock-overlay" id="specialLockOverlay" hidden></div>
-              </div>
             </div>
           </section>
 
@@ -1062,12 +1051,6 @@ function showGateKeyMsg(msg, isError) {
   el.innerHTML = '<div class="' + (isError ? 'error-box' : 'warning-box') + '">' + escHtml(msg) + '</div>';
 }
 
-function showGatePointMsg(msg) {
-  var el = qs('gatePointMsg');
-  if (!el) return;
-  if (!msg) { el.innerHTML = ''; return; }
-  el.innerHTML = '<div class="error-box">' + escHtml(msg) + '</div>';
-}
 
 /* ราคาโปรแกรม (PROG1_M..PROG4_F) เป็นส่วนหนึ่งของ prices แบบแบน ไม่ใช่คีย์แยกต่างหาก
    ตาม SPEC.md ข้อ 4 (แท็บ "ราคา" หมวด "โปรแกรม") และข้อ 5 (action=config คืน prices/points/vaccines/tests เท่านั้น) */
@@ -1098,17 +1081,53 @@ function applyConfigResponse(resp, staffKey) {
 }
 
 // รอบ 9 (ก้อน B, B2) — ดรอปดาวน์ผู้บันทึกบนแถบบนสุด เปลี่ยนได้ทันทีไม่ต้องกลับหน้า gate
+// รอบ 9.1 — ไม่มีหน้า gate ขั้นที่ 2 อีกแล้ว ⇒ ต้องมีตัวเลือกว่างเป็นตัวแรก + ลองคืนค่าจาก sessionStorage เอง
+// (เดิมมีแค่ gate ขั้นที่ 2 ที่ทำหน้าที่นี้ พอตัดออกแล้ว ดรอปดาวน์นี้ต้องรับหน้าที่แทน)
 function buildStaffSelect() {
   var sel = qs('hdrStaffSelect');
   if (!sel) return;
   sel.innerHTML = '';
+  var blankOpt = document.createElement('option');
+  blankOpt.value = '';
+  blankOpt.textContent = '— เลือกชื่อ —';
+  sel.appendChild(blankOpt);
   STATE.staffList.forEach(function (name) {
     var opt = document.createElement('option');
     opt.value = name;
     opt.textContent = name;
     sel.appendChild(opt);
   });
-  if (STATE.staffName && STATE.staffList.indexOf(STATE.staffName) !== -1) sel.value = STATE.staffName;
+  var savedStaff = safeGetItem('svcLogStaffName');
+  if (STATE.staffName && STATE.staffList.indexOf(STATE.staffName) !== -1) {
+    sel.value = STATE.staffName;
+  } else if (savedStaff && STATE.staffList.indexOf(savedStaff) !== -1) {
+    STATE.staffName = savedStaff;
+    sel.value = savedStaff;
+  }
+}
+
+// รอบ 9.1 — คู่ขนานกับ buildStaffSelect() ข้างบนเป๊ะ: จุดบริการย้ายจากหน้า gate ขั้นที่ 2 (ที่ถูกตัดออก) มาไว้บน topbar แทน
+function buildPointSelect() {
+  var sel = qs('hdrPointSelect');
+  if (!sel) return;
+  sel.innerHTML = '';
+  var blankOpt = document.createElement('option');
+  blankOpt.value = '';
+  blankOpt.textContent = '— เลือกจุดบริการ —';
+  sel.appendChild(blankOpt);
+  STATE.points.forEach(function (p) {
+    var opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+  var savedPoint = safeGetItem('svcLogPoint');
+  if (STATE.point && STATE.points.indexOf(STATE.point) !== -1) {
+    sel.value = STATE.point;
+  } else if (savedPoint && STATE.points.indexOf(savedPoint) !== -1) {
+    STATE.point = savedPoint;
+    sel.value = savedPoint;
+  }
 }
 
 function handleGateKeySubmit(e) {
@@ -1121,67 +1140,19 @@ function handleGateKeySubmit(e) {
     setGateKeyLoading(false);
     if (resp && resp.status === 'ok') {
       applyConfigResponse(resp, key);
-      showPointStep();
+      enterAppScreen();
     } else {
       showGateKeyMsg((resp && resp.message) ? resp.message : 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่', true);
     }
   });
 }
 
-function showPointStep() {
-  var sel = qs('gatePointSelect');
-  sel.innerHTML = '';
-  STATE.points.forEach(function (p) {
-    var opt = document.createElement('option');
-    opt.value = p;
-    opt.textContent = p;
-    sel.appendChild(opt);
-  });
-  var savedPoint = safeGetItem('svcLogPoint');
-  if (savedPoint && STATE.points.indexOf(savedPoint) !== -1) sel.value = savedPoint;
-
-  var staffSel = qs('gateStaffSelect');
-  staffSel.innerHTML = '';
-  var blankOpt = document.createElement('option');
-  blankOpt.value = '';
-  blankOpt.textContent = '— เลือกชื่อ —';
-  staffSel.appendChild(blankOpt);
-  STATE.staffList.forEach(function (name) {
-    var opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    staffSel.appendChild(opt);
-  });
-  var savedStaff = safeGetItem('svcLogStaffName');
-  if (savedStaff && STATE.staffList.indexOf(savedStaff) !== -1) staffSel.value = savedStaff;
-
-  if (STATE.warnings.length) {
-    showGatePointMsg(STATE.warnings.join(' · '));
-  } else {
-    showGatePointMsg('');
-  }
-  qs('gateStepKey').hidden = true;
-  qs('gateStepPoint').hidden = false;
-}
-
-function handleGatePointSubmit(e) {
-  if (e) e.preventDefault();
-  var point = qs('gatePointSelect').value;
-  var staffName = qs('gateStaffSelect').value;
-  if (!point) { showGatePointMsg('กรุณาเลือกจุดบริการ'); return; }
-  if (!staffName) { showGatePointMsg('กรุณาเลือกชื่อผู้บันทึก'); return; }
-  showGatePointMsg('');
-  STATE.point = point;
-  STATE.staffName = staffName;
-  safeSetItem('svcLogPoint', point);
-  safeSetItem('svcLogStaffName', staffName);
-  enterAppScreen();
-}
-
+// รอบ 9.1 (เจ้าของสั่ง "หน้าที่ 2 ไม่ต้องมี") — เข้าหน้าบันทึกทันทีหลังรหัสผ่านผ่าน ไม่มีขั้นเลือกจุด/ชื่อแยกอีกต่อไป
+// จุดบริการ/ผู้บันทึกย้ายไปเป็นดรอปดาวน์บน topbar (buildPointSelect()/buildStaffSelect()) เลือก/เปลี่ยนได้ตลอดโดยไม่ต้องกลับหน้า gate
 function enterAppScreen() {
   qs('gateScreen').style.display = 'none';
   qs('appScreen').style.display = 'block';
-  qs('hdrPointName').textContent = STATE.point;
+  buildPointSelect();
   buildStaffSelect();
   buildVaccineList();
   buildSpecialSendsUI();
@@ -1189,15 +1160,13 @@ function enterAppScreen() {
   recalcTotals();
   loadToday();
   showScreen('log'); // รอบ 9 (ก้อน B) — ไม่มีหน้าเมนูอีกแล้ว เข้าหน้าบันทึกทันที
+  // ข้อ 3 (รอบ 9.1): STATE.warnings เดิมโชว์ที่ #gatePointMsg ของหน้าขั้น 2 ซึ่งถูกตัดออกแล้ว
+  // ห้ามกลืนทิ้งเงียบ ๆ (คำเตือนหัวตารางชีตไม่ตรง เคยกันบั๊กใหญ่มาแล้ว) ⇒ โชว์ผ่าน toast แทน
+  if (STATE.warnings && STATE.warnings.length) showToast(STATE.warnings.join(' · '));
 }
 
-function handleChangePoint() {
-  qs('appScreen').style.display = 'none';
-  qs('gateScreen').style.display = 'block';
-  showPointStep();
-}
-
-/* พยายามคืนเซสชันเดิมถ้ามีรหัส+จุดบริการเก็บไว้ใน sessionStorage แล้ว */
+/* พยายามคืนเซสชันเดิมถ้ามีรหัสเก็บไว้ใน sessionStorage แล้ว — รอบ 9.1: เข้าหน้าบันทึกเสมอเมื่อรหัสยังใช้ได้
+   ค่าจุดบริการ/ผู้บันทึกที่จำไว้ไม่ครบ = ปล่อยดรอปดาวน์เป็นตัวเลือกว่าง ให้ผู้ใช้เลือกเองที่แถบบน (ไม่เด้งไปหน้าขั้น 2 อีกแล้วเพราะไม่มีแล้ว) */
 function tryRestoreSession() {
   var savedKey = safeGetItem('svcLogStaffKey');
   var savedPoint = safeGetItem('svcLogPoint');
@@ -1206,14 +1175,9 @@ function tryRestoreSession() {
   apiCall('config', { staffKey: savedKey }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       applyConfigResponse(resp, savedKey);
-      if (savedPoint && STATE.points.indexOf(savedPoint) !== -1 &&
-          savedStaff && STATE.staffList.indexOf(savedStaff) !== -1) {
-        STATE.point = savedPoint;
-        STATE.staffName = savedStaff;
-        enterAppScreen();
-      } else {
-        showPointStep();
-      }
+      if (savedPoint && STATE.points.indexOf(savedPoint) !== -1) STATE.point = savedPoint;
+      if (savedStaff && STATE.staffList.indexOf(savedStaff) !== -1) STATE.staffName = savedStaff;
+      enterAppScreen();
     } else {
       safeRemoveItem('svcLogStaffKey');
       safeRemoveItem('svcLogPoint');
@@ -1246,31 +1210,25 @@ function buildVaccineList() {
 
 /* =========================================================================
    6.1 คิว (รอบ 6) — ตัวเลือกในดรอปดาวน์สร้างใหม่ทุกครั้งที่เปลี่ยนหน้าบริการ ตาม prefix ของหน้านั้น
-   คิวเป็นของ "คน" ไม่ใช่ของ "บริการ" — ถ้าเลือกไว้แล้วเปลี่ยนหน้า ต้องคงค่าเดิม (prepend เข้าไปถ้าค่าเดิมไม่อยู่ใน prefix ใหม่)
+   คิวเป็นของ "คน" ไม่ใช่ของ "บริการ" — ถ้าเลือกไว้แล้วเปลี่ยนหน้า ต้องคงค่าเดิม
+   (แก้ 2026-09-08: queueSelect เป็น <input list> แล้ว ค่าที่ไม่อยู่ใน datalist ก็ยังพิมพ์/แสดงในช่องได้เอง ไม่ต้อง prepend option พิเศษอีกต่อไป)
    ========================================================================= */
+// แก้ 2026-09-08: queueSelect เปลี่ยนจากแท็ก select เดิม เป็น <input list="queueOptions"> ตามคำสั่งเจ้าของ (พิมพ์เองได้)
+// ⇒ ตัวเลือกในดรอปดาวน์ (datalist) เป็นแค่ "คำแนะนำ" ไม่ใช่รายการปิด ไม่ต้องมี "— ไม่ระบุ —" อีกแล้ว (ช่องว่าง = ไม่ระบุอยู่แล้ว)
+// และไม่ต้อง prepend ค่าที่อยู่นอกช่วง 1..40 เข้าไปในรายการอีก เพราะ input เก็บค่าที่พิมพ์/ตั้งไว้เองได้โดยไม่ต้องมี option คู่กัน
 function buildQueueOptions(prefix, forceValue) {
   var sel = qs('queueSelect');
+  var list = qs('queueOptions');
   if (!sel) return;
   var current = (forceValue !== undefined) ? forceValue : sel.value;
-  sel.innerHTML = '';
-  var blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = '— ไม่ระบุ —';
-  sel.appendChild(blank);
-  var found = (current === '');
-  for (var i = 1; i <= 40; i++) {
-    var val = prefix + i;
-    var opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = val;
-    sel.appendChild(opt);
-    if (val === current) found = true;
-  }
-  if (current && !found) {
-    var extra = document.createElement('option');
-    extra.value = current;
-    extra.textContent = current;
-    sel.insertBefore(extra, sel.options ? sel.options[1] : null);
+  if (list) {
+    list.innerHTML = '';
+    for (var i = 1; i <= 40; i++) {
+      var val = prefix + i;
+      var opt = document.createElement('option');
+      opt.value = val;
+      list.appendChild(opt);
+    }
   }
   sel.value = current || '';
 }
@@ -1376,16 +1334,23 @@ function parseBarcode(raw) {
   return { hn: hn, name: name };
 }
 
-function applyBarcode() {
-  var input = qs('barcodeInput');
-  var raw = input ? input.value : '';
+// แก้ 2026-09-08: ตัดช่อง "สแกนบาร์โค้ด" แยกออก ย้าย logic มาที่ช่อง HN โดยตรง (ยิงบาร์โค้ดใส่ #patientHn ได้เลย)
+// parseBarcode() ยังใช้ตรรกะเดิมทุกอย่าง (ไม่แก้)
+function applyHnScan() {
+  var hnEl = qs('patientHn');
+  var raw = hnEl ? hnEl.value : '';
   var parsed = parseBarcode(raw);
-  if (parsed.hn) qs('patientHn').value = parsed.hn;
-  if (parsed.name) qs('patientName').value = parsed.name;
-  var rawEl = qs('barcodeRaw');
-  if (rawEl) rawEl.textContent = raw ? ('สแกนได้: ' + raw) : '';
-  if (input) input.value = '';
-  if (parsed.hn || parsed.name) showToast('เติมชื่อ/HN จากบาร์โค้ดแล้ว');
+  if (parsed.hn && parsed.name) {
+    // บาร์โค้ดยิงมาทั้งก้อน (มี HN และชื่อแยกกันได้) — เติม HN ทับช่องตัวเอง + เติมชื่อเฉพาะตอนช่องชื่อยังว่าง (ห้ามทับที่พิมพ์เอง)
+    hnEl.value = parsed.hn;
+    var nameEl = qs('patientName');
+    if (nameEl && !(nameEl.value || '').trim()) {
+      nameEl.value = parsed.name;
+    }
+    showToast('เติมชื่อ/HN จากบาร์โค้ดแล้ว');
+  }
+  // ถ้าแยกได้แค่ HN อย่างเดียว (บาร์โค้ดมีแต่เลข) ⇒ ไม่ต้องทำอะไร ค่าที่อยู่ในช่องถูกต้องอยู่แล้ว ห้าม toast รบกวน
+  applyLogLocks();
   recalcTotals();
 }
 
@@ -1565,7 +1530,11 @@ function validateForm(ctx) {
     if (!ctx.deliveryMethod) checkupMissing.push('ช่องทางรับผล');
   }
 
-  if (!hasAnything) {
+  // รอบ 9.1: หน้า gate ขั้นที่ 2 (เลือกจุดบริการ+ชื่อผู้บันทึกก่อนเข้าใช้งาน) ถูกตัดออก ย้ายมาเป็นดรอปดาวน์บน topbar
+  // ที่เลือกได้ตลอด ⇒ ต้องกันไว้ตรงนี้แทนว่ายังไม่ได้เลือกจะบันทึกไม่ได้ (STATE.point/STATE.staffName ว่างได้ถ้ายังไม่เลือก)
+  if (!STATE.point || !STATE.staffName) {
+    msg = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
+  } else if (!hasAnything) {
     msg = 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
   } else if (ctx.checkupOn && !ctx.gender) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
@@ -1755,8 +1724,6 @@ function resetLogForm() {
   qs('queueSelect').value = '';
   qs('patientName').value = '';
   qs('patientHn').value = '';
-  qs('barcodeInput').value = '';
-  qs('barcodeRaw').textContent = '';
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
@@ -1847,7 +1814,7 @@ function enterEditMode(rec) {
   applyVaccineFilter();
 
   // รอบ 9 (ก้อน B): ไม่มี "หน้าบริการ" ให้เลือกเปิดอีกแล้ว (ทุกแผงแสดงพร้อมกันตลอด) — คงค่าคิวเดิมของแถวไว้เสมอ
-  // แม้ prefix จะไม่ตรงกับกติกาปัจจุบัน (buildQueueOptions มี forceValue รองรับ prepend ตัวเลือกพิเศษให้อยู่แล้ว)
+  // แม้ prefix จะไม่ตรงกับกติกาปัจจุบัน (buildQueueOptions ตั้ง .value ตรงๆ ผ่าน forceValue — เป็น <input> พิมพ์ค่านอกช่วงได้เองอยู่แล้ว)
   buildQueueOptions(draftQueuePrefix(), rec.queue || '');
 
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — แถวเก่ามี HN/ชื่ออยู่แล้วปกติ ⇒ ปลดล็อกทันที
@@ -2845,15 +2812,34 @@ function showScreen(name) {
 document.addEventListener('DOMContentLoaded', function () {
   qs('btnGateKey').addEventListener('click', handleGateKeySubmit);
   qs('gateStaffKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateKeySubmit(e); });
-  qs('btnGatePoint').addEventListener('click', handleGatePointSubmit);
-  qs('btnChangePoint').addEventListener('click', handleChangePoint);
 
   // รอบ 9 (ก้อน B, B2) — ดรอปดาวน์ผู้บันทึกบนแถบบนสุด เปลี่ยนได้ทันที ไม่เด้งกลับหน้า gate ไม่ล้างร่างที่กรอกค้างอยู่
+  // รอบ 9.1: รองรับค่าว่างด้วย (ยังไม่ได้เลือกชื่อ) + ต้องเรียก recalcTotals() ท้ายทุกครั้งเพื่อปลด/ล็อกปุ่มบันทึกใหม่
   qs('hdrStaffSelect').addEventListener('change', function () {
     var val = qs('hdrStaffSelect').value;
     STATE.staffName = val;
-    safeSetItem('svcLogStaffName', val);
-    showToast('เปลี่ยนผู้บันทึกเป็น ' + val + ' แล้ว');
+    if (val) {
+      safeSetItem('svcLogStaffName', val);
+      showToast('เปลี่ยนผู้บันทึกเป็น ' + val + ' แล้ว');
+    } else {
+      safeRemoveItem('svcLogStaffName');
+    }
+    recalcTotals();
+  });
+
+  // รอบ 9.1 — คู่ขนานกับ hdrStaffSelect ข้างบน: จุดบริการเปลี่ยนได้จาก topbar โดยตรงแล้ว
+  // ⚠ ต้องเรียก loadToday() ใหม่ทุกครั้งที่เปลี่ยน — รายการวันนี้ + ขอบเขตเช็ค HN ซ้ำ (ข้อ 4.6) ผูกกับจุดบริการ
+  qs('hdrPointSelect').addEventListener('change', function () {
+    var val = qs('hdrPointSelect').value;
+    STATE.point = val;
+    if (val) {
+      safeSetItem('svcLogPoint', val);
+      showToast('เปลี่ยนจุดบริการเป็น ' + val + ' แล้ว');
+    } else {
+      safeRemoveItem('svcLogPoint');
+    }
+    loadToday();
+    recalcTotals();
   });
 
   // รอบ 9 (ก้อน B, B7) — radio program/checkbox วัคซีน/medCert*/checkbox sp_reg_* sync คิวด้วย ช่องอื่นไม่ต้อง
@@ -2862,13 +2848,16 @@ document.addEventListener('DOMContentLoaded', function () {
     r.addEventListener('change', recalcTotals);
   });
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
-  qs('queueSelect').addEventListener('change', recalcTotals);
+  // แก้ 2026-09-08: queueSelect เป็น <input list> แล้ว ต้องฟัง 'input' ด้วยไม่ใช่แค่ 'change' (ผู้ใช้พิมพ์เองได้)
+  ['change', 'input'].forEach(function (ev) { qs('queueSelect').addEventListener(ev, recalcTotals); });
   // รอบ 9 (ก้อน B, B4): input ของ patientHn/patientName ต้องปลด/ล็อกแผงด้วยทุกครั้ง (ห้ามเรียก syncQueuePrefix ที่นี่)
   qs('patientName').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
   qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
   qs('checkupAmount').addEventListener('input', recalcTotals);
   qs('deliveryMethod').addEventListener('change', recalcTotals);
-  qs('barcodeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyBarcode(); } });
+  // แก้ 2026-09-08: เดิมมีช่องสแกนบาร์โค้ดแยกต่างหาก (ตัดออกแล้ว) — ตอนนี้ยิงบาร์โค้ดใส่ #patientHn ได้เลย (applyHnScan())
+  qs('patientHn').addEventListener('change', applyHnScan);
+  qs('patientHn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyHnScan(); } });
   qs('medCert5').addEventListener('input', onServiceFieldChange);
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
   qs('medCertLabCount').addEventListener('input', onServiceFieldChange);
