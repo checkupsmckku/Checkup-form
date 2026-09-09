@@ -1549,6 +1549,24 @@
     80% { transform: translateX(4px); }
   }
 
+  /* ─── โควตารับคนต่อวันนัดหมาย (2026-09-05) ─── */
+  .quota-submit-warning {
+    margin-top: 8px; padding: 9px 12px; border-radius: 8px;
+    background: #FDEDEC; border: 1.5px solid #F1B0AB;
+    color: #C0392B; font-size: 12.5px; font-weight: 600; line-height: 1.5;
+  }
+  .quota-override-bar {
+    margin-top: 8px; padding: 8px 12px; border-radius: 8px;
+    background: #FFF6E5; border: 1.5px solid #F0C36D;
+    color: #8A5A00; font-size: 12.5px; font-weight: 600;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .quota-override-bar button {
+    background: #fff; border: 1px solid #F0C36D; color: #8A5A00;
+    border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .quota-override-bar button:hover { background: #FFF0D0; }
+
   /* ─── Toast Notification ─── */
   .val-toast {
     position: fixed;
@@ -2370,7 +2388,7 @@
 
 <!-- Main -->
 <main class="main" id="main-form">
-  <form id="healthForm" onsubmit="handleSubmit(event)" novalidate>
+  <form id="healthForm" onsubmit="submitGate(event)" novalidate>
 
     <!-- ─── SECTION 1: ข้อมูลส่วนตัว (เปิดสิทธิ์) ─── -->
     <div class="form-section" id="sec1">
@@ -2396,6 +2414,12 @@
 
             <svg onclick="openThCal('service')" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280);z-index:3" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <input type="hidden" id="serviceDate">
+          </div>
+          <!-- โควตารับคนต่อวันนัดหมาย (2026-09-05) -->
+          <div id="quotaSubmitWarning" class="quota-submit-warning" style="display:none"></div>
+          <div id="quotaOverrideBar" class="quota-override-bar" style="display:none">
+            <span>⚙ โหมดเจ้าหน้าที่: ลงเกินโควตาได้</span>
+            <button type="button" onclick="cancelQuotaOverride()">ยกเลิก</button>
           </div>
         </div>
 
@@ -2554,12 +2578,13 @@
           <div class="field-group">
             <label>วันเดือนปีเกิด (พ.ศ.) <span class="req">*</span></label>
             <div style="position:relative;width:100%">
-              <input type="text" id="dob" placeholder="วว/ดด/ปปปป" maxlength="10" required
-                oninput="formatDobBE(this)" onclick="openThCal('dob')"
-                style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);background:#fff;cursor:pointer;box-sizing:border-box">
-              <svg onclick="openThCal('dob')" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <input type="text" id="dob" placeholder="วว/ดด/ปปปป" maxlength="10" required inputmode="numeric"
+                oninput="formatDobBE(this)"
+                style="width:100%;padding:9px 40px 9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;color:var(--text);background:#fff;cursor:text;box-sizing:border-box">
+              <!-- ⚠ ไม่มี pointer-events:none — ต้องคลิกไอคอนนี้ได้ตรงๆ เพราะช่อง input ข้างบนไม่เปิดปฏิทินให้แล้ว (แก้ 2026-09-09 ให้พิมพ์เองได้บนมือถือ) -->
+              <svg onclick="openThCal('dob')" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted,#6B7280)" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
-            <div class="field-hint">เช่น 15/06/2520 (ปี พ.ศ.)</div>
+            <div class="field-hint">พิมพ์เองได้ เช่น 15/06/2520 (ปี พ.ศ.) หรือแตะไอคอนปฏิทินด้านขวา</div>
           </div>
         </div>
 
@@ -3844,6 +3869,9 @@ window.onload = function() {
   applyStepLocks();
   initStepLockClickTrap();
   initPapAccordion();
+  // โควตารับคนต่อวันนัดหมาย (D1, 2026-09-05) — ยิงตอนโหลดหน้าเสร็จ ห้าม await (fire-and-forget)
+  // ล้มเหลว/timeout → fail-open ในตัวฟังก์ชันเอง ไม่ทำให้หน้าเว็บค้าง
+  if (typeof loadQuotaBlocked === 'function') loadQuotaBlocked(false);
   // เตรียมฟอนต์ไว้ล่วงหน้าให้ buildMySummaryCanvas() วาดด้วย Sarabun/Noto Sans Thai ได้ทันที
   // ⚠ ห้าม await document.fonts.ready ในตัว handler ที่ผู้ใช้กด (saveMySummaryImage) — จะทำให้
   //   user activation หมดอายุแล้ว navigator.share() บน iOS ถูกปฏิเสธ จึงเตรียมไว้ที่นี่แทน
@@ -5905,17 +5933,12 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQKSkFY5iyQWcc
 // รหัสผ่านเจ้าหน้าที่สำหรับค้นหาใบสรุป (รหัสเดียว)
 const STAFF_SEARCH_KEY = '1901';
 
-// ─── Form Submit ─────────────────────────────────────────────────────────────
-function handleSubmit(e) {
-  e.preventDefault();
-  console.log('[SUBMIT] handleSubmit called');
-  if (!validateAndScrollToError()) {
-    console.log('[SUBMIT] validation FAILED — ดู toast/highlight ที่หน้าจอ');
-    return;
-  }
-  console.log('[SUBMIT] validation PASSED');
-
-  try {
+// ─── สร้างก้อนข้อมูลที่จะส่งขึ้น Google Sheet ───────────────────────────────
+// แยกออกมาจาก handleSubmit() เมื่อ 2026-09-05 (โควตารับคนต่อวัน — D4) เพื่อให้ submitGate() ยิง POST
+// ด้วยก้อนเดียวกันนี้ได้ก่อนเรียก handleSubmit() จริง (กันพลาดให้ payload เพี้ยนจากกัน 2 จุด)
+// ⚠ เป็นการคัดลอกโค้ดเดิมจาก handleSubmit() มาตรงๆ ห้ามแก้ค่า/ลำดับคีย์ใดๆ ในนี้ — พิสูจน์ด้วย
+//   harness/t3_all.js (payload เดิม 5 เคส) + harness/t36_quota_ui.js (เทสต์ A: payload ต้องเหมือนเดิมทุกคีย์)
+function buildRegistrationFormData() {
   // Collect data for summary
   const fname = document.getElementById('firstName').value;
   const lname = document.getElementById('lastName').value;
@@ -5974,22 +5997,6 @@ function handleSubmit(e) {
     const runs = (newAddrVal.match(/\d+/g) || []).filter(n => n.length === 5);
     return runs.length ? runs[runs.length - 1] : '';
   })();
-
-  const nameOrHN = isHNMode
-    ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${escHtml(hnNumber)}</span></div>
-       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(subPrefix + ' ' + subFirstName + ' ' + subLastName)}</span></div>`
-    : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(fname + ' ' + lname)}</span></div>`;
-
-  const card = document.getElementById('summaryCard');
-  card.innerHTML = `
-    ${nameOrHN}
-    <div class="success-row"><span class="slabel">หน่วยงาน</span><span class="sval">${escHtml(dept)}</span></div>
-    ${payRight ? `<div class="success-row"><span class="slabel">สิทธิ์ชำระเงิน</span><span class="sval">${escHtml(payRight)}</span></div>` : ''}
-    <div class="success-row"><span class="slabel">อายุ / เพศ</span><span class="sval">${escHtml(age)} ปี / ${g}</span></div>
-    <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}</span></div>
-    ${addList.length ? `<div class="success-row"><span class="slabel">รายการเพิ่มเติม</span><span class="sval" style="text-align:right;max-width:200px">${addList.map(x=>x.th).join(', ')}</span></div>` : ''}
-    <div class="success-row" style="margin-top:4px"><span class="slabel" style="font-weight:700;color:#00575E">ยอดรวม</span><span class="sval" style="font-size:20px;color:#00575E">${totalTxt} บาท</span></div>
-  `;
 
   // Delivery method
   const delMethod = document.querySelector('input[name="deliveryMethod"]:checked');
@@ -6239,21 +6246,112 @@ function handleSubmit(e) {
     medCertDriverCount:    document.getElementById('medCertDriverCount')?.value || '',
     medCertHealthCount:    document.getElementById('medCertHealthCount')?.value || '',
   };
+  return formData;
+}
 
-  // ส่งข้อมูลไปยัง Google Sheet (ไม่รอผล — แสดง modal ทันที)
-  if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE') {
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(formData),
-      headers: { 'Content-Type': 'text/plain' }, // Apps Script ต้องการ text/plain เพื่อหลีกเลี่ยง CORS preflight
-      keepalive: true // ป้องกัน browser cancel request เมื่อ navigate ไป survey.html
-    })
-    .then(r => r.json())
-    .then(res => {
-      if (res.status !== 'ok') console.warn('Google Sheet error:', res.message);
-    })
-    .catch(err => console.warn('Google Sheet fetch error:', err));
+// ─── Form Submit ─────────────────────────────────────────────────────────────
+// ⚠ 2026-09-05 (โควตารับคนต่อวัน — D4): เพิ่มพารามิเตอร์ precomputedFormData —
+//   submitGate() เรียกด้วยก้อนที่ยิง POST ไปแล้วจริง เพื่อไม่ให้ค่าที่แสดงในใบสรุปคลาดจากที่ส่งจริง
+//   ถ้าเรียกแบบเดิม (ไม่ส่งพารามิเตอร์นี้มา) จะ build ใหม่เอง — โครง try/catch/finally เดิมไม่แตะ
+function handleSubmit(e, precomputedFormData) {
+  e.preventDefault();
+  console.log('[SUBMIT] handleSubmit called');
+  if (!validateAndScrollToError()) {
+    console.log('[SUBMIT] validation FAILED — ดู toast/highlight ที่หน้าจอ');
+    return;
   }
+  console.log('[SUBMIT] validation PASSED');
+
+  try {
+  // Collect data for summary
+  const fname = document.getElementById('firstName').value;
+  const lname = document.getElementById('lastName').value;
+  const prefixSelVal = document.getElementById('prefix')?.value || '';
+  const prefixVal = prefixSelVal === 'อื่นๆ' ? (document.getElementById('prefixOther')?.value.trim() || '') : prefixSelVal;
+  const orgVal = document.getElementById('orgName')?.value || '';
+  const dept = orgVal === '__other__'
+    ? (document.getElementById('orgNameOther')?.value || '')
+    : orgVal;
+  const payRight = document.getElementById('paymentRight')?.value || '';
+  const age = document.getElementById('age').value;
+  const g = selectedGender === 'male' ? 'ชาย' : 'หญิง';
+  const progNames = {1:'Basic Check Up',2:'Advanced Check Up',3:'Executive Check Up',4:'Supreme Check Up'};
+  const totalTxt = document.getElementById('totalAmount').textContent;
+
+  // Build additional list
+  let addList = [];
+  TESTS.forEach(t => {
+    const chk = document.getElementById('chk-' + t.id);
+    const el = document.getElementById('test-' + t.id);
+    if (chk && chk.checked && el && !el.classList.contains('included')) {
+      addList.push({ th: t.name, eng: t.eng });
+    }
+  });
+
+  // ถ้าเลือก "มี HN" ให้แสดง HN แทนชื่อ-สกุล
+  const hnStatusVal = document.querySelector('input[name="hnStatus"]:checked')?.value;
+  const hnNumber = (document.getElementById('patientCardNo')?.value || '').trim();
+  const isHNMode = hnStatusVal === 'has' && hnNumber.length > 0;
+
+  // ── ค่าที่ใช้บันทึกลงชีต: อ่านจากช่องหลักในส่วนที่ 1 ตรงๆ ทั้ง 2 โหมด ──
+  // (เดิมโหมด "มี HN" มีป็อปอัปแก้ไขข้อมูลถามซ้ำอีกชุด — ถอดออกแล้ว เพราะช่องเหล่านี้
+  //  อยู่นอก fullInfoSection จึงแสดงและบังคับกรอกอยู่แล้วทั้งสองโหมด)
+  const subPrefix    = prefixVal;
+  const subFirstName = fname;
+  const subLastName  = lname;
+  const subOldFirst  = document.getElementById('oldFirstName')?.value || '';
+  const subOldLast   = document.getElementById('oldLastName')?.value || '';
+  const subPhone     = document.getElementById('phone')?.value || '';
+
+  // ที่อยู่ใหม่ (โหมด "มี HN" เท่านั้น, ไม่บังคับกรอก) — ของเดียวที่โหมด HN ยังไม่ได้ถาม
+  const newAddrVal = isHNMode ? (document.getElementById('newAddr')?.value || '').trim() : '';
+
+  // Passport (โหมด "มี HN" เท่านั้น, ไม่บังคับกรอก) — ช่อง #passport เดิมอยู่ใน fullInfoSection ที่ถูกซ่อน
+  const hnPassportVal = isHNMode ? (document.getElementById('hnPassport')?.value || '').trim() : '';
+
+  // รหัสไปรษณีย์ในโหมด "มี HN": ไม่มีช่องแยก (เจ้าของระบบสั่งให้พิมพ์รวมมาในช่องที่อยู่ใหม่)
+  // จึงต้องดึงเลข 5 หลักออกมาเองเพื่อลงคอลัมน์ 'รหัสไปรษณีย์' ของชีต
+  // เอา "กลุ่มตัวเลข 5 หลักตัวท้ายสุด" เพราะคำแนะนำใต้ช่องบอกให้ใส่รหัสไปรษณีย์ไว้ท้ายที่อยู่
+  // ⚠ เจ้าของระบบสั่ง 2026-08-21: **ยึดเลขที่ผู้ป่วยพิมพ์มาตรงๆ ห้ามคัดทิ้งเอง**
+  //    เคยใส่กฎ "ข้ามกลุ่มเลขที่ติด / หรือ -" ไว้กันบ้านเลขที่แบบ 12345/6 แล้วถอดออกแล้ว
+  //    เพราะที่อยู่จริงมีเลขแบบ 228/5 เป็นปกติ ไม่ควรให้ระบบไปตัดสินแทนผู้กรอก
+  // ⚠ ห้ามใช้ lookbehind/lookahead ใน regex ตรงนี้ — Safari เก่า parse ทั้ง <script> ไม่ผ่าน = ฟอร์มพังทั้งหน้า
+  const hnZipVal = (() => {
+    if (!isHNMode) return '';
+    const runs = (newAddrVal.match(/\d+/g) || []).filter(n => n.length === 5);
+    return runs.length ? runs[runs.length - 1] : '';
+  })();
+
+  const nameOrHN = isHNMode
+    ? `<div class="success-row"><span class="slabel">เลขประจำตัวโรงพยาบาล (HN)</span><span class="sval">${escHtml(hnNumber)}</span></div>
+       <div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(subPrefix + ' ' + subFirstName + ' ' + subLastName)}</span></div>`
+    : `<div class="success-row"><span class="slabel">ชื่อ-นามสกุล</span><span class="sval">${escHtml(fname + ' ' + lname)}</span></div>`;
+
+  const card = document.getElementById('summaryCard');
+  card.innerHTML = `
+    ${nameOrHN}
+    <div class="success-row"><span class="slabel">หน่วยงาน</span><span class="sval">${escHtml(dept)}</span></div>
+    ${payRight ? `<div class="success-row"><span class="slabel">สิทธิ์ชำระเงิน</span><span class="sval">${escHtml(payRight)}</span></div>` : ''}
+    <div class="success-row"><span class="slabel">อายุ / เพศ</span><span class="sval">${escHtml(age)} ปี / ${g}</span></div>
+    <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}</span></div>
+    ${addList.length ? `<div class="success-row"><span class="slabel">รายการเพิ่มเติม</span><span class="sval" style="text-align:right;max-width:200px">${addList.map(x=>x.th).join(', ')}</span></div>` : ''}
+    <div class="success-row" style="margin-top:4px"><span class="slabel" style="font-weight:700;color:#00575E">ยอดรวม</span><span class="sval" style="font-size:20px;color:#00575E">${totalTxt} บาท</span></div>
+  `;
+
+  // Delivery method
+  const delMethod = document.querySelector('input[name="deliveryMethod"]:checked');
+  const delMap = { pickup: 'รอรับด้วยตนเอง', post: 'ส่งทางไปรษณีย์', email: 'ส่งทาง E-mail' };
+  const delTxt = delMethod ? delMap[delMethod.value] : '';
+
+  // ─── รวบรวมข้อมูลทั้งหมดส่ง Google Sheet ───
+  // ⚠ 2026-09-05 (โควตารับคนต่อวัน — D4): ย้ายการประกอบ payload ไป buildRegistrationFormData()
+  //   (นิยามไว้ก่อน handleSubmit ด้านบน) เพื่อให้ submitGate() เรียกก้อนเดียวกันได้ก่อนยิง POST จริง
+  //   ถ้า submitGate() ส่ง precomputedFormData มา (กรณีปกติ) ใช้ก้อนเดิมที่ยิงไปแล้วเป๊ะๆ ไม่ build ซ้ำ
+  const formData = precomputedFormData || buildRegistrationFormData();
+
+  // ส่ง POST ไป Google Sheet — ย้ายไปยิงที่ submitGate() ก่อนเรียก handleSubmit() แล้ว (ดูสเปก D4)
+  // ⚠ ห้ามยิง fetch ซ้ำที่นี่อีก ไม่งั้นได้แถวซ้ำในชีต 2 แถวต่อการลงทะเบียน 1 ครั้ง
+  // (เดิมเป็น fetch(APPS_SCRIPT_URL, {method:'POST', body:JSON.stringify(formData), ...}) ตรงนี้)
 
   // คำนวณราคาโปรแกรมและรายการเพิ่มเติม
   let _basePrice = 0;
@@ -6343,6 +6441,72 @@ function handleSubmit(e) {
   }
 }
 
+// ─── Quota Gate — เช็คโควตาก่อนส่งจริง (D4, เพิ่ม 2026-09-05) ─────────────────
+// เดิม handleSubmit() ยิง fetch แบบไม่รอผลแล้ว finally สั่ง redirect ไป survey.html เสมอ ⇒ ถ้าวันนั้น
+// เต็ม/ปิดรับ (เซิร์ฟเวอร์ไม่เขียนแถวลงชีต) คนไข้จะไม่รู้เลยว่าลงทะเบียนไม่สำเร็จ ฟังก์ชันนี้ยิง POST
+// ก่อนจริง 1 ครั้ง (ครั้งเดียวในทั้งฟอร์ม — handleSubmit() ไม่ยิงเองแล้ว) รอผลแบบมี timeout 8 วินาที
+// แล้วค่อยตัดสินใจ: เต็ม/ปิดรับ → ไม่ไปต่อ · นอกนั้น (ok/timeout/เน็ตพัง) → ไปต่อเหมือนเดิมทุกประการ
+async function submitGate(e) {
+  e.preventDefault();
+  if (!validateAndScrollToError()) return false;   // ให้ข้อความ error เดิมทำงานเหมือนเดิม
+
+  const formData = buildRegistrationFormData();
+  // เจ้าหน้าที่ลงเกินโควตาได้ด้วยรหัสผ่าน (สัญญากับ Apps Script — ดูสเปก D)
+  formData.staffOverrideKey = quotaOverride ? quotaOverrideKeyVal : '';
+
+  const btn = document.getElementById('submitBtn');
+  const btnOrigHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ กำลังบันทึก...'; }
+  const restoreBtn = () => { if (btn) { btn.disabled = false; btn.innerHTML = btnOrigHtml; } };
+
+  let result = null;
+  try {
+    const fetchPromise = fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(formData),
+      headers: { 'Content-Type': 'text/plain' }, // Apps Script ต้องการ text/plain เพื่อหลีกเลี่ยง CORS preflight
+      keepalive: true // ป้องกัน browser cancel request เมื่อ navigate ไป survey.html
+    }).then(r => r.json());
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('submit timeout')), 8000));
+    result = await Promise.race([fetchPromise, timeoutPromise]);
+  } catch (err) {
+    // timeout / เน็ตพัง / JSON เพี้ยน → ต้องไปต่อเหมือนเดิม ห้ามค้าง (เคยเจอบั๊ก "ส่งฟอร์มแล้วไม่ไปหน้าถัดไป")
+    console.warn('[SUBMIT] submitGate: ไม่ได้ผลลัพธ์จากเซิร์ฟเวอร์ ไปต่อตามปกติ —', err);
+    restoreBtn();
+    return handleSubmit(e, formData);
+  }
+
+  if (result && result.status === 'error' && (result.code === 'FULL' || result.code === 'CLOSED')) {
+    restoreBtn();
+    showQuotaSubmitWarning(result.message || 'วันที่เลือกไม่สามารถลงทะเบียนได้ กรุณาเลือกวันอื่น');
+    return false;
+  }
+  if (result && result.status && result.status !== 'ok') {
+    console.warn('Google Sheet error:', result.message);
+  }
+
+  // ok หรือสถานะอื่นที่ไม่ใช่โควตาเต็ม/ปิดรับ → ไปต่อตามเดิมทุกประการ (ส่งก้อนที่ยิงไปแล้วเป๊ะๆ ไม่ build ซ้ำ)
+  restoreBtn();
+  return handleSubmit(e, formData);
+}
+
+// แสดงข้อความ "เต็ม/ปิดรับ" ใต้ช่องวันที่นัดหมายตอนส่งฟอร์มไม่ผ่าน (D4 ข้อ 6) — ผ่าน escHtml() เสมอ
+function showQuotaSubmitWarning(message) {
+  const box = document.getElementById('quotaSubmitWarning');
+  if (box) {
+    box.innerHTML = escHtml(message);
+    box.style.display = 'block';
+  }
+  const raw = document.getElementById('serviceDateRaw');
+  if (raw) {
+    raw.value = '';
+    if (typeof syncServiceDate === 'function') syncServiceDate(raw);
+  }
+  thCalState.selectedISO = '';
+  if (typeof loadQuotaBlocked === 'function') loadQuotaBlocked(true); // อัปเดตปฏิทินทันทีว่าวันนี้เต็มแล้ว
+  if (raw && raw.scrollIntoView) raw.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function resetForm() {
   document.getElementById('healthForm').reset();
   selectedProgram = null;
@@ -6390,6 +6554,13 @@ function resetForm() {
   // แต่ไม่ได้ enable/disable อะไรเอง ต้องล็อกฟอร์มใหม่ที่นี่ ไม่งั้นแบบฟอร์มถัดไปจะเริ่มแบบไม่ล็อก
   applyHnLock();
   applyStepLocks();
+  // โควตารับคนต่อวัน (D3, 2026-09-05) — เคลียร์โหมดเจ้าหน้าที่ทุกครั้งที่ "ส่งแบบฟอร์มใหม่"
+  // กันเจ้าหน้าที่เปิดค้างไว้แล้วคนไข้คนถัดไปใช้ต่อโดยไม่รู้ตัว
+  quotaOverride = false;
+  quotaOverrideKeyVal = '';
+  renderQuotaOverrideBar();
+  const qsw = document.getElementById('quotaSubmitWarning');
+  if (qsw) { qsw.style.display = 'none'; qsw.innerHTML = ''; }
 }
 
 // ─── Org / Dept Helpers ──────────────────────────────────────────────────────
@@ -7954,13 +8125,18 @@ async function doMySummarySearch() {
         + '<div>ยอดรวม: ' + escHtml(r.total || '—') + ' บาท</div>'
         + '</div>'
         + (items.length > 1
-            ? '<div style="margin-top:10px;text-align:right"><button type="button" onclick="saveMySummaryImage(' + i + ')" style="' + IMG_BTN_STYLE + '">📷 บันทึกเป็นรูปภาพ</button></div>'
+            ? '<div style="margin-top:10px;text-align:right;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
+              + '<button type="button" onclick="saveMySummaryImage(' + i + ')" style="' + IMG_BTN_STYLE + '">📷 บันทึกเป็นรูปภาพ</button>'
+              + '<button type="button" onclick="printMySummary(' + i + ')" style="' + PRINT_BTN_STYLE + '">🖨 พิมพ์ใบสรุป</button>'
+              + '</div>'
             : '')
         + '</div>';
     }).join('')
       + '<div class="my-summary-actions" style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">'
-      + (items.length === 1 ? '<button type="button" onclick="saveMySummaryImage(0)" style="' + IMG_BTN_STYLE + '">📷 บันทึกเป็นรูปภาพ</button>' : '')
-      + '<button type="button" onclick="printModal(\'mySummaryModal\',\'summary\')" style="' + PRINT_BTN_STYLE + '">🖨 พิมพ์ใบสรุป</button>'
+      + (items.length === 1
+          ? '<button type="button" onclick="saveMySummaryImage(0)" style="' + IMG_BTN_STYLE + '">📷 บันทึกเป็นรูปภาพ</button>'
+            + '<button type="button" onclick="printMySummary(0)" style="' + PRINT_BTN_STYLE + '">🖨 พิมพ์ใบสรุป</button>'
+          : '')
       + '</div>';
 
   } catch(err) {
@@ -8208,22 +8384,145 @@ function saveMySummaryImage(i) {
     const blob = new Blob([bytes], { type: 'image/png' });
     const file = new File([blob], 'ใบสรุปตรวจสุขภาพ.png', { type: 'image/png' });
 
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      // เบราว์เซอร์ที่รองรับ Web Share API แบบไฟล์ (Android Chrome, iOS Safari ใหม่ ๆ) — ใช้ทางลัดนี้ก่อน
-      navigator.share({ files: [file], title: 'ใบสรุปการลงทะเบียนตรวจสุขภาพ' }).catch(function(){});
-    } else if (!isInAppBrowser()) {
-      // เดสก์ท็อป/เบราว์เซอร์ปกติที่ดาวน์โหลดไฟล์ได้ตรง ๆ
+    // เจ้าของสั่ง 2026-09-09: กดปุ่มแล้วต้องดาวน์โหลดเป็นรูปเลย ⇒ ดาวน์โหลดตรง ๆ มาก่อนเสมอ
+    // (เดิมใช้ทางลัดแชร์ก่อน ทำให้ Android Chrome / iOS Safari ที่รองรับ canShare โดนแผงแชร์แย่งไปแทนที่จะดาวน์โหลด)
+    if (!isInAppBrowser()) {
+      // เบราว์เซอร์ปกติทุกตัว (รวมเดสก์ท็อป/Android Chrome/iOS Safari) ดาวน์โหลดไฟล์ได้ตรง ๆ
+      // ⚠ href ต้องเป็น blob: ไม่ใช่ dataUrl — Safari (โดยเฉพาะ iOS) ไม่สนใจ attribute download เมื่อ href
+      //   เป็น data: URL เพราะนับเป็นคนละ origin ส่วน blob: ที่สร้างจากหน้านี้เองนับเป็น same-origin จึงดาวน์โหลดได้
+      const objUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.download = 'ใบสรุปตรวจสุขภาพ.png';
-      a.href = dataUrl;
+      a.href = objUrl;
       a.click();
+      // คืนหน่วยความจำทีหลัง — ห้าม revoke ทันที บางเบราว์เซอร์จะยกเลิกการดาวน์โหลดที่เพิ่งเริ่มไป
+      setTimeout(function() { URL.revokeObjectURL(objUrl); }, 60000);
+      showToast('บันทึกรูปใบสรุปลงเครื่องแล้ว');
+    } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // เบราว์เซอร์ในแอปบางตัวดาวน์โหลดไม่ได้แต่แชร์ได้ (Web Share API แบบไฟล์) — ทางนี้ยังดีกว่าไม่มีอะไรเกิดขึ้น
+      navigator.share({ files: [file], title: 'ใบสรุปการลงทะเบียนตรวจสุขภาพ' }).catch(function(){});
     }
-    // เบราว์เซอร์ในแอป iOS ที่ไม่มี navigator.canShare → ไม่ต้องทำอะไรเพิ่ม ผู้ใช้กดค้างที่รูปเอาเอง
+    // ⚠ เบราว์เซอร์ในแอป iOS ที่ไม่มี navigator.canShare (เช่น WKWebView ใน LINE) → ห้ามเรียก <a>.click() เด็ดขาด
+    //   มันไม่ดาวน์โหลดและอาจพาหลุดออกจากหน้า ⇒ ไม่ต้องทำอะไรเพิ่ม ผู้ใช้กดค้างที่รูปเอาเอง (รูป+คำแนะนำอยู่ในหน้าแล้ว)
 
     img.scrollIntoView({ block: 'nearest' });
   } catch (e) {
     showToast('บันทึกรูปไม่สำเร็จ กรุณาจับภาพหน้าจอแทน');
   }
+}
+
+// ─── "🖨 พิมพ์ใบสรุป" ในป็อปอัป "ใบสรุปของฉัน" (เพิ่ม 2026-09-09) ──────────────
+// เจ้าของสั่งให้หน้าตาเหมือนใบสรุปเจ้าหน้าที่ (printStaffSummary) ⇒ ใช้ CSS ร่วมกัน (SUMMARY_PRINT_CSS)
+// และคลาส .sr/.sr-section-title/.sr-test-item/.sr-price-row/.sr-total-row ชุดเดียวกันทุกตัว
+// ⚠ ข้อมูลที่มีให้ใช้มีแค่ 5 ฟิลด์จาก mySummaryRecords[i] (backend action:'mysearch' คืนเท่านี้ ห้ามขอเพิ่ม —
+//   ห้ามมี HN/เลขบัตร/วันเกิด/ที่อยู่/เบอร์/อีเมล ในใบนี้เด็ดขาด ดู CLAUDE.md "ค้นใบสรุป — มี 2 ทาง")
+function printMySummary(i) {
+  const rec = mySummaryRecords[i];
+  if (!rec) return;
+
+  const name        = rec.name || '—';
+  const serviceDate = (rec.serviceDate || '').toString().trim();
+  const program     = (rec.program || '').toString();
+  const total       = rec.total || '';
+
+  // แยกเลขโปรแกรมจาก "โปรแกรม X — ..." เพื่ออ่านรายการตรวจ
+  // ⚠ ใช้ PROG_DETAIL "ปัจจุบัน" ไม่ใช่สแนปช็อต programTests ณ วันลงทะเบียน — backend ฝั่งผู้รับบริการ
+  //   (action:'mysearch') ไม่ได้คืนคอลัมน์สแนปช็อตนั้นมาให้ เป็นเส้นทาง fallback เดียวกับที่ใบเจ้าหน้าที่
+  //   ใช้เมื่อไม่มีสแนปช็อต (ดู showStaffSummary())
+  const progMatch = program.match(/โปรแกรม\s*(\d+)/);
+  const progNum   = progMatch ? parseInt(progMatch[1]) : 0;
+  const progData  = PROG_DETAIL[progNum];
+  const tests     = progData ? progData.tests : null;
+
+  // ตรวจภายใน (Pap) — เดาจากข้อความในชื่อโปรแกรมเท่านั้น ⚠ ห้ามใช้ r.gender เพราะ mysearch ไม่คืนเพศมาให้
+  const papKey  = Object.keys(PAP_LABELS).find(function(k) { return program.indexOf(PAP_LABELS[k]) !== -1; });
+  const papItem = (papKey && PAP_ITEM_MAP[papKey]) ? PAP_ITEM_MAP[papKey] : null;
+
+  const addItems = (rec.additionalItems && rec.additionalItems.trim()) ? parseAdditionalItems(rec.additionalItems) : [];
+  const addItemsSum = addItems.reduce(function(sum, item) {
+    const m = item.match(/\(([\d,]+(?:\.\d+)?)\s*บาท\)\s*$/);
+    return sum + (m ? parseFloat(m[1].replace(/,/g, '')) : 0);
+  }, 0);
+  const totalNum  = parseFloat(total.toString().replace(/,/g, ''));
+  const basePrice = !isNaN(totalNum) ? Math.round((totalNum - addItemsSum) * 100) / 100 : NaN;
+
+  // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือรายการรวมทั้งหมดยาวพอจะดันยอดรวมตกไปหน้าถัดไป (เกณฑ์เดียวกับใบเจ้าหน้าที่)
+  const totalItemCount = (tests ? tests.length : 0) + (papItem ? 1 : 0) + addItems.length;
+  const condense = addItems.length >= 1 || totalItemCount >= 14;
+
+  let body = '';
+  body += '<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">' + escHtml(name) + '</span></div>';
+  body += '<div class="sr"><span class="sl">📅 วันที่นัดหมายเข้ารับบริการ</span><span class="sv">' + (serviceDate ? escHtml(serviceDate) : '—') + '</span></div>';
+
+  // ── โปรแกรม + รายการในโปรแกรม ──
+  body += '<div class="sr-section-title">' + escHtml(program || 'ไม่ระบุโปรแกรม') + '</div>';
+  if (tests) {
+    body += '<div class="sr-test-list' + (condense ? ' sr-test-list-full' : '') + '">';
+    tests.forEach(function(t) {
+      body += '<div class="sr-test-item included"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + escHtml(t.th) + '</span><span class="sr-name-eng">' + escHtml(t.eng) + '</span></div>';
+    });
+    if (papItem) {
+      body += '<div class="sr-test-item included" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot included-dot">●</span><span class="sr-name-th">' + escHtml(papItem.th) + '</span></span><span style="font-weight:600;color:#9D174D;white-space:nowrap;margin-left:8px">+' + papItem.price.toLocaleString() + ' บาท</span></div>';
+    }
+    body += '</div>';
+    if (condense) {
+      const condensedCount = tests.length + (papItem ? 1 : 0);
+      body += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + condensedCount + ' รายการตรวจตามโปรแกรม</div></div>';
+    }
+  }
+  // หาเลขโปรแกรม/PROG_DETAIL ไม่เจอ → ข้ามส่วนรายการตรวจไปเลย (ไม่ throw ไม่โชว์ว่าง)
+
+  // ── ราคาโปรแกรม ──
+  if (!isNaN(basePrice) && basePrice > 0) {
+    body += '<div class="sr-price-row"><span class="sr-price-label">💊 ราคาโปรแกรมตรวจสุขภาพ</span><span class="sr-price-val">' + basePrice.toLocaleString() + ' บาท</span></div>';
+  }
+
+  // ── รายการเพิ่มเติม ──
+  if (rec.additionalItems && rec.additionalItems.trim()) {
+    body += '<div class="sr-section-title extra">➕ รายการเพิ่มเติม (' + addItems.length + ' รายการ)</div>';
+    body += '<div class="sr-test-list">';
+    addItems.forEach(function(item) {
+      const pm    = item.match(/\(([^)]+บาท)\)\s*$/);
+      const nm    = pm ? item.slice(0, item.lastIndexOf(pm[0])).trim() : item;
+      const price = pm ? pm[1] : '';
+      body += '<div class="sr-test-item extra" style="justify-content:space-between">'
+        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(nm) + '</span></span>'
+        + (price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + escHtml(price) + '</span>' : '')
+        + '</div>';
+    });
+    body += '</div>';
+  }
+
+  // ── ยอดรวม ──
+  body += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
+
+  const title = 'ใบสรุปรายการตรวจ — ' + name;
+
+  // กลไกเปิดหน้าต่าง/สั่งพิมพ์ ก๊อปรูปแบบจาก printStaffSummary() ให้ตรงกัน
+  if (!ensureCanPrint()) return;
+  const w = window.open('', '_blank');
+  // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
+    return;
+  }
+  w.document.write('<!DOCTYPE html><html><head>'
+    + '<meta charset="utf-8"><title>' + escHtml(title) + '</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
+    + '<style>' + SUMMARY_PRINT_CSS
+    // .doc-org/.doc-org2 เฉพาะใบผู้รับบริการเท่านั้น ไม่ยัดเข้า SUMMARY_PRINT_CSS เพราะใบเจ้าหน้าที่ไม่มี 2 บรรทัดนี้
+    // ค่าเดียวกับ .pdh-org/.pdh-org2 ใน @media print ของหน้าเว็บ (#mySummaryModal .pdh-org/.pdh-org2)
+    + '.doc-org{font-weight:800;font-size:15px;color:#001D3D}'
+    + '.doc-org2{font-size:12px;color:#555}'
+    + '</style></head><body>'
+    + '<div class="doc-org">หน่วยคลินิกตรวจสุขภาพ SMC · ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>'
+    + '<div class="doc-org2">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</div>'
+    + '<h2>' + escHtml(title) + '</h2>'
+    + (serviceDate ? '<div class="sub">นัดหมาย ' + escHtml(serviceDate) + '</div>' : '')
+    + body
+    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '</body></html>');
+  w.document.close();
 }
 
 function showStaffSummary(idx) {
@@ -8461,33 +8760,11 @@ function collectPrepCss() {
   return out;
 }
 
-function printStaffSummary() {
-  const title   = document.getElementById('staffSummaryTitle').textContent;
-  const dateStr = document.getElementById('staffSummaryDate').textContent;
-  const content = document.getElementById('staffSummaryCard').innerHTML;
-  // ── Technologist's Note (เจ้าของสั่งเพิ่ม 2026-08-26) ──
-  // ช่องเปล่าให้เจ้าหน้าที่เขียนมือหลังตรวจ BMD เสร็จ — "ไม่ใช่" input ที่กรอกบนเว็บ จึงต่อเข้าเฉพาะตอนพิมพ์เท่านั้น
-  // เช็คจาก marker id="dexaSection" ที่ต่อเข้า content ไว้แล้วใน showStaffSummary() — มีเฉพาะคนที่ตรวจ BMD
-  const bmdNoteHtml = content.indexOf('id="dexaSection"') !== -1
-    ? '<div class="sr-section-title">Technologist\'s Note</div>'
-      + '<div class="sr-test-item" style="font-size:12.5px;color:#555">ระหว่างตรวจพบว่ามี technical difficulty หรือไม่ หากมีโปรดระบุ</div>'
-      + '<div class="sr-test-item" style="font-size:12.5px">☐ จัดท่ายาก &nbsp;&nbsp; ☐ ผู้ป่วยมีเหล็กดาม &nbsp;&nbsp; ☐ เคลื่อนย้ายผู้ป่วยลำบาก &nbsp;&nbsp; ☐ ภาพวิเคราะห์ยาก &nbsp;&nbsp; ☐ อื่นๆ</div>'
-      + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
-      + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
-      + '<div class="sr-test-item" style="font-size:12.5px;color:#555;margin-top:10px">หากมีข้อสงสัยกรุณาติดต่อแพทย์ประจำบ้านหรืออาจารย์แพทย์</div>'
-    : '';
-  if (!ensureCanPrint()) return;
-  const w = window.open('', '_blank');
-  // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
-  if (!w) {
-    showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
-    return;
-  }
-  w.document.write('<!DOCTYPE html><html><head>'
-    + '<meta charset="utf-8"><title>' + escHtml(title) + '</title>'
-    + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
-    + '<style>'
-    + 'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px auto;max-width:720px}'
+// CSS ของหน้าต่างพิมพ์ใบสรุป — ใช้ร่วมกัน 2 ใบ: ใบสรุปเจ้าหน้าที่ (printStaffSummary)
+// และใบสรุปของผู้รับบริการ (printMySummary) เพิ่ม 2026-09-09 ให้หน้าตาเหมือนกัน
+// ⚠ ย้ายมาจากก้อนเดิมใน printStaffSummary() ทั้งดุ้น ไม่ได้แก้กฎใด ๆ — แก้ไฟล์นี้กระทบใบพิมพ์ทั้งคู่
+const SUMMARY_PRINT_CSS =
+    'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px auto;max-width:720px}'
     + 'h2{font-size:18px;color:#001D3D;margin:0 0 4px}'
     + '.sub{font-size:12px;color:#666;margin-bottom:16px;border-bottom:2px solid #001D3D;padding-bottom:10px}'
     + '.sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee}'
@@ -8513,7 +8790,34 @@ function printStaffSummary() {
     + '@media print{body{margin:0 auto}'
     + '.sr-total-row{page-break-inside:avoid;break-inside:avoid;page-break-before:avoid;break-before:avoid}'
     + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}'
-    + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}}'
+    + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}}';
+
+function printStaffSummary() {
+  const title   = document.getElementById('staffSummaryTitle').textContent;
+  const dateStr = document.getElementById('staffSummaryDate').textContent;
+  const content = document.getElementById('staffSummaryCard').innerHTML;
+  // ── Technologist's Note (เจ้าของสั่งเพิ่ม 2026-08-26) ──
+  // ช่องเปล่าให้เจ้าหน้าที่เขียนมือหลังตรวจ BMD เสร็จ — "ไม่ใช่" input ที่กรอกบนเว็บ จึงต่อเข้าเฉพาะตอนพิมพ์เท่านั้น
+  // เช็คจาก marker id="dexaSection" ที่ต่อเข้า content ไว้แล้วใน showStaffSummary() — มีเฉพาะคนที่ตรวจ BMD
+  const bmdNoteHtml = content.indexOf('id="dexaSection"') !== -1
+    ? '<div class="sr-section-title">Technologist\'s Note</div>'
+      + '<div class="sr-test-item" style="font-size:12.5px;color:#555">ระหว่างตรวจพบว่ามี technical difficulty หรือไม่ หากมีโปรดระบุ</div>'
+      + '<div class="sr-test-item" style="font-size:12.5px">☐ จัดท่ายาก &nbsp;&nbsp; ☐ ผู้ป่วยมีเหล็กดาม &nbsp;&nbsp; ☐ เคลื่อนย้ายผู้ป่วยลำบาก &nbsp;&nbsp; ☐ ภาพวิเคราะห์ยาก &nbsp;&nbsp; ☐ อื่นๆ</div>'
+      + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
+      + '<div style="border-bottom:1px solid #999;height:28px;margin-top:14px"></div>'
+      + '<div class="sr-test-item" style="font-size:12.5px;color:#555;margin-top:10px">หากมีข้อสงสัยกรุณาติดต่อแพทย์ประจำบ้านหรืออาจารย์แพทย์</div>'
+    : '';
+  if (!ensureCanPrint()) return;
+  const w = window.open('', '_blank');
+  // window.open คืนค่า null ถ้าเบราว์เซอร์บล็อกป๊อปอัป → ต้องเช็คก่อนใช้ ไม่งั้นจะ throw error เงียบๆ
+  if (!w) {
+    showToast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัปสำหรับเว็บไซต์นี้แล้วลองใหม่');
+    return;
+  }
+  w.document.write('<!DOCTYPE html><html><head>'
+    + '<meta charset="utf-8"><title>' + escHtml(title) + '</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
+    + '<style>' + SUMMARY_PRINT_CSS
     + '</style></head><body>'
     // title/dateStr อ่านมาจาก textContent (ดิบ) แต่ที่นี่ต่อเข้า HTML → ต้อง escape
     // ส่วน content เป็น innerHTML ที่ escape มาแล้วตอนสร้างใบสรุป ห้าม escape ซ้ำ
@@ -9069,6 +9373,16 @@ function printStaffSummary() {
   .th-cal-day.empty { cursor:default; }
   .th-cal-day.sunday { color:#E53935; }
   .th-cal-day.sunday.blocked { color:#f5c0c0; }
+  /* ─── โควตารับคนต่อวันนัดหมาย (2026-09-05) — วันเต็ม/ปิดรับยังกดได้ (ไม่ใช้ disabled) ─── */
+  .th-cal-day.full { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 2px 3px; gap:0; }
+  .th-cal-day.full .th-cal-daynum { text-decoration:line-through; color:#E8A9A5; line-height:1.1; }
+  .th-cal-day.full .th-cal-full-tag { font-size:8px; font-weight:700; color:#E57373; line-height:1; margin-top:1px; white-space:nowrap; }
+  .th-cal-notice { margin:0 8px 8px; padding:8px 10px; border-radius:8px; background:#FDEDEC; font-size:11.5px; line-height:1.5; color:#C0392B; }
+  .th-cal-notice-msg { margin-bottom:4px; }
+  .th-cal-override-link { color:#8A5A00; font-size:11.5px; font-weight:700; text-decoration:underline; cursor:pointer; }
+  .th-cal-override-row { display:flex; gap:6px; align-items:center; }
+  .th-cal-override-input { flex:1; min-width:0; padding:5px 8px; border:1.5px solid var(--border,#e2e2e2); border-radius:6px; font-size:12px; box-sizing:border-box; }
+  .th-cal-override-btn { background:var(--primary,#2D3481); color:#fff; border:none; border-radius:6px; padding:5px 10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
   .th-cal-year-view {
     display:none; padding:8px; background:#fff;
   }
@@ -9117,6 +9431,8 @@ function printStaffSummary() {
     <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
   </div>
   <div class="th-cal-grid" id="thCalGrid"></div>
+  <!-- โควตารับคนต่อวันนัดหมาย (2026-09-05) — ข้อความ "เต็ม"/"ปิด" + ทางเข้าโหมดเจ้าหน้าที่ -->
+  <div id="thCalNotice" class="th-cal-notice" style="display:none"></div>
 </div>
 
 <script>
@@ -9126,6 +9442,51 @@ const thCalState = {
   selectedISO: '', mode: 'service',
   showingYearView: false
 };
+
+// ─── โควตารับคนต่อวันนัดหมาย (D1, เพิ่ม 2026-09-05) ──────────────────────────
+// { 'yyyy-MM-dd': 'full' | 'closed' } — ห้ามเก็บตัวเลขจำนวนคนไว้ที่นี่เด็ดขาด (เจ้าของสั่งห้ามแสดง)
+let quotaBlocked = {};
+let quotaLoaded = false;
+let quotaLoadedAt = 0;
+// โหมดเจ้าหน้าที่ — ลงเกินโควตาได้ด้วยรหัสผ่านเจ้าหน้าที่ (ตรวจฝั่งเว็บแค่กันพิมพ์ผิด ด่านจริงอยู่ Apps Script)
+let quotaOverride = false;
+let quotaOverrideKeyVal = '';
+
+// ยิง action:'capacity' ช่วง "วันนี้ → +120 วัน" — ห้าม throw ออกมาเด็ดขาด (fail-open เสมอ)
+async function loadQuotaBlocked(force) {
+  if (!force && quotaLoadedAt && (Date.now() - quotaLoadedAt) < 60000) return; // กันยิงรัวภายใน 60 วิ
+  try {
+    const from = (typeof getMinServiceDate === 'function') ? getMinServiceDate() : new Date().toISOString().slice(0,10);
+    const toD = new Date();
+    toD.setDate(toD.getDate() + 120);
+    const to = toD.toISOString().slice(0,10);
+    const fetchPromise = fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'capacity', from: from, to: to }),
+      headers: { 'Content-Type': 'text/plain' }
+    }).then(r => r.json());
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('quota timeout')), 6000));
+    const json = await Promise.race([fetchPromise, timeoutPromise]);
+    if (json && json.status === 'ok' && Array.isArray(json.blocked)) {
+      const map = {};
+      json.blocked.forEach(b => { if (b && b.date) map[b.date] = (b.reason === 'closed') ? 'closed' : 'full'; });
+      quotaBlocked = map;
+      quotaLoaded = true;
+      quotaLoadedAt = Date.now();
+    } else {
+      // เซิร์ฟเวอร์ตอบไม่ตรงรูปแบบที่คาด — fail-open เหมือน error (เซิร์ฟเวอร์เป็นด่านจริงอยู่แล้ว)
+      quotaBlocked = {};
+      quotaLoaded = false;
+    }
+  } catch (e) {
+    // เน็ตพัง / timeout / JSON เพี้ยน → ห้ามบล็อกทุกวัน
+    quotaBlocked = {};
+    quotaLoaded = false;
+  }
+  // ถ้าปฏิทินโหมด service เปิดอยู่พอดี ให้เรนเดอร์ใหม่ให้เห็นผลทันที (ห้าม await ก่อนแสดงปฏิทินตอนเปิด)
+  const popup = document.getElementById('thCalPopup');
+  if (popup && popup.classList.contains('open') && thCalState.mode === 'service') thCalRender();
+}
 
 const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
                    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -9170,6 +9531,8 @@ function openThCal(mode) {
   thCalState.showingYearView = false;
   document.getElementById('thCalYearView').classList.remove('open');
   thCalRender();
+  // โควตารับคนต่อวัน (D1) — ห้าม await ตรงนี้ ต้องเปิดปฏิทินให้เห็นทันที แล้วค่อยเรนเดอร์ซ้ำเมื่อข้อมูลมาถึง
+  if (mode === 'service') loadQuotaBlocked(false);
   // Position popup near the clicked element
   const popup = document.getElementById('thCalPopup');
   popup.classList.add('open');
@@ -9223,8 +9586,21 @@ function thCalRender() {
       }
     }
     if (isBlocked) cls += ' blocked';
+    // โควตารับคนต่อวัน (D2, เพิ่ม 2026-09-05) — เฉพาะโหมด service และยังไม่ถูกบล็อกด้วยกติกาเดิม
+    // (เสาร์-อาทิตย์/นักขัตฤกษ์/ก่อนวันเร็วสุด) ⚠ ห้ามเรนเดอร์เป็น <button disabled> — ปุ่ม disabled ไม่ยิง
+    // click ผู้ป่วยจะกดแล้วเงียบ ไม่รู้ว่าทำไมเลือกไม่ได้ ⇒ ต้องกดได้เสมอ แค่ขึ้นข้อความอธิบายแทน
+    const quotaTag = (thCalState.mode === 'service') ? (quotaBlocked[iso] || null) : null;
     if (isBlocked) {
       html += '<button type="button" class="' + cls + '" disabled>' + d + '</button>';
+    } else if (quotaTag && !quotaOverride) {
+      const tagTxt = quotaTag === 'closed' ? 'ปิด' : 'เต็ม';
+      html += '<button type="button" class="' + cls + ' full" onclick="thCalFullDay(\'' + iso + '\')">'
+            + '<span class="th-cal-daynum">' + d + '</span><span class="th-cal-full-tag">' + tagTxt + '</span></button>';
+    } else if (quotaTag && quotaOverride) {
+      // เจ้าหน้าที่เปิดโหมดลงเกินโควตาไว้ — เลือกได้ตรงๆ แต่ยังต้องเห็นป้าย "เต็ม/ปิด" อยู่เสมอ
+      const tagTxt = quotaTag === 'closed' ? 'ปิด' : 'เต็ม';
+      html += '<button type="button" class="' + cls + ' full" onclick="thCalSelectDay(\'' + iso + '\')">'
+            + '<span class="th-cal-daynum">' + d + '</span><span class="th-cal-full-tag">' + tagTxt + '</span></button>';
     } else {
       html += '<button type="button" class="' + cls + '" onclick="thCalSelectDay(\'' + iso + '\')">' + d + '</button>';
     }
@@ -9277,10 +9653,19 @@ function thCalPickMonth(m) {
 }
 
 function thCalSelectDay(iso) {
+  // โควตารับคนต่อวัน (D5, เพิ่ม 2026-09-05) — เช็คซ้ำกันเคสเปิดปฏิทินค้างไว้นานจนข้อมูลเก่า/สลับสถานะ
+  // ระหว่างนั้น (thCalRender() ทำหน้าที่กันไว้ชั้นแรกแล้ว นี่คือด่านที่ 2 ตอนคลิกจริง)
+  if (thCalState.mode === 'service' && quotaBlocked[iso] && !quotaOverride) {
+    thCalFullDay(iso);
+    return;
+  }
   thCalState.selectedISO = iso;
   if (thCalState.mode === 'service') {
     const raw = document.getElementById('serviceDateRaw');
     if (raw) { raw.value = iso; if (typeof syncServiceDate === 'function') syncServiceDate(raw); }
+    // เลือกวันใหม่สำเร็จ — เคลียร์กล่องเตือน "เต็ม/ปิดรับ" ค้างจากการส่งฟอร์มครั้งก่อน (ถ้ามี)
+    const qsw = document.getElementById('quotaSubmitWarning');
+    if (qsw) qsw.style.display = 'none';
   } else {
     // dob mode — set dd/MM/yyyy (BE)
     const [y, m, d] = iso.split('-');
@@ -9294,6 +9679,73 @@ function thCalSelectDay(iso) {
     }
   }
   thCalClose();
+}
+
+// ─── โควตารับคนต่อวันนัดหมาย — D3 (เพิ่ม 2026-09-05) ─────────────────────────
+// กดวันที่เต็ม/ปิดรับ: บอกให้ชัดในตัวปฏิทินเอง (ห้าม alert()) + ให้ทางเจ้าหน้าที่ลงเกินโควตาได้
+function thCalFullDay(iso) {
+  const info = quotaBlocked[iso];
+  const parts = iso.split('-');
+  const beYear = parseInt(parts[0], 10) + 543;
+  const monthName = TH_MONTHS[parseInt(parts[1], 10) - 1] || '';
+  const dateTh = parseInt(parts[2], 10) + ' ' + monthName + ' ' + beYear;
+  const msg = (info === 'closed')
+    ? '⚠ วันที่ ' + dateTh + ' ปิดรับลงทะเบียน กรุณาเลือกวันอื่น'
+    : '⚠ วันที่ ' + dateTh + ' มีผู้ลงทะเบียนเต็มจำนวนแล้ว กรุณาเลือกวันอื่น';
+  const notice = document.getElementById('thCalNotice');
+  if (!notice) return;
+  notice.innerHTML =
+    '<div class="th-cal-notice-msg">' + escHtml(msg) + '</div>' +
+    '<a class="th-cal-override-link" onclick="openQuotaOverride()">เจ้าหน้าที่: ลงเกินโควตา</a>';
+  notice.style.display = 'block';
+}
+
+// เปิดช่องกรอกรหัสผ่านเจ้าหน้าที่ในตัวปฏิทิน (ห้ามใช้ prompt())
+function openQuotaOverride() {
+  const notice = document.getElementById('thCalNotice');
+  if (!notice) return;
+  notice.innerHTML =
+    '<div class="th-cal-override-row">' +
+      '<input type="password" id="thCalOverrideKey" class="th-cal-override-input" placeholder="รหัสผ่านเจ้าหน้าที่" ' +
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();applyQuotaOverride();}">' +
+      '<button type="button" class="th-cal-override-btn" onclick="applyQuotaOverride()">ยืนยัน</button>' +
+    '</div>' +
+    '<div id="thCalOverrideErr" class="th-cal-notice-msg" style="display:none"></div>';
+  notice.style.display = 'block';
+  setTimeout(() => { const el = document.getElementById('thCalOverrideKey'); if (el) el.focus(); }, 50);
+}
+
+// ตรวจรหัสผ่านเจ้าหน้าที่ — ⚠ นี่เป็นแค่ด่านกันพิมพ์ผิดฝั่งเว็บเท่านั้น (เหมือน doStaffSearch())
+// ด่านจริงที่บังคับใช้คือฝั่ง Apps Script (STAFF_SEARCH_KEY ที่เทียบกับ staffOverrideKey ตอนส่งฟอร์ม)
+function applyQuotaOverride() {
+  const input = document.getElementById('thCalOverrideKey');
+  const key = (input?.value || '').trim();
+  const errEl = document.getElementById('thCalOverrideErr');
+  if (!key || key !== STAFF_SEARCH_KEY) {
+    try { sessionStorage.removeItem('staffSearchKey'); } catch(e) {}
+    if (errEl) { errEl.textContent = '❌ รหัสผ่านไม่ถูกต้อง'; errEl.style.display = 'block'; }
+    return;
+  }
+  quotaOverride = true;
+  quotaOverrideKeyVal = key;
+  try { sessionStorage.setItem('staffSearchKey', key); } catch(e) {}
+  const notice = document.getElementById('thCalNotice');
+  if (notice) { notice.style.display = 'none'; notice.innerHTML = ''; }
+  renderQuotaOverrideBar();
+  thCalRender();
+}
+
+function cancelQuotaOverride() {
+  quotaOverride = false;
+  quotaOverrideKeyVal = '';
+  renderQuotaOverrideBar();
+  thCalRender();
+}
+
+// แถบเตือนถาวรใต้ช่องวันที่นัดหมาย — กันเจ้าหน้าที่เปิดโหมดค้างไว้แล้วคนไข้คนถัดไปใช้ต่อโดยไม่รู้ตัว
+function renderQuotaOverrideBar() {
+  const bar = document.getElementById('quotaOverrideBar');
+  if (bar) bar.style.display = quotaOverride ? 'flex' : 'none';
 }
 </script>
 </body>
