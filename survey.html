@@ -41,6 +41,9 @@
   .chip.active{background:#e6f7f0;border-color:#1D9E75;color:#0F6E56}
   textarea{width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;font-family:'Sarabun',sans-serif;color:#333;background:#fafafa;resize:none;line-height:1.6}
   textarea:focus{outline:none;border-color:#5DCAA5}
+  /* ช่องระบุปัญหาที่พบ (ข้อ 5) — กลืนหน้าตากับ textarea ข้อเสนอแนะเพิ่มเติม */
+  #q5detail{width:100%;border:1px solid #e0e0e0;border-radius:8px;padding:8px 10px;font-size:12px;font-family:'Sarabun',sans-serif;color:#333;background:#fafafa}
+  #q5detail:focus{outline:none;border-color:#5DCAA5}
   .submit-btn{width:100%;padding:11px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;margin-top:4px;transition:background 0.15s}
   .submit-btn:hover:not(:disabled){background:#0F6E56}
   .submit-btn:disabled{background:#aaa;cursor:not-allowed}
@@ -266,9 +269,12 @@
     <div class="card" id="card-q5">
       <div class="q-label">5. พบปัญหาระหว่างการกรอกข้อมูลหรือไม่</div>
       <div class="chip-row" id="q5">
-        <button type="button" class="chip" data-val="ไม่พบปัญหา" onclick="pick('q5',this)">ไม่พบปัญหา</button>
-        <button type="button" class="chip" data-val="พบบ้างเล็กน้อย" onclick="pick('q5',this)">พบบ้างเล็กน้อย</button>
-        <button type="button" class="chip" data-val="พบปัญหาหลายครั้ง" onclick="pick('q5',this)">พบปัญหาหลายครั้ง</button>
+        <button type="button" class="chip" data-val="ไม่มี" onclick="pick('q5',this)">ไม่มี</button>
+        <button type="button" class="chip" data-val="มี" onclick="pick('q5',this)">มี</button>
+      </div>
+      <!-- ⚠ ซ่อน/แสดงด้วย style.display เท่านั้น ห้ามใช้ attribute hidden (เคยมีปัญหา specificity ในไฟล์นี้) -->
+      <div id="q5detailWrap" style="display:none;margin-top:8px">
+        <input type="text" id="q5detail" placeholder="โปรดระบุปัญหาที่พบ" maxlength="200">
       </div>
     </div>
 
@@ -353,6 +359,19 @@ function pick(qid, btn) {
   btn.classList.add('active');
   answers[qid] = btn.dataset.val || btn.textContent.trim();
   document.getElementById('card-' + qid)?.classList.remove('err');
+
+  // ข้อ 5 "มี" ต้องให้ระบุรายละเอียด — "ไม่มี" ต้องล้างค่าทิ้งกันข้อความพิมพ์ค้างหลุดขึ้นชีต
+  if (qid === 'q5') {
+    var wrap = document.getElementById('q5detailWrap');
+    var detail = document.getElementById('q5detail');
+    if (answers.q5 === 'มี') {
+      if (wrap) wrap.style.display = 'block';
+      if (detail) detail.focus();
+    } else {
+      if (wrap) wrap.style.display = 'none';
+      if (detail) detail.value = '';
+    }
+  }
 }
 
 function validateSurvey() {
@@ -366,6 +385,12 @@ function validateSurvey() {
       card?.classList.remove('err');
     }
   });
+  // ข้อ 5 ตอบ "มี" แล้วต้องระบุรายละเอียดด้วย ไม่งั้นถือว่ายังตอบไม่ครบ
+  if (answers.q5 === 'มี' && !(document.getElementById('q5detail').value || '').trim()) {
+    var q5Card = document.getElementById('card-q5');
+    q5Card?.classList.add('err');
+    if (!firstMissing) firstMissing = q5Card;
+  }
   if (firstMissing) {
     document.getElementById('surveyErr').style.display = 'block';
     firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -404,6 +429,7 @@ async function submitSurvey() {
         q3: answers['q3'] || '',
         q4: answers['q4'] || '',
         q5: answers['q5'] || '',
+        q5detail: (answers['q5'] === 'มี' ? (document.getElementById('q5detail').value || '').trim() : ''),
         q6: document.getElementById('q6').value.trim()
       }),
       headers: { 'Content-Type': 'text/plain' },
