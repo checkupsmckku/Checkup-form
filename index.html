@@ -1957,6 +1957,23 @@
        ไม่ตกบรรทัดเป็นขั้นบันได • ใช้เฉพาะกล่องที่ใส่ .stack-mobile ไม่แตะอีก 19 กล่องที่ตัวเลือกสั้น */
     .chip-radio-group.stack-mobile { flex-direction: column; align-items: stretch; }
     .chip-radio-group.stack-mobile .chip-radio { width: 100%; justify-content: flex-start; }
+
+    /* ── ปุ่ม "มี / ไม่มี HN" ต้องแตะติดด้วยนิ้ว (ตรวจพบ 2026-09-09) ──
+       วัดของจริงบน iPhone 390px: ป้าย "มี" มีพื้นที่แตะแค่ 26×23 px (วงกลม 13×13) ต่ำกว่าเกณฑ์
+       นิ้วมือ 44 px มาก — และนี่คือ "ด่านแรก" ที่ปลดล็อกข้อมูลส่วนบุคคลทั้งก้อน (ดู applyHnLock())
+       แตะพลาด = ฟอร์มค้างล็อกโดยผู้ใช้ไม่รู้ว่าต้องทำอะไรต่อ ซึ่งผู้รับบริการส่วนใหญ่ใช้มือถือ
+       ⚠ ขยายพื้นที่ด้วย min-height/padding เท่านั้น — ห้ามซ่อน input จริงแบบ .chip-radio
+         เพราะ applyHnLock() และเทสต์ t24 อ้างอิงวงกลมตัวจริงที่มองเห็นได้
+       ⚠ .radio-inline ใช้ที่คำถาม HN ที่เดียวในไฟล์ (ยืนยันด้วย grep) กฎนี้จึงไม่กระทบกล่องอื่น */
+    .radio-inline {
+      min-height: 44px;
+      padding: 6px 14px;
+      gap: 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 22px;
+      background: #fff;
+    }
+    .radio-inline input { width: 20px; height: 20px; }
   }
 
   @media print {

@@ -63,6 +63,15 @@
   .spinner{width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1D9E75;border-radius:50%;animation:spin 0.8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
+  /* ── ห้ามให้ iPhone ซูมหน้าจอเองตอนแตะช่องพิมพ์ (เพิ่ม 2026-09-10) ──
+     Safari บน iOS ซูมเข้าอัตโนมัติเมื่อโฟกัสช่องที่ font-size < 16px แล้วค้างซูมอยู่แบบนั้น
+     ผู้ใช้ต้องถ่างนิ้วออกเอง — หน้านี้มี QR ของตัวเองที่ผู้รับบริการเปิดผ่านมือถือโดยตรง
+     ⚠ ห้ามแก้ด้วย maximum-scale / user-scalable=no ใน viewport (คนสายตาไม่ดีจะขยายเองไม่ได้)
+     กฎเดียวกับที่ index.html และ survey.html ใช้อยู่ · ตรวจด้วย harness/t40_mobile_tap.js */
+  @media (max-width: 820px) {
+    textarea, input[type="text"] { font-size: 16px; }
+  }
+
   /* จอแคบ (360px) — ปุ่มดาว/อีโมจิ 5 ปุ่มเรียงแถวเดียวยังต้องกดถูก */
   @media (max-width: 380px) {
     body{padding:1rem 0.6rem}
