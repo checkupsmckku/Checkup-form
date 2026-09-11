@@ -152,6 +152,8 @@
   /* รอบ 8 (B1) — ช่อง "ลงชื่อไว้" ขึ้นบรรทัดแรกเดี่ยว ๆ + คำว่า "สถานะ:" ขึ้นบรรทัดใหม่ก่อนกลุ่มช่องสถานะ */
   .check-row.special-row .sp-check-reg { flex-basis: 100%; font-size: 15px; font-weight: 700; }
   .check-row.special-row .sp-status-label { flex-basis: 100%; font-weight: 600; margin-top: 4px; font-size: 13px; color: var(--text-muted); }
+  .check-row.sp-row-locked { opacity: .55; }
+  .sp-lock-note { margin-left: 6px; font-size: 12px; font-weight: 700; color: var(--danger); }
 
   .price-banner {
     display: inline-block;
@@ -190,15 +192,45 @@
     font-size: 14px; font-weight: 600;
   }
 
+  /* เจ้าของสั่ง 2026-09-11 — การ์ดสติกเกอร์: ซ้ายชื่อ-สกุล+HN แบบสติกเกอร์ · กลางรายละเอียด · ขวาปุ่มแก้ไข/ยกเลิก
+     แก้ 2026-09-11 (รอบ 2 — ตามภาพตัวอย่างที่เจ้าของส่ง): สติกเกอร์ซ้ายเรียง 3 บรรทัดแบบเดียวกับ .cu-card
+     (HN / ชื่อ / สกุล คนละบรรทัด) และฝั่งขวาแตกเป็นหลายบรรทัดแทนประโยคยาวคั่น */
   .record-item {
-    border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 14px;
+    display: flex; align-items: stretch; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; margin-bottom: 8px; font-size: 14px;
   }
   .record-item.cancelled { opacity: 0.55; }
+  .rec-sticker {
+    flex: 0 0 170px; background: var(--gray-pale); border-right: 1px solid var(--border);
+    padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  }
+  .rec-hn { font-weight: 700; font-size: 15px; color: var(--primary-dark); }
+  .rec-line { line-height: 1.45; color: var(--text); word-break: break-word; }
+  .rec-body { flex: 1 1 240px; min-width: 0; padding: 10px 12px; }
+  .rec-actions {
+    flex: 0 0 auto; padding: 10px 12px; border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  }
   .record-item .rec-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
   .record-item .rec-time { font-weight: 700; color: var(--primary-dark); }
   .record-item .rec-total { font-weight: 700; color: var(--accent); }
-  .record-item .rec-detail { margin-top: 4px; color: var(--text-muted); }
   .record-item .cancelled-tag { color: var(--danger); font-weight: 700; text-decoration: line-through; }
+
+  @media (max-width: 640px) {
+    .rec-sticker { flex-basis: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+    .rec-actions { flex-basis: 100%; border-left: none; border-top: 1px solid var(--border); flex-direction: row; }
+  }
+
+  /* เจ้าของสั่ง 2026-09-11: ช่องค้นหา HN เหนือรายการวันนี้ — กรองการ์ดฝั่งเว็บล้วน ไม่ยิง API ใหม่
+     ⚠ #todaySummaryBar และกล่องสรุปส่งตรวจพิเศษต้องนับ "ทั้งวัน" เสมอ ห้ามเปลี่ยนตามคำค้น */
+  .today-search { display: flex; gap: 8px; align-items: center; margin: 8px 0 10px; }
+  .today-search input[type=search] { flex: 1 1 auto; min-width: 0; }
+  .today-search .btn { flex: 0 0 auto; }
+  .today-search-hint {
+    background: #FFF4E5; border: 1px solid #E6A23C; color: #8A5A00;
+    border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; font-weight: 600;
+  }
 
   .scroll-x { overflow-x: auto; max-width: 100%; }
   table.report-table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 14px; }
@@ -207,6 +239,14 @@
   }
   table.report-table th { background: var(--gray-pale); text-align: center; }
   table.report-table td:first-child, table.report-table th:first-child { text-align: left; white-space: normal; }
+
+  /* ใบรายชื่อผู้รับบริการตรวจสุขภาพ (.cu-table) — เจ้าของสั่ง 2026-09-11 "ให้ตัวอักษรอยู่ตรงกลาง"
+     report-table ปกติชิดขวาเพราะเป็นตารางตัวเลขของรายงานรายเดือน แต่ใบนี้เป็นรายชื่อคน ไม่ใช่ตารางตัวเลข
+     ⚠ ต้องเขียน :first-child ซ้ำด้วย ไม่งั้นกฎบรรทัดบน (specificity เท่ากันแต่มาก่อน) จะยังดันคอลัมน์ "คิว" ชิดซ้าย
+     แถวสรุปท้ายตาราง (.sp-total) คงชิดซ้ายไว้เหมือนเดิม เพราะเป็นประโยคยาว ไม่ใช่ค่าในช่อง */
+  table.cu-table th, table.cu-table td,
+  table.cu-table th:first-child, table.cu-table td:first-child { text-align: center; }
+  table.cu-table tr.sp-total td { text-align: left; }
 
   #toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
@@ -293,6 +333,7 @@
   .sp-board-name { font-size: 20px; font-weight: 700; }
   .sp-board-hn { color: var(--text-muted); }
   .sp-board-status { margin: 4px 0; font-weight: 600; }
+  .sp-saving { font-size: 12px; color: var(--text-muted); } /* รอบ 9.2 — ตัวบอกสถานะระหว่างรอ apiCall() ของปุ่มสถานะรายคน */
 
   /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่ */
   .wrap-log { max-width: 1400px; margin: 0 auto; padding: 12px; padding-bottom: 90px; }
@@ -636,6 +677,11 @@
       </div>
 
       <h2 style="margin-top:18px;">รายการวันนี้</h2>
+      <div class="today-search no-print">
+        <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา HN ในรายการวันนี้">
+        <button type="button" class="btn secondary small" id="todayHnClear">ล้าง</button>
+      </div>
+      <div class="today-search-hint" id="todayHnHint" hidden></div>
       <div id="todayList"></div>
     </div>
   </div>
@@ -1384,6 +1430,33 @@ function buildSpecialSendsUI() {
   });
 }
 
+// เจ้าของสั่ง 2026-09-11: เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้ ⇒ ล็อกช่องติ๊ก sp_reg_mmg ตามเพศที่เลือก
+// ⚠ ต้อง .checked = false จริง ไม่ใช่แค่ disabled=true เพราะ getSpecialRegIds() อ่าน .checked ตรงจาก DOM
+// ถ้าติ๊กค้างไว้ก่อนสลับเป็นชาย แล้วแค่ disable โดยไม่ uncheck ค่าจะยังถูกนับว่า "ลงชื่อไว้" อยู่ดี
+function applyMmgGenderLock(gender) {
+  var cb = qs('sp_reg_mmg');
+  if (!cb) return;
+  var blocked = (gender === 'male');
+  if (blocked && cb.checked) {
+    cb.checked = false;
+    showToast('เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้ — ระบบยกเลิกช่องนี้ให้แล้ว');
+  }
+  cb.disabled = blocked;
+  var row = qs('sp_row_mmg');
+  if (row) {
+    if (blocked) row.classList.add('sp-row-locked');
+    else row.classList.remove('sp-row-locked');
+    var noteEl = row.querySelector('.sp-lock-note');
+    if (!noteEl) {
+      noteEl = document.createElement('span');
+      noteEl.className = 'sp-lock-note';
+      noteEl.textContent = 'เฉพาะเพศหญิง';
+      row.appendChild(noteEl);
+    }
+    noteEl.hidden = !blocked;
+  }
+}
+
 // รอบ 8 (B1) — อ่าน "ลงชื่อไว้" จาก DOM ทั้ง 6 รายการ (5 แบบไดนามิกในแผงส่งตรวจพิเศษ + inbody แบบ static ในแผงตรวจสุขภาพ)
 function getSpecialRegIds() {
   return SPECIAL_SENDS.filter(function (item) {
@@ -1546,6 +1619,8 @@ function validateForm(ctx) {
     msg = 'กรุณากรอกจำนวนใบของใบรับรองมี lab';
   } else if (ctx.specialOn && (!ctx.patientName || !ctx.patientHn)) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
+  } else if (getSelectedGender() === 'male' && getSpecialRegIds().indexOf('mmg') !== -1) {
+    msg = 'เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้';
   }
 
   if (msg) {
@@ -1611,6 +1686,12 @@ function recalcTotals() {
   var gender = checkupOn ? getSelectedGender() : '';
 
   updatePelvicSection(checkupOn, gender); // ซ่อน/แสดง + บังคับ 'no' จริงเมื่อไม่ควรเลือกได้ (ชาย/ไม่ตรวจสุขภาพ)
+  // เจ้าของสั่ง 2026-09-11: ชายส่ง MMG ไม่ได้ — ต้องรันก่อน isSpecialOn()/getSpecialRegIds() ด้านล่าง
+  // ⚠ ห้ามส่งตัวแปร gender ของ recalcTotals() เข้าไป — ตัวนั้นเป็น checkupOn ? getSelectedGender() : ''
+  //   ⇒ เลือกเพศชายแต่ยังไม่เลือกโปรแกรม จะได้ '' ⇒ ช่อง MMG ไม่ถูกล็อก ติ๊กได้ แต่ validateForm()
+  //   (ซึ่งอ่าน getSelectedGender() ดิบ) บล็อกปุ่มบันทึกอยู่ดี ⇒ ผู้ใช้ติดตายโดยไม่รู้สาเหตุ
+  //   แผงส่งตรวจพิเศษไม่ได้ผูกกับ "มาตรวจสุขภาพหรือเปล่า" อยู่แล้ว จึงต้องใช้เพศดิบ (t: A3/A4/A6 ของ test_card_mmg_center.js)
+  applyMmgGenderLock(getSelectedGender());
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
 
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่อีกแล้ว — extraIds มีค่าได้เฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่มมาก่อน
@@ -2003,7 +2084,7 @@ function todayStr() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 }
 
-function summarizeRecordText(rec) {
+function summarizeRecordParts(rec) {
   var parts = [];
   if (rec.queue) parts.push('คิว ' + rec.queue); // รอบ 6: โชว์เลขคิวหน้าชื่อ
   if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
@@ -2015,10 +2096,15 @@ function summarizeRecordText(rec) {
   if (rec.specialPrepItems) parts.push('คีย์ consult/ส่ง line: ' + rec.specialPrepItems);
   if (rec.specialSentItems) parts.push('ส่งตรวจ: ' + rec.specialSentItems);
   if (rec.specialBackItems) parts.push('กลับมาแล้ว: ' + rec.specialBackItems);
-  if (rec.patientName || rec.patientHn) {
-    parts.push('ผู้รับบริการ: ' + [rec.patientName, rec.patientHn].filter(Boolean).join(' / '));
-  }
+  // เจ้าของสั่ง 2026-09-11: ชื่อ-สกุล/HN ย้ายไปอยู่สติกเกอร์ซ้ายของการ์ดแล้ว (ดู renderTodayList) — ไม่ใส่ซ้ำตรงนี้
   if (rec.staffName) parts.push('ผู้บันทึก: ' + rec.staffName);
+  return parts;
+}
+
+// แก้ 2026-09-11 (รอบ 2): ย้าย logic การสร้าง parts ไปไว้ที่ summarizeRecordParts() ที่เดียว
+// ฟังก์ชันนี้แค่ join ต่อ ไม่ให้ field list ซ้ำกัน 2 ที่ (renderTodayList เรียก summarizeRecordParts ตรงๆ เพื่อแยกบรรทัด)
+function summarizeRecordText(rec) {
+  var parts = summarizeRecordParts(rec);
   return parts.length ? parts.join(' · ') : '-';
 }
 
@@ -2029,27 +2115,44 @@ function recordGrandTotal(rec) {
 var LAST_TODAY_RECORDS = []; // เก็บผลลัพธ์ today ล่าสุดไว้ใช้ตอนกด "แก้ไข" (ไม่ต้องยิง API ซ้ำ)
 
 /* สรุปส่งตรวจพิเศษ "แยกรายวัน" (รอบ 4) — คำนวณจาก records ที่ handleToday_ คืนมา (เฉพาะจุดบริการที่เลือกอยู่)
-   นับเฉพาะแถวที่ไม่ใช่สถานะ "ยกเลิก" ทุกรายการที่ยอดไม่เป็น 0 แสดงเป็น "<ชื่อ> ส่ง n · กลับ n" */
+   นับเฉพาะแถวที่ไม่ใช่สถานะ "ยกเลิก"
+   รอบ 9.2 — เจ้าของสั่ง "ส่งตรวจพิเศษเอายอดก็พอ ไม่ต้องเอาสถานะ": เปลี่ยนจากนับ prep/sent/back (3 คอลัมน์)
+   เหลือแค่นับหัว "ลงชื่อไว้" (specialReg) ตัวเดียว — เป็นยอดที่เซิร์ฟเวอร์ union prep/sent/back เข้าไปให้แล้ว
+   จึงเป็นเลข "กี่คน" ที่ถูกต้องที่สุด (ของเดิมนับแยกสถานะ นับคนที่ลงชื่อไว้เฉย ๆ ยังไม่ติ๊กอะไรเลยไม่ได้เลย)
+   ใช้ SP_BOARD_ITEMS (ไม่ใช่ SPECIAL_SENDS ตรง ๆ) เพราะเป็นตัวกรอง inbody ออกอยู่แล้วที่มีจุดเดียวในไฟล์
+   (inbody ไม่ได้ "ถูกส่งไปที่อื่น" แบบรายการอื่น ๆ จึงไม่ควรโผล่ในบล็อกนี้ เหมือนเดิม) */
 function renderSpecialTodaySummary(records) {
   var body = qs('specialTodaySummaryBody');
   if (!body) return;
   var counts = {};
-  SPECIAL_SENDS.forEach(function (item) { counts[item.id] = { prep: 0, sent: 0, back: 0 }; });
+  SP_BOARD_ITEMS.forEach(function (item) { counts[item.id] = 0; });
   (records || []).forEach(function (rec) {
     if (rec.status === 'ยกเลิก') return;
-    (rec.specialPrep || []).forEach(function (id) { if (counts[id]) counts[id].prep++; });
-    (rec.specialSent || []).forEach(function (id) { if (counts[id]) counts[id].sent++; });
-    (rec.specialBack || []).forEach(function (id) { if (counts[id]) counts[id].back++; });
+    (rec.specialReg || []).forEach(function (id) { if (id in counts) counts[id]++; });
   });
   var lines = [];
-  SPECIAL_SENDS.forEach(function (item) {
+  SP_BOARD_ITEMS.forEach(function (item) {
     var c = counts[item.id];
-    if (c.prep !== 0 || c.sent !== 0 || c.back !== 0) {
-      var prepPart = (item.prepLabel != null) ? (escHtml(item.prepLabel) + ' ' + c.prep + ' · ') : '';
-      lines.push('<div class="line"><span>' + escHtml(item.name) + '</span><span>' + prepPart + 'ส่ง ' + c.sent + ' · กลับ ' + c.back + '</span></div>');
+    if (c !== 0) {
+      lines.push('<div class="line"><span>' + escHtml(item.name) + '</span><span>' + c + ' คน</span></div>');
     }
   });
   body.innerHTML = lines.length ? lines.join('') : '<p class="muted">ยังไม่มีการส่งตรวจพิเศษวันนี้</p>';
+}
+
+/* ค้นหา HN ในรายการวันนี้ (เจ้าของสั่ง 2026-09-11) — กรองการ์ดฝั่งเว็บล้วน ไม่ยิง API ใหม่
+   normalize ทั้ง 2 ฝั่งด้วยการตัดอักขระที่ไม่ใช่ตัวเลข/ตัวอักษรทิ้ง แล้ว lowercase
+   เพราะ HN ในชีตมีทั้งแบบมีขีดและไม่มี และบาร์โค้ดบางเครื่องยิงช่องว่างติดมาด้วย */
+function normHnQuery(s) {
+  return String(s == null ? '' : s).replace(/[^0-9a-zA-Z\u0E00-\u0E7F]/g, '').toLowerCase();
+}
+function todayHnQuery() {
+  var el = qs('todayHnSearch');
+  return el ? normHnQuery(el.value) : '';
+}
+function recordMatchesHn(rec, q) {
+  if (!q) return true;
+  return normHnQuery(rec && rec.patientHn).indexOf(q) !== -1;
 }
 
 function renderTodayList(records) {
@@ -2059,12 +2162,16 @@ function renderTodayList(records) {
   wrap.innerHTML = '';
   if (!records || records.length === 0) {
     wrap.innerHTML = '<p class="muted">ยังไม่มีบันทึกวันนี้</p>';
+    var hintEmpty = qs('todayHnHint');
+    if (hintEmpty) { hintEmpty.hidden = true; hintEmpty.textContent = ''; }
     return;
   }
   var totalPeople = 0, totalMoney = 0;
   // เจ้าของสั่ง 2026-09-03: หน้า "รายการวันนี้" ต้องสรุปยอดผู้รับบริการรายบริการด้วย
   // นับเป็น "จำนวนคน" ไม่ใช่จำนวนใบ/เข็ม · แถวที่ยกเลิกไม่นับทุกช่อง
   var cntCheckup = 0, cntVaccine = 0, cntMedGen = 0, cntMedLab = 0;
+  var q = todayHnQuery();
+  var shown = 0;
   records.forEach(function (rec) {
     var cancelled = rec.status === 'ยกเลิก';
     if (!cancelled) {
@@ -2075,18 +2182,37 @@ function renderTodayList(records) {
       if ((rec.medCertLabCount || 0) > 0 || (rec.medCertLabAmount || 0) > 0) cntMedLab++;
     }
 
+    if (!recordMatchesHn(rec, q)) return;
+    shown++;
+
     var div = document.createElement('div');
     div.className = 'record-item' + (cancelled ? ' cancelled' : '');
-    var html = '<div class="rec-head">' +
+    var nm = splitFullName(rec.patientName);
+    var detailParts = summarizeRecordParts(rec);
+    var detailHtml = '';
+    if (detailParts.length) {
+      detailParts.forEach(function (p) { detailHtml += '<div class="rec-line">' + escHtml(p) + '</div>'; });
+    } else {
+      detailHtml = '<div class="rec-line">-</div>';
+    }
+    var html = '<div class="rec-sticker">' +
+      '<div class="rec-hn">HN : ' + escHtml(rec.patientHn || '—') + '</div>' +
+      '<div class="rec-line">ชื่อ : ' + escHtml(nm.first || '—') + '</div>' +
+      '<div class="rec-line">สกุล : ' + escHtml(nm.last || '—') + '</div>' +
+      '</div>' +
+      '<div class="rec-body">' +
+      '<div class="rec-head">' +
       '<span class="rec-time">' + escHtml(rec.time || '') + '</span>' +
       '<span class="rec-total">' + escHtml(money(recordGrandTotal(rec))) + ' บาท</span>' +
       '</div>' +
-      '<div class="rec-detail">' + escHtml(summarizeRecordText(rec)) + '</div>';
-    if (cancelled) {
-      html += '<div class="cancelled-tag">ยกเลิกแล้ว</div>';
-    } else {
-      html += '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '" style="margin-top:6px;">แก้ไข</button> ' +
-        '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '" style="margin-top:6px;">ยกเลิก</button>';
+      detailHtml +
+      (cancelled ? '<div class="cancelled-tag">ยกเลิกแล้ว</div>' : '') +
+      '</div>';
+    if (!cancelled) {
+      html += '<div class="rec-actions no-print">' +
+        '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '">แก้ไข</button>' +
+        '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '">ยกเลิก</button>' +
+        '</div>';
     }
     div.innerHTML = html;
     wrap.appendChild(div);
@@ -2098,6 +2224,20 @@ function renderTodayList(records) {
   wrap.querySelectorAll('button[data-edit-id]').forEach(function (btn) {
     btn.addEventListener('click', function () { onEditRecordClick(btn.getAttribute('data-edit-id')); });
   });
+
+  var hint = qs('todayHnHint');
+  if (hint) {
+    var rawQ = (qs('todayHnSearch') ? qs('todayHnSearch').value : '').trim();
+    if (!q) {
+      hint.hidden = true; hint.textContent = '';
+    } else if (shown === 0) {
+      hint.hidden = false;
+      hint.textContent = 'ไม่พบ HN "' + rawQ + '" ในรายการวันนี้ (ทั้งวันมี ' + records.length + ' รายการ)';
+    } else {
+      hint.hidden = false;
+      hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shown + ' จาก ' + records.length + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
+    }
+  }
 
   var sumBar = qs('todaySummaryBar');
   if (sumBar) {
@@ -2163,6 +2303,8 @@ function onCancelRecord(recordId, btnEl) {
 var SP_BOARD_RECORDS = [];
 var SP_BOARD_ACTIVE_ID = '';
 var SP_BOARD_CAP_MODE = false;
+// รอบ 9.2 — ตัวนับ sequence ต่อ recordId กันคำตอบเก่าที่มาถึงทีหลัง (out-of-order response) มาทับสถานะที่ใหม่กว่า
+var SP_SAVE_SEQ = {};
 
 function loadSpBoard() {
   var dateEl = qs('spBoardDate');
@@ -2247,7 +2389,10 @@ function renderSpPeopleCards(id) {
   var rows = spBoardSortPeople(spBoardPeopleForActive(SP_BOARD_RECORDS, id), id);
   var headingEl = qs('spBoardHeading');
   var dateStr = (qs('spBoardDate') && qs('spBoardDate').value) || todayStr();
-  if (headingEl) headingEl.textContent = (item ? item.name : '') + ' · ' + formatThaiDate(dateStr) + ' · รวม ' + rows.length + ' คน';
+  // รอบ 9.2 — เพิ่ม "ไปตรวจแล้ว X / N คน" ต่อท้ายหัวข้อ (นับจาก specialSent ของแถวที่ยังไม่ยกเลิก/อยู่หมวดนี้)
+  var sentCount = rows.filter(function (r) { return (r.specialSent || []).indexOf(id) !== -1; }).length;
+  if (headingEl) headingEl.textContent = (item ? item.name : '') + ' · ' + formatThaiDate(dateStr) + ' · รวม ' + rows.length + ' คน' +
+    ' · ไปตรวจแล้ว ' + sentCount + ' / ' + rows.length + ' คน';
 
   var wrap = qs('spBoardPeopleWrap');
   if (!wrap) return;
@@ -2262,10 +2407,13 @@ function renderSpPeopleCards(id) {
     var label = spBoardStatusLabel(rec, id);
     var isSent = (rec.specialSent || []).indexOf(id) !== -1;
     var isBack = (rec.specialBack || []).indexOf(id) !== -1;
+    // รอบ 9.2 — renderSpPeopleCards() rebuild การ์ดใหม่ทั้งหมดทุกครั้ง ⇒ ตัวบอก "กำลังบันทึก…" ต้องอ่านจาก
+    // rec._spSaving (state บนตัวเรคคอร์ดเอง) ไม่ใช่ disabled ของปุ่ม เพราะปุ่มเดิมถูกทิ้งไปแล้วทุกรอบ render
     card.innerHTML =
       '<div class="sp-board-name">' + (idx + 1) + '. ' + escHtml(rec.patientName || '') + '</div>' +
       '<div class="sp-board-hn">HN ' + escHtml(rec.patientHn || '—') + '</div>' +
-      '<div class="sp-board-status">' + label.icon + ' ' + escHtml(label.text) + '</div>';
+      '<div class="sp-board-status">' + label.icon + ' ' + escHtml(label.text) +
+      (rec._spSaving ? ' <span class="sp-saving">กำลังบันทึก…</span>' : '') + '</div>';
 
     var btnRow = document.createElement('div');
     btnRow.className = 'row sp-board-status-btns';
@@ -2275,7 +2423,9 @@ function renderSpPeopleCards(id) {
     sentBtn.type = 'button';
     sentBtn.className = 'btn small' + (isSent ? '' : ' secondary');
     sentBtn.textContent = (isSent ? '✓ ' : '') + 'ส่งตัวไปแล้ว';
-    sentBtn.addEventListener('click', function () { onSpBoardStatusClick(rec, 'sent', btnRow); });
+    // รอบ 9.2 — ไม่ disabled ปุ่มระหว่างรอ apiCall() อีกต่อไป (optimistic UI: การ์ดถูก re-render ทันทีอยู่แล้ว
+    // ซึ่งสร้างปุ่มใหม่ทดแทนโดยธรรมชาติ) จึงตัดพารามิเตอร์ btnRow ที่เคยส่งไปให้ disable ทิ้ง
+    sentBtn.addEventListener('click', function () { onSpBoardStatusClick(rec, 'sent'); });
     btnRow.appendChild(sentBtn);
 
     var backBtn = document.createElement('button');
@@ -2283,15 +2433,27 @@ function renderSpPeopleCards(id) {
     backBtn.className = 'btn small' + (isBack ? '' : ' secondary');
     backBtn.textContent = (isBack ? '✓ ' : '') + 'กลับมาแล้ว';
     backBtn.disabled = !isSent; // กติกา 3.3.4 — กดไม่ได้ถ้ายังไม่ "ส่งตัวไปแล้ว"
-    backBtn.addEventListener('click', function () { onSpBoardStatusClick(rec, 'back', btnRow); });
+    backBtn.addEventListener('click', function () { onSpBoardStatusClick(rec, 'back'); });
     btnRow.appendChild(backBtn);
+
+    // รอบ 9.2 — ปุ่มลบ/ยกเลิกรายคน อยู่ท้ายแถวเดียวกับปุ่มสถานะ ⇒ btnRow.hidden = SP_BOARD_CAP_MODE
+    // ข้างบนซ่อนมันไปด้วยโดยอัตโนมัติตอนโหมดแคป (ไม่ต้องเขียนซ้ำ)
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'btn small secondary';
+    delBtn.textContent = '🗑 ลบ';
+    delBtn.addEventListener('click', function () { onSpBoardDeleteClick(rec); });
+    btnRow.appendChild(delBtn);
 
     card.appendChild(btnRow);
     wrap.appendChild(card);
   });
 }
 
-function onSpBoardStatusClick(rec, stage, btnRowEl) {
+// รอบ 9.2 — Optimistic UI: mutate rec ในหน่วยความจำ + re-render ทันที ก่อนรอผล apiCall() (2-3 วิ/ครั้ง)
+// แล้วค่อย reconcile ตอนได้ผลจริง (สำเร็จ = เชื่อค่าจากเซิร์ฟเวอร์ / ล้มเหลว = rollback กลับค่าก่อนกด)
+// SP_SAVE_SEQ กัน response เก่าที่มาช้ากว่ามาทับ state ที่ใหม่กว่าถ้าผู้ใช้กดรัว ๆ (ดู "3. Fire two clicks" ในเทสต์)
+function onSpBoardStatusClick(rec, stage) {
   var id = SP_BOARD_ACTIVE_ID;
   var sent = (rec.specialSent || []).slice();
   var back = (rec.specialBack || []).slice();
@@ -2305,39 +2467,156 @@ function onSpBoardStatusClick(rec, stage, btnRowEl) {
     back = toggle(back, id);
     if (!wasBack && sent.indexOf(id) === -1) sent.push(id);
   }
-  if (btnRowEl && btnRowEl.children) {
-    Array.prototype.forEach.call(btnRowEl.children, function (b) { b.disabled = true; });
-  }
+
+  // สแนปช็อตค่าก่อนแก้ไว้ rollback ถ้าเซิร์ฟเวอร์ตอบไม่สำเร็จ (prep/reg การ์ดนี้ไม่แตะ แต่เก็บไว้ครบตามสเปก)
+  var snapshot = {
+    specialPrep: (rec.specialPrep || []).slice(),
+    specialSent: (rec.specialSent || []).slice(),
+    specialBack: (rec.specialBack || []).slice(),
+    specialReg: (rec.specialReg || []).slice()
+  };
+
+  // อัปเดต state + วาดใหม่ทันที ก่อนยิง network สักครั้งเดียว — ผู้ใช้เห็นผลลัพธ์ทันที ไม่ต้องรอ 2-3 วิ
+  rec.specialSent = sent;
+  rec.specialBack = back;
+  rec._spSaving = true;
+  renderSpBoardCards();
+  renderSpBoardSwitchBar();
+  renderSpPeopleCards(id);
+
+  SP_SAVE_SEQ[rec.recordId] = (SP_SAVE_SEQ[rec.recordId] || 0) + 1;
+  var mySeq = SP_SAVE_SEQ[rec.recordId];
+
   apiCall('specialStatus', {
     staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
     specialPrep: rec.specialPrep || [], specialSent: sent, specialBack: back,
     specialReg: rec.specialReg || []
   }).then(function (resp) {
+    // มีคำขอใหม่กว่ายิงทับไปแล้วระหว่างที่คำขอนี้ยังค้างอยู่ ⇒ ปล่อยให้คำขอที่ใหม่กว่าเป็นเจ้าของ state ต่อไป
+    if (SP_SAVE_SEQ[rec.recordId] !== mySeq) return;
+
     if (resp && resp.status === 'ok') {
       rec.specialPrep = resp.specialPrep || rec.specialPrep || [];
       rec.specialSent = resp.specialSent || [];
       rec.specialBack = resp.specialBack || [];
       rec.specialReg = resp.specialReg || rec.specialReg || [];
-      for (var i = 0; i < SP_BOARD_RECORDS.length; i++) {
-        if (SP_BOARD_RECORDS[i].recordId === rec.recordId) {
-          SP_BOARD_RECORDS[i].specialPrep = rec.specialPrep;
-          SP_BOARD_RECORDS[i].specialSent = rec.specialSent;
-          SP_BOARD_RECORDS[i].specialBack = rec.specialBack;
-          SP_BOARD_RECORDS[i].specialReg = rec.specialReg;
-          break;
-        }
-      }
+      rec._spSaving = false;
       renderSpBoardCards();
       renderSpBoardSwitchBar();
       renderSpPeopleCards(id);
-      showToast('อัปเดตสถานะแล้ว');
+      // ไม่ toast ตอนสำเร็จแล้ว (รอบ 9.2) — optimistic UI แสดงผลให้เห็นอยู่แล้วตั้งแต่ก่อนยิง API
+      // toast ทุกครั้งจะรกจอเพราะผู้ใช้ติ๊กถี่ ๆ ต่อเนื่องหลายคน
     } else {
-      showToast('❌ ' + ((resp && resp.message) ? resp.message : 'อัปเดตไม่สำเร็จ'));
+      rec.specialSent = snapshot.specialSent;
+      rec.specialBack = snapshot.specialBack;
+      rec._spSaving = false;
+      renderSpBoardCards();
+      renderSpBoardSwitchBar();
       renderSpPeopleCards(id);
+      showToast('❌ บันทึกไม่สำเร็จ: ' + (rec.patientName || 'ผู้รับบริการ') + ' — กดใหม่อีกครั้ง');
     }
   });
 }
 
+// รอบ 9.2 — มีบริการอื่นของคนคนนี้อยู่ในระบบไหม (นอกเหนือจาก id ปัจจุบัน) ใช้ตัดสินว่าปุ่ม 🗑 ลบ
+// ควรแค่ถอด id นี้ออกจาก specialReg (Path A) หรือยกเลิกทั้งแถวไปเลย (Path B)
+function spBoardHasOtherServices(rec, id) {
+  if (rec.program) return true;
+  if ((rec.vaccineCount || 0) > 0) return true;
+  if ((rec.medCertCount || 0) > 0) return true;
+  if ((rec.medCertLabCount || 0) > 0) return true;
+  if ((rec.extraCount || 0) > 0) return true;
+  var reg = rec.specialReg || [];
+  for (var i = 0; i < reg.length; i++) { if (reg[i] !== id) return true; }
+  return false;
+}
+
+function onSpBoardDeleteClick(rec) {
+  var id = SP_BOARD_ACTIVE_ID;
+  var item = SPECIAL_SEND_BY_ID[id];
+
+  if (spBoardHasOtherServices(rec, id)) {
+    // Path A — ยังมีบริการอื่นของคนนี้อยู่ในระบบ ⇒ ถอดแค่ id ของหมวดนี้ออกจาก 4 ช่องสถานะ ไม่แตะบริการอื่น
+    if (!window.confirm('ลบ ' + rec.patientName + ' ออกจากรายการ ' + (item ? item.name : '') + ' ใช่ไหม? (บริการอื่นของคนนี้ยังอยู่)')) return;
+
+    // ยกเลิกคำขอ onSpBoardStatusClick() ที่อาจค้างอยู่สำหรับแถวนี้ กัน response เก่ามาทับสิ่งที่ลบไปแล้ว
+    SP_SAVE_SEQ[rec.recordId] = (SP_SAVE_SEQ[rec.recordId] || 0) + 1;
+
+    var snapshot = {
+      specialReg: (rec.specialReg || []).slice(),
+      specialPrep: (rec.specialPrep || []).slice(),
+      specialSent: (rec.specialSent || []).slice(),
+      specialBack: (rec.specialBack || []).slice()
+    };
+    var newReg = snapshot.specialReg.filter(function (v) { return v !== id; });
+    var newPrep = snapshot.specialPrep.filter(function (v) { return v !== id; });
+    var newSent = snapshot.specialSent.filter(function (v) { return v !== id; });
+    var newBack = snapshot.specialBack.filter(function (v) { return v !== id; });
+
+    rec.specialReg = newReg;
+    rec.specialPrep = newPrep;
+    rec.specialSent = newSent;
+    rec.specialBack = newBack;
+    renderSpBoardCards(); // การ์ดหายไปทันที เพราะ spBoardPeopleForActive() กรองด้วย specialReg
+    renderSpBoardSwitchBar();
+    renderSpPeopleCards(id);
+
+    apiCall('specialStatus', {
+      staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
+      specialPrep: newPrep, specialSent: newSent, specialBack: newBack, specialReg: newReg
+    }).then(function (resp) {
+      if (resp && resp.status === 'ok') {
+        // เซิร์ฟเวอร์เป็นผู้ตัดสินสุดท้าย — reconcile ให้ตรง แม้ state ในเครื่องจะตรงอยู่แล้วก็ตาม
+        rec.specialPrep = resp.specialPrep || newPrep;
+        rec.specialSent = resp.specialSent || newSent;
+        rec.specialBack = resp.specialBack || newBack;
+        rec.specialReg = resp.specialReg || newReg;
+        renderSpBoardCards();
+        renderSpBoardSwitchBar();
+        renderSpPeopleCards(id);
+      } else {
+        rec.specialReg = snapshot.specialReg;
+        rec.specialPrep = snapshot.specialPrep;
+        rec.specialSent = snapshot.specialSent;
+        rec.specialBack = snapshot.specialBack;
+        renderSpBoardCards();
+        renderSpBoardSwitchBar();
+        renderSpPeopleCards(id);
+        showToast('❌ ลบไม่สำเร็จ: ' + rec.patientName + ' — กดใหม่อีกครั้ง');
+      }
+    });
+    return;
+  }
+
+  // Path B — ไม่มีบริการอื่นเลย ⇒ ยกเลิกทั้งแถว (ติดธง "ยกเลิก" ในชีต ไม่ใช่ลบแถวจริง — เซิร์ฟเวอร์ทำผ่าน action:'cancel')
+  if (!window.confirm(rec.patientName + ' ไม่มีบริการอื่นในรายการวันนี้เลย — ยกเลิกรายการทั้งใบเลยไหม? (แถวจะถูกทำเครื่องหมาย "ยกเลิก" ในชีต)')) return;
+
+  var origIndex = -1;
+  for (var i = 0; i < SP_BOARD_RECORDS.length; i++) {
+    if (SP_BOARD_RECORDS[i].recordId === rec.recordId) { origIndex = i; break; }
+  }
+  if (origIndex === -1) return;
+  SP_BOARD_RECORDS.splice(origIndex, 1);
+  renderSpBoardCards();
+  renderSpBoardSwitchBar();
+  renderSpPeopleCards(id);
+
+  apiCall('cancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      showToast('ยกเลิกรายการแล้ว');
+    } else {
+      SP_BOARD_RECORDS.splice(origIndex, 0, rec);
+      renderSpBoardCards();
+      renderSpBoardSwitchBar();
+      renderSpPeopleCards(id);
+      showToast('❌ ยกเลิกไม่สำเร็จ: ' + rec.patientName + (resp && resp.message ? ' (' + resp.message + ')' : ''));
+    }
+  });
+}
+
+// รอบ 9.2 — Optimistic UI + worker pool จำกัดความเข้มข้นไม่เกิน 4 คำขอพร้อมกัน (เดิมยิงทีละคน รอ response
+// ก่อนค่อยยิงคนถัดไป = ช้ามากถ้ามีคนเยอะ) เพดาน 4 เพราะฝั่งเซิร์ฟเวอร์ใช้ LockService.getScriptLock().waitLock(30000)
+// ยิงพร้อมกันเกินนี้เสี่ยง lock timeout
 function bulkMarkPrep(id) {
   var rows = spBoardPeopleForActive(SP_BOARD_RECORDS, id).filter(function (rec) {
     return (rec.specialPrep || []).indexOf(id) === -1;
@@ -2345,44 +2624,58 @@ function bulkMarkPrep(id) {
   var btn = qs('btnSpBoardBulkPrep');
   var statusEl = qs('spBoardBulkStatus');
   if (!rows.length) { showToast('ทุกคนส่งรายชื่อแล้ว'); return; }
-  if (btn) btn.disabled = true;
-  var total = rows.length, failed = [];
-  function next(i) {
-    if (i >= rows.length) {
-      if (btn) btn.disabled = false;
-      // SPEC_รอบ9.md 3.4 — ตอนจบต้องบอกด้วยว่า "ใคร" ที่ไม่สำเร็จ ไม่ใช่แค่จำนวน
-      // (ใช้ textContent ⇒ ชื่อคนไข้ไม่ต้องผ่าน escHtml และห้ามเปลี่ยนไปใช้ innerHTML)
-      var failNames = failed.map(function (r) {
-        return r.patientName || (r.patientHn ? 'HN ' + r.patientHn : '(ไม่ทราบชื่อ)');
-      }).join(', ');
-      if (statusEl) statusEl.textContent = 'สำเร็จ ' + (total - failed.length) + ' · ล้มเหลว ' + failed.length +
-        (failed.length ? ' — ' + failNames + ' (กดปุ่มซ้ำเพื่อลองใหม่เฉพาะคนที่ยังไม่สำเร็จ)' : '');
-      renderSpBoardCards();
-      renderSpBoardSwitchBar();
-      renderSpPeopleCards(id);
-      return;
-    }
+  if (btn) btn.disabled = true; // ปุ่ม bulk นี้เป็นปุ่มเดียวจบ ไม่ใช่ปุ่มสถานะรายแถว disable ได้ตามเดิม
+
+  var total = rows.length, failed = [], done = 0;
+  var originals = rows.map(function (rec) { return (rec.specialPrep || []).slice(); });
+
+  // ติ๊กทุกแถวใน state + วาดใหม่ครั้งเดียวทันที ก่อนยิง API สักตัว
+  rows.forEach(function (rec, i) { rec.specialPrep = originals[i].concat([id]); });
+  renderSpBoardCards();
+  renderSpBoardSwitchBar();
+  renderSpPeopleCards(id);
+
+  function saveOne(i) {
     var rec = rows[i];
-    if (statusEl) statusEl.textContent = 'กำลังติ๊ก ' + (i + 1) + '/' + total;
-    var prep = (rec.specialPrep || []).slice();
-    prep.push(id);
-    apiCall('specialStatus', {
+    return apiCall('specialStatus', {
       staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
-      specialPrep: prep, specialSent: rec.specialSent || [], specialBack: rec.specialBack || [],
+      specialPrep: rec.specialPrep, specialSent: rec.specialSent || [], specialBack: rec.specialBack || [],
       specialReg: rec.specialReg || []
     }).then(function (resp) {
       if (resp && resp.status === 'ok') {
-        var newPrep = resp.specialPrep || prep;
-        for (var j = 0; j < SP_BOARD_RECORDS.length; j++) {
-          if (SP_BOARD_RECORDS[j].recordId === rec.recordId) { SP_BOARD_RECORDS[j].specialPrep = newPrep; break; }
-        }
+        rec.specialPrep = resp.specialPrep || rec.specialPrep;
       } else {
+        rec.specialPrep = originals[i];
         failed.push(rec);
       }
-      next(i + 1);
+      done++;
+      if (statusEl) statusEl.textContent = 'กำลังบันทึก ' + done + '/' + total;
     });
   }
-  next(0);
+
+  var nextIdx = 0;
+  function worker() {
+    if (nextIdx >= rows.length) return Promise.resolve();
+    var i = nextIdx++;
+    return saveOne(i).then(worker);
+  }
+  var workerCount = Math.min(4, rows.length);
+  var workers = [];
+  for (var w = 0; w < workerCount; w++) workers.push(worker());
+
+  Promise.all(workers).then(function () {
+    if (btn) btn.disabled = false;
+    // SPEC_รอบ9.md 3.4 — ตอนจบต้องบอกด้วยว่า "ใคร" ที่ไม่สำเร็จ ไม่ใช่แค่จำนวน
+    // (ใช้ textContent ⇒ ชื่อคนไข้ไม่ต้องผ่าน escHtml และห้ามเปลี่ยนไปใช้ innerHTML)
+    var failNames = failed.map(function (r) {
+      return r.patientName || (r.patientHn ? 'HN ' + r.patientHn : '(ไม่ทราบชื่อ)');
+    }).join(', ');
+    if (statusEl) statusEl.textContent = 'สำเร็จ ' + (total - failed.length) + ' · ล้มเหลว ' + failed.length +
+      (failed.length ? ' — ' + failNames + ' (กดปุ่มซ้ำเพื่อลองใหม่เฉพาะคนที่ยังไม่สำเร็จ)' : '');
+    renderSpBoardCards();
+    renderSpBoardSwitchBar();
+    renderSpPeopleCards(id);
+  });
 }
 
 function toggleSpBoardCapMode() {
@@ -2858,6 +3151,21 @@ document.addEventListener('DOMContentLoaded', function () {
   // แก้ 2026-09-08: เดิมมีช่องสแกนบาร์โค้ดแยกต่างหาก (ตัดออกแล้ว) — ตอนนี้ยิงบาร์โค้ดใส่ #patientHn ได้เลย (applyHnScan())
   qs('patientHn').addEventListener('change', applyHnScan);
   qs('patientHn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyHnScan(); } });
+  // เจ้าของสั่ง 2026-09-11: ช่องค้นหา HN ของ "รายการวันนี้" — re-render จาก LAST_TODAY_RECORDS ไม่ยิง API ใหม่
+  // ⚠ ตัวกรองถูกอ่านสด ๆ จากช่องภายใน renderTodayList() ⇒ loadToday() รีเฟรชเมื่อไร ตัวกรองก็ยังติดอยู่เอง
+  var todayHnEl = qs('todayHnSearch');
+  if (todayHnEl) {
+    todayHnEl.addEventListener('input', function () { renderTodayList(LAST_TODAY_RECORDS); });
+    todayHnEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+  }
+  var todayHnClearEl = qs('todayHnClear');
+  if (todayHnClearEl) {
+    todayHnClearEl.addEventListener('click', function () {
+      var el = qs('todayHnSearch');
+      if (el) { el.value = ''; el.focus(); }
+      renderTodayList(LAST_TODAY_RECORDS);
+    });
+  }
   qs('medCert5').addEventListener('input', onServiceFieldChange);
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
   qs('medCertLabCount').addEventListener('input', onServiceFieldChange);
