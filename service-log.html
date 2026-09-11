@@ -582,6 +582,11 @@
             </button>
             <div class="log-panel-body">
               <section id="svcVaccine">
+                <label class="check-row" id="vaccineWithCheckupRow">
+                  <input type="checkbox" id="vaccineWithCheckup">
+                  <span class="item-name">มาตรวจสุขภาพด้วย (คิดวัคซีนเรตตรวจสุขภาพ ไม่บวก DF/PE/10%)</span>
+                  <span class="sp-lock-note" id="vaccineWithCheckupNote" hidden>เลือกโปรแกรมแล้ว คิดให้อัตโนมัติ</span>
+                </label>
                 <div id="vaccinePriceBanner" class="price-banner banner-normal">ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)</div>
                 <details class="list-fold" open>
                   <summary>รายการวัคซีน (เลือกแล้ว <span id="vaccineCount">0</span> เข็ม) ▸</summary>
@@ -1572,6 +1577,23 @@ function updateVaccinePriceBanner(checkupOn) {
   }
 }
 
+// เจ้าของสั่ง 2026-09-11: มีโปรแกรมตรวจสุขภาพ -> บังคับติ๊กและล็อกไว้ (ได้เรตนี้อยู่แล้วโดยอัตโนมัติ)
+// ไม่มีโปรแกรม -> ปลดล็อกให้เจ้าหน้าที่ติ๊กเองได้ตามจริง (คนมาตรวจสุขภาพแต่ไม่ได้บันทึกชื่อ/HN โปรแกรม)
+// ⚠ ห้าม auto-uncheck ตอนปลดล็อก — สถานะติ๊กที่ผู้ใช้ตั้งเอง (หรือที่ enterEditMode() เติมกลับมา) ต้องไม่ถูกแตะ
+function applyVaccineCheckupRateLock(checkupOn) {
+  var cb = qs('vaccineWithCheckup');
+  if (!cb) return;
+  var noteEl = qs('vaccineWithCheckupNote');
+  if (checkupOn) {
+    cb.checked = true;
+    cb.disabled = true;
+    if (noteEl) noteEl.hidden = false;
+  } else {
+    cb.disabled = false;
+    if (noteEl) noteEl.hidden = true;
+  }
+}
+
 /* รอบ 6: เลิกใช้ช่องติ๊ก 4 หมวด (#chkCheckup/#chkVaccine/#chkMedCert/#chkSpecial) — อนุมานจาก "มีข้อมูลอะไรกรอกไว้" แทน
    ให้ตรงกับเกณฑ์ที่ buildRecordFromPayload_ ฝั่งเซิร์ฟเวอร์ใช้ตัดสินอยู่แล้ว (เดิมเว็บใช้ checkbox เป็นสวิตช์ คนละเกณฑ์กัน) */
 function isCheckupOn() { return !!getSelectedProgram(); } // รวม 'pea'
@@ -1720,6 +1742,8 @@ function recalcTotals() {
 
   var vaccineCodes = getCheckedVaccineCodes();
   var vaccineOn = vaccineCodes.length > 0;
+  applyVaccineCheckupRateLock(checkupOn);
+  var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
 
   var medNums = getMedCertNums();
   var medOn = isMedOn();
@@ -1746,7 +1770,7 @@ function recalcTotals() {
   var checkupAmountNum = getCheckupAmountNum();
   var checkupTotal = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
   var extraTotal = calcExtraTotal(extraIds, STATE.tests);
-  var vaccineTotal = calcVaccineTotal(vaccineCodes, checkupOn, STATE.vaccines, STATE.prices);
+  var vaccineTotal = calcVaccineTotal(vaccineCodes, withCheckupRate, STATE.vaccines, STATE.prices);
   var medCertTotal = calcMedCertTotal(nCert, STATE.prices) + labAmount;
   var grand = calcGrandTotal(checkupTotal, extraTotal, vaccineTotal, medCertTotal);
 
@@ -1759,7 +1783,7 @@ function recalcTotals() {
 
   qs('vaccineCount').textContent = String(vaccineCodes.length);
 
-  updateVaccinePriceBanner(checkupOn);
+  updateVaccinePriceBanner(withCheckupRate);
   updateProgramLabels();
   updatePelvicPriceLabels();
 
@@ -1829,6 +1853,8 @@ function resetLogForm() {
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+  var vwcResetEl = qs('vaccineWithCheckup');
+  if (vwcResetEl) vwcResetEl.checked = false;
   clearSpecialGroup('checkup'); // ครอบ sp_reg_inbody ด้วย (inbody อยู่กลุ่ม checkup ใน SPECIAL_SENDS)
   clearSpecialGroup('medcert');
   // แก้เพิ่ม (0.2.3): ล้างร่างตรวจเพิ่มของแถวเก่าที่อาจค้างจากโหมดแก้ไขก่อนหน้าด้วย
@@ -1892,6 +1918,8 @@ function enterEditMode(rec) {
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) {
     cb.checked = vaccineCodes.indexOf(cb.value) !== -1;
   });
+  var vwcEl = qs('vaccineWithCheckup');
+  if (vwcEl) vwcEl.checked = !!rec.vaccineWithCheckup;
 
   // ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5) — รอบ 9 (ก้อน B, B6): ไม่มี element sp_prep_*/sp_sent_*/sp_back_* ให้ติ๊กกลับแล้ว
   // (แผงนี้เหลือแค่ "ลงชื่อไว้") ⇒ เก็บสถานะเดิม (prep/sent/back) ไว้ใน STATE.editSpecial* เฉย ๆ แล้วส่งกลับตอนบันทึก
@@ -1999,6 +2027,7 @@ function onSubmitLog(e) {
   var checkupAmountNum = getCheckupAmountNum();
   var checkupAmount = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
   var vaccineCodes = getCheckedVaccineCodes();
+  var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
   var medCert5 = Math.max(0, parseInt(qs('medCert5').value, 10) || 0);
   var medCertDriver = Math.max(0, parseInt(qs('medCertDriver').value, 10) || 0);
   var medCertLabCount = Math.max(0, parseInt(qs('medCertLabCount').value, 10) || 0);
@@ -2057,6 +2086,7 @@ function onSubmitLog(e) {
     deliveryMethod: deliveryMethod,
     tests: extraIds,
     vaccines: vaccineCodes,
+    vaccineWithCheckup: withCheckupRate,
     medCert5: medCert5,
     medCertDriver: medCertDriver,
     medCertLabCount: medCertLabCount,
