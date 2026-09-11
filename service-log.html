@@ -307,13 +307,17 @@
   .cu-card {
     display: grid; grid-template-columns: 42% 58%; gap: 6px;
     border: 1.5px solid var(--primary); border-radius: 6px; padding: 6px 8px;
-    font-size: 13px; line-height: 1.5; break-inside: avoid; page-break-inside: avoid;
+    font-size: 13px; line-height: 1.9; break-inside: avoid; page-break-inside: avoid;
   }
   .cu-card .cu-left { border-right: 1px dashed var(--border); padding-right: 6px; }
   .cu-card .cu-hn { font-weight: 800; font-size: 15px; }
   .cu-card .cu-line { white-space: normal; word-break: break-word; }
-  .cu-card .cu-sign { margin-top: 2px; }
-  .cu-card .cu-sign .cu-sig-line { min-width: 30mm; }
+  /* เจ้าของสั่ง 2026-09-11: "ขยับช่องให้เซ็นชื่อได้ง่าย" + "เพิ่มระยะห่างระหว่างบรรทัด"
+     เดิมเส้นเซ็นสูง 0.3 มม. (วัดจริงในโหมดพิมพ์) = เส้นแปะติดใต้คำว่า "เซ็นรับ" ไม่มีที่ลงปากกา
+     ⚠ ให้ความสูงกับตัว .cu-sig-line เอง เส้นขีดคือ border-bottom ⇒ ความสูงกลายเป็นที่ว่างเหนือเส้นพอดี
+     ห้ามแก้ด้วย margin-bottom เพราะเส้นจะลอยห่างจากที่ว่างที่ตั้งใจให้เซ็น */
+  .cu-card .cu-sign { margin-top: 6px; }
+  .cu-card .cu-sign .cu-sig-line { min-width: 30mm; height: 9mm; vertical-align: bottom; }
   @media (max-width: 620px) { .cu-cards { grid-template-columns: 1fr; } }
 
   /* รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager */
@@ -384,9 +388,10 @@
     /* รอบ 8 (B7) — ใบพิมพ์รายชื่อตรวจสุขภาพ: บีบให้ลงหน้า A4 ได้มากที่สุดตามที่เจ้าของสั่ง */
     @page { size: A4; margin: 8mm; }
     .cu-cards { grid-template-columns: 1fr 1fr; gap: 3mm; }
-    .cu-card { font-size: 9.5pt; line-height: 1.35; padding: 1.5mm 2mm; border-color: #000; border-width: 1px; }
+    .cu-card { font-size: 9.5pt; line-height: 1.75; padding: 2mm 2mm; border-color: #000; border-width: 1px; }
     .cu-card .cu-hn { font-size: 11pt; }
-    .cu-card .cu-sig-line { min-width: 28mm; }
+    .cu-card .cu-sign { margin-top: 2mm; }
+    .cu-card .cu-sig-line { min-width: 28mm; height: 9mm; }
     #cuTableWrap .scroll-x, #cuCardsWrap { overflow: visible !important; }
     /* ตารางนี้มี 9 คอลัมน์ ⇒ ถ้าปล่อยให้กว้างตามเนื้อหาจะล้นขอบขวาของ A4 แล้วคอลัมน์ลายเซ็นหายไปทั้งคอลัมน์
        (เจอจริงตอนทดสอบพิมพ์ 2026-09-03) ⇒ ล็อกความกว้างเป็น % ด้วย table-layout: fixed และให้ข้อความตัดบรรทัดได้ */
@@ -1356,6 +1361,13 @@ function guardSpecialRegUncheck(id) {
 }
 function onSpecialRegChange(id) { guardSpecialRegUncheck(id); onServiceFieldChange(); }
 
+/* เจ้าของสั่ง 2026-09-11: HN ต้องเป็นตัวอักษรอังกฤษ 2 ตัว + ตัวเลข 4 หลัก (เช่น AB1234) ผิดรูปแบบห้ามบันทึก
+   ⚠ บังคับฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — แถวเก่าจำนวนมากมี HN คนละรูปแบบ
+      ถ้าเซิร์ฟเวอร์บังคับด้วยจะแก้ไขแถวเก่าไม่ได้เลย (เหตุผลเดียวกับที่เขียนไว้ในบล็อก checkupMissing) */
+var HN_PATTERN = /^[A-Za-z]{2}[0-9]{4}$/;
+function isValidHn(v) {
+  return HN_PATTERN.test(String(v == null ? '' : v).trim());
+}
 /* =========================================================================
    6.2 สแกนบาร์โค้ด (รอบ 6) — ปรับ pattern ที่นี่จุดเดียวเมื่อรู้รูปแบบบาร์โค้ดจริง
    ========================================================================= */
@@ -1365,15 +1377,22 @@ function parseBarcode(raw) {
   var parts = raw.split(/\t|\||\^|;|\s{2,}/).map(function (s) { return s.trim(); }).filter(function (s) { return s; });
   var isNumericChunk = function (s) { return /^[0-9][0-9\-\/]*$/.test(s); };
   var hasLetter = function (s) { return /[ก-๙a-zA-Z]/.test(s); };
-  var hn = '', name = '';
+  var hn = '', name = '', hnIdx = -1;
   if (parts.length === 1) {
-    if (isNumericChunk(parts[0])) hn = parts[0];
+    if (HN_PATTERN.test(parts[0])) hn = parts[0];
+    else if (isNumericChunk(parts[0])) hn = parts[0];
     else if (hasLetter(parts[0])) name = parts[0];
   } else {
     for (var i = 0; i < parts.length; i++) {
-      if (!hn && isNumericChunk(parts[i])) hn = parts[i];
+      if (!hn && HN_PATTERN.test(parts[i])) { hn = parts[i]; hnIdx = i; }
+    }
+    if (!hn) {
+      for (var k = 0; k < parts.length; k++) {
+        if (!hn && isNumericChunk(parts[k])) { hn = parts[k]; hnIdx = k; }
+      }
     }
     for (var j = 0; j < parts.length; j++) {
+      if (j === hnIdx) continue;
       if (!name && hasLetter(parts[j])) name = parts[j];
     }
   }
@@ -1619,6 +1638,8 @@ function validateForm(ctx) {
     msg = 'กรุณากรอกจำนวนใบของใบรับรองมี lab';
   } else if (ctx.specialOn && (!ctx.patientName || !ctx.patientHn)) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
+  } else if (ctx.patientHn && !isValidHn(ctx.patientHn)) {
+    msg = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
   } else if (getSelectedGender() === 'male' && getSpecialRegIds().indexOf('mmg') !== -1) {
     msg = 'เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้';
   }
