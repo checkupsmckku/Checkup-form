@@ -181,6 +181,10 @@
     background: #FFF8E8; border: 1px solid #F0C040; color: #7A5A00;
     border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 14px; font-weight: 600;
   }
+  .field-hint-warn {
+    background: #FFF8E8; border: 1px solid #F0C040; color: #7A5A00;
+    border-radius: 8px; padding: 6px 10px; margin-top: 4px; font-size: 13px; font-weight: 600;
+  }
   .error-box {
     background: #FDECEA; border: 1px solid var(--danger); color: var(--danger);
     border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 14px; font-weight: 600;
@@ -484,6 +488,7 @@
 
                 <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
                 <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
+                <div id="patientHnHint" class="field-hint-warn" hidden></div>
 
                 <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
                 <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
@@ -1373,6 +1378,33 @@ var HN_PATTERN = /^[A-Za-z]{2}[0-9]{4}$/;
 function isValidHn(v) {
   return HN_PATTERN.test(String(v == null ? '' : v).trim());
 }
+
+var THAI_CHAR_RE = /[ก-๙]/;
+/* เจ้าของสั่ง 2026-09-12: เตือนที่ตัวช่อง HN ทันที (ไม่ใช่แค่ท้ายฟอร์มใต้ยอดรวม) เพราะเคสที่เจอบ่อยคือ
+   เจ้าหน้าที่ลืมเปลี่ยนแป้นพิมพ์ พิมพ์ HN เป็นภาษาไทยไปทั้งช่อง กว่าจะเห็น error ท้ายฟอร์มก็กรอกอย่างอื่นจนจบแล้ว
+   ⚠ ฟังก์ชันนี้เป็นแค่ hint เสริม ห้ามยุ่งกับ validateForm()/#formWarning ที่เป็นด่านจริง */
+function updateHnHint() {
+  var hintEl = qs('patientHnHint');
+  if (!hintEl) return;
+  var raw = (qs('patientHn').value || '').trim();
+  if (raw === '') {
+    hintEl.hidden = true;
+    hintEl.textContent = '';
+    return;
+  }
+  if (THAI_CHAR_RE.test(raw)) {
+    hintEl.textContent = '⚠ ตอนนี้พิมพ์เป็นภาษาไทยอยู่ — กด Alt+Shift เปลี่ยนเป็นภาษาอังกฤษ แล้วพิมพ์ HN ใหม่ (เช่น AB1234)';
+    hintEl.hidden = false;
+    return;
+  }
+  if (!isValidHn(raw)) {
+    hintEl.textContent = '⚠ HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
+    hintEl.hidden = false;
+    return;
+  }
+  hintEl.hidden = true;
+  hintEl.textContent = '';
+}
 /* =========================================================================
    6.2 สแกนบาร์โค้ด (รอบ 6) — ปรับ pattern ที่นี่จุดเดียวเมื่อรู้รูปแบบบาร์โค้ดจริง
    ========================================================================= */
@@ -1422,6 +1454,7 @@ function applyHnScan() {
   // ถ้าแยกได้แค่ HN อย่างเดียว (บาร์โค้ดมีแต่เลข) ⇒ ไม่ต้องทำอะไร ค่าที่อยู่ในช่องถูกต้องอยู่แล้ว ห้าม toast รบกวน
   applyLogLocks();
   recalcTotals();
+  updateHnHint();
 }
 
 /* ส่งตรวจพิเศษ (รอบ 4, ขยายรอบ 5, รวมเป็นรายการเดียวรอบ 6, เพิ่มช่อง "ลงชื่อไว้" รอบ 8, เหลือเฉพาะ "ลงชื่อไว้" รอบ 9 ก้อน B)
@@ -1850,6 +1883,7 @@ function resetLogForm() {
   qs('queueSelect').value = '';
   qs('patientName').value = '';
   qs('patientHn').value = '';
+  updateHnHint();
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
@@ -1899,6 +1933,7 @@ function enterEditMode(rec) {
 
   qs('patientName').value = rec.patientName || '';
   qs('patientHn').value = rec.patientHn || '';
+  updateHnHint();
   qs('deliveryMethod').value = rec.deliveryMethod || '';
 
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กกลับอีกแล้ว — เก็บ id ไว้เฉย ๆ แล้วส่งกลับตอนบันทึกแก้ไข (onSubmitLog)
@@ -3196,7 +3231,7 @@ document.addEventListener('DOMContentLoaded', function () {
   ['change', 'input'].forEach(function (ev) { qs('queueSelect').addEventListener(ev, recalcTotals); });
   // รอบ 9 (ก้อน B, B4): input ของ patientHn/patientName ต้องปลด/ล็อกแผงด้วยทุกครั้ง (ห้ามเรียก syncQueuePrefix ที่นี่)
   qs('patientName').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
-  qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
+  qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); updateHnHint(); });
   qs('checkupAmount').addEventListener('input', recalcTotals);
   qs('deliveryMethod').addEventListener('change', recalcTotals);
   // แก้ 2026-09-08: เดิมมีช่องสแกนบาร์โค้ดแยกต่างหาก (ตัดออกแล้ว) — ตอนนี้ยิงบาร์โค้ดใส่ #patientHn ได้เลย (applyHnScan())
