@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>กระดานคิวพบแพทย์ | Checkup SMC KKU</title>
+<style>
+  :root {
+    --primary: #2D3481;
+    --primary-dark: #1A2060;
+    --primary-light: #4050B5;
+    --accent: #F47920;
+    --accent-light: #FF9840;
+    --bg: #F4F5FB;
+    --surface: #FFFFFF;
+    --text: #1A1E40;
+    --text-muted: #5A6080;
+    --border: #CDD0EA;
+    --danger: #C0392B;
+    --success: #1A7A4A;
+    --green: #27AE60;
+    --green-pale: #E8F8F0;
+    --gray-pale: #F1F3F5;
+  }
+  * { box-sizing: border-box; }
+  /* ⚠ ห้ามลบ: กฎ [hidden] ของเบราว์เซอร์คือ display:none ระดับ UA stylesheet ซึ่งแพ้กฎของเราเองทุกอัน
+     ถ้าที่อื่นตั้ง display เอง (เช่น .room-card = block) el.hidden = true จะ "ซ่อนไม่ลง" แบบเงียบ ๆ */
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
+  body {
+    font-family: 'Sarabun','Noto Sans Thai','Tahoma',sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    padding-bottom: 72px;
+  }
+  h1 { font-size: 1.3rem; color: var(--primary-dark); margin: 0 0 4px; }
+  h2 { font-size: 1.05rem; color: var(--primary-dark); margin: 0 0 10px; }
+  .muted { color: var(--text-muted); font-size: 0.9rem; }
+  .field-label { display: block; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-muted); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .btn {
+    display: inline-block;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 1rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .btn:active { background: var(--primary-dark); }
+  .btn.block { display: block; width: 100%; }
+  .btn.secondary { background: var(--gray-pale); color: var(--text); border: 1px solid var(--border); }
+  .btn.danger { background: var(--danger); color: #fff; }
+  .btn.small { padding: 4px 10px; font-size: 0.85rem; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  input, select {
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 100%;
+    background: var(--surface);
+    color: var(--text);
+  }
+  .error-box { background: #FCEBEA; color: var(--danger); border: 1px solid var(--danger); border-radius: 8px; padding: 8px 12px; margin-top: 8px; }
+  .warning-box { background: #FFF6E5; color: #8A5A00; border: 1px solid #E0A000; border-radius: 8px; padding: 8px 12px; margin-top: 8px; }
+  #toast {
+    display: none; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--primary-dark); color: #fff; padding: 10px 18px; border-radius: 20px; z-index: 999;
+    max-width: 90%; text-align: center;
+  }
+  .topbar { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 480px) {
+    .room-grid { grid-template-columns: 1fr; }
+  }
+  .room-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    min-height: 96px;
+    cursor: pointer;
+    position: relative;
+    transition: border-color .15s;
+  }
+  .room-card:active { border-color: var(--primary); }
+  .room-card.room-busy { border-color: var(--accent); }
+  .room-name { font-size: 1.4rem; font-weight: bold; color: var(--primary-dark); }
+  .room-doctor { color: var(--text-muted); font-size: 0.95rem; margin-top: 2px; }
+  .room-shift { color: var(--text-muted); font-size: 0.85rem; }
+  .room-current { margin-top: 8px; font-size: 1rem; font-weight: bold; color: var(--accent); }
+  .room-timer { font-variant-numeric: tabular-nums; font-size: 1.15rem; }
+  .room-stats { margin-top: 6px; font-size: 0.85rem; color: var(--text-muted); }
+  .room-end-btn { margin-top: 8px; }
+  .today-item {
+    border-bottom: 1px solid var(--border); padding: 8px 0;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .today-item.cancelled { opacity: 0.55; text-decoration: line-through; }
+  .setup-row { display: grid; grid-template-columns: 1fr 1fr 90px 90px auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+  @media (max-width: 600px) {
+    .setup-row { grid-template-columns: 1fr 1fr; }
+    .setup-row-head { display: none; }
+  }
+  .overlay-block {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.15); z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .overlay-block .spin-msg { background: var(--surface); padding: 12px 20px; border-radius: 10px; color: var(--text); }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div id="busyOverlay" class="overlay-block" hidden><div class="spin-msg">กำลังบันทึก...</div></div>
+
+<!-- ============== GATE SCREEN ============== -->
+<div id="gateScreen">
+  <div class="card" style="max-width:420px;margin:40px auto;text-align:center;">
+    <h1>กระดานคิวพบแพทย์</h1>
+    <p class="muted">Checkup SMC KKU — สำหรับเจ้าหน้าที่เท่านั้น · เช็คว่าคิวนี้เข้าห้องไหน แพทย์ใช้เวลาต่อคนเท่าไหร่</p>
+    <div id="urlWarning" class="warning-box" hidden>ยังไม่ได้ตั้งค่า URL ของ Apps Script</div>
+    <div id="gateForm">
+      <label class="field-label" for="gateKey">รหัสผ่านเจ้าหน้าที่</label>
+      <input type="password" id="gateKey" autocomplete="off" placeholder="กรอกรหัสผ่าน">
+      <button type="button" class="btn block" id="btnGateLogin" style="margin-top:12px;">เข้าสู่ระบบ</button>
+      <div id="gateMsg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== BOARD SCREEN ============== -->
+<div id="boardScreen" hidden>
+  <div class="topbar">
+    <div>
+      <h1>กระดานคิวพบแพทย์</h1>
+      <div id="todayDateText" class="muted"></div>
+    </div>
+    <button type="button" class="btn secondary" id="btnOpenSetup">⚙ ตั้งห้อง</button>
+  </div>
+
+  <div class="card">
+    <label class="field-label" for="queueSelect">เลือกคิวผู้ป่วย แล้วแตะการ์ดห้องที่จะเข้า</label>
+    <select id="queueSelect"></select>
+  </div>
+
+  <div id="roomCards" class="room-grid"></div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2>รายการวันนี้</h2>
+    <div id="todayList"></div>
+  </div>
+</div>
+
+<!-- ============== SETUP SCREEN ============== -->
+<div id="setupScreen" hidden>
+  <div class="topbar">
+    <h1>ตั้งห้องตรวจวันนี้</h1>
+    <button type="button" class="btn secondary" id="btnCloseSetup">◀ กลับ</button>
+  </div>
+  <div class="card">
+    <div class="setup-row setup-row-head" style="font-weight:bold;color:var(--text-muted);">
+      <div>ห้อง</div><div>ชื่อแพทย์</div><div>เริ่มเวร</div><div>สิ้นสุดเวร</div><div></div>
+    </div>
+    <div id="setupRooms"></div>
+    <button type="button" class="btn secondary" id="btnAddRoom" style="margin-top:8px;">➕ เพิ่มห้อง</button>
+  </div>
+  <button type="button" class="btn block" id="btnSaveRooms">บันทึกผัง</button>
+  <div id="setupMsg"></div>
+</div>
+
+<script>
+/* =========================================================================
+   0. ค่าคงที่ตั้งต้น
+   ========================================================================= */
+// ยังไม่มี deployment — รอเจ้าของสร้างชีต + Apps Script project แล้ว deploy ก่อน จึงจะใส่ URL ได้
+var APPS_SCRIPT_URL = '';
+
+var DEFAULT_ROOMS = [
+  { room: '1', doctor: '', start: '', end: '' },
+  { room: '8', doctor: '', start: '', end: '' },
+  { room: '5', doctor: '', start: '', end: '' },
+  { room: 'ล็อกขาย', doctor: '', start: '', end: '' }
+];
+
+var THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+var THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+var STATE = {
+  staffKey: '',
+  today: null, // ผลลัพธ์ล่าสุดจาก action=today {date, rooms, logs, summary}
+  timers: []   // interval id ของนาฬิกานับสดในการ์ดห้อง — clearInterval ให้หมดก่อน re-render ทุกครั้ง
+};
+
+/* =========================================================================
+   1. UTIL — escape / storage / toast
+   ========================================================================= */
+function escHtml(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function safeSetItem(key, value) {
+  try { sessionStorage.setItem(key, value); } catch (e) { /* QuotaExceededError หรือ private mode — ข้ามไป */ }
+}
+function safeGetItem(key) {
+  try { return sessionStorage.getItem(key); } catch (e) { return null; }
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.style.display = 'none'; }, 3200);
+}
+
+function qs(id) { return document.getElementById(id); }
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function dateKeyLocal_() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+
+function formatThaiDateFull(d) {
+  d = d || new Date();
+  var dayName = THAI_DAYS[d.getDay()];
+  var monthName = THAI_MONTHS[d.getMonth()];
+  var yearBE = d.getFullYear() + 543;
+  return 'วัน' + dayName + 'ที่ ' + d.getDate() + ' ' + monthName + ' ' + yearBE;
+}
+
+function formatTimeHM(isoOrDate) {
+  var d = new Date(isoOrDate);
+  if (isNaN(d.getTime())) return '--:--';
+  return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+
+/* =========================================================================
+   2. เรียก API
+   ========================================================================= */
+function apiCall(action, payload) {
+  var body = Object.assign({ action: action, staffKey: STATE.staffKey }, payload || {});
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  }).then(function (res) {
+    return res.json();
+  }).catch(function (err) {
+    return { status: 'error', message: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ (' + (err && err.message ? err.message : 'network error') + ')' };
+  });
+}
+
+function setBusy(busy) {
+  qs('busyOverlay').hidden = !busy;
+}
+
+/* =========================================================================
+   3. GATE / เข้าสู่ระบบ
+   ========================================================================= */
+function checkUrlConfigured() {
+  if (!APPS_SCRIPT_URL) {
+    qs('urlWarning').hidden = false;
+    qs('gateForm').hidden = true;
+    return false;
+  }
+  return true;
+}
+
+function showGateMsg(msg, isError) {
+  var el = qs('gateMsg');
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="' + (isError ? 'error-box' : 'warning-box') + '">' + escHtml(msg) + '</div>';
+}
+
+function setGateLoading(loading) {
+  var btn = qs('btnGateLogin');
+  btn.disabled = loading;
+  btn.textContent = loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ';
+}
+
+function handleGateLogin() {
+  var key = (qs('gateKey').value || '').trim();
+  if (!key) { showGateMsg('กรุณากรอกรหัสผ่านเจ้าหน้าที่', true); return; }
+  showGateMsg('');
+  setGateLoading(true);
+  apiCall('login', { staffKey: key }).then(function (resp) {
+    setGateLoading(false);
+    if (resp && resp.status === 'ok') {
+      STATE.staffKey = key;
+      safeSetItem('dqStaffKey', key);
+      enterBoard();
+    } else {
+      showGateMsg((resp && resp.message) ? resp.message : 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่', true);
+    }
+  });
+}
+
+function tryRestoreSession() {
+  var saved = safeGetItem('dqStaffKey');
+  if (!saved) return;
+  STATE.staffKey = saved;
+  apiCall('login', { staffKey: saved }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      enterBoard();
+    } else {
+      STATE.staffKey = '';
+    }
+  });
+}
+
+/* =========================================================================
+   4. หน้าจอ / navigation
+   ========================================================================= */
+function showScreen(name) {
+  qs('gateScreen').hidden = name !== 'gate';
+  qs('boardScreen').hidden = name !== 'board';
+  qs('setupScreen').hidden = name !== 'setup';
+}
+
+function buildQueueOptions() {
+  var sel = qs('queueSelect');
+  sel.innerHTML = '';
+  var blank = document.createElement('option');
+  blank.value = '';
+  blank.textContent = '— เลือกคิวผู้ป่วย —';
+  sel.appendChild(blank);
+  ['C', 'M'].forEach(function (prefix) {
+    for (var i = 1; i <= 40; i++) {
+      var opt = document.createElement('option');
+      opt.value = prefix + i;
+      opt.textContent = prefix + i;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function enterBoard() {
+  showScreen('board');
+  buildQueueOptions();
+  qs('todayDateText').textContent = formatThaiDateFull(new Date());
+  loadToday();
+}
+
+/* =========================================================================
+   5. BOARD — โหลด/แสดงข้อมูลวันนี้
+   ========================================================================= */
+function loadToday() {
+  apiCall('today', {}).then(function (resp) {
+    if (!resp || resp.status !== 'ok') {
+      showToast((resp && resp.message) ? resp.message : 'โหลดข้อมูลไม่สำเร็จ');
+      return;
+    }
+    STATE.today = resp;
+    renderRoomCards();
+    renderTodayList();
+  });
+}
+
+function clearRoomTimers() {
+  STATE.timers.forEach(function (id) { clearInterval(id); });
+  STATE.timers = [];
+}
+
+function renderRoomCards() {
+  clearRoomTimers();
+  var container = qs('roomCards');
+  container.innerHTML = '';
+  var rooms = (STATE.today && STATE.today.rooms) || [];
+  var summaryByRoom = {};
+  ((STATE.today && STATE.today.summary) || []).forEach(function (s) { summaryByRoom[s.room] = s; });
+  var openTimeByRoom = {};
+  ((STATE.today && STATE.today.logs) || []).forEach(function (log) {
+    if (log.status === 'บันทึกแล้ว' && !log.timeOut) {
+      openTimeByRoom[log.room] = log.timeIn;
+    }
+  });
+
+  if (rooms.length === 0) {
+    container.innerHTML = '<p class="muted">ยังไม่ได้ตั้งห้องของวันนี้ — กด "⚙ ตั้งห้อง" เพื่อเริ่ม</p>';
+    return;
+  }
+
+  rooms.forEach(function (rm) {
+    var summary = summaryByRoom[rm.room] || { count: 0, avgMinutes: 0, openQueue: null };
+    var card = document.createElement('div');
+    card.className = 'room-card' + (summary.openQueue ? ' room-busy' : '');
+    card.setAttribute('data-room', rm.room);
+
+    var shiftText = (rm.start || rm.end) ? (escHtml(rm.start || '—') + '–' + escHtml(rm.end || '—')) : '';
+    var currentHtml = summary.openQueue
+      ? ('กำลังตรวจ: คิว ' + escHtml(summary.openQueue) + ' <span class="room-timer" data-room="' + escHtml(rm.room) + '">00:00</span>')
+      : 'ว่าง';
+    var endBtnHtml = summary.openQueue
+      ? '<div><button type="button" class="btn small danger room-end-btn" data-room="' + escHtml(rm.room) + '">จบ</button></div>'
+      : '';
+
+    card.innerHTML =
+      '<div class="room-name">ห้อง ' + escHtml(rm.room) + '</div>' +
+      '<div class="room-doctor">' + (rm.doctor ? escHtml(rm.doctor) : '<span class="muted">ยังไม่ระบุแพทย์</span>') + '</div>' +
+      '<div class="room-shift">' + shiftText + '</div>' +
+      '<div class="room-current">' + currentHtml + '</div>' +
+      '<div class="room-stats">วันนี้ ' + summary.count + ' คิว · เฉลี่ย ' + summary.avgMinutes + ' นาที/คน</div>' +
+      endBtnHtml;
+
+    card.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.room-end-btn')) return;
+      onRoomCardClick(rm.room);
+    });
+    container.appendChild(card);
+
+    if (summary.openQueue && openTimeByRoom[rm.room]) {
+      var startMs = new Date(openTimeByRoom[rm.room]).getTime();
+      var timerEl = card.querySelector('.room-timer');
+      var update = function () {
+        var elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+        var mm = pad2(Math.floor(elapsed / 60));
+        var ss = pad2(elapsed % 60);
+        if (timerEl) timerEl.textContent = mm + ':' + ss;
+      };
+      update();
+      var tid = setInterval(update, 1000);
+      STATE.timers.push(tid);
+    }
+  });
+
+  container.querySelectorAll('.room-end-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      onRoomEndClick(btn.getAttribute('data-room'));
+    });
+  });
+}
+
+function renderTodayList() {
+  var container = qs('todayList');
+  var logs = (STATE.today && STATE.today.logs) || [];
+  if (logs.length === 0) {
+    container.innerHTML = '<p class="muted">ยังไม่มีรายการวันนี้</p>';
+    return;
+  }
+  container.innerHTML = '';
+  logs.forEach(function (log) {
+    var row = document.createElement('div');
+    row.className = 'today-item' + (log.status === 'ยกเลิก' ? ' cancelled' : '');
+    var timeInStr = log.timeIn ? formatTimeHM(log.timeIn) : '--:--';
+    var timeOutStr = log.timeOut ? formatTimeHM(log.timeOut) : 'กำลังตรวจ';
+    var hasMinutes = log.minutes !== '' && log.minutes !== null && log.minutes !== undefined;
+    var minutesStr = hasMinutes ? (' (' + log.minutes + ' นาที)') : '';
+    var text = 'คิว ' + log.queue + ' · ห้อง ' + log.room + (log.doctor ? (' · ' + log.doctor) : '') +
+      ' · ' + timeInStr + '–' + timeOutStr + minutesStr;
+    var canCancel = log.status !== 'ยกเลิก';
+    row.innerHTML = '<span>' + escHtml(text) + '</span>' +
+      (canCancel
+        ? '<button type="button" class="btn small secondary btn-cancel-log" data-id="' + escHtml(log.id) + '">ยกเลิก</button>'
+        : '<span class="muted">ยกเลิกแล้ว</span>');
+    container.appendChild(row);
+  });
+  container.querySelectorAll('.btn-cancel-log').forEach(function (btn) {
+    btn.addEventListener('click', function () { onCancelLogClick(btn.getAttribute('data-id')); });
+  });
+}
+
+function onRoomCardClick(room) {
+  var queue = qs('queueSelect').value;
+  if (!queue) { showToast('กรุณาเลือกคิวผู้ป่วยก่อน'); return; }
+  setBusy(true);
+  apiCall('logEnter', { queue: queue, room: room }).then(function (resp) {
+    setBusy(false);
+    if (resp && resp.status === 'ok') {
+      qs('queueSelect').value = '';
+      loadToday();
+    } else {
+      showToast((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ');
+    }
+  });
+}
+
+function onRoomEndClick(room) {
+  setBusy(true);
+  apiCall('logEnd', { room: room }).then(function (resp) {
+    setBusy(false);
+    if (resp && resp.status === 'ok') {
+      loadToday();
+    } else {
+      showToast((resp && resp.message) ? resp.message : 'ดำเนินการไม่สำเร็จ');
+    }
+  });
+}
+
+function onCancelLogClick(id) {
+  setBusy(true);
+  apiCall('logCancel', { id: id }).then(function (resp) {
+    setBusy(false);
+    if (resp && resp.status === 'ok') {
+      loadToday();
+    } else {
+      showToast((resp && resp.message) ? resp.message : 'ยกเลิกไม่สำเร็จ');
+    }
+  });
+}
+
+/* =========================================================================
+   6. SETUP — ตั้งห้องตรวจวันนี้
+   ========================================================================= */
+function openSetup() {
+  showScreen('setup');
+  qs('setupMsg').innerHTML = '';
+  var rooms = (STATE.today && STATE.today.rooms) || [];
+  var list = rooms.length > 0
+    ? rooms.map(function (r) { return { room: r.room, doctor: r.doctor, start: r.start, end: r.end }; })
+    : DEFAULT_ROOMS.map(function (r) { return Object.assign({}, r); });
+  renderSetupRows(list);
+}
+
+function renderSetupRows(list) {
+  var container = qs('setupRooms');
+  container.innerHTML = '';
+  list.forEach(function (item) { addSetupRow(item); });
+}
+
+function addSetupRow(item) {
+  item = item || { room: '', doctor: '', start: '', end: '' };
+  var row = document.createElement('div');
+  row.className = 'setup-row';
+  row.innerHTML =
+    '<input type="text" class="su-room" placeholder="ห้อง" value="' + escHtml(item.room) + '">' +
+    '<input type="text" class="su-doctor" placeholder="ชื่อแพทย์" value="' + escHtml(item.doctor) + '">' +
+    '<input type="text" class="su-start" placeholder="HH:MM" value="' + escHtml(item.start) + '">' +
+    '<input type="text" class="su-end" placeholder="HH:MM" value="' + escHtml(item.end) + '">' +
+    '<button type="button" class="btn small secondary su-remove">ลบห้องนี้</button>';
+  row.querySelector('.su-remove').addEventListener('click', function () { row.remove(); });
+  qs('setupRooms').appendChild(row);
+}
+
+function collectSetupRows() {
+  var rows = qs('setupRooms').querySelectorAll('.setup-row');
+  var out = [];
+  rows.forEach(function (row) {
+    out.push({
+      room: row.querySelector('.su-room').value,
+      doctor: row.querySelector('.su-doctor').value,
+      start: row.querySelector('.su-start').value,
+      end: row.querySelector('.su-end').value
+    });
+  });
+  return out;
+}
+
+function showSetupMsg(msg, isError) {
+  var el = qs('setupMsg');
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="' + (isError ? 'error-box' : 'warning-box') + '">' + escHtml(msg) + '</div>';
+}
+
+function onSaveRoomsClick() {
+  var rows = collectSetupRows();
+  var trimmedRooms = rows.map(function (r) { return (r.room || '').trim(); });
+
+  if (trimmedRooms.some(function (r) { return r === ''; })) {
+    showSetupMsg('กรุณากรอกชื่อห้องให้ครบทุกแถว', true);
+    return;
+  }
+  var seen = {};
+  for (var i = 0; i < trimmedRooms.length; i++) {
+    if (seen[trimmedRooms[i]]) { showSetupMsg('มีชื่อห้องซ้ำกันในผัง', true); return; }
+    seen[trimmedRooms[i]] = true;
+  }
+  showSetupMsg('');
+
+  setBusy(true);
+  var dateStr = (STATE.today && STATE.today.date) || dateKeyLocal_();
+  apiCall('saveRooms', { date: dateStr, rooms: rows }).then(function (resp) {
+    setBusy(false);
+    if (resp && resp.status === 'ok') {
+      showScreen('board');
+      loadToday();
+    } else {
+      showSetupMsg((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ', true);
+    }
+  });
+}
+
+/* =========================================================================
+   7. INIT
+   ========================================================================= */
+document.addEventListener('DOMContentLoaded', function () {
+  if (!checkUrlConfigured()) return;
+
+  qs('btnGateLogin').addEventListener('click', handleGateLogin);
+  qs('gateKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateLogin(); });
+  qs('btnOpenSetup').addEventListener('click', openSetup);
+  qs('btnCloseSetup').addEventListener('click', function () { showScreen('board'); });
+  qs('btnAddRoom').addEventListener('click', function () { addSetupRow(); });
+  qs('btnSaveRooms').addEventListener('click', onSaveRoomsClick);
+
+  showScreen('gate');
+  tryRestoreSession();
+});
+</script>
+</body>
+</html>
