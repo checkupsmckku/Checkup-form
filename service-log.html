@@ -490,6 +490,14 @@
                 <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
                 <div id="patientHnHint" class="field-hint-warn" hidden></div>
 
+                <label class="field-label" for="patientPrefix" id="patientPrefixLabel">คำนำหน้า</label>
+                <input type="text" id="patientPrefix" list="prefixOptions" autocomplete="off" placeholder="เลือกหรือพิมพ์เอง (ไม่บังคับ)">
+                <datalist id="prefixOptions">
+                  <option value="นาย"></option>
+                  <option value="นาง"></option>
+                  <option value="น.ส."></option>
+                </datalist>
+
                 <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
                 <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
               </div>
@@ -1883,6 +1891,7 @@ function resetLogForm() {
   qs('queueSelect').value = '';
   qs('patientName').value = '';
   qs('patientHn').value = '';
+  qs('patientPrefix').value = '';
   updateHnHint();
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
@@ -1933,6 +1942,7 @@ function enterEditMode(rec) {
 
   qs('patientName').value = rec.patientName || '';
   qs('patientHn').value = rec.patientHn || '';
+  qs('patientPrefix').value = rec.patientPrefix || '';
   updateHnHint();
   qs('deliveryMethod').value = rec.deliveryMethod || '';
 
@@ -2037,6 +2047,11 @@ function mergeDraftIntoTodayRecord(rec, draft) {
     qs('patientName').value = draft.patientName;
   }
 
+  // คำนำหน้า: ของแถวเก่าถ้าไม่ว่าง (enterEditMode ใส่ไว้แล้ว) ไม่งั้นของร่าง
+  if (!(qs('patientPrefix').value || '').trim() && draft.patientPrefix) {
+    qs('patientPrefix').value = draft.patientPrefix;
+  }
+
   applyVaccineFilter();
   applyLogLocks();
   recalcTotals();
@@ -2070,6 +2085,7 @@ function onSubmitLog(e) {
   // ⚠ patientName/patientHn ส่งเสมอ (รอบ 4) — เลิกผูกกับ checkupOn แล้ว เพราะ "ส่งตรวจพิเศษ" ก็ต้องใช้ 2 ช่องนี้ด้วย
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim();
+  var patientPrefix = (qs('patientPrefix').value || '').trim();
   var deliveryMethod = checkupOn ? (qs('deliveryMethod').value || '') : '';
   // รอบ 9 (ก้อน B, B6): ไม่มี element sp_sent_*/sp_back_*/sp_prep_* ให้อ่านจาก DOM แล้ว — ส่ง STATE.editSpecial*
   // กลับไปแทน (มีค่าเฉพาะตอนแก้ไขแถวเก่าที่เคยมีสถานะอยู่ก่อน · บันทึกรายใหม่เป็น [] เสมอเพราะ exitEditMode() ล้างไว้)
@@ -2100,7 +2116,7 @@ function onSubmitLog(e) {
           program: program, genderDom: genderDom, pelvic: pelvic, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
           vaccineCodes: vaccineCodes, medCert5: medCert5, medCertDriver: medCertDriver,
           medCertLabCount: medCertLabCount, medCertLabAmount: medCertLabAmount,
-          specialRegIds: specialRegIds, queue: queue, patientName: patientName
+          specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix
         });
         return;
       }
@@ -2118,6 +2134,7 @@ function onSubmitLog(e) {
     checkupAmount: checkupAmount,
     patientName: patientName,
     patientHn: patientHn,
+    patientPrefix: patientPrefix,
     deliveryMethod: deliveryMethod,
     tests: extraIds,
     vaccines: vaccineCodes,
@@ -2175,6 +2192,10 @@ function summarizeRecordParts(rec) {
   if (rec.queue) parts.push('คิว ' + rec.queue); // รอบ 6: โชว์เลขคิวหน้าชื่อ
   if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
   if (rec.pelvicLabel) parts.push(rec.pelvicLabel);
+  // เจ้าของสั่ง 2026-09-12: การ์ด "รายการวันนี้" ต้องเห็นช่องทางรับผลด้วย (เดิมเห็นได้เฉพาะตอนกดแก้ไข
+  // หรือในใบรายชื่อผู้รับบริการตรวจสุขภาพ) — ใช้คำเดียวกับป้ายในฟอร์มคือ "ช่องทางรับผล"
+  // ค่านี้มีเฉพาะแถวที่มีโปรแกรมตรวจสุขภาพ (เซิร์ฟเวอร์เก็บ '' เมื่อไม่มีโปรแกรม) จึงไม่ต้องเช็ค program ซ้ำ
+  if (rec.deliveryMethod) parts.push('ช่องทางรับผล : ' + rec.deliveryMethod);
   if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
   if (rec.vaccineCount) parts.push('วัคซีน ' + rec.vaccineCount + ' เข็ม');
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
@@ -2283,7 +2304,7 @@ function renderTodayList(records) {
     }
     var html = '<div class="rec-sticker">' +
       '<div class="rec-hn">HN : ' + escHtml(rec.patientHn || '—') + '</div>' +
-      '<div class="rec-line">ชื่อ : ' + escHtml(nm.first || '—') + '</div>' +
+      '<div class="rec-line">ชื่อ : ' + escHtml(prefixedFirstName(rec, nm.first) || '—') + '</div>' +
       '<div class="rec-line">สกุล : ' + escHtml(nm.last || '—') + '</div>' +
       '</div>' +
       '<div class="rec-body">' +
@@ -2825,6 +2846,13 @@ function splitFullName(full) {
   return { first: s.slice(0, i), last: s.slice(i + 1) };
 }
 
+// คำนำหน้า + ชื่อต้น สำหรับบรรทัด "ชื่อ :" ของสติกเกอร์/ใบพิมพ์ (ไม่มีคำนำหน้าก็คืนชื่อต้นเฉย ๆ)
+function prefixedFirstName(rec, first) {
+  var prefix = (rec && rec.patientPrefix) ? String(rec.patientPrefix).trim() : '';
+  var f = first || '';
+  return prefix ? (prefix + ' ' + f).trim() : f;
+}
+
 var CU_US_PROGRAMS = ['3', '4'];
 function checkupUsCount(rows) {
   return (rows || []).filter(function (rec) {
@@ -2861,7 +2889,7 @@ function renderCheckupTable(records, dateStr) {
     var sigCell = isWaitPickup ? '<span class="cu-sig-line"></span>' : '—';
     html += '<tr>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
-      '<td>' + escHtml(rec.patientName || '') + '</td>' +
+      '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td>' + escHtml(rec.gender || '') + '</td>' +
       '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
@@ -2897,7 +2925,7 @@ function renderCheckupCards(records, dateStr) {
     html += '<div class="cu-card">' +
       '<div class="cu-left">' +
         '<div class="cu-hn">HN : ' + escHtml(rec.patientHn || '—') + '</div>' +
-        '<div class="cu-line">ชื่อ : ' + escHtml(nm.first || '—') + '</div>' +
+        '<div class="cu-line">ชื่อ : ' + escHtml(prefixedFirstName(rec, nm.first) || '—') + '</div>' +
         '<div class="cu-line">สกุล : ' + escHtml(nm.last || '—') + '</div>' +
       '</div>' +
       '<div class="cu-right">' +
