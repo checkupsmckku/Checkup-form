@@ -5375,6 +5375,21 @@ function escHtml(v) {
   return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ยอดรวมในชีตเก็บเป็นข้อความดิบ ("3674") ⇒ ใบพิมพ์เคยขึ้นไม่มีลูกน้ำ ขณะที่บรรทัดราคาโปรแกรมข้างบน
+// ใช้ .toLocaleString() มาตลอด ⇒ ใบเดียวกันมีตัวเลข 2 รูปแบบ (เจ้าของทักเมื่อ 2026-09-13)
+// ถ้าแปลงเป็นตัวเลขไม่ได้ ให้คืนค่าเดิม — ห้ามกลืนค่าที่อ่านไม่ออกหายไป
+// แยกเป็น 2 ชั้น (2026-09-13) เพราะ buildMySummaryCanvas() วาดข้อความลง <canvas> ตรงๆ ไม่ผ่าน innerHTML
+// เลยห้าม escape (escHtml จะทำให้ "&" กลายเป็น "&amp;" ปรากฏบนรูปจริง) ⇒ แยกตรรกะแปลงตัวเลขออกมาเป็น
+// fmtBahtPlain() ที่ไม่ escape ให้ทั้ง 2 จุดเรียกร่วมกัน ส่วน fmtBaht() (ใช้ต่อ HTML) ยังคง escape เหมือนเดิม
+function fmtBahtPlain(v) {
+  if (v === undefined || v === null || String(v).trim() === '') return (v === undefined || v === null) ? '' : String(v);
+  const num = Number(String(v).replace(/,/g, ''));
+  return isFinite(num) ? num.toLocaleString() : String(v);
+}
+function fmtBaht(v) {
+  return escHtml(fmtBahtPlain(v));
+}
+
 // ช่องชื่อ-นามสกุล: รับเฉพาะภาษาไทย — ถ้าพิมพ์แล้วโดนตัดออก (ลืมเปลี่ยนภาษาแป้นพิมพ์) ให้แจ้งเตือน
 function thaiNameInput(el, extraChars) {
   const before = el.value;
@@ -8187,12 +8202,21 @@ function parseAdditionalItems(str) {
 // ใช้ไม่ได้เลย (ดู isInAppBrowser()) ⇒ วาดใบสรุปเป็นรูป PNG เองด้วย <canvas> แล้วให้กดค้าง/แชร์เก็บไว้
 // ในเครื่องแทน ไม่ต้องออกจากแอปเลย — ห้ามวาดข้อมูลอ่อนไหว (เลขบัตร/วันเกิด/HN/ที่อยู่/เบอร์/อีเมล) ลงรูป
 // เพราะ backend ของ action:'mysearch' ไม่ได้ส่งมาให้อยู่แล้ว (ดู CLAUDE.md "ค้นใบสรุป — มี 2 ทาง")
-const MY_SUMMARY_IMG_W = 560;     // ความกว้างเชิงตรรกะของรูป (px)
-const MY_SUMMARY_IMG_SCALE = 2;   // วาดที่ scale 2 ให้คมบนจอมือถือ (canvas.width จริง = 1120)
-const MY_SUMMARY_IMG_PAD_X = 24;  // ระยะขอบซ้าย/ขวา
+// เจ้าของสั่ง 2026-09-13: รูปต้องหน้าตาเหมือนใบที่ได้จากปุ่ม "🖨 พิมพ์ใบสรุป" (printMySummary) เป๊ะ
+// เพียงแต่เป็นไฟล์รูปแทน PDF ⇒ เปลี่ยนความกว้างจากการ์ดเดิม (560px) เป็นเทียบเท่าความกว้างเนื้อหาของใบพิมพ์
+// (width:180mm ของ body ใน SUMMARY_PRINT_CSS ที่ 96dpi ≈ 680px) แล้วบวกขอบซ้าย/ขวากลับเข้าไป
+const MY_SUMMARY_CONTENT_W = 680;    // ความกว้างเนื้อหา เทียบเท่า 180mm @ 96dpi ของ body ในใบพิมพ์
+const MY_SUMMARY_IMG_PAD_X = 28;     // ระยะขอบซ้าย/ขวา/ล่าง (บนใช้ MY_SUMMARY_IMG_PAD_TOP แยกต่างหาก)
+const MY_SUMMARY_IMG_PAD_TOP = 36;   // ระยะขอบบน — ตั้งใจให้ต่างจากซ้าย/ขวา/ล่าง (เผื่อพื้นที่หัวเอกสาร)
+const MY_SUMMARY_IMG_W = MY_SUMMARY_CONTENT_W + MY_SUMMARY_IMG_PAD_X * 2;  // = 736 — ชื่อตัวแปรนี้คงไว้เดิม
+                                                                            // เพราะ t34_summary_image.js อ่านชื่อนี้โดยตรง
+const MY_SUMMARY_IMG_SCALE = 2;      // วาดที่ scale 2 ให้คมบนจอมือถือ (คงเดิม)
 const MY_SUMMARY_FONT = "'Sarabun','Noto Sans Thai',sans-serif";
 // เก็บความกว้างของทุกบรรทัดที่วาดจริงไว้ให้เทสต์ตรวจว่าไม่มีบรรทัดไหนล้นขอบ (harness/t34_summary_image.js)
 window.__mySummaryLineWidths = [];
+// เก็บ "ข้อความจริง" ของทุกบรรทัดที่วาดไว้ให้เทสต์ตรวจว่าไม่มีข้อมูลอ่อนไหว (HN/เลขบัตร/วันเกิด/ที่อยู่/เบอร์/อีเมล)
+// หลุดลงไปในรูป (harness/t34_summary_image.js หมวด I) — array นี้มีไว้ให้เทสต์เท่านั้น ห้ามใช้งานจริงในโค้ดส่วนอื่น
+window.__mySummaryDrawnTexts = [];
 
 // ตัดบรรทัดด้วยการวัดจริง (ctx.measureText) ห้ามตัดด้วยจำนวนตัวอักษรตายตัว — ตัดที่ช่องว่างก่อน
 // ถ้าคำเดียวยังกว้างเกิน (พบบ่อยกับข้อความไทยที่ไม่มีช่องว่างเลย) ค่อยตัดเป็นรายตัวอักษรแทน
@@ -8231,91 +8255,252 @@ function _mySummaryWrapText(ctx, text, maxWidth) {
   return lines.length ? lines : ['—'];
 }
 
-// วาดบรรทัดเดียวแล้วบันทึกความกว้างจริงไว้ให้เทสต์ตรวจ (window.__mySummaryLineWidths)
+// วาดบรรทัดเดียวแล้วบันทึกความกว้างจริง + ข้อความจริงไว้ให้เทสต์ตรวจ
+// (window.__mySummaryLineWidths กันบรรทัดล้นขอบ, window.__mySummaryDrawnTexts กันข้อมูลอ่อนไหวหลุดลงรูป)
 function _mySummaryDrawLine(ctx, text, x, y, font, color) {
   ctx.font = font;
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
   window.__mySummaryLineWidths.push(ctx.measureText(text).width);
-}
-
-// วันเวลาปัจจุบันแบบไทย (พ.ศ.) สำหรับพิมพ์ท้ายรูป "บันทึกเมื่อ …" — เป็นเวลาที่กดบันทึก ไม่ใช่ข้อมูลอ่อนไหว
-function _mySummarySavedAtStr(d) {
-  const pad2 = function(n) { return (n < 10 ? '0' : '') + n; };
-  return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + (d.getFullYear() + 543)
-    + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  window.__mySummaryDrawnTexts.push(text);
 }
 
 // คืน canvas element ที่วาดใบสรุปของ rec ({name, serviceDate, program, additionalItems, total}) เสร็จแล้ว
 // ⚠ ต้องวัดเนื้อหาก่อนแล้วค่อยตั้ง canvas.width/height เพราะการตั้งขนาดล้าง context ทิ้งทันที
+// เจ้าของสั่ง 2026-09-13: หน้าตาต้องเหมือนใบที่ได้จากปุ่ม "🖨 พิมพ์ใบสรุป" (printMySummary) เป๊ะ ⇒ ใช้
+// buildMySummaryModel(rec) ตัวเดียวกับ printMySummary ห้ามคัดลอกตรรกะแยกไปคำนวณเอง (จะเบี้ยวกันได้ในอนาคต)
+// ตัดออกจากการ์ดแบบเก่า 3 อย่างตามที่เจ้าของสั่ง (ใบพิมพ์ไม่มี): แถบหัวสีกรมท่า ·
+// "โปรดนำใบสรุปนี้มาแสดงในวันเข้ารับบริการ" · "บันทึกเมื่อ …"
 function buildMySummaryCanvas(rec) {
   rec = rec || {};
-  const W = MY_SUMMARY_IMG_W, SCALE = MY_SUMMARY_IMG_SCALE, PAD_X = MY_SUMMARY_IMG_PAD_X;
-  const contentW = W - PAD_X * 2;
+  const CONTENT_W = MY_SUMMARY_CONTENT_W;
+  const PAD_X = MY_SUMMARY_IMG_PAD_X;
+  const PAD_TOP = MY_SUMMARY_IMG_PAD_TOP;
+  const W = MY_SUMMARY_IMG_W;
+  const SCALE = MY_SUMMARY_IMG_SCALE;
   const FONT = MY_SUMMARY_FONT;
   window.__mySummaryLineWidths = [];
+  window.__mySummaryDrawnTexts = [];
 
-  const name = (rec.name === undefined || rec.name === null || String(rec.name).trim() === '') ? '—' : String(rec.name).trim();
-  const serviceDate = (rec.serviceDate === undefined || rec.serviceDate === null || String(rec.serviceDate).trim() === '') ? '—' : String(rec.serviceDate).trim();
-  const program = (rec.program === undefined || rec.program === null || String(rec.program).trim() === '') ? '—' : String(rec.program).trim();
-  let totalStr = (rec.total === undefined || rec.total === null || String(rec.total).trim() === '') ? '—' : String(rec.total).trim();
-  // ชีตเก็บยอดรวมเป็นเลขดิบ ("8939") แต่ทุกที่บนหน้าเว็บแสดงแบบมีจุลภาค ("8,939")
-  // ใบสรุปที่ผู้ป่วยเก็บไว้ต้องอ่านให้เหมือนกัน ไม่งั้นดูเหมือนคนละยอดกับที่เห็นบนจอ
-  if (/^\d[\d,]*(\.\d+)?$/.test(totalStr)) {
-    const totalNum = Number(totalStr.replace(/,/g, ''));
-    if (isFinite(totalNum)) totalStr = totalNum.toLocaleString('en-US');
-  }
-  const itemsList = (rec.additionalItems && String(rec.additionalItems).trim() !== '') ? parseAdditionalItems(String(rec.additionalItems)) : [];
-  const savedAt = _mySummarySavedAtStr(new Date());
+  const m = buildMySummaryModel(rec);
 
   // canvas ชั่วคราวไว้แค่วัดข้อความ (ไม่ผูกกับขนาดจริง — measureText ขึ้นกับ font เท่านั้น)
   const mcv = document.createElement('canvas');
   const mctx = mcv.getContext('2d');
 
-  const HEAD_H = 76;
-  const cmds = []; // { text, x, y, font, color, align }
-  let y = HEAD_H + 34;
+  // คำสั่งวาดที่เก็บไว้ก่อน วัดความสูงรวมให้เสร็จแล้วค่อยตั้งขนาด canvas จริงทีเดียว (เหมือนโค้ดเดิม)
+  // kind: 'text' { text,x,y,font,color,align } | 'rect' { x,y,w,h,color,radius } | 'line' { x1,y1,x2,y2,color,width }
+  const cmds = [];
+  let y = PAD_TOP; // "บน" ของบล็อกถัดไป (ไม่ใช่ baseline) — แต่ละ helper แปลงเป็น baseline เองข้างใน
 
-  function addBlock(text, font, color, lineGap) {
+  // ── บล็อกข้อความล้วน ชิดซ้าย (doc-org/doc-org2/h2) — ตัดบรรทัดด้วย _mySummaryWrapText เสมอ ──
+  function textBlock(text, font, fontPx, color, marginBottom) {
     mctx.font = font;
-    const lines = _mySummaryWrapText(mctx, text, contentW);
+    const lines = _mySummaryWrapText(mctx, text, CONTENT_W);
+    const lineH = Math.round(fontPx * 1.45);
+    const asc = Math.round(fontPx * 1.05);
     lines.forEach(function(l) {
-      cmds.push({ text: l, x: PAD_X, y: y, font: font, color: color, align: 'left' });
-      y += lineGap;
+      y += asc;
+      cmds.push({ kind: 'text', text: l, x: PAD_X, y: y, font: font, color: color, align: 'left' });
+      y += lineH - asc;
     });
-    return lines.length;
+    y += marginBottom;
   }
 
-  mctx.font = '700 19px ' + FONT;
-  const headLine1 = _mySummaryWrapText(mctx, 'หน่วยคลินิกตรวจสุขภาพ SMC', contentW);
-  mctx.font = '400 11.5px ' + FONT;
-  const headLine2 = _mySummaryWrapText(mctx, 'ศูนย์บริการทางการแพทย์ชั้นเลิศ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น', contentW);
+  // ── แถวซ้าย-ขวาบนเส้นฐานเดียวกัน (.sr) + เส้นคั่นบางด้านล่าง — ขวาล้นให้ตัดขึ้นบรรทัดใหม่ชิดขวา ──
+  function srRow(label, value) {
+    const labelFont = '400 14px ' + FONT;
+    const valueFont = '700 14px ' + FONT;
+    mctx.font = labelFont;
+    const labelW = mctx.measureText(label).width;
+    mctx.font = valueFont;
+    const availW = Math.max(CONTENT_W - labelW - 10, CONTENT_W * 0.35);
+    const valueLines = (mctx.measureText(value).width <= availW) ? [value] : _mySummaryWrapText(mctx, value, availW);
+    y += 6;
+    const baseline0 = y + 11;
+    cmds.push({ kind: 'text', text: label, x: PAD_X, y: baseline0, font: labelFont, color: '#555', align: 'left' });
+    cmds.push({ kind: 'text', text: valueLines[0], x: PAD_X + CONTENT_W, y: baseline0, font: valueFont, color: '#1a1a1a', align: 'right' });
+    let lastBaseline = baseline0;
+    for (let li = 1; li < valueLines.length; li++) {
+      lastBaseline += 19;
+      cmds.push({ kind: 'text', text: valueLines[li], x: PAD_X + CONTENT_W, y: lastBaseline, font: valueFont, color: '#1a1a1a', align: 'right' });
+    }
+    y = lastBaseline + 8;
+    cmds.push({ kind: 'line', x1: PAD_X, y1: y, x2: PAD_X + CONTENT_W, y2: y, color: '#eee', width: 1 });
+    y += 1;
+  }
 
-  addBlock('ใบสรุปการลงทะเบียนตรวจสุขภาพประจำปี', '700 17px ' + FONT, '#001D3D', 24);
-  y += 12;
-  addBlock(name, '700 20px ' + FONT, '#111111', 27);
-  y += 8;
-  addBlock('วันที่นัดหมาย: ' + serviceDate, '400 14px ' + FONT, '#333333', 21);
-  addBlock('โปรแกรม: ' + program, '400 14px ' + FONT, '#333333', 21);
-  y += 12;
+  // ── กล่องหัวข้อ (.sr-section-title / .extra) — พื้นสี + แถบซ้ายหนา 4px ──
+  function sectionTitle(text, bg, color) {
+    y += 12; // margin-top เหมือน CSS .sr-section-title{margin:12px 0 6px}
+    const font = '800 14px ' + FONT;
+    mctx.font = font;
+    const lines = _mySummaryWrapText(mctx, text, CONTENT_W - 28);
+    const lineH = 18, padV = 7;
+    const boxTop = y;
+    const boxH = padV * 2 + lines.length * lineH;
+    cmds.push({ kind: 'rect', x: PAD_X, y: boxTop, w: CONTENT_W, h: boxH, color: bg, radius: 7 });
+    cmds.push({ kind: 'rect', x: PAD_X, y: boxTop, w: 4, h: boxH, color: color, radius: 0 });
+    let by = boxTop + padV + 13;
+    lines.forEach(function(l) {
+      cmds.push({ kind: 'text', text: l, x: PAD_X + 16, y: by, font: font, color: color, align: 'left' });
+      by += lineH;
+    });
+    y = boxTop + boxH + 6;
+  }
 
-  if (itemsList.length) {
-    addBlock('รายการเพิ่มเติม', '700 14px ' + FONT, '#001D3D', 21);
+  // ── รายการตรวจ 1 แถว: จุด + ชื่อไทย + ชื่ออังกฤษ (ถ้ามีที่พอ) ต่อท้ายด้วยราคาฝั่งขวาได้ (papItem/รายการเพิ่มเติม) ──
+  function testItem(th, eng, dotColor, rightText, rightColor, rightFont) {
+    rightFont = rightFont || ('600 13px ' + FONT);
+    const thFont = '600 13px ' + FONT;
+    const engFont = 'italic 400 11.5px ' + FONT;
+    const dotFont = '8px ' + FONT;
+    mctx.font = thFont;
+    const thW = mctx.measureText(th).width;
+    const indent = PAD_X + 10;
+    let rightW = 0;
+    if (rightText) { mctx.font = rightFont; rightW = mctx.measureText(rightText).width; }
+    const rightReserve = rightText ? (rightW + 10) : 0;
+
+    let engOnSameLine = false;
+    if (eng) {
+      mctx.font = engFont;
+      const engW = mctx.measureText(eng).width;
+      if (indent + thW + 6 + engW <= PAD_X + CONTENT_W - rightReserve) engOnSameLine = true;
+    }
+    // ชื่อไทยเองชนราคาฝั่งขวาไหม (กรณีไม่มีชื่ออังกฤษ หรือมีแต่ตัดบรรทัดไปแล้ว)
+    const thRightOverlap = !!(rightText && (indent + thW + 10 > PAD_X + CONTENT_W - rightW));
+
     y += 4;
-    itemsList.forEach(function(it) { addBlock('•  ' + it, '400 13.5px ' + FONT, '#333333', 20); });
+    const baseline = y + 10;
+    cmds.push({ kind: 'text', text: '●', x: PAD_X, y: baseline, font: dotFont, color: dotColor, align: 'left' });
+    cmds.push({ kind: 'text', text: th, x: indent, y: baseline, font: thFont, color: '#1a1a1a', align: 'left' });
+    if (eng && engOnSameLine) {
+      cmds.push({ kind: 'text', text: eng, x: indent + thW + 6, y: baseline, font: engFont, color: '#888', align: 'left' });
+    }
+    if (rightText && !thRightOverlap) {
+      cmds.push({ kind: 'text', text: rightText, x: PAD_X + CONTENT_W, y: baseline, font: rightFont, color: rightColor, align: 'right' });
+    }
+    y = baseline + 6;
+    if (eng && !engOnSameLine) {
+      mctx.font = engFont;
+      const maxW = Math.max(PAD_X + CONTENT_W - indent - rightReserve, CONTENT_W * 0.3);
+      const engLines = _mySummaryWrapText(mctx, eng, maxW);
+      engLines.forEach(function(l) {
+        y += 14;
+        cmds.push({ kind: 'text', text: l, x: indent, y: y, font: engFont, color: '#888', align: 'left' });
+      });
+      y += 6;
+    }
+    if (rightText && thRightOverlap) {
+      y += 2;
+      cmds.push({ kind: 'text', text: rightText, x: PAD_X + CONTENT_W, y: y, font: rightFont, color: rightColor, align: 'right' });
+      y += 14;
+    }
+  }
+
+  // ── กล่องแถวเดียว ซ้าย label ขวา value (ราคาโปรแกรม) — ขวาล้นให้ตัดขึ้นบรรทัดใหม่ชิดขวา ──
+  function boxRow(label, value, bg, labelColor, valueColor, labelFont, valueFont, boxH, marginTop, marginBottom, radius) {
+    y += marginTop;
+    mctx.font = labelFont;
+    const labelW = mctx.measureText(label).width;
+    mctx.font = valueFont;
+    const availW = Math.max(CONTENT_W - 24 - labelW - 10, CONTENT_W * 0.3);
+    const valueLines = (mctx.measureText(value).width <= availW) ? [value] : _mySummaryWrapText(mctx, value, availW);
+    const extraH = (valueLines.length - 1) * 18;
+    const boxTop = y;
+    const totalBoxH = boxH + extraH;
+    cmds.push({ kind: 'rect', x: PAD_X, y: boxTop, w: CONTENT_W, h: totalBoxH, color: bg, radius: radius });
+    const baseline = boxTop + boxH / 2 + 5;
+    cmds.push({ kind: 'text', text: label, x: PAD_X + 12, y: baseline, font: labelFont, color: labelColor, align: 'left' });
+    let by = baseline;
+    valueLines.forEach(function(l) {
+      cmds.push({ kind: 'text', text: l, x: PAD_X + CONTENT_W - 12, y: by, font: valueFont, color: valueColor, align: 'right' });
+      by += 18;
+    });
+    y = boxTop + totalBoxH + marginBottom;
+  }
+
+  // ── กล่องยอดรวม — ตัวเลขใหญ่ + " บาท" เล็กต่อท้าย (คนละฟอนต์ วัดจริงเพื่อวางให้ชิดขวาพอดี) ──
+  function totalRow(marginTop) {
+    y += marginTop;
+    const boxTop = y;
+    const boxH = 46;
+    cmds.push({ kind: 'rect', x: PAD_X, y: boxTop, w: CONTENT_W, h: boxH, color: '#E8F5F7', radius: 9 });
+    const baseline = boxTop + boxH / 2 + 7;
+    cmds.push({ kind: 'text', text: 'ยอดรวมทั้งหมด', x: PAD_X + 14, y: baseline, font: '800 15px ' + FONT, color: '#00575E', align: 'left' });
+    const suffixFont = '500 13px ' + FONT;
+    mctx.font = suffixFont;
+    const suffixW = mctx.measureText(' บาท').width;
+    const rightEdge = PAD_X + CONTENT_W - 14;
+    cmds.push({ kind: 'text', text: ' บาท', x: rightEdge, y: baseline, font: suffixFont, color: '#00575E', align: 'right' });
+    cmds.push({ kind: 'text', text: m.totalStr, x: rightEdge - suffixW, y: baseline, font: '900 22px ' + FONT, color: '#00575E', align: 'right' });
+    y = boxTop + boxH + 4;
+  }
+
+  // 1-2. หัวเอกสาร (.doc-org / .doc-org2)
+  textBlock('หน่วยคลินิกตรวจสุขภาพ SMC · ศูนย์บริการทางการแพทย์ชั้นเลิศ', '800 15px ' + FONT, 15, '#001D3D', 2);
+  textBlock('คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น', '400 12px ' + FONT, 12, '#555', 10);
+
+  // 3. หัวเรื่อง (h2)
+  textBlock('ใบสรุปรายการตรวจ — ' + m.name, '700 18px ' + FONT, 18, '#001D3D', 6);
+
+  // 4. นัดหมาย (.sub) + เส้นคั่นหนา — เฉพาะเมื่อมี serviceDate เหมือน printMySummary
+  if (m.serviceDate) {
+    mctx.font = '400 12px ' + FONT;
+    const subLines = _mySummaryWrapText(mctx, 'นัดหมาย ' + m.serviceDate, CONTENT_W);
+    subLines.forEach(function(l) {
+      y += 13;
+      cmds.push({ kind: 'text', text: l, x: PAD_X, y: y, font: '400 12px ' + FONT, color: '#666', align: 'left' });
+      y += 4;
+    });
+    y += 11;
+    cmds.push({ kind: 'line', x1: PAD_X, y1: y, x2: PAD_X + CONTENT_W, y2: y, color: '#001D3D', width: 2 });
+    y += 2 + 16;
+  } else {
     y += 8;
   }
 
-  const totalBoxY = y;
-  const totalBoxH = 50;
-  y += totalBoxH + 20;
+  // 5. แถว .sr — ชื่อ-นามสกุล + วันที่นัดหมาย
+  srRow('ชื่อ-นามสกุล', m.name);
+  srRow('📅 วันที่นัดหมายเข้ารับบริการ', m.serviceDate || '—');
 
-  const dividerY = y;
-  y += 20;
-  addBlock('โปรดนำใบสรุปนี้มาแสดงในวันเข้ารับบริการ', '400 11.5px ' + FONT, '#888888', 18);
-  addBlock('บันทึกเมื่อ ' + savedAt, '400 11.5px ' + FONT, '#888888', 18);
-  y += 8;
+  // 6. ชื่อโปรแกรม (.sr-section-title)
+  sectionTitle(m.program || 'ไม่ระบุโปรแกรม', '#E8F5F7', '#00575E');
 
+  // 7. รายการตรวจ / ย่อ / ตรวจภายใน — เฉพาะเมื่อ PROG_DETAIL[progNum] หาเจอ (เหมือน printMySummary)
+  if (m.tests) {
+    if (!m.condense) {
+      m.tests.forEach(function(t) { testItem(t.th, t.eng, '#00575E'); });
+      if (m.papItem) {
+        testItem(m.papItem.th, null, '#00575E', '+' + m.papItem.price.toLocaleString() + ' บาท', '#9D174D');
+      }
+    } else {
+      y += 4;
+      const baseline = y + 10;
+      cmds.push({ kind: 'text', text: '✓ ครอบคลุม ' + m.condensedCount + ' รายการตรวจตามโปรแกรม', x: PAD_X, y: baseline, font: '600 13px ' + FONT, color: '#1a1a1a', align: 'left' });
+      y = baseline + 6;
+    }
+  }
+
+  // 8. ราคาโปรแกรม (.sr-price-row)
+  if (!isNaN(m.basePrice) && m.basePrice > 0) {
+    boxRow('💊 ราคาโปรแกรมตรวจสุขภาพ', m.basePrice.toLocaleString() + ' บาท', '#F0F4FF', '#1565C0', '#1565C0',
+      '600 12px ' + FONT, '700 14px ' + FONT, 32, 4, 4, 8);
+  }
+
+  // 9. รายการเพิ่มเติม (.sr-section-title.extra)
+  if (m.addItems.length) {
+    sectionTitle('➕ รายการเพิ่มเติม (' + m.addItems.length + ' รายการ)', '#FFF3E0', '#E65100');
+    m.addItems.forEach(function(item) {
+      testItem(item.name, null, '#E65100', item.price || '', '#E65100', '700 13px ' + FONT);
+    });
+  }
+
+  // 10. ยอดรวม (.sr-total-row)
+  totalRow(14);
+
+  y += PAD_X; // ขอบล่าง (เท่ากับซ้าย/ขวา ตามสเปก)
   const H = Math.ceil(y);
 
   const canvas = document.createElement('canvas');
@@ -8326,39 +8511,33 @@ function buildMySummaryCanvas(rec) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // 1. แถบหัว
-  ctx.fillStyle = '#001D3D';
-  ctx.fillRect(0, 0, W, HEAD_H);
-  ctx.textAlign = 'center';
-  let hy = 32;
-  headLine1.forEach(function(l) { _mySummaryDrawLine(ctx, l, W / 2, hy, '700 19px ' + FONT, '#ffffff'); hy += 20; });
-  hy = 54;
-  headLine2.forEach(function(l) { _mySummaryDrawLine(ctx, l, W / 2, hy, '400 11.5px ' + FONT, '#ffffff'); hy += 15; });
-  ctx.textAlign = 'left';
+  function fillRoundRect(x, yy, w_, h_, color, radius) {
+    ctx.fillStyle = color;
+    if (radius && typeof ctx.roundRect === 'function') {
+      ctx.beginPath();
+      ctx.roundRect(x, yy, w_, h_, radius);
+      ctx.fill();
+    } else {
+      ctx.fillRect(x, yy, w_, h_);
+    }
+  }
 
-  // 2-6. หัวเรื่อง/ชื่อ/วันที่/โปรแกรม/รายการเพิ่มเติม
   cmds.forEach(function(c) {
-    ctx.textAlign = c.align;
-    _mySummaryDrawLine(ctx, c.text, c.x, c.y, c.font, c.color);
+    if (c.kind === 'rect') {
+      fillRoundRect(c.x, c.y, c.w, c.h, c.color, c.radius);
+    } else if (c.kind === 'line') {
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = c.width;
+      ctx.beginPath();
+      ctx.moveTo(c.x1, c.y1);
+      ctx.lineTo(c.x2, c.y2);
+      ctx.stroke();
+    } else if (c.kind === 'text') {
+      ctx.textAlign = c.align;
+      _mySummaryDrawLine(ctx, c.text, c.x, c.y, c.font, c.color);
+    }
   });
   ctx.textAlign = 'left';
-
-  // 7. กล่องยอดรวม
-  ctx.fillStyle = '#E8F5F7';
-  ctx.fillRect(PAD_X, totalBoxY, contentW, totalBoxH);
-  ctx.textAlign = 'left';
-  _mySummaryDrawLine(ctx, 'ยอดรวม', PAD_X + 14, totalBoxY + totalBoxH / 2 + 6, '700 15px ' + FONT, '#00575E');
-  ctx.textAlign = 'right';
-  _mySummaryDrawLine(ctx, totalStr + ' บาท', PAD_X + contentW - 14, totalBoxY + totalBoxH / 2 + 6, '700 16px ' + FONT, '#00575E');
-  ctx.textAlign = 'left';
-
-  // 8. เส้นคั่น
-  ctx.strokeStyle = '#dddddd';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(PAD_X, dividerY);
-  ctx.lineTo(W - PAD_X, dividerY);
-  ctx.stroke();
 
   return canvas;
 }
@@ -8428,15 +8607,13 @@ function saveMySummaryImage(i) {
   }
 }
 
-// ─── "🖨 พิมพ์ใบสรุป" ในป็อปอัป "ใบสรุปของฉัน" (เพิ่ม 2026-09-09) ──────────────
-// เจ้าของสั่งให้หน้าตาเหมือนใบสรุปเจ้าหน้าที่ (printStaffSummary) ⇒ ใช้ CSS ร่วมกัน (SUMMARY_PRINT_CSS)
-// และคลาส .sr/.sr-section-title/.sr-test-item/.sr-price-row/.sr-total-row ชุดเดียวกันทุกตัว
+// ─── โมเดลข้อมูลของ "ใบสรุปของฉัน" — ใช้ร่วมกันทั้ง printMySummary() (พิมพ์) และ buildMySummaryCanvas() (วาดรูป) ──
+// (เพิ่ม 2026-09-13 ตอนเปลี่ยนหน้าตารูปให้เหมือนใบพิมพ์เป๊ะ — ก่อนหน้านี้ตรรกะนี้อยู่ในตัว printMySummary() เอง)
 // ⚠ ข้อมูลที่มีให้ใช้มีแค่ 5 ฟิลด์จาก mySummaryRecords[i] (backend action:'mysearch' คืนเท่านี้ ห้ามขอเพิ่ม —
-//   ห้ามมี HN/เลขบัตร/วันเกิด/ที่อยู่/เบอร์/อีเมล ในใบนี้เด็ดขาด ดู CLAUDE.md "ค้นใบสรุป — มี 2 ทาง")
-function printMySummary(i) {
-  const rec = mySummaryRecords[i];
-  if (!rec) return;
-
+//   ห้ามมี HN/เลขบัตร/วันเกิด/ที่อยู่/เบอร์/อีเมล ในโมเดลนี้เด็ดขาด แม้ rec ที่ส่งเข้ามาจะมีฟิลด์อื่นติดมาด้วยก็ตาม
+//   ดู CLAUDE.md "ค้นใบสรุป — มี 2 ทาง") คืนค่าดิบทั้งหมด (ยังไม่ escape) — ผู้เรียกต้องผ่าน escHtml() เองตอนต่อ HTML
+function buildMySummaryModel(rec) {
+  rec = rec || {};
   const name        = rec.name || '—';
   const serviceDate = (rec.serviceDate || '').toString().trim();
   const program     = (rec.program || '').toString();
@@ -8456,9 +8633,15 @@ function printMySummary(i) {
   const papItem = (papKey && PAP_ITEM_MAP[papKey]) ? PAP_ITEM_MAP[papKey] : null;
 
   const addItems = (rec.additionalItems && rec.additionalItems.trim()) ? parseAdditionalItems(rec.additionalItems) : [];
+  const addItemsParsed = addItems.map(function(item) {
+    const pm    = item.match(/\(([^)]+บาท)\)\s*$/);
+    const nm    = pm ? item.slice(0, item.lastIndexOf(pm[0])).trim() : item;
+    const price = pm ? pm[1] : '';
+    return { raw: item, name: nm, price: price };
+  });
   const addItemsSum = addItems.reduce(function(sum, item) {
-    const m = item.match(/\(([\d,]+(?:\.\d+)?)\s*บาท\)\s*$/);
-    return sum + (m ? parseFloat(m[1].replace(/,/g, '')) : 0);
+    const mm = item.match(/\(([\d,]+(?:\.\d+)?)\s*บาท\)\s*$/);
+    return sum + (mm ? parseFloat(mm[1].replace(/,/g, '')) : 0);
   }, 0);
   const totalNum  = parseFloat(total.toString().replace(/,/g, ''));
   const basePrice = !isNaN(totalNum) ? Math.round((totalNum - addItemsSum) * 100) / 100 : NaN;
@@ -8466,6 +8649,39 @@ function printMySummary(i) {
   // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือรายการรวมทั้งหมดยาวพอจะดันยอดรวมตกไปหน้าถัดไป (เกณฑ์เดียวกับใบเจ้าหน้าที่)
   const totalItemCount = (tests ? tests.length : 0) + (papItem ? 1 : 0) + addItems.length;
   const condense = addItems.length >= 1 || totalItemCount >= 14;
+  const condensedCount = tests ? (tests.length + (papItem ? 1 : 0)) : 0;
+
+  return {
+    name: name,
+    serviceDate: serviceDate,
+    program: program,
+    tests: tests,
+    papItem: papItem,
+    addItems: addItemsParsed,
+    totalStr: fmtBahtPlain(total),
+    basePrice: basePrice,
+    condense: condense,
+    condensedCount: condensedCount
+  };
+}
+
+// ─── "🖨 พิมพ์ใบสรุป" ในป็อปอัป "ใบสรุปของฉัน" (เพิ่ม 2026-09-09) ──────────────
+// เจ้าของสั่งให้หน้าตาเหมือนใบสรุปเจ้าหน้าที่ (printStaffSummary) ⇒ ใช้ CSS ร่วมกัน (SUMMARY_PRINT_CSS)
+// และคลาส .sr/.sr-section-title/.sr-test-item/.sr-price-row/.sr-total-row ชุดเดียวกันทุกตัว
+// ⚠ ข้อมูลที่มีให้ใช้มีแค่ 5 ฟิลด์จาก mySummaryRecords[i] (backend action:'mysearch' คืนเท่านี้ ห้ามขอเพิ่ม —
+//   ห้ามมี HN/เลขบัตร/วันเกิด/ที่อยู่/เบอร์/อีเมล ในใบนี้เด็ดขาด ดู CLAUDE.md "ค้นใบสรุป — มี 2 ทาง")
+function printMySummary(i) {
+  const rec = mySummaryRecords[i];
+  if (!rec) return;
+
+  const m = buildMySummaryModel(rec);
+  const name        = m.name;
+  const serviceDate = m.serviceDate;
+  const program     = m.program;
+  const tests       = m.tests;
+  const papItem     = m.papItem;
+  const addItems    = m.addItems;
+  const condense    = m.condense;
 
   let body = '';
   body += '<div class="sr"><span class="sl">ชื่อ-นามสกุล</span><span class="sv">' + escHtml(name) + '</span></div>';
@@ -8483,35 +8699,31 @@ function printMySummary(i) {
     }
     body += '</div>';
     if (condense) {
-      const condensedCount = tests.length + (papItem ? 1 : 0);
-      body += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + condensedCount + ' รายการตรวจตามโปรแกรม</div></div>';
+      body += '<div class="sr-test-list sr-test-list-condensed"><div class="sr-test-item included" style="font-weight:600">✓ ครอบคลุม ' + m.condensedCount + ' รายการตรวจตามโปรแกรม</div></div>';
     }
   }
   // หาเลขโปรแกรม/PROG_DETAIL ไม่เจอ → ข้ามส่วนรายการตรวจไปเลย (ไม่ throw ไม่โชว์ว่าง)
 
   // ── ราคาโปรแกรม ──
-  if (!isNaN(basePrice) && basePrice > 0) {
-    body += '<div class="sr-price-row"><span class="sr-price-label">💊 ราคาโปรแกรมตรวจสุขภาพ</span><span class="sr-price-val">' + basePrice.toLocaleString() + ' บาท</span></div>';
+  if (!isNaN(m.basePrice) && m.basePrice > 0) {
+    body += '<div class="sr-price-row"><span class="sr-price-label">💊 ราคาโปรแกรมตรวจสุขภาพ</span><span class="sr-price-val">' + m.basePrice.toLocaleString() + ' บาท</span></div>';
   }
 
-  // ── รายการเพิ่มเติม ──
+  // ── รายการเพิ่มเติม ── (เช็คจาก rec ดิบเหมือนเดิม ไม่ใช่ addItems.length เผื่อกรณี parseAdditionalItems คืน [] จากสตริงที่ trim() ไม่ว่าง — คงพฤติกรรมเดิมเป๊ะ)
   if (rec.additionalItems && rec.additionalItems.trim()) {
     body += '<div class="sr-section-title extra">➕ รายการเพิ่มเติม (' + addItems.length + ' รายการ)</div>';
     body += '<div class="sr-test-list">';
     addItems.forEach(function(item) {
-      const pm    = item.match(/\(([^)]+บาท)\)\s*$/);
-      const nm    = pm ? item.slice(0, item.lastIndexOf(pm[0])).trim() : item;
-      const price = pm ? pm[1] : '';
       body += '<div class="sr-test-item extra" style="justify-content:space-between">'
-        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(nm) + '</span></span>'
-        + (price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + escHtml(price) + '</span>' : '')
+        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(item.name) + '</span></span>'
+        + (item.price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + escHtml(item.price) + '</span>' : '')
         + '</div>';
     });
     body += '</div>';
   }
 
   // ── ยอดรวม ──
-  body += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
+  body += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(m.totalStr) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
 
   const title = 'ใบสรุปรายการตรวจ — ' + name;
 
@@ -8528,16 +8740,19 @@ function printMySummary(i) {
     + '<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">'
     + '<style>' + SUMMARY_PRINT_CSS
     // .doc-org/.doc-org2 เฉพาะใบผู้รับบริการเท่านั้น ไม่ยัดเข้า SUMMARY_PRINT_CSS เพราะใบเจ้าหน้าที่ไม่มี 2 บรรทัดนี้
-    // ค่าเดียวกับ .pdh-org/.pdh-org2 ใน @media print ของหน้าเว็บ (#mySummaryModal .pdh-org/.pdh-org2)
-    + '.doc-org{font-weight:800;font-size:15px;color:#001D3D}'
-    + '.doc-org2{font-size:12px;color:#555}'
+    // ค่าสี/ขนาดเดียวกับ .pdh-org/.pdh-org2 ใน @media print ของหน้าเว็บ (#mySummaryModal .pdh-org/.pdh-org2)
+    // ⚠ line-height/margin-bottom **ตั้งใจมีเฉพาะที่นี่ ห้ามถอดออกโดยอ้างว่า .pdh-org ไม่มี** — เจ้าของส่งภาพหน้าจอ
+    //   หัวเอกสารของใบพิมพ์มาเมื่อ 2026-09-13 แล้วสั่งว่า "แก้ไขให้ระยะห่างระหว่างบรรทัดมากขึ้น" (สระ/วรรณยุกต์ไทยชนกัน)
+    //   บรรทัด 2 บรรทัดนี้คือตัวแก้โจทย์นั้นโดยตรง ส่วน .pdh-org เป็นของบนจอ คนละที่ คนละโจทย์ (เคยโดนถอดออกมาแล้ว 1 ครั้ง)
+    + '.doc-org{font-weight:800;font-size:15px;color:#001D3D;line-height:1.55;margin-bottom:2px}'
+    + '.doc-org2{font-size:12px;color:#555;line-height:1.55;margin-bottom:6px}'
     + '</style></head><body>'
     + '<div class="doc-org">หน่วยคลินิกตรวจสุขภาพ SMC · ศูนย์บริการทางการแพทย์ชั้นเลิศ</div>'
     + '<div class="doc-org2">คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</div>'
     + '<h2>' + escHtml(title) + '</h2>'
     + (serviceDate ? '<div class="sub">นัดหมาย ' + escHtml(serviceDate) + '</div>' : '')
     + body
-    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '<script>' + SUMMARY_PRINT_FIT_JS + '<\/script>'
     + '</body></html>');
   w.document.close();
 }
@@ -8714,7 +8929,7 @@ function showStaffSummary(idx) {
   }
 
   // ── ยอดรวม ──
-  html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + escHtml(r.total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
+  html += '<div class="sr-total-row"><span class="sr-total-label">ยอดรวมทั้งหมด</span><span class="sr-total-amount">' + fmtBaht(r.total) + ' <span style="font-size:13px;font-weight:500">บาท</span></span></div>';
 
   // ── แบบสอบถามผู้ป่วยตรวจความหนาแน่นของกระดูกด้วย DEXA (เจ้าของสั่งเพิ่ม 2026-08-26) ──
   // r.bmdSurvey มาจากคอลัมน์ 'แบบซักประวัติ BMD (DEXA)' ในชีต ผ่าน doSearch — ว่างสำหรับคนที่ไม่ได้ตรวจ BMD
@@ -8780,17 +8995,26 @@ function collectPrepCss() {
 // CSS ของหน้าต่างพิมพ์ใบสรุป — ใช้ร่วมกัน 2 ใบ: ใบสรุปเจ้าหน้าที่ (printStaffSummary)
 // และใบสรุปของผู้รับบริการ (printMySummary) เพิ่ม 2026-09-09 ให้หน้าตาเหมือนกัน
 // ⚠ ย้ายมาจากก้อนเดิมใน printStaffSummary() ทั้งดุ้น ไม่ได้แก้กฎใด ๆ — แก้ไฟล์นี้กระทบใบพิมพ์ทั้งคู่
+// ⚠ ไม่มี @media print แล้ว (ถอดออก 2026-09-13) — หน้าต่างนี้เปิดมาเพื่อพิมพ์อย่างเดียวเท่านั้น
+// (window.open('', '_blank') + document.write ทั้งใบ ไม่เคยมีใครเห็นแบบไม่พิมพ์) ⇒ ใส่กฎตรง ๆ ไม่ต้องมีเงื่อนไข
+// เหตุผลที่ต้องถอด: กฎย่อรายการ/ตัดหน้า (.sr-test-list-full/.sr-test-list-condensed ฯลฯ) ต้องทำงาน "ตอนวัดความสูงด้วย JS"
+// ด้วย (SUMMARY_PRINT_FIT_JS ด้านล่าง) — ถ้ายังอยู่ใน @media print กฎจะไม่ทำงานตอนอยู่บนจอ (ก่อนกด print)
+// ⇒ JS วัดความสูงได้คนละค่ากับตอนพิมพ์จริง ทำให้ย่อ zoom ผิดขนาด
 const SUMMARY_PRINT_CSS =
-    'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;margin:24px auto;max-width:720px}'
-    + 'h2{font-size:18px;color:#001D3D;margin:0 0 4px}'
-    + '.sub{font-size:12px;color:#666;margin-bottom:16px;border-bottom:2px solid #001D3D;padding-bottom:10px}'
-    + '.sr{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee}'
+    // line-height:1.5 (ใหม่) แก้ปัญหาสระ/วรรณยุกต์ไทยชนกัน — เดิม body ไม่เคยตั้งค่านี้เลย
+    // width:180mm (แทน max-width:720px เดิม = 190.5mm ซึ่งล้นพื้นที่พิมพ์ 186mm อยู่แล้ว) + margin:0 auto
+    // ให้ความกว้างตอนวัดบนจอ (ก่อนพิมพ์) เท่ากับความกว้างตอนพิมพ์จริงเป๊ะ — SUMMARY_PRINT_FIT_JS ต้องพึ่งค่านี้
+    // padding:10mm 0 4mm (ใหม่) กันเนื้อหาชิดขอบบนกระดาษเกินไป
+    'body{font-family:"Sarabun",sans-serif;font-size:14px;color:#1a1a1a;line-height:1.5;width:180mm;margin:0 auto;padding:10mm 0 4mm}'
+    + 'h2{font-size:18px;color:#001D3D;margin:0 0 6px;line-height:1.5}'
+    + '.sub{font-size:12px;color:#666;margin-bottom:16px;border-bottom:2px solid #001D3D;padding-bottom:11px;line-height:1.5}'
+    + '.sr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee}'
     + '.sl{color:#555}.sv{font-weight:700;text-align:right}'
     + '.sr-section-title{font-weight:800;font-size:14px;background:#E8F5F7;color:#00575E;padding:7px 12px;border-radius:7px;margin:12px 0 6px;border-left:4px solid #00575E}'
     + '.sr-section-title.extra{background:#FFF3E0;color:#E65100;border-left:4px solid #E65100}'
     + '.sr-test-list{padding-left:4px}'
     + '.sr-test-list-condensed{display:none}'
-    + '.sr-test-item{display:flex;align-items:baseline;gap:6px;padding:3px 0;font-size:13px}'
+    + '.sr-test-item{display:flex;align-items:baseline;gap:6px;padding:2.5px 0;font-size:13px}'
     + '.sr-dot{font-size:8px}.included-dot{color:#00575E}.extra-dot{color:#E65100}'
     + '.sr-name-th{font-weight:600;color:#1a1a1a}.sr-name-eng{color:#888;font-size:11.5px;font-style:italic}'
     + '.sr-price-row{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:#F0F4FF;border-radius:8px;margin:4px 0}'
@@ -8800,14 +9024,86 @@ const SUMMARY_PRINT_CSS =
     + '.sr-total-amount{font-size:22px;font-weight:900;color:#00575E}'
     // (เคยยัด CSS ของบล็อกคำแนะนำก่อนตรวจไว้ตรงนี้ — ถอดออกแล้วเมื่อ user สั่งยกเลิก 2026-08-18
     //  ใบสรุปเจ้าหน้าที่ไม่มีบล็อกนั้นแล้ว จึงไม่ต้องแบก CSS 50+ กฎไปกับทุกครั้งที่พิมพ์)
-    // ขอบกระดาษเท่ากันทุกด้านตอนพิมพ์ (ใช้เมื่อผู้ใช้เลือก margin "Default" ในกล่องพิมพ์)
+    // ขอบกระดาษเท่ากันทุกด้านตอนพิมพ์ (ใช้เมื่อผู้ใช้เลือก margin "Default" ในกล่องพิมพ์) — @page คงอยู่นอก @media เดิมอยู่แล้ว
     + '@page{margin:12mm}'
-    // margin:0 auto = จัดกึ่งกลาง ห้ามใช้ margin:0 เฉยๆ ไม่งั้นถ้าผู้ใช้ตั้ง margin เป็น "None"
-    // เนื้อหากว้าง 720px จะไปกองชิดซ้ายแล้วเหลือช่องว่าง ~74px ที่ขวาข้างเดียว (เจอจริง 2026-08-09)
-    + '@media print{body{margin:0 auto}'
+    // กฎ 4 บรรทัดต่อไปนี้ (เดิมอยู่ใน @media print) ย้ายออกมาใช้ตลอดเวลาแล้ว (ดูเหตุผลบนสุดของไฟล์นี้)
+    // margin:0 auto ของ body (ประกาศรวมไว้ในบรรทัด body ด้านบนแล้ว) = จัดกึ่งกลาง ห้ามใช้ margin:0 เฉยๆ
+    // ไม่งั้นถ้าผู้ใช้ตั้ง margin เป็น "None" เนื้อหาจะไปกองชิดซ้ายแล้วเหลือช่องว่างข้างขวาข้างเดียว (เจอจริง 2026-08-09)
     + '.sr-total-row{page-break-inside:avoid;break-inside:avoid;page-break-before:avoid;break-before:avoid}'
     + '.sr-test-item,.sr-section-title{page-break-inside:avoid;break-inside:avoid}'
-    + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}}';
+    + '.sr-test-list-full{display:none!important}.sr-test-list-condensed{display:flex!important}';
+
+// ย่อทั้งหน้าให้พอดี 1 แผ่นก่อนสั่งพิมพ์จริง (เพิ่ม 2026-09-13 · แก้ขอบกันพลาด + จุดจุดชนวน 2026-09-13 รอบ 2)
+// ปัญหาเดิม: ใบเจ้าหน้าที่ที่มีรายการตรวจ 13 รายการพอดี (ไม่เข้าเกณฑ์ย่อรายการ addItems>=1 || totalItemCount>=14)
+// ล้นไปหน้า 2 แค่บรรทัด "ราคาโปรแกรม" กับ "ยอดรวมทั้งหมด" ⇒ เกณฑ์ >=14 เดิมครอบคลุมไม่ครบทุกเคส
+// แก้ด้วยการวัดความสูงจริงของ body แล้วย่อทั้งหน้าด้วย CSS zoom แทนการเพิ่มเงื่อนไขย่อรายการอีก
+// ยัดเข้า <script> ของหน้าต่างพิมพ์แทน 'window.onload=function(){window.print();}' เดิมทั้ง 2 ใบ
+const SUMMARY_PRINT_FIT_JS =
+    // ต้องรอฟอนต์ Sarabun โหลดเสร็จก่อนวัดความสูง ไม่งั้นวัดตอนฟอนต์ fallback (เช่น Times) ซึ่งความสูงไม่ตรงกับตอนพิมพ์จริง
+    // ไม่มี document.fonts (เบราว์เซอร์เก่า) หรือรอเกิน 1500ms → เดินหน้าต่อเลยไม่ต้องรอ
+    // _done กันเรียกซ้ำ เผื่อ fallback timer กับ document.fonts.ready.then() มาถึงพร้อมกัน
+    'var _done=false;'
+    + 'function fitAndPrint(){'
+    + '  if(_done) return;'
+    + '  _done=true;'
+    + '  try{'
+    + '    var PX_PER_MM=96/25.4;'
+    // พื้นที่พิมพ์ได้ 1 หน้า = ความสูงกระดาษ A4 (297mm) ลบขอบบน-ล่างที่ตั้งไว้ใน @page ข้างบน (12mm ต่อด้าน)
+    // ⚠ SAFE=0.96 (เผื่อ ~11mm) — เหตุผลเดียวกับ harness/t23_print_blocks.js ("เหลือที่ว่างเผื่อขอบเครื่องพิมพ์ ≥ 5 mm"):
+    //   @page{margin:12mm} เป็นแค่ค่าที่ "ขอ" เบราว์เซอร์ ถ้าไดรเวอร์/เครื่องพิมพ์จริงบังคับขอบกว้างกว่านี้ (พบได้ทั่วไป)
+    //   Chrome จะขยายขอบตามเครื่องพิมพ์ พื้นที่พิมพ์จริงจะน้อยกว่า 273mm ที่คำนวณไว้ ⇒ ถ้าย่อชิดเป๊ะพอดี 273mm
+    //   จะตกไปหน้า 2 อีก (บั๊กเดิมที่กำลังแก้กลับมา) — เผื่อ 4% ไว้ล่วงหน้าจึงต้องมีเสมอ ไม่ใช่แค่ปัดเศษ
+    + '    var SAFE=0.96;'
+    + '    var AVAIL_PX=(297-12*2)*PX_PER_MM*SAFE;'
+    + '    var k=1;'
+    // วนได้ไม่เกิน 4 รอบ — ตัวอักษรไทย reflow ทำให้ความสูงไม่ลดลงเป็นเชิงเส้นตามที่คำนวณในรอบเดียว
+    + '    for(var i=0;i<4;i++){'
+    + '      var h=document.body.getBoundingClientRect().height;'
+    // getBoundingClientRect() ของ Chrome คืนค่าที่คูณ zoom ที่ตั้งไปแล้วมาด้วย ⇒ วัดซ้ำได้ตรง ๆ ทุกรอบ
+    + '      if(h<=AVAIL_PX) break;'
+    // 0.995 ตรงนี้มีไว้ให้ค่า k ลู่เข้าเร็วขึ้น (กันวนเกิน AVAIL_PX นิดหน่อยจาก rounding) ไม่ใช่ตัวเผื่อขอบ — ตัวเผื่อขอบคือ SAFE ข้างบน
+    + '      k=k*(AVAIL_PX/h)*0.995;'
+    // พื้นย่อต่ำสุด 0.70 ห้ามย่อกว่านี้ — ย่อกว่านี้ตัวอักษรเล็กจนอ่านไม่ออก ยอมให้ล้นไปหน้า 2 ดีกว่า
+    // (เคสที่ชนพื้นคือใบเจ้าหน้าที่ที่มีทั้งแบบสอบถาม DEXA และ Technologist's Note ซึ่งยาวมากจริง ๆ)
+    + '      if(k<0.70) k=0.70;'
+    // zoom ไม่ใช่ CSS มาตรฐาน เบราว์เซอร์ที่ไม่รองรับ (เช่น Firefox) แค่เพิกเฉย ไม่ throw ⇒ ไม่ต้องมี fallback อื่น
+    + '      document.body.style.zoom=k;'
+    + '    }'
+    // วัดครั้งสุดท้าย — ถ้าย่อจนชนพื้น 0.70 แล้วยังไม่พอดี 1 หน้า ให้คืนขนาดเต็ม
+    // เพราะการย่อในกรณีนี้ไม่ได้ลดจำนวนหน้าลงเลย (คำนวณย้อนกลับแล้วเนื้อหายาวเกิน 1 หน้าอยู่แล้วตั้งแต่ต้น
+    // ต่อให้ไม่ย่อก็ยังเป็น 2 หน้าเท่าเดิม) แลกมาด้วยตัวอักษรเล็กลง 30% เปล่า ๆ — อ่านง่ายเต็มขนาดบน 2 หน้า
+    // ดีกว่าอ่านยาก 70% บน 2 หน้าเท่ากัน (เคสจริง: โปรแกรมใหญ่สุด + รายการเพิ่มเติมเยอะ + DEXA + Technologist’s Note)
+    + '    if(document.body.getBoundingClientRect().height>AVAIL_PX){document.body.style.zoom="";}'
+    + '  }catch(e){}'
+    // ห้ามมีเส้นทางไหนไม่ได้พิมพ์เลย แม้การวัด/ย่อข้างบนจะพัง
+    + '  try{window.print();}catch(e){}'
+    + '}'
+    // รอฟอนต์: แยกออกมาเป็นฟังก์ชันของตัวเอง เรียกได้จากทั้ง 2 เส้นทางจุดชนวนด้านล่างโดยไม่ซ้ำโค้ด
+    + 'function startFit(){'
+    + '  try{'
+    + '    if(window.document.fonts && document.fonts.ready){'
+    + '      var _t=setTimeout(fitAndPrint,1500);'
+    + '      document.fonts.ready.then(function(){clearTimeout(_t);fitAndPrint();});'
+    + '    }else{'
+    + '      fitAndPrint();'
+    + '    }'
+    + '  }catch(e){fitAndPrint();}'
+    + '}'
+    // จุดชนวน: ต้องรอ window.onload ก่อน (เหมือนโค้ดเดิม 'window.onload=function(){window.print();}')
+    // ไม่ใช่รันทันทีตอน parse ⇒ กันวัดความสูงก่อนสไตล์ชีต Google Fonts (link ใน <head>) โหลดเสร็จ
+    // ซึ่งจะได้ความสูงผิดแล้วคำนวณ zoom ผิดขนาดไปเลย (คนละปัญหากับ document.fonts.ready ข้างบนที่รอ "ฟอนต์เรนเดอร์"
+    // — อันนี้รอ "สไตล์ชีตโหลดเสร็จ" ซึ่งต้องมาก่อน)
+    // ถ้าเอกสารโหลดเสร็จอยู่แล้ว (ไม่ค่อยเกิดเพราะเพิ่ง document.write มา) เข้า startFit() ได้เลย
+    // ผูก addEventListener('load') ไว้ + มี setTimeout สำรอง 3000ms เผื่อ 'load' ไม่ยิงด้วยเหตุผลใดก็ตาม
+    // (_done ใน fitAndPrint() กันเรียกซ้ำอยู่แล้วไม่ว่าเส้นทางไหนจะมาถึงก่อน)
+    + 'try{'
+    + '  if(document.readyState==="complete"){'
+    + '    startFit();'
+    + '  }else{'
+    + '    window.addEventListener("load",startFit);'
+    + '    setTimeout(startFit,3000);'
+    + '  }'
+    + '}catch(e){fitAndPrint();}';
 
 function printStaffSummary() {
   const title   = document.getElementById('staffSummaryTitle').textContent;
@@ -8842,7 +9138,7 @@ function printStaffSummary() {
     + '<div class="sub">' + escHtml(dateStr) + '</div>'
     + content
     + bmdNoteHtml
-    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '<script>' + SUMMARY_PRINT_FIT_JS + '<\/script>'
     + '</body></html>');
   w.document.close();
 }
