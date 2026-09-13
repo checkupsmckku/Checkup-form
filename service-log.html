@@ -185,10 +185,37 @@
     background: #FFF8E8; border: 1px solid #F0C040; color: #7A5A00;
     border-radius: 8px; padding: 6px 10px; margin-top: 4px; font-size: 13px; font-weight: 600;
   }
+  /* เจ้าของสั่ง 2026-09-13: "ดูด้วยตาเปล่าไม่ออกว่าพิมพ์ภาษาไทยไว้ เจ้าหน้าที่จะคิดว่าระบบบัค"
+     สาเหตุ: สระ/วรรณยุกต์ไทย (◌ิ ◌ี ◌ั ◌่ ◌้ ◌์ ...) เป็นอักขระที่ "เกาะ" ตัวหน้า ไม่กินที่ ไม่มีรูปของตัวเอง
+     ⇒ ช่องที่มี "NN1234" + สระไทยซ่อนอยู่ จะดูเหมือน NN1234 เฉย ๆ ทั้งที่ค่าจริงไม่ใช่
+     เจ้าของเลือกแนวทาง "ไม่แตะค่าในช่อง แต่ทำให้เห็นชัด" (ไม่ให้ระบบแก้ค่าให้เอง) */
+  input.input-bad {
+    border-color: var(--danger) !important; background: #FDECEA;
+  }
+  .hint-badchar {
+    display: inline-block; background: #fff; border: 1px solid var(--danger); color: var(--danger);
+    border-radius: 5px; padding: 0 5px; margin: 0 2px; font-weight: 700; font-size: 14px;
+  }
+  .hint-clear-btn {
+    display: inline-block; margin-left: 6px; padding: 2px 10px; font-size: 12px; font-weight: 700;
+    border: 1px solid var(--danger); background: #fff; color: var(--danger);
+    border-radius: 6px; cursor: pointer;
+  }
   .error-box {
     background: #FDECEA; border: 1px solid var(--danger); color: var(--danger);
     border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 14px; font-weight: 600;
   }
+
+  /* เจ้าของสั่ง 2026-09-13: แถบสรุปต้องแยก 5 หมวด พร้อมจำนวนคนและยอดเงินของแต่ละหมวด
+     ⚠ .summary-bar เดิมเป็น flex แนวนอน (justify-content: space-between) ⇒ ถ้าปล่อยไว้ ตารางย่อยจะถูกดันไปอยู่ข้าง ๆ
+     จึงให้ .sum-breakdown เป็น grid ของตัวเอง และบังคับให้กินเต็มบรรทัดด้วย flex-basis: 100% */
+  .sum-breakdown {
+    flex: 1 1 100%; margin-top: 6px; padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.35);
+    display: grid; grid-template-columns: 1fr auto auto; gap: 3px 16px; font-weight: 700;
+  }
+  .sum-breakdown .sum-n, .sum-breakdown .sum-b { text-align: right; white-space: nowrap; }
+  @media print { .sum-breakdown { border-top-color: #999; } }
 
   .summary-bar {
     display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
@@ -197,8 +224,8 @@
   }
 
   /* เจ้าของสั่ง 2026-09-11 — การ์ดสติกเกอร์: ซ้ายชื่อ-สกุล+HN แบบสติกเกอร์ · กลางรายละเอียด · ขวาปุ่มแก้ไข/ยกเลิก
-     แก้ 2026-09-11 (รอบ 2 — ตามภาพตัวอย่างที่เจ้าของส่ง): สติกเกอร์ซ้ายเรียง 3 บรรทัดแบบเดียวกับ .cu-card
-     (HN / ชื่อ / สกุล คนละบรรทัด) และฝั่งขวาแตกเป็นหลายบรรทัดแทนประโยคยาวคั่น */
+     แก้ 2026-09-13: สติกเกอร์ซ้ายเหลือ **บรรทัดเดียว** "HN : AB1234 นาง นน มม" (เดิมแยก HN/ชื่อ/สกุล 3 บรรทัด)
+     ⇒ ขยาย flex-basis จาก 170px เป็น 230px ไม่งั้นบรรทัดเดียวจะถูกตัดเป็น 3 บรรทัดเหมือนเดิมโดยปริยาย */
   .record-item {
     display: flex; align-items: stretch; flex-wrap: wrap;
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
@@ -206,10 +233,10 @@
   }
   .record-item.cancelled { opacity: 0.55; }
   .rec-sticker {
-    flex: 0 0 170px; background: var(--gray-pale); border-right: 1px solid var(--border);
+    flex: 0 0 230px; background: var(--gray-pale); border-right: 1px solid var(--border);
     padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 2px;
   }
-  .rec-hn { font-weight: 700; font-size: 15px; color: var(--primary-dark); }
+  .rec-hn { font-weight: 700; font-size: 15px; color: var(--primary-dark); word-break: break-word; }
   .rec-line { line-height: 1.45; color: var(--text); word-break: break-word; }
   .rec-body { flex: 1 1 240px; min-width: 0; padding: 10px 12px; }
   .rec-actions {
@@ -308,13 +335,20 @@
      เจ้าของสั่ง: "แบบการ์ดเอาให้อยู่ใน 1 หน้าได้เยอะที่สุด จะได้ไม่เปลืองกระดาษ ไซส์ A4"
      ⇒ 2 ใบ/แถว · ตัวอักษรเล็กแต่ยังอ่านออก · break-inside:avoid กันการ์ดถูกตัดครึ่งข้ามหน้า */
   .cu-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  /* แก้ 2026-09-13 (เจ้าของสั่ง): บรรทัดระบุตัวคนเป็นบรรทัดเดียว "HN : AB1234 นาง ชื่อ สกุล" พาดเต็มความกว้าง
+     แล้วรายละเอียดอยู่ใต้ลงมาเรียง 2 คอลัมน์ (เดิมการ์ดแบ่งซ้าย 42% / ขวา 58% แล้วซ้ายเรียง HN/ชื่อ/สกุล 3 บรรทัด) */
   .cu-card {
-    display: grid; grid-template-columns: 42% 58%; gap: 6px;
+    display: block;
     border: 1.5px solid var(--primary); border-radius: 6px; padding: 6px 8px;
     font-size: 13px; line-height: 1.9; break-inside: avoid; page-break-inside: avoid;
   }
-  .cu-card .cu-left { border-right: 1px dashed var(--border); padding-right: 6px; }
-  .cu-card .cu-hn { font-weight: 800; font-size: 15px; }
+  /* รายละเอียดเรียงเต็มความกว้างการ์ด — เคยลองแบ่ง 2 คอลัมน์แล้วบรรทัดอย่าง
+     "ตรวจภายใน : ตรวจภายใน (Thinprep + HPV)" ถูกตัดกลางคำ อ่านยากกว่าเดิม */
+  .cu-card .cu-body { display: block; }
+  .cu-card .cu-hn {
+    font-weight: 800; font-size: 15px;
+    border-bottom: 1px dashed var(--border); padding-bottom: 2px; margin-bottom: 3px;
+  }
   .cu-card .cu-line { white-space: normal; word-break: break-word; }
   /* เจ้าของสั่ง 2026-09-11: "ขยับช่องให้เซ็นชื่อได้ง่าย" + "เพิ่มระยะห่างระหว่างบรรทัด"
      เดิมเส้นเซ็นสูง 0.3 มม. (วัดจริงในโหมดพิมพ์) = เส้นแปะติดใต้คำว่า "เซ็นรับ" ไม่มีที่ลงปากกา
@@ -339,7 +373,7 @@
   .sp-board-card-line.sp-board-warn { color: var(--danger); font-weight: 700; }
   .sp-board-person-card { margin-top: 10px; }
   .sp-board-name { font-size: 20px; font-weight: 700; }
-  .sp-board-hn { color: var(--text-muted); }
+  /* 2026-09-13: .sp-board-hn ถูกยุบเข้า .sp-board-name (บรรทัดเดียว "HN : … ") — ไม่มี element ตัวนี้แล้ว */
   .sp-board-status { margin: 4px 0; font-weight: 600; }
   .sp-saving { font-size: 12px; color: var(--text-muted); } /* รอบ 9.2 — ตัวบอกสถานะระหว่างรอ apiCall() ของปุ่มสถานะรายคน */
 
@@ -397,6 +431,7 @@
     .cu-card .cu-sign { margin-top: 2mm; }
     .cu-card .cu-sig-line { min-width: 28mm; height: 9mm; }
     #cuTableWrap .scroll-x, #cuCardsWrap { overflow: visible !important; }
+    #cuListWrap .rec-actions { display: none; }
     /* ตารางนี้มี 9 คอลัมน์ ⇒ ถ้าปล่อยให้กว้างตามเนื้อหาจะล้นขอบขวาของ A4 แล้วคอลัมน์ลายเซ็นหายไปทั้งคอลัมน์
        (เจอจริงตอนทดสอบพิมพ์ 2026-09-03) ⇒ ล็อกความกว้างเป็น % ด้วย table-layout: fixed และให้ข้อความตัดบรรทัดได้ */
     table.cu-table { font-size: 8.5pt; width: 100%; min-width: 0; table-layout: fixed; }
@@ -424,8 +459,6 @@
   <div class="gate-wrap">
     <div class="card">
       <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
-      <p class="muted">Checkup SMC KKU — บันทึกเพื่อสถิติปริมาณงาน · ไม่เก็บเลขบัตรประชาชน · ช่องชื่อ/HN เป็นช่องไม่บังคับ ใช้ภายในหน่วยเท่านั้น</p>
-
       <div id="gateStepKey">
         <label class="field-label" for="gateStaffKey">รหัสผ่านเจ้าหน้าที่</label>
         <input type="password" id="gateStaffKey" autocomplete="off" placeholder="กรอกรหัสผ่าน">
@@ -496,6 +529,9 @@
                   <option value="นาย"></option>
                   <option value="นาง"></option>
                   <option value="น.ส."></option>
+                  <option value="Mr."></option>
+                  <option value="Miss"></option>
+                  <option value="Mrs."></option>
                 </datalist>
 
                 <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
@@ -742,12 +778,14 @@
           <button type="button" class="btn" id="btnCuLoad">ดูรายชื่อ</button>
           <button type="button" class="btn secondary" id="btnCuViewTable">📋 แบบตาราง</button>
           <button type="button" class="btn secondary" id="btnCuViewCard">🗂 แบบการ์ด</button>
+          <button type="button" class="btn secondary" id="btnCuViewList">📝 แบบรายการ (แก้ไขได้)</button>
           <button type="button" class="btn secondary" id="btnCuPrint">🖨 พิมพ์</button>
         </div>
       </div>
       <h2 id="cuTableHeading" style="margin-top:14px;"></h2>
       <div id="cuTableWrap"></div>
       <div id="cuCardsWrap" hidden></div>
+      <div id="cuListWrap" hidden></div>
     </div>
   </div>
 
@@ -1387,31 +1425,99 @@ function isValidHn(v) {
   return HN_PATTERN.test(String(v == null ? '' : v).trim());
 }
 
+/* เจ้าของสั่ง 2026-09-13: "เลือกเพศชายแล้วคำนำหน้าเป็นของผู้หญิง → แจ้งเตือนและห้ามบันทึก"
+   ตัวอย่างที่เจ้าของยกมาเอง: miss · mrs. · นางสาว · นาง · ร.ต.ต.หญิง
+   ⇒ ตัดสิน 2 ทาง เพราะช่องนี้เป็น input+datalist พิมพ์เองได้ จะไล่เทียบเฉพาะรายการใน datalist ไม่พอ:
+     1. มีคำว่า "หญิง" อยู่ในคำนำหน้า — ครอบยศทุกชั้น (ร.ต.ต.หญิง · พ.ต.อ.หญิง · เด็กหญิง) โดยไม่ต้องไล่เติมยศทีละตัว
+     2. คำที่เป็นของผู้หญิงแต่ไม่มีคำว่า "หญิง" ติดมา — ต้องไล่ตามรายการ
+   ⚠ บังคับฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — เหตุผลเดียวกับ HN/checkupMissing
+      (แถวเก่าที่คำนำหน้าไม่ตรงเพศจะกลายเป็นแถวที่แก้ไขไม่ได้เลย) */
+var FEMALE_PREFIX_WORDS = ['นาง', 'นางสาว', 'นส', 'miss', 'mrs', 'ms', 'ดญ'];
+function normPrefix_(raw) {
+  // ตัดจุด/ช่องว่าง/ไม้ยมก/ฟองมัน/ขีด แล้วทำเป็นตัวพิมพ์เล็ก ⇒ 'น.ส.'→'นส' · 'Mrs.'→'mrs' · 'ร.ต.ต.หญิง'→'รตตหญิง'
+  return String(raw == null ? '' : raw).replace(/[\s.ๆ๏•\-_]/g, '').toLowerCase();
+}
+function isFemalePrefix(raw) {
+  var p = normPrefix_(raw);
+  if (!p) return false;
+  if (p.indexOf('หญิง') !== -1) return true;
+  return FEMALE_PREFIX_WORDS.indexOf(p) !== -1;
+}
+
 var THAI_CHAR_RE = /[ก-๙]/;
 /* เจ้าของสั่ง 2026-09-12: เตือนที่ตัวช่อง HN ทันที (ไม่ใช่แค่ท้ายฟอร์มใต้ยอดรวม) เพราะเคสที่เจอบ่อยคือ
    เจ้าหน้าที่ลืมเปลี่ยนแป้นพิมพ์ พิมพ์ HN เป็นภาษาไทยไปทั้งช่อง กว่าจะเห็น error ท้ายฟอร์มก็กรอกอย่างอื่นจนจบแล้ว
    ⚠ ฟังก์ชันนี้เป็นแค่ hint เสริม ห้ามยุ่งกับ validateForm()/#formWarning ที่เป็นด่านจริง */
+/* อักขระไทยที่ "เกาะตัวหน้า" (combining) — ไม่มีรูปของตัวเอง ต้องเอา ◌ (U+25CC) มารองถึงจะเห็นบนจอ
+   ครอบ: ◌ั ◌ิ ◌ี ◌ึ ◌ื ◌ุ ◌ู ◌ฺ ◌็ ◌่ ◌้ ◌๊ ◌๋ ◌์ ◌ํ ◌๎ (U+0E31, U+0E34-U+0E3A, U+0E47-U+0E4E) */
+var THAI_COMBINING_RE = /[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/;
+function describeThaiChars_(raw) {
+  var out = [];
+  var str = String(raw == null ? '' : raw);
+  for (var i = 0; i < str.length; i++) {
+    var ch = str.charAt(i);
+    if (!THAI_CHAR_RE.test(ch)) continue;
+    // ◌ + ตัวเกาะ = มองเห็นได้จริงบนจอ · ตัวที่มีรูปของตัวเองแสดงตรง ๆ
+    out.push({ pos: i + 1, shown: THAI_COMBINING_RE.test(ch) ? ('\u25CC' + ch) : ch });
+  }
+  return out;
+}
+
 function updateHnHint() {
   var hintEl = qs('patientHnHint');
+  var inputEl = qs('patientHn');
   if (!hintEl) return;
-  var raw = (qs('patientHn').value || '').trim();
-  if (raw === '') {
-    hintEl.hidden = true;
+  // ⚠ สร้าง DOM ด้วย createElement/textContent ล้วน ห้ามต่อ string ใส่ innerHTML
+  //   ค่าในช่องมาจากผู้ใช้ และตัวอักษรที่เอามาโชว์คือค่าดิบของเขาเอง
+  function reset_() {
     hintEl.textContent = '';
+    while (hintEl.firstChild) hintEl.removeChild(hintEl.firstChild);
+  }
+  function markBad_(bad) { if (inputEl) { if (bad) inputEl.classList.add('input-bad'); else inputEl.classList.remove('input-bad'); } }
+
+  var raw = (inputEl && inputEl.value ? inputEl.value : '').trim();
+  if (raw === '') {
+    reset_(); hintEl.hidden = true; markBad_(false);
     return;
   }
   if (THAI_CHAR_RE.test(raw)) {
-    hintEl.textContent = '⚠ ตอนนี้พิมพ์เป็นภาษาไทยอยู่ — กด Alt+Shift เปลี่ยนเป็นภาษาอังกฤษ แล้วพิมพ์ HN ใหม่ (เช่น AB1234)';
-    hintEl.hidden = false;
+    var bads = describeThaiChars_(raw);
+    reset_();
+    hintEl.appendChild(document.createTextNode(
+      '\u26A0 มีตัวอักษรภาษาไทยปนอยู่ ' + bads.length + ' ตัว (ตำแหน่งที่ ' +
+      bads.map(function (b) { return b.pos; }).join(', ') + ') คือ '));
+    bads.forEach(function (b) {
+      var chip = document.createElement('span');
+      chip.className = 'hint-badchar';
+      chip.textContent = b.shown;
+      hintEl.appendChild(chip);
+    });
+    hintEl.appendChild(document.createTextNode(
+      ' — สระ/วรรณยุกต์ไทยเกาะอยู่บนตัวอื่น จึงมองด้วยตาเปล่าไม่เห็น (◌ คือช่องว่างที่ระบบใส่ให้ดู) ' +
+      'กด Alt+Shift เปลี่ยนเป็นภาษาอังกฤษ แล้วพิมพ์ HN ใหม่ (เช่น AB1234)'));
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hint-clear-btn';
+    btn.textContent = 'ล้างช่องนี้';
+    btn.addEventListener('click', function () {
+      if (!inputEl) return;
+      inputEl.value = '';
+      updateHnHint();
+      applyLogLocks();
+      recalcTotals();
+      inputEl.focus();
+    });
+    hintEl.appendChild(btn);
+    hintEl.hidden = false; markBad_(true);
     return;
   }
   if (!isValidHn(raw)) {
-    hintEl.textContent = '⚠ HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
-    hintEl.hidden = false;
+    reset_();
+    hintEl.textContent = '\u26A0 HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
+    hintEl.hidden = false; markBad_(true);
     return;
   }
-  hintEl.hidden = true;
-  hintEl.textContent = '';
+  reset_(); hintEl.hidden = true; markBad_(false);
 }
 /* =========================================================================
    6.2 สแกนบาร์โค้ด (รอบ 6) — ปรับ pattern ที่นี่จุดเดียวเมื่อรู้รูปแบบบาร์โค้ดจริง
@@ -1705,6 +1811,10 @@ function validateForm(ctx) {
     msg = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
   } else if (getSelectedGender() === 'male' && getSpecialRegIds().indexOf('mmg') !== -1) {
     msg = 'เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้';
+  } else if (getSelectedGender() === 'male' && isFemalePrefix(qs('patientPrefix').value)) {
+    // ⚠ ใช้ getSelectedGender() ดิบ ไม่ใช่ ctx.gender — ctx.gender เป็น checkupOn ? getSelectedGender() : ''
+    //   ⇒ เลือกเพศชายไว้แต่ยังไม่ได้เลือกโปรแกรม จะได้ '' แล้วด่านนี้หลุด (บทเรียนเดียวกับด่าน MMG ข้างบน)
+    msg = 'คำนำหน้า "' + String(qs('patientPrefix').value).trim() + '" เป็นของผู้หญิง แต่เลือกเพศชายไว้ — แก้อย่างใดอย่างหนึ่งก่อนบันทึก';
   }
 
   if (msg) {
@@ -2262,6 +2372,38 @@ function recordMatchesHn(rec, q) {
   return normHnQuery(rec && rec.patientHn).indexOf(q) !== -1;
 }
 
+// เจ้าของสั่ง 2026-09-13: แยกมาร์กอัปการ์ด .record-item ออกมาเป็นฟังก์ชันกลาง เพื่อให้มุมมองที่ 3
+// "แบบรายการ (แก้ไขได้)" ของหน้ารายชื่อตรวจสุขภาพ (renderCheckupList) ใช้ร่วมกับหน้า "รายการวันนี้" ได้
+// ⚠ ห้ามเปลี่ยนชื่อคลาส/attribute ในนี้ — renderTodayList และ renderCheckupList พึ่ง data-edit-id/data-record-id เดียวกัน
+function recordItemHtml(rec, cancelled) {
+  var detailParts = summarizeRecordParts(rec);
+  var detailHtml = '';
+  if (detailParts.length) {
+    detailParts.forEach(function (p) { detailHtml += '<div class="rec-line">' + escHtml(p) + '</div>'; });
+  } else {
+    detailHtml = '<div class="rec-line">-</div>';
+  }
+  // เจ้าของสั่ง 2026-09-13: ทุกที่ที่ขึ้น HN+คำนำหน้า+ชื่อ+สกุล ใช้บรรทัดเดียวรูปแบบ "HN : AB1234 นาง นน มม"
+  var html = '<div class="rec-sticker">' +
+    '<div class="rec-hn">' + escHtml(hnNameLine(rec)) + '</div>' +
+    '</div>' +
+    '<div class="rec-body">' +
+    '<div class="rec-head">' +
+    '<span class="rec-time">' + escHtml(rec.time || '') + '</span>' +
+    '<span class="rec-total">' + escHtml(money(recordGrandTotal(rec))) + ' บาท</span>' +
+    '</div>' +
+    detailHtml +
+    (cancelled ? '<div class="cancelled-tag">ยกเลิกแล้ว</div>' : '') +
+    '</div>';
+  if (!cancelled) {
+    html += '<div class="rec-actions no-print">' +
+      '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '">แก้ไข</button>' +
+      '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '">ยกเลิก</button>' +
+      '</div>';
+  }
+  return html;
+}
+
 function renderTodayList(records) {
   LAST_TODAY_RECORDS = records || [];
   renderSpecialTodaySummary(LAST_TODAY_RECORDS);
@@ -2276,17 +2418,34 @@ function renderTodayList(records) {
   var totalPeople = 0, totalMoney = 0;
   // เจ้าของสั่ง 2026-09-03: หน้า "รายการวันนี้" ต้องสรุปยอดผู้รับบริการรายบริการด้วย
   // นับเป็น "จำนวนคน" ไม่ใช่จำนวนใบ/เข็ม · แถวที่ยกเลิกไม่นับทุกช่อง
-  var cntCheckup = 0, cntVaccine = 0, cntMedGen = 0, cntMedLab = 0;
+  // เจ้าของสั่งเพิ่ม 2026-09-13: แยกให้ครบ 5 หมวด พร้อม "ยอดเงิน" ของแต่ละหมวด
+  //   ตรวจสุขภาพ · วัคซีนเดี่ยว · วัคซีนเรตตรวจสุขภาพ · ใบรับรองแพทย์ทั่วไป · ใบรับรองแพทย์มี lab
+  // ⚠ "วัคซีนเดี่ยว" กับ "วัคซีนเรตตรวจสุขภาพ" แยกด้วยธง rec.vaccineWithCheckup (คอลัมน์ที่ 42 ของชีต)
+  //   ไม่ใช่แยกด้วย "มีโปรแกรมตรวจสุขภาพไหม" — คนที่มาตรวจสุขภาพแต่เจ้าหน้าที่ไม่ได้บันทึกโปรแกรม
+  //   ก็ติ๊กธงนี้เองได้ และต้องถูกนับเป็นเรตตรวจสุขภาพ (ดูเหตุผลที่ applyVaccineCheckupRateLock)
+  // ⚠ ยอดใบรับรองแพทย์: totals.medcert = ค่าใบทั่วไป + medCertLabAmount รวมกันมาแล้ว
+  //   ⇒ ยอด "ทั่วไป" ต้องลบ medCertLabAmount ออก ไม่งั้นยอด lab ถูกนับซ้ำ 2 หมวด
+  var cntCheckup = 0, cntVaccine = 0, cntVaccineCu = 0, cntMedGen = 0, cntMedLab = 0;
+  var sumCheckup = 0, sumVaccine = 0, sumVaccineCu = 0, sumMedGen = 0, sumMedLab = 0, sumOther = 0;
   var q = todayHnQuery();
   var shown = 0;
   records.forEach(function (rec) {
     var cancelled = rec.status === 'ยกเลิก';
     if (!cancelled) {
       totalPeople++; totalMoney += recordGrandTotal(rec);
-      if (rec.program) cntCheckup++;
-      if ((rec.vaccineCount || 0) > 0) cntVaccine++;
-      if (((rec.medCert5 || 0) + (rec.medCertDriver || 0)) > 0) cntMedGen++;
-      if ((rec.medCertLabCount || 0) > 0 || (rec.medCertLabAmount || 0) > 0) cntMedLab++;
+      var t = rec.totals || {};
+      var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
+      var labAmt = numOf(rec.medCertLabAmount);
+      if (rec.program) { cntCheckup++; sumCheckup += numOf(t.checkup); }
+      if ((rec.vaccineCount || 0) > 0) {
+        if (rec.vaccineWithCheckup) { cntVaccineCu++; sumVaccineCu += numOf(t.vaccine); }
+        else { cntVaccine++; sumVaccine += numOf(t.vaccine); }
+      }
+      if (((rec.medCert5 || 0) + (rec.medCertDriver || 0)) > 0) { cntMedGen++; sumMedGen += (numOf(t.medcert) - labAmt); }
+      if ((rec.medCertLabCount || 0) > 0 || labAmt > 0) { cntMedLab++; sumMedLab += labAmt; }
+      // ตรวจเพิ่มของ "แถวยุคเก่า" ไม่เข้าหมวดไหนเลย (กระดานไม่มี UI ให้ติ๊กตรวจเพิ่มแล้ว)
+      // เก็บไว้ต่างหากเพื่อให้ยอด 5 หมวดบวกกันแล้วเท่ากับยอดรวมจริงเสมอ
+      sumOther += numOf(t.extra);
     }
 
     if (!recordMatchesHn(rec, q)) return;
@@ -2294,34 +2453,7 @@ function renderTodayList(records) {
 
     var div = document.createElement('div');
     div.className = 'record-item' + (cancelled ? ' cancelled' : '');
-    var nm = splitFullName(rec.patientName);
-    var detailParts = summarizeRecordParts(rec);
-    var detailHtml = '';
-    if (detailParts.length) {
-      detailParts.forEach(function (p) { detailHtml += '<div class="rec-line">' + escHtml(p) + '</div>'; });
-    } else {
-      detailHtml = '<div class="rec-line">-</div>';
-    }
-    var html = '<div class="rec-sticker">' +
-      '<div class="rec-hn">HN : ' + escHtml(rec.patientHn || '—') + '</div>' +
-      '<div class="rec-line">ชื่อ : ' + escHtml(prefixedFirstName(rec, nm.first) || '—') + '</div>' +
-      '<div class="rec-line">สกุล : ' + escHtml(nm.last || '—') + '</div>' +
-      '</div>' +
-      '<div class="rec-body">' +
-      '<div class="rec-head">' +
-      '<span class="rec-time">' + escHtml(rec.time || '') + '</span>' +
-      '<span class="rec-total">' + escHtml(money(recordGrandTotal(rec))) + ' บาท</span>' +
-      '</div>' +
-      detailHtml +
-      (cancelled ? '<div class="cancelled-tag">ยกเลิกแล้ว</div>' : '') +
-      '</div>';
-    if (!cancelled) {
-      html += '<div class="rec-actions no-print">' +
-        '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '">แก้ไข</button>' +
-        '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '">ยกเลิก</button>' +
-        '</div>';
-    }
-    div.innerHTML = html;
+    div.innerHTML = recordItemHtml(rec, cancelled);
     wrap.appendChild(div);
   });
 
@@ -2349,12 +2481,26 @@ function renderTodayList(records) {
   var sumBar = qs('todaySummaryBar');
   if (sumBar) {
     // ตัวเลขทั้งหมดเป็นจำนวนนับ/ยอดเงินที่คำนวณเอง ไม่มีข้อมูลผู้ใช้มาต่อสตริง จึงยัด innerHTML ได้
+    var breakdown = [
+      ['ตรวจสุขภาพ', cntCheckup, sumCheckup],
+      ['วัคซีนเดี่ยว', cntVaccine, sumVaccine],
+      ['วัคซีนเรตตรวจสุขภาพ', cntVaccineCu, sumVaccineCu],
+      ['ใบรับรองแพทย์ทั่วไป', cntMedGen, sumMedGen],
+      ['ใบรับรองแพทย์มี lab', cntMedLab, sumMedLab]
+    ];
+    // แถวนี้โผล่เฉพาะเมื่อมีแถวยุคเก่าที่มี "ตรวจเพิ่ม" ติดมา — มีไว้ให้ 5 หมวดบวกกันแล้วเท่ากับยอดรวมพอดี
+    if (sumOther > 0) breakdown.push(['อื่น ๆ (ตรวจเพิ่มของแถวเก่า)', 0, sumOther]);
+    // ⚠ ห้ามห่อแต่ละหมวดด้วยแท็ก div — .sum-breakdown เป็น grid 3 คอลัมน์ ถ้าห่อ แต่ละหมวดจะกลายเป็น
+    //   (และห้ามพิมพ์แท็ก div แบบเต็มในคอมเมนต์ด้วย — test_verify_web.js นับแท็กเปิด/ปิดจากตัวไฟล์ดิบ แล้วจะล้ม)
+    //   grid item ตัวเดียวแล้วไหลไปเรียงข้างกัน 3 หมวดต่อบรรทัด (เคยพลาดมาแล้ว 2026-09-13)
+    var rowsHtml = breakdown.map(function (b) {
+      return '<span class="sum-name">' + b[0] + '</span>' +
+        '<span class="sum-n">' + (b[1] > 0 ? (b[1] + ' คน') : '—') + '</span>' +
+        '<span class="sum-b">' + money(b[2]) + ' บาท</span>';
+    }).join('');
     sumBar.innerHTML =
       '<div>วันนี้ให้บริการ ' + totalPeople + ' คน · ยอดเงินรวม ' + money(totalMoney) + ' บาท</div>' +
-      '<div style="margin-top:4px;font-weight:700;">ตรวจสุขภาพ ' + cntCheckup +
-      ' · วัคซีน ' + cntVaccine +
-      ' · ใบรับรองแพทย์ทั่วไป ' + cntMedGen +
-      ' · มี Lab ' + cntMedLab + '</div>';
+      '<div class="sum-breakdown">' + rowsHtml + '</div>';
   }
 }
 
@@ -2362,6 +2508,11 @@ function onEditRecordClick(recordId) {
   var rec = null;
   for (var i = 0; i < LAST_TODAY_RECORDS.length; i++) {
     if (LAST_TODAY_RECORDS[i].recordId === recordId) { rec = LAST_TODAY_RECORDS[i]; break; }
+  }
+  if (!rec) {
+    for (var j = 0; j < LAST_CU_RECORDS.length; j++) {
+      if (LAST_CU_RECORDS[j].recordId === recordId) { rec = LAST_CU_RECORDS[j]; break; }
+    }
   }
   if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชรายการวันนี้'); return; }
   enterEditMode(rec);
@@ -2389,7 +2540,12 @@ function onCancelRecord(recordId, btnEl) {
   apiCall('cancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: recordId }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       showToast('ยกเลิกบันทึกแล้ว');
-      loadToday();
+      var cuScreen = qs('checkupTableScreen');
+      if (cuScreen && cuScreen.style.display !== 'none') {
+        loadCheckupTable();
+      } else {
+        loadToday();
+      }
     } else {
       showToast('❌ ยกเลิกไม่สำเร็จ' + (resp && resp.message ? ': ' + resp.message : ''));
       if (btnEl) btnEl.disabled = false;
@@ -2517,8 +2673,8 @@ function renderSpPeopleCards(id) {
     // รอบ 9.2 — renderSpPeopleCards() rebuild การ์ดใหม่ทั้งหมดทุกครั้ง ⇒ ตัวบอก "กำลังบันทึก…" ต้องอ่านจาก
     // rec._spSaving (state บนตัวเรคคอร์ดเอง) ไม่ใช่ disabled ของปุ่ม เพราะปุ่มเดิมถูกทิ้งไปแล้วทุกรอบ render
     card.innerHTML =
-      '<div class="sp-board-name">' + (idx + 1) + '. ' + escHtml(rec.patientName || '') + '</div>' +
-      '<div class="sp-board-hn">HN ' + escHtml(rec.patientHn || '—') + '</div>' +
+      // เจ้าของสั่ง 2026-09-13: รูปแบบเดียวกับที่อื่น (เดิมแยก 2 บรรทัด และ**ไม่มีคำนำหน้า**)
+      '<div class="sp-board-name">' + (idx + 1) + '. ' + escHtml(hnNameLine(rec)) + '</div>' +
       '<div class="sp-board-status">' + label.icon + ' ' + escHtml(label.text) +
       (rec._spSaving ? ' <span class="sp-saving">กำลังบันทึก…</span>' : '') + '</div>';
 
@@ -2853,14 +3009,23 @@ function prefixedFirstName(rec, first) {
   return prefix ? (prefix + ' ' + f).trim() : f;
 }
 
-var CU_US_PROGRAMS = ['3', '4'];
-function checkupUsCount(rows) {
-  return (rows || []).filter(function (rec) {
-    return CU_US_PROGRAMS.indexOf(String(rec.program)) !== -1;
-  }).length;
+/* เจ้าของสั่ง 2026-09-13: "ทุกส่วนที่ต้องขึ้น HN คำนำหน้าชื่อสกุล ให้เป็นรูปแบบนี้ HN : AB1234 นาง นน มม ไปเลย"
+   ⇒ รวมเป็นบรรทัดเดียวที่เดียวตรงนี้ ห้ามไปประกอบสตริงเองซ้ำในแต่ละหน้า
+   ใช้อยู่ 3 ที่: การ์ด "รายการวันนี้" (.rec-sticker) · ใบพิมพ์แบบการ์ด (.cu-hn) · กระดานงานค้างรายคน (.sp-board-name)
+   ⚠ ใบพิมพ์แบบตารางไม่ได้ใช้ — ที่นั่น คิว/ชื่อ-สกุล/HN เป็นคนละคอลัมน์ ไม่ใช่บรรทัดเดียว
+   ⚠ ค่าว่างถูกตัดทิ้ง ไม่ใส่ — ยกเว้น HN ที่ไม่มีจะขึ้น "HN : —" เพื่อให้เห็นว่าแถวนี้ไม่มี HN จริง ๆ */
+function hnNameLine(rec) {
+  var nm = splitFullName(rec && rec.patientName);
+  return ['HN : ' + ((rec && rec.patientHn) || '—'), prefixedFirstName(rec, nm.first), nm.last]
+    .filter(function (x) { return String(x == null ? '' : x).trim() !== ''; })
+    .join(' ');
 }
+
+/* 🗑 เจ้าของสั่งตัดออกทั้งหมด 2026-09-13: โน้ตท้ายใบเคยมี "ยอด U/S (P3+4) N คน" ต่อท้าย "รวม N คน"
+   ตัดทั้งบนจอและบนกระดาษ ทั้งใบแบบตารางและใบแบบการ์ด ⇒ ตัวนับ checkupUsCount()/CU_US_PROGRAMS ถูกลบไปด้วย
+   (ของเดิมนับเฉพาะโปรแกรม 3 และ 4 เพราะ 2 โปรแกรมนี้มีอัลตราซาวด์ — ถ้าจะเอากลับ ดู git history) */
 function checkupFootText(rows, totalMoney) {
-  var t = 'รวม ' + rows.length + ' คน · ยอด U/S (P3+4) ' + checkupUsCount(rows) + ' คน';
+  var t = 'รวม ' + rows.length + ' คน';
   if (typeof totalMoney === 'number') t += ' · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท';
   return t;
 }
@@ -2921,13 +3086,12 @@ function renderCheckupCards(records, dateStr) {
   rows.forEach(function (rec) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
     var isWaitPickup = rec.deliveryMethod === 'รอรับด้วยตนเอง';
-    var nm = splitFullName(rec.patientName);
+    // เจ้าของสั่ง 2026-09-13: "ถ้าจะเรียงก็จะต้องเป็น HN : AB1234 นาง.... .... ไปเลย"
+    // ⇒ ยุบ 3 บรรทัด (HN / ชื่อ / สกุล) เป็นบรรทัดเดียวพาดเต็มความกว้างการ์ด แล้วเอารายละเอียดไปเรียง 2 คอลัมน์ข้างล่าง
+    //   (ถ้าปล่อยบรรทัดยาวไว้ในคอลัมน์ซ้าย 42% เดิม มันจะตัดบรรทัดเองกลายเป็น 3 บรรทัดเหมือนเดิม)
     html += '<div class="cu-card">' +
-      '<div class="cu-left">' +
-        '<div class="cu-hn">HN : ' + escHtml(rec.patientHn || '—') + '</div>' +
-        '<div class="cu-line">ชื่อ : ' + escHtml(prefixedFirstName(rec, nm.first) || '—') + '</div>' +
-        '<div class="cu-line">สกุล : ' + escHtml(nm.last || '—') + '</div>' +
-      '</div>' +
+      '<div class="cu-hn">' + escHtml(hnNameLine(rec)) + '</div>' +
+      '<div class="cu-body">' +
       '<div class="cu-right">' +
         '<div class="cu-line">' + escHtml(programLabelForPrint(rec.program)) + '</div>' +
         '<div class="cu-line">ราคา : ' + money(amt) + '</div>' +
@@ -2937,6 +3101,7 @@ function renderCheckupCards(records, dateStr) {
           ? '<div class="cu-line cu-sign">เซ็นรับ <span class="cu-sig-line"></span></div>'
           : '') +
       '</div>' +
+      '</div>' +
     '</div>';
   });
   html += '</div>';
@@ -2944,17 +3109,53 @@ function renderCheckupCards(records, dateStr) {
   wrap.innerHTML = html;
 }
 
+/* มุมมองที่ 3 (เจ้าของสั่ง 2026-09-13): "แบบรายการ (แก้ไขได้)" — การ์ดเดียวกับ .record-item ของหน้า "รายการวันนี้"
+   ต่างจาก renderCheckupCards()/.cu-card ตรงที่แก้ไข/ยกเลิกได้ ⇒ ใช้ recordItemHtml() ร่วมกับหน้านั้น
+   ⚠ เก็บผลไว้ใน LAST_CU_RECORDS คนละตัวกับ LAST_TODAY_RECORDS โดยเจตนา — LAST_TODAY_RECORDS ใช้ตัดสิน
+   "ซ้ำกับแถวของวันนี้ที่จุดบริการตัวเอง" ใน onSubmitLog() ถ้าเอาข้อมูลจากหน้านี้ (allPoints:true, เลือกวันย้อนหลังได้)
+   ไปแทน จะเช็คซ้ำผิดคน/ผิดวัน */
+var LAST_CU_RECORDS = [];
+function renderCheckupList(records, dateStr) {
+  LAST_CU_RECORDS = records || [];
+  var wrap = qs('cuListWrap');
+  if (!wrap) return;
+  var rows = checkupTableRows(records);
+  if (rows.length === 0) {
+    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้รับบริการตรวจสุขภาพของวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
+    return;
+  }
+  var totalMoney = 0;
+  rows.forEach(function (rec) {
+    var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
+    totalMoney += amt;
+  });
+  var html = '<div class="summary-bar">รวม ' + rows.length + ' คน · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท</div>';
+  rows.forEach(function (rec) {
+    html += '<div class="record-item">' + recordItemHtml(rec, false) + '</div>';
+  });
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('button[data-record-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onCancelRecord(btn.getAttribute('data-record-id'), btn); });
+  });
+  wrap.querySelectorAll('button[data-edit-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onEditRecordClick(btn.getAttribute('data-edit-id')); });
+  });
+}
+
 /* สลับมุมมองตาราง/การ์ด — พิมพ์ออกมาได้อย่างที่เห็นบนจอ (WYSIWYG) ไม่ต้องเดาว่าปุ่มไหนพิมพ์แบบไหน */
 var CU_VIEW = 'table';
 function setCuView(view) {
-  CU_VIEW = (view === 'card') ? 'card' : 'table';
-  var tableEl = qs('cuTableWrap'), cardsEl = qs('cuCardsWrap');
+  CU_VIEW = (view === 'card' || view === 'list') ? view : 'table';
+  var tableEl = qs('cuTableWrap'), cardsEl = qs('cuCardsWrap'), listEl = qs('cuListWrap');
   if (tableEl) tableEl.hidden = (CU_VIEW !== 'table');
   if (cardsEl) cardsEl.hidden = (CU_VIEW !== 'card');
-  ['btnCuViewTable', 'btnCuViewCard'].forEach(function (id) {
+  if (listEl) listEl.hidden = (CU_VIEW !== 'list');
+  ['btnCuViewTable', 'btnCuViewCard', 'btnCuViewList'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var active = (id === 'btnCuViewTable') ? (CU_VIEW === 'table') : (CU_VIEW === 'card');
+    var view2 = (id === 'btnCuViewTable') ? 'table' : (id === 'btnCuViewCard') ? 'card' : 'list';
+    var active = (CU_VIEW === view2);
     b.className = 'btn small' + (active ? '' : ' secondary');
   });
 }
@@ -2968,11 +3169,14 @@ function loadCheckupTable() {
   if (wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
   var cardsWrap = qs('cuCardsWrap');
   if (cardsWrap) cardsWrap.innerHTML = '';
+  var listWrap = qs('cuListWrap');
+  if (listWrap) listWrap.innerHTML = '';
   // ทุกจุดบริการเสมอ (allPoints:true ตายตัว ไม่มีช่องติ๊กให้เลือก — ตามคำตอบยืนยันของเจ้าของ)
   apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       renderCheckupTable(resp.records || [], dateStr);
       renderCheckupCards(resp.records || [], dateStr); // วาดทั้ง 2 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
+      renderCheckupList(resp.records || [], dateStr);
     } else {
       if (wrap) wrap.innerHTML = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
     }
@@ -3044,6 +3248,8 @@ function itemsMapToSortedArray(itemsObj) {
 }
 
 /* summary.byPoint และ summary.byStaff เป็น object map {'ชื่อ': {count, money}, ...} โครงเดียวกัน — ใช้ตัวแปลงร่วมกันได้ */
+// ⚠ 2026-09-13: ผู้เรียกทั้ง 2 ตัว (byPoint/byStaff ในรายงานรายเดือน) ถูกตัดออกตามคำสั่งเจ้าของ
+//    คงฟังก์ชันไว้เพราะเป็นตัวแปลงกลาง ถ้าเอาการ์ดกลับมาเมื่อไรใช้ตัวนี้ได้เลย
 function countMoneyMapToArray(obj) {
   var out = [];
   if (obj && typeof obj === 'object') {
@@ -3139,30 +3345,9 @@ function renderReport(summary) {
   });
   html += '</tbody></table></div></div>';
 
-  // แยกตามจุดบริการ — summary.byPoint (object map)
-  var byPoint = countMoneyMapToArray(summary.byPoint);
-  html += '<div class="card"><h2>แยกตามจุดบริการ</h2><div class="scroll-x"><table class="report-table"><thead><tr><th>จุดบริการ</th><th>จำนวนคน</th><th>ยอดเงิน</th></tr></thead><tbody>';
-  if (byPoint.length === 0) {
-    html += '<tr><td colspan="3">ไม่มีข้อมูล</td></tr>';
-  } else {
-    byPoint.forEach(function (pt) {
-      html += '<tr><td>' + escHtml(pt.name) + '</td><td>' + numOr0(pt.count) + '</td><td>' + money(numOr0(pt.money)) + '</td></tr>';
-    });
-  }
-  html += '</tbody></table></div></div>';
-
-  // แยกตามผู้บันทึก — summary.byStaff (object map, โครงเดียวกับ byPoint)
-  var byStaff = countMoneyMapToArray(summary.byStaff);
-  byStaff.sort(function (a, b) { return b.money - a.money; });
-  html += '<div class="card"><h2>แยกตามผู้บันทึก</h2><div class="scroll-x"><table class="report-table"><thead><tr><th>ผู้บันทึก</th><th>จำนวนคน</th><th>ยอดเงิน</th></tr></thead><tbody>';
-  if (byStaff.length === 0) {
-    html += '<tr><td colspan="3">ไม่มีข้อมูล</td></tr>';
-  } else {
-    byStaff.forEach(function (st) {
-      html += '<tr><td>' + escHtml(st.name) + '</td><td>' + numOr0(st.count) + '</td><td>' + money(numOr0(st.money)) + '</td></tr>';
-    });
-  }
-  html += '</tbody></table></div></div>';
+  // 🗑 เจ้าของสั่งตัดออก 2026-09-13 (ส่งภาพหน้าจอมาชี้): การ์ด "แยกตามจุดบริการ" + "แยกตามผู้บันทึก"
+  //    ฝั่ง Apps Script ยังคำนวณ summary.byPoint / summary.byStaff ส่งมาให้เหมือนเดิม (ไม่ได้แตะ backend)
+  //    ⇒ ถ้าจะเอากลับมาแสดง เขียน render ใหม่ได้เลย ข้อมูลมาถึงหน้าเว็บอยู่แล้ว ไม่ต้อง deploy ใหม่
 
   el.innerHTML = html;
 }
@@ -3261,7 +3446,14 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('patientName').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
   qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); updateHnHint(); });
   qs('checkupAmount').addEventListener('input', recalcTotals);
+  // เพิ่ม 2026-09-13: ช่องคำนำหน้าตอนสร้าง (09-12) ไม่มี listener — ตอนนั้นไม่มีด่านจึงยังไม่เป็นไร
+  // ตอนนี้มีด่านเพศแล้ว ถ้าไม่ผูก listener คำเตือนจะไม่ขึ้นจนกว่าผู้ใช้จะไปแตะช่องอื่น (พันธุ์เดียวกับบั๊ก #vaccineWithCheckup)
+  ['input', 'change'].forEach(function (ev) { qs('patientPrefix').addEventListener(ev, recalcTotals); });
   qs('deliveryMethod').addEventListener('change', recalcTotals);
+  // 🐞 แก้ 2026-09-13: ช่องนี้ไม่เคยมี listener มาตั้งแต่วันที่สร้าง (2026-09-11) ⇒ ติ๊ก/ติ๊กออกด้วยมือแล้ว
+  // ยอดรวมกับป้ายราคาไม่เปลี่ยน (ค้างเรตเดิม) ทั้งที่ onSubmitLog() อ่าน .checked สด ๆ ⇒ ยอดบนจอ ≠ ยอดที่ลงชีต
+  // ⚠ ใช้ recalcTotals ตรง ๆ ไม่ใช่ onServiceFieldChange — ช่องนี้ไม่เปลี่ยน isCheckupOn()/isVaccineOn() จึงไม่ต้อง sync คิว
+  qs('vaccineWithCheckup').addEventListener('change', recalcTotals);
   // แก้ 2026-09-08: เดิมมีช่องสแกนบาร์โค้ดแยกต่างหาก (ตัดออกแล้ว) — ตอนนี้ยิงบาร์โค้ดใส่ #patientHn ได้เลย (applyHnScan())
   qs('patientHn').addEventListener('change', applyHnScan);
   qs('patientHn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyHnScan(); } });
@@ -3321,6 +3513,7 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnCuLoad').addEventListener('click', loadCheckupTable); // รอบ 8 (B7)
   qs('btnCuViewTable').addEventListener('click', function () { setCuView('table'); });
   qs('btnCuViewCard').addEventListener('click', function () { setCuView('card'); });
+  qs('btnCuViewList').addEventListener('click', function () { setCuView('list'); });
   setCuView('table');
   qs('btnCuPrint').addEventListener('click', function () { window.print(); });
 
