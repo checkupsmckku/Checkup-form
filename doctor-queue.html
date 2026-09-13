@@ -21,6 +21,7 @@
     --green: #27AE60;
     --green-pale: #E8F8F0;
     --gray-pale: #F1F3F5;
+    --blue-pale: #E4E7FB;
   }
   * { box-sizing: border-box; }
   /* ⚠ ห้ามลบ: กฎ [hidden] ของเบราว์เซอร์คือ display:none ระดับ UA stylesheet ซึ่งแพ้กฎของเราเองทุกอัน
@@ -80,33 +81,21 @@
     max-width: 90%; text-align: center;
   }
   .topbar { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .room-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 12px;
-  }
-  @media (max-width: 480px) {
-    .room-grid { grid-template-columns: 1fr; }
-  }
-  .room-card {
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    min-height: 96px;
-    cursor: pointer;
-    position: relative;
-    transition: border-color .15s;
-  }
-  .room-card:active { border-color: var(--primary); }
-  .room-card.room-busy { border-color: var(--accent); }
-  .room-name { font-size: 1.4rem; font-weight: bold; color: var(--primary-dark); }
-  .room-doctor { color: var(--text-muted); font-size: 0.95rem; margin-top: 2px; }
-  .room-shift { color: var(--text-muted); font-size: 0.85rem; }
-  .room-current { margin-top: 8px; font-size: 1rem; font-weight: bold; color: var(--accent); }
-  .room-timer { font-variant-numeric: tabular-nums; font-size: 1.15rem; }
-  .room-stats { margin-top: 6px; font-size: 0.85rem; color: var(--text-muted); }
-  .room-end-btn { margin-top: 8px; }
+  #queueSelect { font-size: 16px; } /* กัน iOS ซูมอัตโนมัติตอนแตะช่อง — ห้ามลดต่ำกว่า 16px */
+  #roomCards { overflow-x: auto; }
+  .dq-table { border-collapse: collapse; table-layout: fixed; width: 100%; }
+  .dq-table th, .dq-table td { border: 1px solid var(--primary); padding: 4px 8px; }
+  .dq-table tbody tr { height: 40px; } /* ช่องว่างต้องแตะติดบนมือถือ */
+  .dq-title { background: var(--blue-pale); font-weight: bold; text-align: center; color: var(--primary-dark); }
+  .dq-room-head { font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--primary-dark); }
+  .dq-slot { cursor: pointer; text-align: center; color: var(--primary-light); background: var(--blue-pale); font-weight: bold; }
+
+  .dq-entry { font-weight: bold; color: #C00000; }
+  .dq-open { font-weight: normal; font-size: 0.85rem; color: var(--accent); }
+  .dq-cancelled { text-decoration: line-through; opacity: 0.45; color: var(--text-muted); }
+  .dq-timer { font-variant-numeric: tabular-nums; }
+  .dq-foot { text-align: center; font-size: 0.85rem; color: var(--text-muted); }
+  .room-end-btn { margin-top: 4px; margin-left: 6px; }
   .today-item {
     border-bottom: 1px solid var(--border); padding: 8px 0;
     display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -156,11 +145,12 @@
   </div>
 
   <div class="card">
-    <label class="field-label" for="queueSelect">เลือกคิวผู้ป่วย แล้วแตะการ์ดห้องที่จะเข้า</label>
-    <select id="queueSelect"></select>
+    <label class="field-label" for="queueSelect">พิมพ์เลขคิวผู้ป่วย แล้วแตะช่องว่างของห้องที่จะเข้า</label>
+    <input type="text" id="queueSelect" list="queueOptions" autocomplete="off" maxlength="4" placeholder="พิมพ์เลขคิว เช่น C1">
+    <datalist id="queueOptions"></datalist>
   </div>
 
-  <div id="roomCards" class="room-grid"></div>
+  <div id="roomCards"></div>
 
   <div class="card" style="margin-top:16px;">
     <h2>รายการวันนี้</h2>
@@ -200,6 +190,9 @@ var DEFAULT_ROOMS = [
   { room: '5', doctor: '', start: '', end: '' },
   { room: 'ล็อกขาย', doctor: '', start: '', end: '' }
 ];
+
+// ชุดเดียวกับ normQueue_ ฝั่งเซิร์ฟเวอร์ (SPEC ข้อ 3.1) — ห้ามแก้ให้ต่างกัน
+var QUEUE_RE = /^[CM]([1-9]|[1-3][0-9]|40)$/;
 
 var THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 var THAI_MONTHS = [
@@ -259,6 +252,14 @@ function formatTimeHM(isoOrDate) {
   var d = new Date(isoOrDate);
   if (isNaN(d.getTime())) return '--:--';
   return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+}
+
+// H.MM คั่นด้วยจุด ชั่วโมงไม่ใส่ 0 นำหน้า นาที 2 หลักเสมอ (เช่น 9.00, 13.05, 0.07)
+// formatTimeHM() เดิมห้ามลบ — "รายการวันนี้" ยังใช้อยู่
+function formatTimeDot(v) {
+  var d = new Date(v);
+  if (isNaN(d.getTime())) return '--';
+  return d.getHours() + '.' + pad2(d.getMinutes());
 }
 
 /* =========================================================================
@@ -345,20 +346,20 @@ function showScreen(name) {
 }
 
 function buildQueueOptions() {
-  var sel = qs('queueSelect');
-  sel.innerHTML = '';
-  var blank = document.createElement('option');
-  blank.value = '';
-  blank.textContent = '— เลือกคิวผู้ป่วย —';
-  sel.appendChild(blank);
+  var dl = qs('queueOptions');
+  dl.innerHTML = '';
   ['C', 'M'].forEach(function (prefix) {
     for (var i = 1; i <= 40; i++) {
       var opt = document.createElement('option');
       opt.value = prefix + i;
-      opt.textContent = prefix + i;
-      sel.appendChild(opt);
+      dl.appendChild(opt);
     }
   });
+}
+
+function onQueueInputInput() {
+  var cleaned = (this.value || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  if (cleaned !== this.value) this.value = cleaned;
 }
 
 function enterBoard() {
@@ -388,73 +389,146 @@ function clearRoomTimers() {
   STATE.timers = [];
 }
 
+// เนื้อในช่องรายการหนึ่งช่อง (ดู SPEC ตาราง B5) — item = { log, seq } · seq = null ถ้ายกเลิก
+function buildEntryCellHtml(item) {
+  var log = item.log;
+  var seq = item.seq;
+  if (log.status === 'ยกเลิก') {
+    return '<div class="dq-entry dq-cancelled">' + escHtml(log.queue) + '&nbsp;&nbsp;' + formatTimeDot(log.timeIn) + '</div>';
+  }
+  if (log.timeOut) {
+    return '<div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' +
+      formatTimeDot(log.timeIn) + '-' + formatTimeDot(log.timeOut) + '</div>';
+  }
+  // ยังตรวจอยู่ (status === 'บันทึกแล้ว' และไม่มี timeOut)
+  return '<div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' + formatTimeDot(log.timeIn) + '-</div>' +
+    '<div class="dq-open"><span class="dq-timer" data-room="' + escHtml(log.room) + '">00:00</span> กำลังตรวจ' +
+    '<button type="button" class="btn small danger room-end-btn" data-room="' + escHtml(log.room) + '">จบ</button></div>';
+}
+
 function renderRoomCards() {
   clearRoomTimers();
   var container = qs('roomCards');
   container.innerHTML = '';
   var rooms = (STATE.today && STATE.today.rooms) || [];
-  var summaryByRoom = {};
-  ((STATE.today && STATE.today.summary) || []).forEach(function (s) { summaryByRoom[s.room] = s; });
-  var openTimeByRoom = {};
-  ((STATE.today && STATE.today.logs) || []).forEach(function (log) {
-    if (log.status === 'บันทึกแล้ว' && !log.timeOut) {
-      openTimeByRoom[log.room] = log.timeIn;
-    }
-  });
 
   if (rooms.length === 0) {
     container.innerHTML = '<p class="muted">ยังไม่ได้ตั้งห้องของวันนี้ — กด "⚙ ตั้งห้อง" เพื่อเริ่ม</p>';
     return;
   }
 
-  rooms.forEach(function (rm) {
-    var summary = summaryByRoom[rm.room] || { count: 0, avgMinutes: 0, openQueue: null };
-    var card = document.createElement('div');
-    card.className = 'room-card' + (summary.openQueue ? ' room-busy' : '');
-    card.setAttribute('data-room', rm.room);
-
-    var shiftText = (rm.start || rm.end) ? (escHtml(rm.start || '—') + '–' + escHtml(rm.end || '—')) : '';
-    var currentHtml = summary.openQueue
-      ? ('กำลังตรวจ: คิว ' + escHtml(summary.openQueue) + ' <span class="room-timer" data-room="' + escHtml(rm.room) + '">00:00</span>')
-      : 'ว่าง';
-    var endBtnHtml = summary.openQueue
-      ? '<div><button type="button" class="btn small danger room-end-btn" data-room="' + escHtml(rm.room) + '">จบ</button></div>'
-      : '';
-
-    card.innerHTML =
-      '<div class="room-name">ห้อง ' + escHtml(rm.room) + '</div>' +
-      '<div class="room-doctor">' + (rm.doctor ? escHtml(rm.doctor) : '<span class="muted">ยังไม่ระบุแพทย์</span>') + '</div>' +
-      '<div class="room-shift">' + shiftText + '</div>' +
-      '<div class="room-current">' + currentHtml + '</div>' +
-      '<div class="room-stats">วันนี้ ' + summary.count + ' คิว · เฉลี่ย ' + summary.avgMinutes + ' นาที/คน</div>' +
-      endBtnHtml;
-
-    card.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('.room-end-btn')) return;
-      onRoomCardClick(rm.room);
-    });
-    container.appendChild(card);
-
-    if (summary.openQueue && openTimeByRoom[rm.room]) {
-      var startMs = new Date(openTimeByRoom[rm.room]).getTime();
-      var timerEl = card.querySelector('.room-timer');
-      var update = function () {
-        var elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
-        var mm = pad2(Math.floor(elapsed / 60));
-        var ss = pad2(elapsed % 60);
-        if (timerEl) timerEl.textContent = mm + ':' + ss;
-      };
-      update();
-      var tid = setInterval(update, 1000);
-      STATE.timers.push(tid);
+  var summaryByRoom = {};
+  ((STATE.today && STATE.today.summary) || []).forEach(function (s) { summaryByRoom[s.room] = s; });
+  var allLogs = (STATE.today && STATE.today.logs) || []; // เรียงใหม่สุดขึ้นก่อน (desc) — ห้าม .reverse() ทับ array นี้
+  var openTimeByRoom = {};
+  allLogs.forEach(function (log) {
+    if (log.status === 'บันทึกแล้ว' && !log.timeOut) {
+      openTimeByRoom[log.room] = log.timeIn;
     }
   });
 
+  // ต่อห้อง: เก่าสุดอยู่บน ใหม่สุดอยู่ล่าง (.slice().reverse() — ไม่แตะ array เดิม) + เลขลำดับเฉพาะที่ไม่ถูกยกเลิก
+  var entriesByRoom = {};
+  var maxEntries = 0;
+  rooms.forEach(function (rm) {
+    var raw = allLogs.filter(function (log) { return log.room === rm.room; }).slice().reverse();
+    var seq = 0;
+    var withSeq = raw.map(function (log) {
+      if (log.status === 'ยกเลิก') return { log: log, seq: null };
+      seq++;
+      return { log: log, seq: seq };
+    });
+    entriesByRoom[rm.room] = withSeq;
+    if (withSeq.length > maxEntries) maxEntries = withSeq.length;
+  });
+  var rowCount = maxEntries + 6; // ช่องว่างเหลือให้กรอกอย่างน้อย 6 แถวเสมอ
+
+  var table = document.createElement('table');
+  table.className = 'dq-table';
+  // table-layout:fixed ทำให้ min-width ของ th/td ถูกเมิน ต้องตั้งที่ตัวตารางแทน
+  // เพื่อให้ #roomCards { overflow-x: auto } ทำงานได้จริงเมื่อจอแคบกว่าจำนวนห้อง * 150px
+  table.style.minWidth = (rooms.length * 150) + 'px';
+
+  var thead = document.createElement('thead');
+  var titleRow = document.createElement('tr');
+  var titleTh = document.createElement('th');
+  titleTh.className = 'dq-title';
+  titleTh.colSpan = rooms.length;
+  titleTh.textContent = 'ห้องตรวจ';
+  titleRow.appendChild(titleTh);
+  thead.appendChild(titleRow);
+
+  var headRow = document.createElement('tr');
+  rooms.forEach(function (rm) {
+    var th = document.createElement('th');
+    th.className = 'dq-room-head';
+    th.textContent = 'ห้อง ' + rm.room + (rm.doctor ? (' ' + rm.doctor) : '');
+    var shiftText = (rm.start || rm.end) ? ((rm.start || '—') + '–' + (rm.end || '—')) : '';
+    if (shiftText) th.title = 'เวร ' + shiftText;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  for (var i = 0; i < rowCount; i++) {
+    var tr = document.createElement('tr');
+    rooms.forEach(function (rm) {
+      var entries = entriesByRoom[rm.room];
+      var td = document.createElement('td');
+      if (i < entries.length) {
+        td.innerHTML = buildEntryCellHtml(entries[i]);
+      } else if (i === entries.length) {
+        td.className = 'dq-slot';
+        td.setAttribute('data-room', rm.room);
+        td.textContent = '＋';
+      } else {
+        td.className = 'dq-blank';
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+
+  var tfoot = document.createElement('tfoot');
+  var footRow = document.createElement('tr');
+  rooms.forEach(function (rm) {
+    var summary = summaryByRoom[rm.room] || { count: 0, avgMinutes: 0 };
+    var td = document.createElement('td');
+    td.className = 'dq-foot';
+    td.textContent = summary.count + ' คิว · เฉลี่ย ' + summary.avgMinutes + ' นาที/คน';
+    footRow.appendChild(td);
+  });
+  tfoot.appendChild(footRow);
+  table.appendChild(tfoot);
+
+  container.appendChild(table);
+
+  container.querySelectorAll('.dq-slot').forEach(function (td) {
+    td.addEventListener('click', function () { onRoomSlotClick(td.getAttribute('data-room')); });
+  });
   container.querySelectorAll('.room-end-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       onRoomEndClick(btn.getAttribute('data-room'));
     });
+  });
+
+  container.querySelectorAll('.dq-timer').forEach(function (timerEl) {
+    var room = timerEl.getAttribute('data-room');
+    var startTime = openTimeByRoom[room];
+    if (!startTime) return;
+    var startMs = new Date(startTime).getTime();
+    var update = function () {
+      var elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+      var mm = pad2(Math.floor(elapsed / 60));
+      var ss = pad2(elapsed % 60);
+      timerEl.textContent = mm + ':' + ss;
+    };
+    update();
+    var tid = setInterval(update, 1000);
+    STATE.timers.push(tid);
   });
 }
 
@@ -487,14 +561,16 @@ function renderTodayList() {
   });
 }
 
-function onRoomCardClick(room) {
-  var queue = qs('queueSelect').value;
-  if (!queue) { showToast('กรุณาเลือกคิวผู้ป่วยก่อน'); return; }
+function onRoomSlotClick(room) {
+  var q = (qs('queueSelect').value || '').trim().toUpperCase();
+  if (!q) { showToast('กรุณากรอกเลขคิวก่อน'); return; }
+  if (!QUEUE_RE.test(q)) { showToast('เลขคิวไม่ถูกต้อง — ใช้ C1-C40 หรือ M1-M40'); return; }
   setBusy(true);
-  apiCall('logEnter', { queue: queue, room: room }).then(function (resp) {
+  apiCall('logEnter', { queue: q, room: room }).then(function (resp) {
     setBusy(false);
     if (resp && resp.status === 'ok') {
       qs('queueSelect').value = '';
+      qs('queueSelect').focus();
       loadToday();
     } else {
       showToast((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ');
@@ -615,6 +691,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   qs('btnGateLogin').addEventListener('click', handleGateLogin);
   qs('gateKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateLogin(); });
+  qs('queueSelect').addEventListener('input', onQueueInputInput);
   qs('btnOpenSetup').addEventListener('click', openSetup);
   qs('btnCloseSetup').addEventListener('click', function () { showScreen('board'); });
   qs('btnAddRoom').addEventListener('click', function () { addSetupRow(); });
