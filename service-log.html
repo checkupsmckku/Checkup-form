@@ -299,10 +299,17 @@
   table.cu-table th:first-child, table.cu-table td:first-child { text-align: center; }
   table.cu-table tr.sp-total td { text-align: left; }
 
+  /* ⚠ 2 บรรทัดล่างของกฎนี้ห้ามลบ (เจอจริง 2026-09-15 ตอนย้ายยอด+ปุ่มบันทึกมากึ่งกลางจอ):
+     #toast ลอยกึ่งกลางล่างจอด้วย z-index 999 ⇒ ทับปุ่มบันทึกในแถบล่างจอเต็ม ๆ
+     เดิมไม่มีใครเจอเพราะปุ่มอยู่ชิดขวา พ้นตัว toast พอดี
+     - pointer-events: none  ⇒ คลิกทะลุไปโดนปุ่มเสมอ (พิสูจน์แล้วว่าถ้าไม่มี คลิกไปโดน DIV#toast แทน
+       แล้วการบันทึก "เงียบ" ไม่มีอะไรเกิดขึ้นเลย — เทสต์ t_round9_ui_merge หมวด B จับได้)
+     - bottom: 84px ⇒ ลอยเหนือแถบล่างจอ (สูง ~67px) ไม่บังยอดเงิน/ปุ่มที่ต้องอ่านตอนกดบันทึก */
   #toast {
-    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
     background: var(--primary-dark); color: #fff; padding: 10px 18px; border-radius: 24px;
     font-size: 14px; font-weight: 600; z-index: 999; display: none; max-width: 90vw;
+    pointer-events: none;
   }
 
   #gateScreen .gate-wrap { max-width: 420px; margin: 40px auto; padding: 12px; }
@@ -319,9 +326,10 @@
     padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
     box-shadow: 0 -2px 10px rgba(0,0,0,.10); max-width: 100%;
   }
-  /* ยอด + ปุ่มบันทึกอยู่กลุ่มเดียวกันชิดขวา (เจ้าของสั่ง 2026-09-15) */
-  .sticky-bar { justify-content: flex-end; }
-  .sticky-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 1 auto; }
+  /* ยอด + ปุ่มบันทึกอยู่กลุ่มเดียวกัน แล้ววางคู่นี้ไว้ "กึ่งกลางจอ" (เจ้าของสั่ง 2026-09-15 · เดิมชิดขวา)
+     ⚠ จัดกึ่งกลางที่ตัว .sticky-bar เท่านั้น ห้ามไปตั้ง margin auto ที่ปุ่ม — ปุ่มกับยอดต้องติดกันอยู่ */
+  .sticky-bar { justify-content: center; }
+  .sticky-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; flex: 0 1 auto; }
   .sticky-bar .sticky-total { font-weight: 800; font-size: 16px; color: var(--primary-dark); }
 
   /* ปุ่มโปรแกรม 5 สี — ต้องเข้มพอให้อ่านออก + ตอนเลือกต้องดูออกโดยไม่พึ่งสีอย่างเดียว (ขอบหนา + เครื่องหมายถูก) */
