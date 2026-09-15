@@ -31,9 +31,13 @@
      ที่ตั้ง display เอง (.check-row = flex · .btn = block) ⇒ el.hidden = true จะ "ซ่อนไม่ลง" แบบเงียบ ๆ
      (เจอจริง 2026-09-03: หน้าส่งตรวจพิเศษโชว์ครบ 6 รายการทั้งที่สั่งซ่อนไป 5 · ปุ่มบันทึกที่ตั้ง hidden ไว้ก็โผล่) */
   [hidden] { display: none !important; }
-  html, body {
-    margin: 0; padding: 0; max-width: 100%; overflow-x: hidden;
-  }
+  html { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
+  /* ⚠ body ต้องเป็น overflow-x: clip ไม่ใช่ hidden (เปลี่ยน 2026-09-15)
+     hidden ทำให้ body กลายเป็น scroll container ของตัวเอง ⇒ position: sticky ข้างใน body "ตายเงียบ"
+     (computed style ขึ้น sticky ตามปกติ แต่กล่องเลื่อนหลุดจอไปเฉย ๆ — พิสูจน์ในเบราว์เซอร์จริงแล้ว
+      ตอนทำ #panelTotals ให้หนึบ: hidden → top -413px · clip → หนึบที่ 12px ตามที่สั่ง)
+     clip กันล้นแนวนอนได้เหมือน hidden แต่ไม่สร้าง scroll container + ยังมี overflow-x ของ html กันอีกชั้น */
+  body { margin: 0; padding: 0; max-width: 100%; overflow-x: clip; }
   body {
     font-family: 'Sarabun','Noto Sans Thai','Tahoma',sans-serif;
     background: var(--bg);
@@ -383,7 +387,13 @@
   .log-col { display: flex; flex-direction: column; gap: 12px; }
   /* จุดตัดจอกว้าง/จอแคบ — ทดสอบจริงที่ 390px และ 1440px แล้ว ใช้ 1100px (ดูรายงานตรวจรับ) */
   @media (min-width: 1100px) {
-    .log-grid { grid-template-columns: repeat(3, 1fr); align-items: start; }
+    /* ⚠ align-items ต้องเป็น stretch (ไม่ใช่ start เหมือนเดิม) — คอลัมน์ต้องสูงเท่าแถว
+       ไม่งั้น #panelTotals ที่เป็น element ตัวสุดท้ายของคอลัมน์จะ sticky ไม่ขยับเลย
+       (กรอบเลื่อนของ sticky = กล่องพ่อ .log-col ซึ่งถ้าสูงเท่าเนื้อหาจะไม่เหลือระยะให้เลื่อน)
+       พาเนลข้างในไม่มี flex-grow ⇒ ความสูงที่เห็นเท่าเดิมทุกใบ เปลี่ยนแค่ความสูงของคอลัมน์ */
+    .log-grid { grid-template-columns: repeat(3, 1fr); align-items: stretch; }
+    /* เจ้าของสั่ง 2026-09-15: กล่อง 'ยอดรวม / บันทึก' ต้องติดหนึบอยู่บนจอ เลื่อนดูรายการแล้วยังเห็นยอด + ปุ่มบันทึก */
+    #panelTotals { position: sticky; top: 12px; z-index: 5; box-shadow: 0 4px 14px rgba(26,30,64,.12); }
   }
 
   .log-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
@@ -407,6 +417,24 @@
     .log-panel-head { cursor: default; }
     .log-panel-arrow { display: none; }
   }
+
+  /* เจ้าของสั่ง 2026-09-15: ให้กล่องบริการแต่ละใบมีสีประจำประเภท มองปราดเดียวรู้ว่ากำลังกรอกกล่องไหน
+     ตรวจสุขภาพ = ส้ม · ส่งตรวจพิเศษ = ชมพู · วัคซีน = เหลือง · ใบรับรองแพทย์ = ฟ้า
+     (กล่อง 'ผู้รับบริการ' กับ 'ยอดรวม' ไม่ใช่ประเภทบริการ จึงคงพื้นขาวไว้เหมือนเดิม)
+     ⚠ แต้มสีเฉพาะ 'หัวกล่อง + ขอบ' เท่านั้น — .log-panel-body ต้องพื้นขาวต่อไป
+       เพราะช่องกรอก/ปุ่ม/แถบล็อก/overlay ข้างในออกแบบมาบนพื้นขาว ถ้าย้อมพื้นทั้งใบตัวหนังสือจะจม */
+  .log-panel[data-svc] {
+    border-color: var(--svc-line);
+    border-left: 5px solid var(--svc-line);
+  }
+  .log-panel[data-svc] .log-panel-head { background: var(--svc-tint); color: var(--svc-ink); }
+  .log-panel[data-svc] .log-panel-title { color: var(--svc-ink); }
+  .log-panel[data-svc] .log-panel-summary,
+  .log-panel[data-svc] .log-panel-arrow { color: var(--svc-ink); }
+  .log-panel[data-svc="checkup"] { --svc-tint: #FFEBD8; --svc-line: #F47920; --svc-ink: #8A4206; }
+  .log-panel[data-svc="special"] { --svc-tint: #FCE1EE; --svc-line: #E0559B; --svc-ink: #8C2059; }
+  .log-panel[data-svc="vaccine"] { --svc-tint: #FFF3C9; --svc-line: #E0AE00; --svc-ink: #7A5500; }
+  .log-panel[data-svc="medcert"] { --svc-tint: #DCEEFB; --svc-line: #3E8FD0; --svc-ink: #0F4E7C; }
 
   .log-lock-bar {
     background: #FFF3E0; color: #A85700; border: 1px solid #F0C040; border-radius: 8px;
@@ -541,7 +569,7 @@
           </section>
 
           <!-- แผง "ตรวจสุขภาพ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) -->
-          <section class="log-panel" id="panelCheckup" data-collapsed="1">
+          <section class="log-panel" id="panelCheckup" data-svc="checkup" data-collapsed="1">
             <button type="button" class="log-panel-head" data-panel="panelCheckup">
               <span class="log-panel-title">ตรวจสุขภาพ</span>
               <span class="log-panel-summary" id="panelCheckupSummary">—</span>
@@ -600,30 +628,10 @@
           </section>
         </div>
 
-        <!-- คอลัมน์ 2: ส่งตรวจพิเศษ (บน) + วัคซีน (ล่าง) -->
+        <!-- คอลัมน์ 2: วัคซีน (บน) + ส่งตรวจพิเศษ (ล่าง) — สลับลำดับ 2026-09-15 ตามคำสั่งเจ้าของ -->
         <div class="log-col">
-          <!-- แผง "ส่งตรวจพิเศษ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) · เหลือช่อง "ลงชื่อไว้" อย่างเดียว 5 รายการ (B5)
-               ⚠ ย้ายมาคอลัมน์ 2 เมื่อ 2026-09-08 (เดิมอยู่คอลัมน์ 3) — ตอนนี้อยู่ใต้ panelVaccine หลัง panelMedcert ย้ายไปคอลัมน์ 3 -->
-          <section class="log-panel" id="panelSpecial" data-collapsed="1">
-            <button type="button" class="log-panel-head" data-panel="panelSpecial">
-              <span class="log-panel-title">ส่งตรวจพิเศษ</span>
-              <span class="log-panel-summary" id="panelSpecialSummary">—</span>
-              <span class="log-panel-arrow">▾</span>
-            </button>
-            <div class="log-panel-body">
-              <div class="log-lock-bar" id="specialLockBar" hidden>🔒 กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกส่งตรวจพิเศษได้</div>
-              <div class="log-lock-wrap" id="specialLockWrap">
-                <section id="svcSpecial">
-                  <p class="muted">ติ๊กลงชื่อผู้รับบริการที่จะส่งตรวจแต่ละประเภทได้เลย — สถานะ (ส่งรายชื่อ/ส่งตัว/กลับมาแล้ว) มาติ๊กทีหลังได้ที่กระดาน "รวมรายชื่อส่งตรวจพิเศษ" ด้านบน</p>
-                  <div id="specialSendsList"></div>
-                </section>
-                <div class="log-lock-overlay" id="specialLockOverlay" hidden></div>
-              </div>
-            </div>
-          </section>
-
-          <!-- แผง "วัคซีน" — อยู่ใต้ส่งตรวจพิเศษในคอลัมน์กลาง (เจ้าของสั่งลำดับนี้ 2026-09-08) -->
-          <section class="log-panel" id="panelVaccine" data-collapsed="1">
+          <!-- แผง "วัคซีน" — บนสุดของคอลัมน์กลาง (เจ้าของสั่งสลับกับส่งตรวจพิเศษ 2026-09-15 · เดิมอยู่ล่าง ตั้งแต่ 09-08) -->
+          <section class="log-panel" id="panelVaccine" data-svc="vaccine" data-collapsed="1">
             <button type="button" class="log-panel-head" data-panel="panelVaccine">
               <span class="log-panel-title">วัคซีน</span>
               <span class="log-panel-summary" id="panelVaccineSummary">—</span>
@@ -647,12 +655,32 @@
               </section>
             </div>
           </section>
+
+          <!-- แผง "ส่งตรวจพิเศษ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) · เหลือช่อง "ลงชื่อไว้" อย่างเดียว 5 รายการ (B5)
+               ⚠ ย้ายมาคอลัมน์ 2 เมื่อ 2026-09-08 (เดิมอยู่คอลัมน์ 3) · ย้ายลงล่างสุดของคอลัมน์กลางเมื่อ 2026-09-15 (เจ้าของสั่ง) -->
+          <section class="log-panel" id="panelSpecial" data-svc="special" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelSpecial">
+              <span class="log-panel-title">ส่งตรวจพิเศษ</span>
+              <span class="log-panel-summary" id="panelSpecialSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <div class="log-lock-bar" id="specialLockBar" hidden>🔒 กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกส่งตรวจพิเศษได้</div>
+              <div class="log-lock-wrap" id="specialLockWrap">
+                <section id="svcSpecial">
+                  <p class="muted">ติ๊กลงชื่อผู้รับบริการที่จะส่งตรวจแต่ละประเภทได้เลย — สถานะ (ส่งรายชื่อ/ส่งตัว/กลับมาแล้ว) มาติ๊กทีหลังได้ที่กระดาน "รวมรายชื่อส่งตรวจพิเศษ" ด้านบน</p>
+                  <div id="specialSendsList"></div>
+                </section>
+                <div class="log-lock-overlay" id="specialLockOverlay" hidden></div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <!-- คอลัมน์ 3: ใบรับรองแพทย์ + ยอดรวม/บันทึก -->
         <div class="log-col">
           <!-- แผง "ใบรับรองแพทย์" — ⚠ ย้ายมาคอลัมน์ 3 เมื่อ 2026-09-08 ตามคำสั่งเจ้าของ (เดิมอยู่คอลัมน์ 2 ใต้วัคซีน) -->
-          <section class="log-panel" id="panelMedcert" data-collapsed="1">
+          <section class="log-panel" id="panelMedcert" data-svc="medcert" data-collapsed="1">
             <button type="button" class="log-panel-head" data-panel="panelMedcert">
               <span class="log-panel-title">ใบรับรองแพทย์</span>
               <span class="log-panel-summary" id="panelMedcertSummary">—</span>
@@ -695,12 +723,14 @@
           <section class="log-panel" id="panelTotals">
             <div class="log-panel-head-static"><span class="log-panel-title">ยอดรวม / บันทึก</span></div>
             <div class="log-panel-body">
+              <div id="formWarning" class="warning-box" hidden></div>
+              <div id="formError" class="error-box" hidden></div>
+
+              <!-- เจ้าของสั่ง 2026-09-15: ยอดเงินต้องอยู่ติดปุ่มบันทึก (เดิมยอดอยู่บนสุด มีกล่องเตือน/กล่อง error คั่นกลาง
+                   ⇒ เวลามีข้อความเตือนโผล่ ยอดจะถูกดันห่างจากปุ่มจนมองพร้อมกันไม่ได้) — ย้ายกล่องเตือนขึ้นไปไว้บนแทน -->
               <div class="totals-box" id="totalsBox">
                 <div class="grand"><span>💰 รวม</span><span id="totGrand">0 บาท</span></div>
               </div>
-
-              <div id="formWarning" class="warning-box" hidden></div>
-              <div id="formError" class="error-box" hidden></div>
 
               <div class="row" style="margin-top:10px;">
                 <button type="button" class="btn no-print" id="btnDraftSave">💾 บันทึก</button>
@@ -3170,15 +3200,22 @@ function loadCheckupTable() {
   var cardsWrap = qs('cuCardsWrap');
   if (cardsWrap) cardsWrap.innerHTML = '';
   var listWrap = qs('cuListWrap');
-  if (listWrap) listWrap.innerHTML = '';
+  // เจ้าของสั่ง 2026-09-15: กด "ดูรายชื่อ" ต้องได้ "แบบรายการ (แก้ไขได้)" ทันที (เดิมเปิดมาเป็นแบบตาราง
+  // แล้วต้องกดปุ่ม 📝 อีกทีถึงจะแก้ไขได้) ⇒ ข้อความ "กำลังโหลด"/ข้อความ error ต้องลงในกล่องของมุมมองนี้ด้วย
+  // ไม่งั้นผู้ใช้จะเห็นจอว่างเปล่าระหว่างโหลด เพราะกล่องตารางถูกซ่อนอยู่
+  if (listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  setCuView('list');
   // ทุกจุดบริการเสมอ (allPoints:true ตายตัว ไม่มีช่องติ๊กให้เลือก — ตามคำตอบยืนยันของเจ้าของ)
   apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       renderCheckupTable(resp.records || [], dateStr);
       renderCheckupCards(resp.records || [], dateStr); // วาดทั้ง 2 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
       renderCheckupList(resp.records || [], dateStr);
+      setCuView('list'); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
     } else {
-      if (wrap) wrap.innerHTML = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
+      var errHtml = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
+      if (wrap) wrap.innerHTML = errHtml;
+      if (listWrap) listWrap.innerHTML = errHtml; // มุมมองที่ผู้ใช้เห็นอยู่คือ list ⇒ ต้องเห็น error ที่นี่ ไม่ใช่ในกล่องที่ถูกซ่อน
     }
   });
 }
