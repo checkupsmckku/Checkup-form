@@ -2452,7 +2452,7 @@ function recordItemHtml(rec, cancelled) {
   }
   // เจ้าของสั่ง 2026-09-13: ทุกที่ที่ขึ้น HN+คำนำหน้า+ชื่อ+สกุล ใช้บรรทัดเดียวรูปแบบ "HN : AB1234 นาง นน มม"
   var html = '<div class="rec-sticker">' +
-    '<div class="rec-hn">' + escHtml(hnNameLine(rec)) + '</div>' +
+    '<div class="rec-hn">' + hnNameHtml(rec) + '</div>' +
     '</div>' +
     '<div class="rec-body">' +
     '<div class="rec-head">' +
@@ -2741,7 +2741,7 @@ function renderSpPeopleCards(id) {
     // rec._spSaving (state บนตัวเรคคอร์ดเอง) ไม่ใช่ disabled ของปุ่ม เพราะปุ่มเดิมถูกทิ้งไปแล้วทุกรอบ render
     card.innerHTML =
       // เจ้าของสั่ง 2026-09-13: รูปแบบเดียวกับที่อื่น (เดิมแยก 2 บรรทัด และ**ไม่มีคำนำหน้า**)
-      '<div class="sp-board-name">' + (idx + 1) + '. ' + escHtml(hnNameLine(rec)) + '</div>' +
+      '<div class="sp-board-name">' + (idx + 1) + '. ' + hnNameHtml(rec) + '</div>' +
       '<div class="sp-board-status">' + label.icon + ' ' + escHtml(label.text) +
       (rec._spSaving ? ' <span class="sp-saving">กำลังบันทึก…</span>' : '') + '</div>';
 
@@ -3088,6 +3088,21 @@ function hnNameLine(rec) {
     .join(' ');
 }
 
+/* เจ้าของสั่ง 2026-09-15: "ย้ายชื่อลงมา 1 บรรทัด" — HN อยู่บรรทัดบน ชื่อ-สกุลอยู่บรรทัดล่าง
+   (เดิมตั้งแต่ 09-13 เป็นบรรทัดเดียวกันหมด) ⇒ ต้องคืนเป็น HTML เพราะมี <br> คั่น
+   ⚠ ฟังก์ชันนี้ escape ให้เรียบร้อยแล้วในตัว — ผู้เรียก "ห้าม" ห่อ escHtml() ซ้ำ
+     ไม่งั้นเจ้าหน้าที่จะเห็นคำว่า &lt;br&gt; โผล่เป็นตัวหนังสือบนใบพิมพ์
+   ⚠ hnNameLine() ด้านบนยังอยู่ และยังเป็นที่เดียวที่กำหนด "เนื้อหา" ของบรรทัดนี้
+     (ใช้เทียบในเทสต์ + เผื่อที่ไหนต้องการข้อความล้วนไม่ใช่ HTML) ห้ามประกอบสตริงเองซ้ำที่อื่น */
+function hnNameHtml(rec) {
+  var nm = splitFullName(rec && rec.patientName);
+  var name = [prefixedFirstName(rec, nm.first), nm.last]
+    .filter(function (x) { return String(x == null ? '' : x).trim() !== ''; })
+    .join(' ');
+  var hn = 'HN : ' + ((rec && rec.patientHn) || '—');
+  return escHtml(hn) + (name ? '<br>' + escHtml(name) : '');
+}
+
 /* 🗑 เจ้าของสั่งตัดออกทั้งหมด 2026-09-13: โน้ตท้ายใบเคยมี "ยอด U/S (P3+4) N คน" ต่อท้าย "รวม N คน"
    ตัดทั้งบนจอและบนกระดาษ ทั้งใบแบบตารางและใบแบบการ์ด ⇒ ตัวนับ checkupUsCount()/CU_US_PROGRAMS ถูกลบไปด้วย
    (ของเดิมนับเฉพาะโปรแกรม 3 และ 4 เพราะ 2 โปรแกรมนี้มีอัลตราซาวด์ — ถ้าจะเอากลับ ดู git history) */
@@ -3157,7 +3172,7 @@ function renderCheckupCards(records, dateStr) {
     // ⇒ ยุบ 3 บรรทัด (HN / ชื่อ / สกุล) เป็นบรรทัดเดียวพาดเต็มความกว้างการ์ด แล้วเอารายละเอียดไปเรียง 2 คอลัมน์ข้างล่าง
     //   (ถ้าปล่อยบรรทัดยาวไว้ในคอลัมน์ซ้าย 42% เดิม มันจะตัดบรรทัดเองกลายเป็น 3 บรรทัดเหมือนเดิม)
     html += '<div class="cu-card">' +
-      '<div class="cu-hn">' + escHtml(hnNameLine(rec)) + '</div>' +
+      '<div class="cu-hn">' + hnNameHtml(rec) + '</div>' +
       '<div class="cu-body">' +
       '<div class="cu-right">' +
         '<div class="cu-line">' + escHtml(programLabelForPrint(rec.program)) + '</div>' +
