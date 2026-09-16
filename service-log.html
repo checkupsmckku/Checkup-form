@@ -389,6 +389,12 @@
   .cu-card .cu-sign .cu-sig-line { min-width: 30mm; height: 9mm; vertical-align: bottom; }
   @media (max-width: 620px) { .cu-cards { grid-template-columns: 1fr; } }
 
+  /* เจ้าของสั่ง 2026-09-15: กล่องสรุป U/S + consult + แยกตามแพทย์ (no-print — ห้ามติดกระดาษ)
+     ของหน้า "รายชื่อตรวจสุขภาพรายวัน" ดูฟังก์ชัน checkupExtraSummaryHtml() ในบล็อกสคริปต์ */
+  .cu-extra { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-top: 8px; background: var(--surface); }
+  .cu-extra-line { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+  .cu-extra-line:first-child { margin-top: 0; color: var(--primary-dark); font-weight: 700; }
+
   /* รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager */
   .sp-board-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
   @media (min-width: 640px) { .sp-board-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -841,12 +847,22 @@
         <h2 style="margin-top:0;">รายชื่อตรวจสุขภาพรายวัน</h2>
         <label class="field-label" for="cuDate">วันที่</label>
         <input type="date" id="cuDate">
+        <!-- เจ้าของสั่ง 2026-09-15: เพิ่มช่องค้นหา HN ในหน้านี้ (คนละช่องกับ #todayHnSearch ของหน้า "รายการวันนี้"
+             ห้ามยุ่งกับตัวนั้น) กรองฝั่งเว็บล้วนจากข้อมูลที่โหลดไว้แล้ว ไม่ยิง API ใหม่ (ดู cuHnQuery()/updateCuHnHint())
+             มีผลกับทั้ง 3 มุมมอง · ยอดรวม/กล่องสรุป U/S ยังนับทั้งวันเสมอ ไม่เปลี่ยนตามคำค้น -->
+        <label class="field-label no-print" for="cuHnSearch">ค้นหา HN</label>
+        <input type="search" id="cuHnSearch" class="no-print" autocomplete="off" placeholder="ค้นหา HN ในรายชื่อวันนี้">
+        <p id="cuHnHint" class="muted no-print" hidden></p>
+        <!-- เจ้าของสั่ง 2026-09-15: ยุบปุ่ม "แบบรายการ (แก้ไขได้)" เข้าไปอยู่ในปุ่ม "ดูรายชื่อ" แล้ว (ไม่มีปุ่มของตัวเองอีก)
+             เหลือ 3 ปุ่มมุมมอง ทำงานอิสระจากกัน กดปุ่มไหนก่อนก็โหลดเองได้ (ดู showCuView()) ·
+             ปุ่มพิมพ์แยกออกมาอีกแถวและเล็กลงตามภาพที่เจ้าของส่งมา -->
         <div class="row" style="margin-top:10px;">
           <button type="button" class="btn" id="btnCuLoad">ดูรายชื่อ</button>
           <button type="button" class="btn secondary" id="btnCuViewTable">📋 แบบตาราง</button>
           <button type="button" class="btn secondary" id="btnCuViewCard">🗂 แบบการ์ด</button>
-          <button type="button" class="btn secondary" id="btnCuViewList">📝 แบบรายการ (แก้ไขได้)</button>
-          <button type="button" class="btn secondary" id="btnCuPrint">🖨 พิมพ์</button>
+        </div>
+        <div class="row" style="margin-top:6px;">
+          <button type="button" class="btn secondary small no-print" id="btnCuPrint">🖨 พิมพ์</button>
         </div>
       </div>
       <h2 id="cuTableHeading" style="margin-top:14px;"></h2>
@@ -2609,7 +2625,7 @@ function onCancelRecord(recordId, btnEl) {
       showToast('ยกเลิกบันทึกแล้ว');
       var cuScreen = qs('checkupTableScreen');
       if (cuScreen && cuScreen.style.display !== 'none') {
-        loadCheckupTable();
+        loadCheckupTable(CU_VIEW); // รีโหลดแล้วคงมุมมองที่เปิดอยู่ ไม่บังคับกลับไป list เสมอ
       } else {
         loadToday();
       }
@@ -3055,6 +3071,29 @@ function checkupTableRows(records) {
   });
 }
 
+/* เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN ของหน้า "รายชื่อตรวจสุขภาพรายวัน" — คนละช่องกับ #todayHnSearch
+   ⚠ ใช้ normHnQuery()/recordMatchesHn() ร่วมกับหน้า "รายการวันนี้" (ฟังก์ชันกลางที่ไม่ผูกกับหน้าไหนอยู่แล้ว
+   ประกาศไว้ก่อนหน้านี้ในไฟล์) แต่ห้ามแตะ #todayHnSearch/renderTodayList เอง — คนละหน้ากัน */
+function cuHnQuery() {
+  var el = qs('cuHnSearch');
+  return el ? normHnQuery(el.value) : '';
+}
+
+/* ⚠ กติกาเดียวกับ #todayHnHint ของหน้ารายการวันนี้: ยอดรวม/กล่องสรุป U/S ที่อยู่นอกฟังก์ชันนี้ต้องคิดจาก
+   "ทั้งวัน" (totalCount) เสมอ — ฟังก์ชันนี้แค่รายงานผลค้นหา ไม่แก้ตัวเลขสรุปใด ๆ */
+function updateCuHnHint(totalCount, shownCount) {
+  var hint = qs('cuHnHint');
+  if (!hint) return;
+  var rawQ = (qs('cuHnSearch') ? qs('cuHnSearch').value : '').trim();
+  if (!rawQ) { hint.hidden = true; hint.textContent = ''; return; }
+  hint.hidden = false;
+  if (shownCount === 0) {
+    hint.textContent = 'ไม่พบ HN "' + rawQ + '" ในรายชื่อวันนี้ (ทั้งวันมี ' + totalCount + ' รายการ)';
+  } else {
+    hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shownCount + ' จาก ' + totalCount + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
+  }
+}
+
 /* โน้ตท้ายใบ (เจ้าของสั่ง 2026-09-03): "รวม N คน · ยอด U/S (P3+4) M คน"
    U/S = อัลตราซาวด์ ซึ่งอยู่ในโปรแกรม 3 และโปรแกรม 4 ⇒ นับเฉพาะ 2 โปรแกรมนี้
    ⚠ ถ้าวันหลังโปรแกรมที่มี U/S เปลี่ยน ต้องแก้ลิสต์นี้ที่เดียว */
@@ -3103,13 +3142,80 @@ function hnNameHtml(rec) {
   return escHtml(hn) + (name ? '<br>' + escHtml(name) : '');
 }
 
-/* 🗑 เจ้าของสั่งตัดออกทั้งหมด 2026-09-13: โน้ตท้ายใบเคยมี "ยอด U/S (P3+4) N คน" ต่อท้าย "รวม N คน"
-   ตัดทั้งบนจอและบนกระดาษ ทั้งใบแบบตารางและใบแบบการ์ด ⇒ ตัวนับ checkupUsCount()/CU_US_PROGRAMS ถูกลบไปด้วย
-   (ของเดิมนับเฉพาะโปรแกรม 3 และ 4 เพราะ 2 โปรแกรมนี้มีอัลตราซาวด์ — ถ้าจะเอากลับ ดู git history) */
+/* เจ้าของสั่ง 2026-09-13: ตัดยอด U/S ออกจากโน้ตท้ายใบ (`checkupFootText`) เพราะบรรทัดนั้นติดไปบนกระดาษด้วย
+   ⇒ `checkupFootText` ยังคงเดิมทุกตัวอักษรตั้งแต่ตอนนั้น ห้ามเอา U/S กลับไปต่อท้ายบรรทัดนี้อีก */
 function checkupFootText(rows, totalMoney) {
   var t = 'รวม ' + rows.length + ' คน';
   if (typeof totalMoney === 'number') t += ' · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท';
   return t;
+}
+
+/* เจ้าของสั่ง 2026-09-15: เอายอด U/S กลับมา (แต่ "จะไม่อยู่ในรูปแบบพิมพ์" — ห้ามติดกระดาษ) +
+   เพิ่มสรุป consult / รายชื่อแพทย์ รายวัน ของหน้า "รายชื่อตรวจสุขภาพรายวัน"
+   ⚠ ต่างจากรอบก่อน (ที่ตัดยอด U/S ออกเพราะมันต่อท้าย checkupFootText() ซึ่งพิมพ์ออกกระดาษด้วย) —
+   รอบนี้แยกกล่องออกมาเป็น .cu-extra ต่างหาก (ดู checkupExtraSummaryHtml ด้านล่าง) แล้วบังคับคลาส no-print
+   ให้กล่องนั้นเสมอ ⇒ checkupFootText() เดิมข้างบนไม่ต้องแก้อะไรเลย ยังพิมพ์ขึ้นกระดาษแบบเดิมทุกตัวอักษร */
+var CU_US_PROGRAMS = ['3', '4']; // U/S = อัลตราซาวด์ อยู่ในโปรแกรม 3 และ 4 ⚠ ถ้าโปรแกรมที่มี U/S เปลี่ยน แก้ที่ตัวแปรนี้ที่เดียว
+
+// นับแถวที่โปรแกรมอยู่ใน CU_US_PROGRAMS — ⚠ String() ก่อนเทียบเสมอ เพราะชีต/records อาจคืน program เป็นตัวเลข (3)
+// ไม่ใช่สตริง ('3') แล้วแต่ทางที่ข้อมูลผ่านมา (JSON.parse ของ apiCall ไม่ได้บังคับชนิดให้)
+function checkupUsCount(rows) {
+  return (rows || []).filter(function (rec) {
+    return CU_US_PROGRAMS.indexOf(String(rec.program)) !== -1;
+  }).length;
+}
+
+// นับ consult แบบเข้มงวดด้วย === true เท่านั้น — ห้ามใช้ truthy เพราะค่าที่เคยพิมพ์/บันทึกมาอาจเป็น 'ใช่'/1/'true'
+// ซึ่งเป็น truthy ทั้งหมดแต่ไม่ใช่ boolean true จริง ๆ (เจ้าของสั่งเข้มงวดเรื่องนี้ชัดเจน)
+function checkupConsultCount(rows) {
+  return (rows || []).filter(function (rec) {
+    return rec.consult === true;
+  }).length;
+}
+
+// รวมจำนวนเคสแยกตามชื่อแพทย์ → [{name, count}] เรียงมาก→น้อย เท่ากันเรียง ก-ฮ (localeCompare('th'))
+// ชื่อว่าง/ช่องว่างล้วน รวมเป็นกลุ่ม 'ไม่ระบุชื่อแพทย์' ซึ่งต้องอยู่ท้ายสุดเสมอไม่ว่าจะมีกี่เคส (เป็นกลุ่มตกค้าง ไม่ใช่ชื่อแพทย์จริง)
+function checkupDoctorCounts(rows) {
+  var UNSPECIFIED = 'ไม่ระบุชื่อแพทย์';
+  var counts = {}; // key = ชื่อหลังยุบช่องว่างซ้อน — ⚠ ตัวพิมพ์ใหญ่/เล็กต่างกันถือเป็นคนละกลุ่ม (ไม่เดาแทนเจ้าหน้าที่)
+  (rows || []).forEach(function (rec) {
+    var name = String((rec && rec.doctorName) || '').trim().replace(/\s+/g, ' ');
+    if (!name) name = UNSPECIFIED;
+    counts[name] = (counts[name] || 0) + 1;
+  });
+  var list = [];
+  for (var name in counts) {
+    if (Object.prototype.hasOwnProperty.call(counts, name)) list.push({ name: name, count: counts[name] });
+  }
+  list.sort(function (a, b) {
+    // กลุ่มตกค้าง 'ไม่ระบุชื่อแพทย์' ต้องท้ายสุดเสมอ — เช็คก่อนเทียบจำนวน/ชื่อทุกครั้ง
+    if (a.name === UNSPECIFIED && b.name !== UNSPECIFIED) return 1;
+    if (b.name === UNSPECIFIED && a.name !== UNSPECIFIED) return -1;
+    if (a.count !== b.count) return b.count - a.count; // มาก -> น้อย
+    return a.name.localeCompare(b.name, 'th'); // จำนวนเท่ากันเรียงตามชื่อ ก-ฮ
+  });
+  return list;
+}
+
+/* กล่องสรุปยอด U/S + consult + แยกตามแพทย์ — ใช้ร่วมกันทั้ง 3 มุมมองของหน้า "รายชื่อตรวจสุขภาพรายวัน"
+   ⚠ ต้องมีคลาส no-print เสมอทั้งกล่อง (เจ้าของสั่งชัดว่ายอด U/S ห้ามอยู่บนกระดาษ ถือกติกาเดียวกันกับ consult/แพทย์
+   เพราะเป็นตัวเลขสำหรับนับงาน ไม่ใช่ข้อมูลที่ผู้รับบริการต้องเห็นบนกระดาษ) — กฎ
+   `@media print { .no-print { display:none!important } }` มีอยู่แล้วในไฟล์ ห้ามเขียนซ้ำ */
+function checkupExtraSummaryHtml(rows) {
+  rows = rows || [];
+  if (rows.length === 0) return ''; // ไม่มีแถวเลย ไม่ต้องวาดกล่อง
+  var usCount = checkupUsCount(rows);
+  var consultCount = checkupConsultCount(rows);
+  var doctors = checkupDoctorCounts(rows);
+  var html = '<div class="cu-extra no-print">';
+  html += '<div class="cu-extra-line">ยอด U/S (P3+4) <b>' + usCount + '</b> คน · consult <b>' + consultCount + '</b> เคส</div>';
+  if (doctors.length > 0) {
+    // ชื่อแพทย์เป็นข้อความที่เจ้าหน้าที่พิมพ์เอง ⇒ ต้องผ่าน escHtml() เสมอ กัน < > โดนอ่านเป็นแท็ก
+    var parts = doctors.map(function (d) { return escHtml(d.name) + ' = ' + d.count + ' เคส'; });
+    html += '<div class="cu-extra-line">แยกตามแพทย์ : ' + parts.join(' · ') + '</div>';
+  }
+  html += '</div>';
+  return html;
 }
 
 function renderCheckupTable(records, dateStr) {
@@ -3119,17 +3225,28 @@ function renderCheckupTable(records, dateStr) {
 
   if (rows.length === 0) {
     wrap.innerHTML = '<p class="muted">ยังไม่มีผู้รับบริการตรวจสุขภาพของวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
+    updateCuHnHint(0, 0);
     return;
   }
 
+  // เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN — กรองเฉพาะ "แถวที่จะแสดง" (shownRows) ⚠ ยอดรวม/checkupFootText/
+  // checkupExtraSummaryHtml ต้องคิดจาก rows (ทั้งวัน) เสมอ ห้ามใช้ shownRows ไม่งั้นยอดรวมจะเพี้ยนตามคำค้น
+  var hnQ = cuHnQuery();
+  var shownRows = hnQ ? rows.filter(function (r) { return recordMatchesHn(r, hnQ); }) : rows;
+
   var totalMoney = 0;
+  rows.forEach(function (rec) {
+    var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
+    totalMoney += amt;
+  });
+
   var html = '<div class="scroll-x"><table class="report-table cu-table"><thead><tr>' +
     '<th>คิว</th><th>ชื่อ-สกุล</th><th>HN</th><th>เพศ</th><th>โปรแกรม</th><th>ตรวจภายใน</th>' +
     '<th>ช่องทางรับผล</th><th>ยอดเงินตรวจสุขภาพ</th><th>ลายเซ็นรับเอกสาร</th></tr></thead><tbody>';
 
-  rows.forEach(function (rec) {
+  if (shownRows.length === 0) html += '<tr><td colspan="9" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
+  shownRows.forEach(function (rec) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
-    totalMoney += amt;
     // ⚠ คำสั่งเจ้าของเพิ่มเติม: เฉพาะ "รอรับด้วยตนเอง" เว้นช่องว่างให้เซ็นจริง · ไปรษณีย์/E-mail/ไม่ระบุ ใส่ — เสมอ
     // (กันเจ้าหน้าที่ไล่ให้คนที่ไม่ได้รอรับเซ็น)
     var isWaitPickup = rec.deliveryMethod === 'รอรับด้วยตนเอง';
@@ -3149,7 +3266,9 @@ function renderCheckupTable(records, dateStr) {
 
   html += '<tr class="sp-total"><td colspan="9">' + escHtml(checkupFootText(rows, totalMoney)) + '</td></tr>';
   html += '</tbody></table></div>';
+  html += checkupExtraSummaryHtml(rows); // นอกตาราง (no-print) — ห้ามเอากลับไปต่อท้าย checkupFootText() ในแถว <tr> ข้างบน
   wrap.innerHTML = html;
+  updateCuHnHint(rows.length, shownRows.length);
 }
 
 
@@ -3162,10 +3281,16 @@ function renderCheckupCards(records, dateStr) {
   var rows = checkupTableRows(records);
   if (rows.length === 0) {
     wrap.innerHTML = '<p class="muted">ยังไม่มีผู้รับบริการตรวจสุขภาพของวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
+    updateCuHnHint(0, 0);
     return;
   }
+  // เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN — checkupFootText(rows)/checkupExtraSummaryHtml(rows) ข้างล่างยังใช้
+  // rows (ทั้งวัน) เสมอ มีแค่การ์ดที่ "แสดง" ที่กรองด้วย shownRows
+  var hnQ = cuHnQuery();
+  var shownRows = hnQ ? rows.filter(function (r) { return recordMatchesHn(r, hnQ); }) : rows;
   var html = '<div class="cu-cards">';
-  rows.forEach(function (rec) {
+  if (shownRows.length === 0) html += '<p class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</p>';
+  shownRows.forEach(function (rec) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
     var isWaitPickup = rec.deliveryMethod === 'รอรับด้วยตนเอง';
     // เจ้าของสั่ง 2026-09-13: "ถ้าจะเรียงก็จะต้องเป็น HN : AB1234 นาง.... .... ไปเลย"
@@ -3188,7 +3313,9 @@ function renderCheckupCards(records, dateStr) {
   });
   html += '</div>';
   html += '<p id="cuCardsFoot" style="font-weight:700;margin-top:8px;">' + escHtml(checkupFootText(rows)) + '</p>';
+  html += checkupExtraSummaryHtml(rows); // ต่อท้าย #cuCardsFoot (no-print) — ห้ามยัดเข้าไปในบรรทัด #cuCardsFoot เอง
   wrap.innerHTML = html;
+  updateCuHnHint(rows.length, shownRows.length);
 }
 
 /* มุมมองที่ 3 (เจ้าของสั่ง 2026-09-13): "แบบรายการ (แก้ไขได้)" — การ์ดเดียวกับ .record-item ของหน้า "รายการวันนี้"
@@ -3291,6 +3418,7 @@ function renderCheckupList(records, dateStr) {
   var rows = checkupTableRows(records);
   if (rows.length === 0) {
     wrap.innerHTML = '<p class="muted">ยังไม่มีผู้รับบริการตรวจสุขภาพของวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
+    updateCuHnHint(0, 0);
     return;
   }
   var totalMoney = 0;
@@ -3298,8 +3426,14 @@ function renderCheckupList(records, dateStr) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
     totalMoney += amt;
   });
+  // เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN — แถบสรุป/กล่อง U/S ข้างบนยังคิดจาก rows (ทั้งวัน) เสมอ
+  // มีแค่การ์ดที่ "แสดง" ในลูปข้างล่างที่กรองด้วย shownRows
+  var hnQ = cuHnQuery();
+  var shownRows = hnQ ? rows.filter(function (r) { return recordMatchesHn(r, hnQ); }) : rows;
   var html = '<div class="summary-bar">รวม ' + rows.length + ' คน · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท</div>';
-  rows.forEach(function (rec) {
+  html += checkupExtraSummaryHtml(rows); // ต่อจาก .summary-bar ก่อนการ์ดใบแรก (no-print)
+  if (shownRows.length === 0) html += '<p class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</p>';
+  shownRows.forEach(function (rec) {
     html += '<div class="record-item">' + recordItemHtml(rec, false) + cuNoteHtml(rec) + '</div>';
   });
   wrap.innerHTML = html;
@@ -3311,53 +3445,75 @@ function renderCheckupList(records, dateStr) {
     btn.addEventListener('click', function () { onEditRecordClick(btn.getAttribute('data-edit-id')); });
   });
   bindCuNoteEvents(wrap);
+  updateCuHnHint(rows.length, shownRows.length);
 }
 
-/* สลับมุมมองตาราง/การ์ด — พิมพ์ออกมาได้อย่างที่เห็นบนจอ (WYSIWYG) ไม่ต้องเดาว่าปุ่มไหนพิมพ์แบบไหน */
+/* สลับมุมมองตาราง/การ์ด/รายการ — พิมพ์ออกมาได้อย่างที่เห็นบนจอ (WYSIWYG) ไม่ต้องเดาว่าปุ่มไหนพิมพ์แบบไหน
+   เจ้าของสั่ง 2026-09-15: ยุบปุ่ม "แบบรายการ (แก้ไขได้)" เข้าไปอยู่ในปุ่ม "ดูรายชื่อ" (#btnCuLoad) แล้ว
+   ⇒ ไม่มีปุ่มของตัวเองสำหรับมุมมอง list อีก #btnCuLoad ต้องทำหน้าที่แสดงสถานะ "มุมมองที่เปิดอยู่" ของ list ด้วย
+   (อยู่มุมมองแบบรายการ = ปุ่ม "ดูรายชื่อ" ทึบ ปุ่มตาราง/การ์ดจาง — ตรงกับภาพที่เจ้าของส่งมา) */
 var CU_VIEW = 'table';
+var CU_LOADED_DATE = ''; // วันที่ที่โหลดข้อมูลสำเร็จล่าสุด — showCuView() ใช้ตัดสินว่าต้องยิง API ใหม่หรือสลับมุมมองเฉย ๆ
 function setCuView(view) {
   CU_VIEW = (view === 'card' || view === 'list') ? view : 'table';
   var tableEl = qs('cuTableWrap'), cardsEl = qs('cuCardsWrap'), listEl = qs('cuListWrap');
   if (tableEl) tableEl.hidden = (CU_VIEW !== 'table');
   if (cardsEl) cardsEl.hidden = (CU_VIEW !== 'card');
   if (listEl) listEl.hidden = (CU_VIEW !== 'list');
-  ['btnCuViewTable', 'btnCuViewCard', 'btnCuViewList'].forEach(function (id) {
+  ['btnCuViewTable', 'btnCuViewCard'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var view2 = (id === 'btnCuViewTable') ? 'table' : (id === 'btnCuViewCard') ? 'card' : 'list';
+    var view2 = (id === 'btnCuViewTable') ? 'table' : 'card';
     var active = (CU_VIEW === view2);
     b.className = 'btn small' + (active ? '' : ' secondary');
   });
+  var loadBtn = qs('btnCuLoad'); // ตัวแทนมุมมอง list — ไม่ใส่คลาส small (ขนาดเดิมของปุ่มนี้ไม่เคยเป็น small)
+  if (loadBtn) loadBtn.className = 'btn' + (CU_VIEW === 'list' ? '' : ' secondary');
 }
 
-function loadCheckupTable() {
+/* เจ้าของสั่ง 2026-09-15 (รอบขยายความ): "แบบตาราง/แบบการ์ด กดดูได้เลย ไม่ต้องกดดูรายชื่อก่อน" + "แยกอิสระจากกัน"
+   ⇒ ปุ่มทั้ง 3 ต้องโหลดข้อมูลเองได้ ไม่ต้องพึ่งกันอีกต่อไป — view: 'table' | 'card' | 'list' (ปริยาย 'list')
+   ข้อความ "กำลังโหลด...”/error ต้องลงในกล่องของมุมมองที่ "กำลังจะดู" เท่านั้น ไม่ใช่กล่องอื่นที่อาจถูกซ่อนอยู่ */
+function loadCheckupTable(view) {
+  view = (view === 'table' || view === 'card') ? view : 'list';
   var dateStr = qs('cuDate').value || todayStr();
   var headEl = qs('cuTableHeading');
   // เจ้าของสั่งตัดคำว่า "รวมทุกจุดบริการ" ออกจากหัวใบพิมพ์ 2026-09-03 (ยังยิง allPoints:true เหมือนเดิม แค่ไม่พิมพ์ข้อความนี้)
   if (headEl) headEl.textContent = 'รายชื่อผู้รับบริการตรวจสุขภาพ · วันที่ ' + formatThaiDate(dateStr);
   var wrap = qs('cuTableWrap');
-  if (wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
   var cardsWrap = qs('cuCardsWrap');
-  if (cardsWrap) cardsWrap.innerHTML = '';
   var listWrap = qs('cuListWrap');
-  // เจ้าของสั่ง 2026-09-15: กด "ดูรายชื่อ" ต้องได้ "แบบรายการ (แก้ไขได้)" ทันที (เดิมเปิดมาเป็นแบบตาราง
-  // แล้วต้องกดปุ่ม 📝 อีกทีถึงจะแก้ไขได้) ⇒ ข้อความ "กำลังโหลด"/ข้อความ error ต้องลงในกล่องของมุมมองนี้ด้วย
-  // ไม่งั้นผู้ใช้จะเห็นจอว่างเปล่าระหว่างโหลด เพราะกล่องตารางถูกซ่อนอยู่
-  if (listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  setCuView('list');
+  if (view === 'table' && wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  if (view === 'card' && cardsWrap) cardsWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  if (view === 'list' && listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  setCuView(view);
   // ทุกจุดบริการเสมอ (allPoints:true ตายตัว ไม่มีช่องติ๊กให้เลือก — ตามคำตอบยืนยันของเจ้าของ)
   apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
     if (resp && resp.status === 'ok') {
+      CU_LOADED_DATE = dateStr; // โหลดสำเร็จแล้ว — จำวันที่ไว้กันปุ่มมุมมองอื่นยิง API ซ้ำถ้าเป็นวันเดียวกัน
       renderCheckupTable(resp.records || [], dateStr);
-      renderCheckupCards(resp.records || [], dateStr); // วาดทั้ง 2 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
+      renderCheckupCards(resp.records || [], dateStr); // วาดครบ 3 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
       renderCheckupList(resp.records || [], dateStr);
-      setCuView('list'); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
+      setCuView(view); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
     } else {
       var errHtml = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
-      if (wrap) wrap.innerHTML = errHtml;
-      if (listWrap) listWrap.innerHTML = errHtml; // มุมมองที่ผู้ใช้เห็นอยู่คือ list ⇒ ต้องเห็น error ที่นี่ ไม่ใช่ในกล่องที่ถูกซ่อน
+      if (view === 'table' && wrap) wrap.innerHTML = errHtml;
+      if (view === 'card' && cardsWrap) cardsWrap.innerHTML = errHtml;
+      if (view === 'list' && listWrap) listWrap.innerHTML = errHtml;
     }
   });
+}
+
+/* ตัวกลางที่ปุ่มแบบตาราง/แบบการ์ดเรียก — ถ้าข้อมูลของวันที่เลือกอยู่โหลดไว้แล้ว (CU_LOADED_DATE ตรงกับ #cuDate)
+   แค่สลับมุมมอง ไม่ยิง API ซ้ำ · ถ้ายังไม่เคยโหลดหรือเปลี่ยนวันที่ไปแล้ว ⇒ โหลดใหม่ให้เลย (ต้องได้ข้อมูลของวันใหม่จริง) */
+function showCuView(view) {
+  var dateEl = qs('cuDate');
+  var dateStr = (dateEl && dateEl.value) || todayStr();
+  if (CU_LOADED_DATE && CU_LOADED_DATE === dateStr) {
+    setCuView(view);
+  } else {
+    loadCheckupTable(view);
+  }
 }
 
 /* =========================================================================
@@ -3563,7 +3719,7 @@ function showScreen(name) {
   }
 
   if (name === 'today') loadToday();
-  if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable(); } // รอบ 8 (B7)
+  if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable('list'); } // รอบ 8 (B7)
   if (name === 'spBoard') { // รอบ 9 (ก้อน A)
     SP_BOARD_CAP_MODE = false;
     var spL1 = qs('spBoardLayer1'), spL2 = qs('spBoardLayer2');
@@ -3687,12 +3843,25 @@ document.addEventListener('DOMContentLoaded', function () {
     if (overlay) overlay.addEventListener('click', function () { showToast(lockMsg); });
   });
 
-  qs('btnCuLoad').addEventListener('click', loadCheckupTable); // รอบ 8 (B7)
-  qs('btnCuViewTable').addEventListener('click', function () { setCuView('table'); });
-  qs('btnCuViewCard').addEventListener('click', function () { setCuView('card'); });
-  qs('btnCuViewList').addEventListener('click', function () { setCuView('list'); });
+  // เจ้าของสั่ง 2026-09-15: "แบบตาราง/แบบการ์ด กดดูได้เลย แยกอิสระจากกัน" ⇒ ผ่าน showCuView() ทั้งคู่
+  // (โหลดเองถ้ายังไม่มีข้อมูลของวันนี้ / สลับเฉย ๆ ถ้ามีแล้ว) — ส่วน "ดูรายชื่อ" เป็นปุ่ม "โหลด/รีเฟรช" ยิงใหม่เสมอ ไม่ใช้แคช
+  qs('btnCuLoad').addEventListener('click', function () { loadCheckupTable('list'); }); // รอบ 8 (B7)
+  qs('btnCuViewTable').addEventListener('click', function () { showCuView('table'); });
+  qs('btnCuViewCard').addEventListener('click', function () { showCuView('card'); });
   setCuView('table');
   qs('btnCuPrint').addEventListener('click', function () { window.print(); });
+  // เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN ของหน้านี้ — re-render จาก LAST_CU_RECORDS ไม่ยิง API ใหม่
+  // ⚠ วาดครบ 3 มุมมองเสมอ (เหมือน loadCheckupTable) เพื่อให้สลับมุมมองระหว่างมีคำค้นค้างอยู่ยังกรองอยู่
+  var cuHnEl = qs('cuHnSearch');
+  if (cuHnEl) {
+    cuHnEl.addEventListener('input', function () {
+      var d = qs('cuDate').value || todayStr();
+      renderCheckupTable(LAST_CU_RECORDS, d);
+      renderCheckupCards(LAST_CU_RECORDS, d);
+      renderCheckupList(LAST_CU_RECORDS, d);
+    });
+    cuHnEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+  }
 
   qs('btnLoadReport').addEventListener('click', loadReport);
   qs('btnPrintReport').addEventListener('click', function () { window.print(); });
