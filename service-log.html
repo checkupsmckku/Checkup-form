@@ -268,6 +268,9 @@
   .cu-note-doctor { flex: 1 1 150px; min-width: 120px; width: auto; }
   .cu-note .check-row { flex: 0 0 auto; width: auto; margin: 0; }
   .cu-note-consult-note { flex: 1 1 200px; min-width: 160px; width: auto; }
+  /* รอบ 13 (2026-09-16): ช่อง "วันที่ส่งออก" — <span> คู่กันมีไว้สำหรับใบพิมพ์เท่านั้น บนจอซ่อนไว้ */
+  .cu-note-sentdate { flex: 0 0 auto; width: auto; min-width: 140px; }
+  .cu-note-sentdate-print { display: none; }
   .cu-note-state { flex: 0 0 auto; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .cu-note-state.saving { color: var(--text-muted); }
   .cu-note-state.ok { color: var(--success); }
@@ -498,6 +501,12 @@
     .cu-note-state { display: none; }
     .cu-note-doctor, .cu-note-consult-note {
       border: none; border-bottom: 1px solid #000; border-radius: 0; background: transparent; padding: 2px 0;
+    }
+    /* รอบ 13: <input type="date"> ที่ยังว่างพิมพ์ออกมาเป็น "วว/ดด/ปปปป" + ไอคอนปฏิทิน = รกบนกระดาษ
+       ⇒ ซ่อน input แล้วพิมพ์ <span> แทน — ว่างได้เส้นใต้ให้เขียนมือ · มีค่าก็ได้วันที่แบบไทย */
+    .cu-note-sentdate { display: none; }
+    .cu-note-sentdate-print {
+      display: inline-block; min-width: 30mm; border-bottom: 1px solid #000; padding: 2px 0;
     }
     /* ตารางนี้มี 9 คอลัมน์ ⇒ ถ้าปล่อยให้กว้างตามเนื้อหาจะล้นขอบขวาของ A4 แล้วคอลัมน์ลายเซ็นหายไปทั้งคอลัมน์
        (เจอจริงตอนทดสอบพิมพ์ 2026-09-03) ⇒ ล็อกความกว้างเป็น % ด้วย table-layout: fixed และให้ข้อความตัดบรรทัดได้ */
@@ -3334,6 +3343,7 @@ function cuNoteHtml(rec) {
   var doctorName = (rec && rec.doctorName) || '';
   var consult = !!(rec && rec.consult);
   var consultNote = (rec && rec.consultNote) || '';
+  var sentDate = (rec && rec.sentDate) || '';
   var recId = escHtml(rec && rec.recordId);
   var disAttr = cancelled ? ' disabled' : '';
   var disNoteAttr = (cancelled || !consult) ? ' disabled' : '';
@@ -3345,6 +3355,9 @@ function cuNoteHtml(rec) {
     '<span class="item-name">Consult</span>' +
     '</label>' +
     '<input type="text" class="cu-note-consult-note" data-note-consult-note="' + recId + '" placeholder="ระบุ (consult ใคร/เรื่องอะไร)" value="' + escHtml(consultNote) + '" autocomplete="off"' + disNoteAttr + '>' +
+    '<label class="field-label">วันที่ส่งออก</label>' +
+    '<input type="date" class="cu-note-sentdate" data-note-sentdate="' + recId + '" value="' + escHtml(sentDate) + '"' + disAttr + '>' +
+    '<span class="cu-note-sentdate-print" data-note-sentdate-print="' + recId + '">' + escHtml(sentDate ? formatThaiDate(sentDate) : '') + '</span>' +
     '<span class="cu-note-state" data-note-state="' + recId + '"></span>' +
     '</div>';
 }
@@ -3359,23 +3372,24 @@ function findCuRecord(recordId) {
 
 /* auto-save เมื่อออกจากช่อง (ไม่มีปุ่มบันทึกต่อแถว) — เทียบกับค่าล่าสุดที่รู้ก่อนยิงเสมอ กัน blur/change
    ที่ไม่ได้เปลี่ยนค่าอะไรเลยยิง API ซ้ำ (เช่นคลิกเข้าช่องแล้วคลิกออกโดยไม่พิมพ์) */
-function maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, stateEl) {
+function maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, sentDateInput, stateEl) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
   var consultNote = consult ? noteInput.value.trim() : '';
-  if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote) {
-    return; // ค่าทั้ง 3 ช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
+  var sentDate = sentDateInput.value;
+  if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote && (rec.sentDate || '') === sentDate) {
+    return; // ค่าทั้ง 4 ช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
   apiCall('noteUpdate', {
     staffKey: STATE.staffKey, staffName: STATE.staffName,
-    recordId: recordId, doctorName: doctorName, consult: consult, consultNote: consultNote
+    recordId: recordId, doctorName: doctorName, consult: consult, consultNote: consultNote, sentDate: sentDate
   }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
       // อัปเดตค่าล่าสุดที่รู้ ให้ตรงกับที่บันทึกไปแล้ว (กัน blur ครั้งต่อไปที่ค่าไม่เปลี่ยนยิงซ้ำ)
-      if (rec) { rec.doctorName = doctorName; rec.consult = consult; rec.consultNote = consultNote; }
+      if (rec) { rec.doctorName = doctorName; rec.consult = consult; rec.consultNote = consultNote; rec.sentDate = sentDate; }
     } else {
       // ล้มเหลว/reject: ห้ามล้างค่าที่ผู้ใช้พิมพ์ไว้ และห้ามอัปเดต LAST_CU_RECORDS
       // เพื่อให้ blur ครั้งต่อไป (ค่าเดิม) ยังยิงซ้ำได้ ไม่ใช่ถูกมองว่า "ไม่เปลี่ยน" แล้วเงียบไปเลย
@@ -3391,13 +3405,24 @@ function bindCuNoteEvents(container) {
     var doctorInput = box.querySelector('.cu-note-doctor');
     var consultChk = box.querySelector('.cu-note-consult');
     var noteInput = box.querySelector('.cu-note-consult-note');
+    var sentDateInput = box.querySelector('.cu-note-sentdate');
+    var sentDatePrint = box.querySelector('.cu-note-sentdate-print');
     var stateEl = box.querySelector('.cu-note-state');
-    if (!doctorInput || !consultChk || !noteInput) return;
+    if (!doctorInput || !consultChk || !noteInput || !sentDateInput) return;
 
-    function trySave() { maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, stateEl); }
+    function trySave() { maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, sentDateInput, stateEl); }
+
+    // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
+    // ไม่ใช่รอผลบันทึกจากเซิร์ฟเวอร์ ไม่งั้นกรอกแล้วสั่งพิมพ์เลยจะได้กระดาษที่ไม่ตรงกับหน้าจอ (WYSIWYG)
+    function syncSentDatePrint() {
+      if (!sentDatePrint) return;
+      var v = sentDateInput.value;
+      sentDatePrint.textContent = v ? formatThaiDate(v) : '';
+    }
 
     doctorInput.addEventListener('blur', trySave);
     noteInput.addEventListener('blur', trySave);
+    sentDateInput.addEventListener('change', function () { syncSentDatePrint(); trySave(); });
     consultChk.addEventListener('change', function () {
       if (consultChk.checked) {
         noteInput.disabled = false;
