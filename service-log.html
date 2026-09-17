@@ -271,6 +271,13 @@
   /* รอบ 13 (2026-09-16): ช่อง "วันที่ส่งออก" — <span> คู่กันมีไว้สำหรับใบพิมพ์เท่านั้น บนจอซ่อนไว้ */
   .cu-note-sentdate { flex: 0 0 auto; width: auto; min-width: 140px; }
   .cu-note-sentdate-print { display: none; }
+  /* รอบ 14 (2026-09-17): ห่อป้าย+ช่องกรอกเป็นคู่ด้วย .cu-note-field กัน "ป้ายค้างท้ายบรรทัดบน ช่องกรอกตกบรรทัดล่าง"
+     ตอน .cu-note (flex-wrap) ตัดบรรทัดกลางคู่ — ให้ทั้งคู่ wrap ไปด้วยกันเป็นก้อนเดียวเสมอ (ใช้กับวันที่ส่งออก/ส่งออกอีกครั้ง/consult+จำนวนครั้ง) */
+  .cu-note-field { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
+  .cu-note-consult-count { width: 52px; flex: 0 0 auto; }
+  .cu-note-consult-count-print { display: none; }
+  .cu-note-resenddate { flex: 0 0 auto; width: auto; min-width: 140px; }
+  .cu-note-resenddate-print { display: none; }
   .cu-note-state { flex: 0 0 auto; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .cu-note-state.saving { color: var(--text-muted); }
   .cu-note-state.ok { color: var(--success); }
@@ -285,6 +292,10 @@
     background: #FFF4E5; border: 1px solid #E6A23C; color: #8A5A00;
     border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; font-weight: 600;
   }
+
+  /* รอบ 15 (2026-09-17) — W2: ป้ายเล็กข้างหัวข้อ "รายการวันนี้/รายชื่อตรวจสุขภาพรายวัน/ส่งตรวจพิเศษ"
+     ระหว่าง/หลังรีเฟรชเบื้องหลัง (ดู setRefreshHint()) — เล็ก จาง ไม่ติดกระดาษ (ใส่ no-print ที่ element เองด้วยเสมอ) */
+  .refresh-hint { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--text-muted); vertical-align: middle; }
 
   .scroll-x { overflow-x: auto; max-width: 100%; }
   table.report-table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 14px; }
@@ -420,6 +431,8 @@
   /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่ */
   .wrap-log { max-width: 1400px; margin: 0 auto; padding: 12px; padding-bottom: 90px; }
   .log-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  /* กันบันทึกซ้ำ (2026-09-16): ระหว่างรอ apiCall ตอบ ล็อกทั้งฟอร์มด้วย inert แล้วหรี่ให้เห็นว่ากดไม่ได้ */
+  #logForm[inert] { opacity: .6; }
   .log-col { display: flex; flex-direction: column; gap: 12px; }
   /* จุดตัดจอกว้าง/จอแคบ — ทดสอบจริงที่ 390px และ 1440px แล้ว ใช้ 1100px (ดูรายงานตรวจรับ) */
   @media (min-width: 1100px) {
@@ -508,6 +521,21 @@
     .cu-note-sentdate-print {
       display: inline-block; min-width: 30mm; border-bottom: 1px solid #000; padding: 2px 0;
     }
+    /* รอบ 14: จำนวนครั้ง consult — ซ่อนช่องตัวเลข พิมพ์แค่ "× N" ต่อท้ายคำว่า Consult เมื่อ ≥ 2 ครั้ง
+       (1 ครั้งไม่ต้องพิมพ์อะไรเพิ่ม เพราะ "Consult" เฉย ๆ ก็สื่อความแล้ว) ⇒ ไม่มีเส้นใต้ให้เขียนมือเหมือนช่องวันที่ */
+    .cu-note-consult-count { display: none; }
+    .cu-note-consult-count-print { display: inline; }
+    /* หน่วย "ครั้ง" ต่อท้ายช่องกรอกตัวเลข มีความหมายแค่ตอนกรอกบนจอ — ช่องตัวเลขถูกซ่อนไปแล้วข้างบน
+       ถ้าไม่ซ่อนป้ายนี้ด้วย กระดาษจะโชว์ "Consult ครั้ง" ลอย ๆ โดยไม่มีเลขกำกับ */
+    .cu-note-consult-unit { display: none; }
+    /* รอบ 14: "ส่งออกอีกครั้ง" เป็นช่องทางเลือก — เจ้าของไม่ได้ขอเส้นใต้ให้เขียนมือเหมือนวันที่ส่งออกช่องแรก
+       ⇒ ซ่อน input เฉย ๆ แล้วโชว์วันที่ไทยเฉพาะตอนมีค่า (ว่างก็คือไม่พิมพ์อะไรเลย ไม่ใช่เส้นว่าง)
+       ป้าย "ส่งออกอีกครั้ง" เดิมพิมพ์ทุกกรณีแม้ไม่มีวันที่ ⇒ ซ่อนป้าย+input ทั้งคู่ แล้วให้ ::before ของ span
+       ที่ไม่ว่างพิมพ์ป้ายกำกับแทน (span ว่าง = ไม่มีอะไรพิมพ์เลย ไม่ใช่ป้ายลอย) */
+    .cu-note-resenddate { display: none; }
+    .cu-note-resend-field { display: none; }
+    .cu-note-resenddate-print { display: inline-block; }
+    .cu-note-resenddate-print:not(:empty)::before { content: 'ส่งออกอีกครั้ง '; }
     /* ตารางนี้มี 9 คอลัมน์ ⇒ ถ้าปล่อยให้กว้างตามเนื้อหาจะล้นขอบขวาของ A4 แล้วคอลัมน์ลายเซ็นหายไปทั้งคอลัมน์
        (เจอจริงตอนทดสอบพิมพ์ 2026-09-03) ⇒ ล็อกความกว้างเป็น % ด้วย table-layout: fixed และให้ข้อความตัดบรรทัดได้ */
     table.cu-table { font-size: 8.5pt; width: 100%; min-width: 0; table-layout: fixed; }
@@ -817,7 +845,7 @@
         <div id="specialTodaySummaryBody"></div>
       </div>
 
-      <h2 style="margin-top:18px;">รายการวันนี้</h2>
+      <h2 style="margin-top:18px;">รายการวันนี้<span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
       <div class="today-search no-print">
         <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา HN ในรายการวันนี้">
         <button type="button" class="btn secondary small" id="todayHnClear">ล้าง</button>
@@ -875,6 +903,7 @@
         </div>
       </div>
       <h2 id="cuTableHeading" style="margin-top:14px;"></h2>
+      <span class="muted no-print refresh-hint" id="cuRefreshHint" hidden></span>
       <div id="cuTableWrap"></div>
       <div id="cuCardsWrap" hidden></div>
       <div id="cuListWrap" hidden></div>
@@ -889,6 +918,7 @@
       <div id="spBoardLayer1">
         <div class="card">
           <h2 id="spBoardDashHeading" style="margin-top:0;">รวมรายชื่อส่งตรวจพิเศษ</h2>
+          <span class="muted no-print refresh-hint" id="spRefreshHint" hidden></span>
           <label class="field-label" for="spBoardDate">วันที่</label>
           <div class="row">
             <input type="date" id="spBoardDate">
@@ -1209,7 +1239,10 @@ var STATE = {
   // handleEdit_ ฝั่งเซิร์ฟเวอร์ (ที่เขียนทับคอลัมน์สถานะจาก payload ทุกครั้ง) จะล้างสถานะที่เจ้าหน้าที่ติ๊กไว้แล้วทิ้งเงียบ ๆ
   editSpecialPrep: [],
   editSpecialSent: [],
-  editSpecialBack: []
+  editSpecialBack: [],
+  // กันบันทึกซ้ำ (2026-09-16): true ระหว่างรอ apiCall('log'/'edit') ตอบกลับ — validateForm() ต้องเช็คค่านี้ด้วย
+  // เพราะแค่ btn.disabled อย่างเดียวไม่พอ (recalcTotals ระหว่างรอ ปลดล็อกปุ่มทับให้เองถ้าฟอร์มยัง valid)
+  saving: false
 };
 
 /* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
@@ -1536,6 +1569,16 @@ function isFemalePrefix(raw) {
   return FEMALE_PREFIX_WORDS.indexOf(p) !== -1;
 }
 
+/* เจ้าของสั่ง 2026-09-17: กันเคสชายส่ง MMG ผ่านคำนำหน้าเมื่อยังไม่ได้เลือกเพศ (ดู isMaleForMmg())
+   ไม่เติมกฎจับคำว่า "ชาย" แบบ substring เหมือนฝั่งหญิง เพราะเสี่ยงจับคำนำหน้ากลาง ๆ ผิด
+   (เจ้าของสั่งให้ใช้ exact list เท่านั้น) */
+var MALE_PREFIX_WORDS = ['นาย', 'ดช', 'mr', 'master', 'นพ'];
+function isMalePrefix(raw) {
+  var p = normPrefix_(raw);
+  if (!p) return false;
+  return MALE_PREFIX_WORDS.indexOf(p) !== -1;
+}
+
 var THAI_CHAR_RE = /[ก-๙]/;
 /* เจ้าของสั่ง 2026-09-12: เตือนที่ตัวช่อง HN ทันที (ไม่ใช่แค่ท้ายฟอร์มใต้ยอดรวม) เพราะเคสที่เจอบ่อยคือ
    เจ้าหน้าที่ลืมเปลี่ยนแป้นพิมพ์ พิมพ์ HN เป็นภาษาไทยไปทั้งช่อง กว่าจะเห็น error ท้ายฟอร์มก็กรอกอย่างอื่นจนจบแล้ว
@@ -1745,6 +1788,11 @@ function getSelectedGender() {
   var el = document.querySelector('input[name="gender"]:checked');
   return el ? el.value : '';
 }
+// ผู้ป่วยที่มีแต่รายการส่งตรวจพิเศษ (ไม่มีโปรแกรมตรวจสุขภาพ) มักไม่เคยเลือกวิทยุเพศเลย
+// ⇒ ต้องเดาจากคำนำหน้าด้วย แต่ให้วิทยุเพศหญิงชนะเสมอถ้าเลือกไว้ชัดเจน (กันคำนำหน้ากำกวม/พิมพ์ผิด)
+function isMaleForMmg() {
+  return getSelectedGender() === 'male' || (getSelectedGender() !== 'female' && isMalePrefix(qs('patientPrefix').value));
+}
 function getSelectedPelvic() {
   var el = document.querySelector('input[name="pelvic"]:checked');
   return el ? el.value : 'no';
@@ -1901,7 +1949,7 @@ function validateForm(ctx) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
   } else if (ctx.patientHn && !isValidHn(ctx.patientHn)) {
     msg = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
-  } else if (getSelectedGender() === 'male' && getSpecialRegIds().indexOf('mmg') !== -1) {
+  } else if (isMaleForMmg() && getSpecialRegIds().indexOf('mmg') !== -1) {
     msg = 'เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้';
   } else if (getSelectedGender() === 'male' && isFemalePrefix(qs('patientPrefix').value)) {
     // ⚠ ใช้ getSelectedGender() ดิบ ไม่ใช่ ctx.gender — ctx.gender เป็น checkupOn ? getSelectedGender() : ''
@@ -1917,6 +1965,8 @@ function validateForm(ctx) {
     warnEl.hidden = true;
     btn.disabled = false;
   }
+  // กันบันทึกซ้ำ: ระหว่างรอ apiCall ตอบ ห้ามปุ่มเด้งกลับมากดได้แม้ฟอร์มจะ valid (เตือน/ข้อความข้างบนคำนวณตามปกติ)
+  if (STATE.saving) btn.disabled = true;
   syncStickyButtons();
 }
 
@@ -1977,7 +2027,8 @@ function recalcTotals() {
   //   ⇒ เลือกเพศชายแต่ยังไม่เลือกโปรแกรม จะได้ '' ⇒ ช่อง MMG ไม่ถูกล็อก ติ๊กได้ แต่ validateForm()
   //   (ซึ่งอ่าน getSelectedGender() ดิบ) บล็อกปุ่มบันทึกอยู่ดี ⇒ ผู้ใช้ติดตายโดยไม่รู้สาเหตุ
   //   แผงส่งตรวจพิเศษไม่ได้ผูกกับ "มาตรวจสุขภาพหรือเปล่า" อยู่แล้ว จึงต้องใช้เพศดิบ (t: A3/A4/A6 ของ test_card_mmg_center.js)
-  applyMmgGenderLock(getSelectedGender());
+  // เจ้าของสั่ง 2026-09-17: ไม่ใช่แค่วิทยุเพศแล้ว — isMaleForMmg() เดาจากคำนำหน้าด้วยเมื่อยังไม่เลือกวิทยุเพศ
+  applyMmgGenderLock(isMaleForMmg() ? 'male' : '');
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
 
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่อีกแล้ว — extraIds มีค่าได้เฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่มมาก่อน
@@ -2266,6 +2317,9 @@ function mergeDraftIntoTodayRecord(rec, draft) {
 
 function onSubmitLog(e) {
   e.preventDefault();
+  // กันบันทึกซ้ำ (2026-09-16): เช็ค STATE.saving ก่อนแม้แต่ btn.disabled — ต้องมาก่อนกล่องยืนยันรวมแถวข้างล่าง
+  // ไม่งั้นคลิกรัวระหว่างรอ apiCall ตอบจะเปิดกล่อง confirm ซ้อนได้ (validateForm ปลดล็อก btn.disabled คืนระหว่างทาง)
+  if (STATE.saving) return;
   var btn = qs('btnSubmitLog');
   if (btn.disabled) return;
 
@@ -2352,15 +2406,29 @@ function onSubmitLog(e) {
   };
   if (isEdit) payload.recordId = STATE.editingId;
 
+  // กันบันทึกซ้ำ (2026-09-16): ตั้ง saving + inert ก่อนยิง apiCall — inert ทำให้แก้ฟอร์มระหว่างรอไม่ได้
+  // (กันบั๊กเดิม: ติ๊กเพิ่มระหว่างรอ แล้วโดน resetLogForm() ล้างทิ้งตอนสำเร็จ)
+  STATE.saving = true;
+  qs('logForm').inert = true;
   btn.disabled = true;
   setSubmitLabel(isEdit ? 'กำลังบันทึกการแก้ไข...' : 'กำลังบันทึก...');
   qs('formError').hidden = true;
 
   apiCall(isEdit ? 'edit' : 'log', payload).then(function (resp) {
+    // ต้องปลด saving/inert เป็นบรรทัดแรกของทั้ง 2 กิ่ง — resetLogForm()/recalcTotals() ข้างล่างเรียก validateForm()
+    // ซึ่งอ่าน STATE.saving เพื่อคืนสถานะปุ่มให้ถูก ถ้าไม่ปลดก่อนปุ่มจะค้าง disabled ตลอดไป
+    STATE.saving = false;
+    qs('logForm').inert = false;
     if (resp && resp.status === 'ok') {
       showToast(isEdit ? '✔ บันทึกการแก้ไขสำเร็จ' : '✔ บันทึกสำเร็จ');
       resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
-      loadToday();
+      // รอบ 15 (2026-09-17) — W1: เซิร์ฟเวอร์คืน record มาด้วย -> แปะเข้าแคชที่มีอยู่ทันที ไม่ต้องยิง apiCall('today') ซ้ำ
+      // (เซิร์ฟเวอร์รุ่นเก่าที่ยังไม่ deploy จะไม่มีคีย์นี้ -> เผื่อไว้ด้วย loadToday() แบบเดิมเป๊ะ)
+      if (resp.record) {
+        applySavedRecord(resp.record);
+      } else {
+        loadToday();
+      }
       showScreen('log');
     } else {
       setSubmitLabel(isEdit ? 'บันทึกการแก้ไข' : 'บันทึก');
@@ -2369,11 +2437,18 @@ function onSubmitLog(e) {
       errEl.hidden = false;
       recalcTotals(); // คืนสถานะปุ่มตามความถูกต้องของฟอร์ม
     }
+  }).catch(function () {
+    // apiCall เองไม่เคย reject (ดักไว้แล้วคืน status:'error') แต่กันไว้อีกชั้นไม่ให้ saving ค้าง true ตลอดไป
+    STATE.saving = false;
+    qs('logForm').inert = false;
+    setSubmitLabel(isEdit ? 'บันทึกการแก้ไข' : 'บันทึก');
+    recalcTotals();
   });
 }
 
 /* ปุ่มบันทึกที่มองเห็นจริง (sticky bar / แถบร่างบนเมนู) เรียกผ่านทางนี้ — #btnSubmitLog เป็นตัวเก็บสถานะ disabled จริง */
 function triggerSubmit() {
+  if (STATE.saving) return; // กันบันทึกซ้ำ: กำลังส่งอยู่แล้ว ไม่ต้องเด้งคำเตือนซ้ำ เงียบไปเฉยๆ
   var btn = qs('btnSubmitLog');
   if (btn.disabled) {
     qs('formWarning').hidden = false;
@@ -2422,6 +2497,91 @@ function recordGrandTotal(rec) {
 }
 
 var LAST_TODAY_RECORDS = []; // เก็บผลลัพธ์ today ล่าสุดไว้ใช้ตอนกด "แก้ไข" (ไม่ต้องยิง API ซ้ำ)
+
+/* =========================================================================
+   รอบ 15 (2026-09-17) — W1/W2: บันทึกแล้วไม่โหลดซ้ำ + แสดงของเดิมทันทีแล้วรีเฟรชเบื้องหลัง
+   (SPEC_รอบ15_ความเร็ว.md) — แคชทั้งหมดเป็นตัวแปร JS ล้วนในหน่วยความจำ ห้าม localStorage/sessionStorage
+   (มีข้อมูลผู้ป่วย) ⇒ หายเมื่อรีโหลดหน้า ซึ่งยอมรับได้ตามสเปก
+   - TODAY_CACHE: คีย์ = STATE.point + '|' + วันนี้ (หน้า "รายการวันนี้" กรองด้วยจุดบริการ)
+   - CU_CACHE / SP_CACHE: คีย์ = วันที่ล้วน (allPoints ⇒ ไม่กรองจุด)
+   แต่ละแคชเก็บ {key, records, json} — json คือ JSON.stringify(records) ของ "คำตอบจริงจากเซิร์ฟเวอร์ล่าสุด"
+   ใช้เทียบว่าคำตอบรอบใหม่ "เหมือนเดิมทุกตัวอักษรไหม" (ถ้าเหมือน ไม่ต้อง render ซ้ำ) ========================== */
+var TODAY_CACHE = { key: '', records: null, json: '' };
+var CU_CACHE = { key: '', records: null, json: '' };
+var SP_CACHE = { key: '', records: null, json: '' };
+// จำนวนคำขอ apiCall('specialStatus') ที่ยังค้างอยู่ (ดู onSpBoardStatusClick/onSpBoardDeleteClick) — ระหว่างนี้
+// ห้ามให้คำตอบรีเฟรชเบื้องหลังของ loadSpBoard() ทับสถานะที่เพิ่งติ๊กไปแล้ว (SPEC ข้อ W2 ท้ายสุด)
+var SP_PENDING_COUNT = 0;
+
+// แทรก/แทนที่ record เดียวในอาร์เรย์ตาม recordId (ไม่เจอ ⇒ ใส่หัวรายการ) — คืนอาร์เรย์ใหม่เสมอ ไม่แก้ของเดิมในที่
+function upsertRecordInList(list, record) {
+  var out = (list || []).slice();
+  var idx = -1;
+  for (var i = 0; i < out.length; i++) {
+    if (out[i].recordId === record.recordId) { idx = i; break; }
+  }
+  if (idx === -1) out.unshift(record); else out[idx] = record;
+  return out;
+}
+
+// ลบ record ตาม recordId ออกจากอาร์เรย์ (คืนอาร์เรย์ใหม่) — ใช้เมื่อ record ที่เพิ่งบันทึกไม่เข้าเงื่อนไขของแคชนั้นแล้ว
+function removeRecordFromList(list, recordId) {
+  return (list || []).filter(function (r) { return r.recordId !== recordId; });
+}
+
+/* ป้ายเล็ก "กำลังอัปเดต…" ข้างหัวข้อของหน้าที่มีแคช (todayRefreshHint/cuRefreshHint/spRefreshHint)
+   mode: 'loading' (กำลังรีเฟรชเบื้องหลัง) · 'stale' (มีของใหม่แต่ห้าม render ทับ ต้องส่ง onClick มาด้วย) ·
+   'error' (รีเฟรชไม่สำเร็จ แต่ของเดิมบนจอยังอยู่) · อย่างอื่น/ไม่ส่ง mode = ซ่อนป้าย */
+function setRefreshHint(id, mode, onClick) {
+  var el = qs(id);
+  if (!el) return;
+  el.onclick = null;
+  el.style.cursor = '';
+  if (mode === 'loading') {
+    el.hidden = false; el.textContent = '(กำลังอัปเดต…)';
+  } else if (mode === 'stale') {
+    el.hidden = false; el.textContent = '(มีข้อมูลใหม่ — แตะเพื่อรีเฟรช)';
+    el.style.cursor = 'pointer';
+    el.onclick = onClick;
+  } else if (mode === 'error') {
+    el.hidden = false; el.textContent = '(⚠ อัปเดตไม่สำเร็จ)';
+  } else {
+    el.hidden = true; el.textContent = '';
+  }
+}
+
+// กำลังพิมพ์อยู่ในช่อง "ชื่อแพทย์/consult/วันที่ส่งออก" ของมุมมอง "แบบรายการ (แก้ไขได้)" อยู่ไหม (cuNoteHtml)
+// ใช้กันไม่ให้รีเฟรชเบื้องหลังของ loadCheckupTable() วาดทับสิ่งที่เจ้าหน้าที่กำลังพิมพ์ค้างอยู่ (SPEC ข้อ W2)
+function isFocusInCuNote() {
+  var el = document.activeElement;
+  return !!(el && typeof el.closest === 'function' && el.closest('.cu-note'));
+}
+
+/* W1: หลังบันทึก/แก้ไขสำเร็จ ถ้าเซิร์ฟเวอร์คืน record มาด้วย (รอบ 15 ขึ้นไป) ให้แปะเข้าแคชที่มีอยู่ทันที
+   แทนที่จะยิง apiCall('today') ซ้ำอีกรอบ (onSubmitLog ผู้เรียกจะไม่เรียก loadToday() เลยเมื่อมี record) */
+function applySavedRecord(record) {
+  var today = todayStr();
+
+  // "รายการวันนี้" ของจุดบริการตัวเอง — ต้องตรงทั้งวันที่และจุดบริการ ไม่ตรง ⇒ ลบตัวเดิมออก (ถ้าเคยมี)
+  if (record.date === today && record.point === STATE.point) {
+    renderTodayList(upsertRecordInList(LAST_TODAY_RECORDS, record));
+  } else {
+    renderTodayList(removeRecordFromList(LAST_TODAY_RECORDS, record.recordId));
+  }
+
+  // หน้า "รายชื่อตรวจสุขภาพรายวัน" (allPoints ไม่กรองจุด) — อัปเดตเฉพาะแคชของวันเดียวกับ record เท่านั้น
+  if (CU_CACHE.key === record.date && CU_CACHE.records) {
+    var cuRecords = upsertRecordInList(CU_CACHE.records, record);
+    CU_CACHE = { key: record.date, records: cuRecords, json: JSON.stringify(cuRecords) };
+  }
+
+  // กระดานส่งตรวจพิเศษ (allPoints) — เดียวกัน แต่เว้นไว้ถ้ามี specialStatus ค้างรออยู่ (กันชนกับ optimistic UI)
+  if (SP_CACHE.key === record.date && SP_CACHE.records && SP_PENDING_COUNT === 0) {
+    var spRecords = upsertRecordInList(SP_CACHE.records, record);
+    SP_CACHE = { key: record.date, records: spRecords, json: JSON.stringify(spRecords) };
+    SP_BOARD_RECORDS = spRecords;
+  }
+}
 
 /* สรุปส่งตรวจพิเศษ "แยกรายวัน" (รอบ 4) — คำนวณจาก records ที่ handleToday_ คืนมา (เฉพาะจุดบริการที่เลือกอยู่)
    นับเฉพาะแถวที่ไม่ใช่สถานะ "ยกเลิก"
@@ -2498,6 +2658,9 @@ function recordItemHtml(rec, cancelled) {
 
 function renderTodayList(records) {
   LAST_TODAY_RECORDS = records || [];
+  // รอบ 15 (2026-09-17) — W2: ฟังก์ชันนี้ถูกเรียกด้วยชุดข้อมูลของ STATE.point ในวันนี้เท่านั้นทุกจุดเรียกจริง
+  // (loadToday()/applySavedRecord()/ตัวกรอง HN) ⇒ อัปเดตแคชคู่กับ point+date ปัจจุบันไว้ที่นี่ที่เดียว
+  TODAY_CACHE = { key: STATE.point + '|' + todayStr(), records: LAST_TODAY_RECORDS, json: JSON.stringify(LAST_TODAY_RECORDS) };
   renderSpecialTodaySummary(LAST_TODAY_RECORDS);
   var wrap = qs('todayList');
   wrap.innerHTML = '';
@@ -2597,6 +2760,9 @@ function renderTodayList(records) {
 }
 
 function onEditRecordClick(recordId) {
+  // กันบันทึกซ้ำ (2026-09-16): กำลังรอบันทึกอยู่ — ห้ามโหลดแถวอื่นมาทับฟอร์ม เดี๋ยว resp 'ok' ที่ยังค้างจะมา
+  // resetLogForm() ล้างทิ้งสิ่งที่เพิ่งโหลดเข้ามา
+  if (STATE.saving) { showToast('รอบันทึกรายการก่อนหน้าให้เสร็จก่อน'); return; }
   var rec = null;
   for (var i = 0; i < LAST_TODAY_RECORDS.length; i++) {
     if (LAST_TODAY_RECORDS[i].recordId === recordId) { rec = LAST_TODAY_RECORDS[i]; break; }
@@ -2617,9 +2783,29 @@ function onEditRecordClick(recordId) {
 }
 
 function loadToday() {
-  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: todayStr() }).then(function (resp) {
+  var dateStr = todayStr();
+  var key = STATE.point + '|' + dateStr;
+  // รอบ 15 (2026-09-17) — W2: มีแคชของจุดบริการ+วันนี้อยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ (ไม่ขึ้น "กำลังโหลด...")
+  // แล้วรีเฟรชเบื้องหลัง ป้าย "กำลังอัปเดต…" บอกว่ากำลังยิงซ้ำอยู่
+  var cacheHit = !!(TODAY_CACHE.key === key && TODAY_CACHE.records);
+  if (cacheHit) {
+    renderTodayList(TODAY_CACHE.records);
+    setRefreshHint('todayRefreshHint', 'loading');
+  }
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr }).then(function (resp) {
+    // เปลี่ยนจุดบริการ/ข้ามวันระหว่างรอ -> คีย์ที่หน้าจอควรแสดงตอนนี้ไม่ตรงกับคำขอนี้แล้ว ทิ้งคำตอบนี้ไปเลย
+    if (STATE.point + '|' + todayStr() !== key) return;
     if (resp && resp.status === 'ok') {
-      renderTodayList(resp.records || []);
+      var records = resp.records || [];
+      var json = JSON.stringify(records);
+      if (cacheHit && json === TODAY_CACHE.json) {
+        setRefreshHint('todayRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
+        return;
+      }
+      renderTodayList(records); // ตั้ง LAST_TODAY_RECORDS + TODAY_CACHE ให้เองข้างในแล้ว
+      setRefreshHint('todayRefreshHint', 'none');
+    } else if (cacheHit) {
+      setRefreshHint('todayRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ (ห้ามกลืนเงียบ)
     } else {
       qs('todayList').innerHTML = '<p class="muted">โหลดรายการวันนี้ไม่สำเร็จ' + (resp && resp.message ? ' (' + escHtml(resp.message) + ')' : '') + '</p>';
     }
@@ -2667,20 +2853,59 @@ function loadSpBoard() {
   var dateStr = (dateEl && dateEl.value) || todayStr();
   var headEl = qs('spBoardDashHeading');
   if (headEl) headEl.textContent = 'ส่งตรวจพิเศษ · ' + formatThaiDate(dateStr) + ' · ทุกจุด';
+
+  // รอบ 15 (2026-09-17) — W2: มีแคชของวันนี้อยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ แล้วรีเฟรชเบื้องหลัง
+  var cacheHit = !!(SP_CACHE.key === dateStr && SP_CACHE.records);
+  if (cacheHit) {
+    SP_BOARD_RECORDS = SP_CACHE.records;
+    renderSpBoardCards();
+    var l2pre = qs('spBoardLayer2');
+    if (l2pre && !l2pre.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
+    setRefreshHint('spRefreshHint', 'loading');
+  }
+
   apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
+    // เปลี่ยนวันที่ระหว่างรอ -> คีย์ไม่ตรงกับที่หน้าจอควรแสดงอยู่แล้ว ทิ้งคำตอบนี้
+    var curDateEl = qs('spBoardDate');
+    if (((curDateEl && curDateEl.value) || todayStr()) !== dateStr) return;
+
     // ⚠ ห้ามกลืน error เงียบ — กระดาน 0 ทุกช่องหน้าตาเหมือน "วันนี้ไม่มีใครลงชื่อ" เป๊ะ
     //    apiCall() ไม่เคย reject (จับ error คืนเป็น {status:'error'}) ⇒ ต้องเช็ค status เองที่นี่
     var loadOk = !!(resp && resp.status === 'ok');
     var errEl = qs('spBoardError');
-    if (errEl) {
-      errEl.textContent = loadOk ? '' : ('❌ โหลดข้อมูลไม่สำเร็จ — ตัวเลขข้างล่างยังไม่ใช่ของจริง กด 🔄 รีเฟรชอีกครั้ง' +
-        (resp && resp.message ? ' (' + resp.message + ')' : ''));
-      errEl.hidden = loadOk;
+
+    if (loadOk) {
+      var records = resp.records || [];
+      var json = JSON.stringify(records);
+      if (cacheHit && json === SP_CACHE.json) {
+        setRefreshHint('spRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
+        return;
+      }
+      if (SP_PENDING_COUNT > 0) {
+        // มี specialStatus ค้างรออยู่ (เพิ่งติ๊กสถานะ) — ห้ามให้คำตอบรีเฟรชเก่ามาทับ ข้ามรอบนี้ไปเลย (ปลอดภัยไว้ก่อน)
+        setRefreshHint('spRefreshHint', 'none');
+        return;
+      }
+      SP_CACHE = { key: dateStr, records: records, json: json };
+      SP_BOARD_RECORDS = records;
+      if (errEl) { errEl.textContent = ''; errEl.hidden = true; }
+      renderSpBoardCards();
+      var l2 = qs('spBoardLayer2');
+      if (l2 && !l2.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
+      setRefreshHint('spRefreshHint', 'none');
+    } else if (cacheHit) {
+      setRefreshHint('spRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ
+    } else {
+      if (errEl) {
+        errEl.textContent = '❌ โหลดข้อมูลไม่สำเร็จ — ตัวเลขข้างล่างยังไม่ใช่ของจริง กด 🔄 รีเฟรชอีกครั้ง' +
+          (resp && resp.message ? ' (' + resp.message + ')' : '');
+        errEl.hidden = false;
+      }
+      SP_BOARD_RECORDS = [];
+      renderSpBoardCards();
+      var l2b = qs('spBoardLayer2');
+      if (l2b && !l2b.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
     }
-    SP_BOARD_RECORDS = loadOk ? (resp.records || []) : [];
-    renderSpBoardCards();
-    var l2 = qs('spBoardLayer2');
-    if (l2 && !l2.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
   });
 }
 
@@ -2842,11 +3067,14 @@ function onSpBoardStatusClick(rec, stage) {
   SP_SAVE_SEQ[rec.recordId] = (SP_SAVE_SEQ[rec.recordId] || 0) + 1;
   var mySeq = SP_SAVE_SEQ[rec.recordId];
 
+  // รอบ 15 (2026-09-17) — W2: กันรีเฟรชเบื้องหลังของ loadSpBoard() มาทับสถานะที่เพิ่งติ๊กระหว่างรอคำขอนี้ตอบ
+  SP_PENDING_COUNT++;
   apiCall('specialStatus', {
     staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
     specialPrep: rec.specialPrep || [], specialSent: sent, specialBack: back,
     specialReg: rec.specialReg || []
   }).then(function (resp) {
+    SP_PENDING_COUNT = Math.max(0, SP_PENDING_COUNT - 1);
     // มีคำขอใหม่กว่ายิงทับไปแล้วระหว่างที่คำขอนี้ยังค้างอยู่ ⇒ ปล่อยให้คำขอที่ใหม่กว่าเป็นเจ้าของ state ต่อไป
     if (SP_SAVE_SEQ[rec.recordId] !== mySeq) return;
 
@@ -2916,10 +3144,13 @@ function onSpBoardDeleteClick(rec) {
     renderSpBoardSwitchBar();
     renderSpPeopleCards(id);
 
+    // รอบ 15 (2026-09-17) — W2: เดียวกับ onSpBoardStatusClick() กันรีเฟรชเบื้องหลังทับระหว่างรอคำขอนี้ตอบ
+    SP_PENDING_COUNT++;
     apiCall('specialStatus', {
       staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
       specialPrep: newPrep, specialSent: newSent, specialBack: newBack, specialReg: newReg
     }).then(function (resp) {
+      SP_PENDING_COUNT = Math.max(0, SP_PENDING_COUNT - 1);
       if (resp && resp.status === 'ok') {
         // เซิร์ฟเวอร์เป็นผู้ตัดสินสุดท้าย — reconcile ให้ตรง แม้ state ในเครื่องจะตรงอยู่แล้วก็ตาม
         rec.specialPrep = resp.specialPrep || newPrep;
@@ -3016,9 +3247,12 @@ function bulkMarkPrep(id) {
   }
   var workerCount = Math.min(4, rows.length);
   var workers = [];
+  // รอบ 15 (2026-09-17) — W2: มี specialStatus ค้างรออยู่ทั้งชุด กันรีเฟรชเบื้องหลังของ loadSpBoard() มาทับระหว่างนี้
+  SP_PENDING_COUNT++;
   for (var w = 0; w < workerCount; w++) workers.push(worker());
 
   Promise.all(workers).then(function () {
+    SP_PENDING_COUNT = Math.max(0, SP_PENDING_COUNT - 1);
     if (btn) btn.disabled = false;
     // SPEC_รอบ9.md 3.4 — ตอนจบต้องบอกด้วยว่า "ใคร" ที่ไม่สำเร็จ ไม่ใช่แค่จำนวน
     // (ใช้ textContent ⇒ ชื่อคนไข้ไม่ต้องผ่าน escHtml และห้ามเปลี่ยนไปใช้ innerHTML)
@@ -3182,6 +3416,19 @@ function checkupConsultCount(rows) {
   }).length;
 }
 
+// รอบ 14 (2026-09-17): คนเดียว consult ได้มากกว่า 1 ครั้ง ⇒ แยก "จำนวนครั้งรวม" ออกจาก checkupConsultCount()
+// ที่ยังนับ "จำนวนคน" เหมือนเดิม (ใช้เป็น M ในบรรทัดสรุป) — ครั้งนับเฉพาะ rec.consult === true เท่านั้น (กติกาเข้มงวดเดิม)
+// รายการเก่าที่ยังไม่มี consultCount (ก่อนรอบนี้) แต่ consult=true ถือเป็น 1 ครั้ง
+function checkupConsultTotalCount(rows) {
+  var total = 0;
+  (rows || []).forEach(function (rec) {
+    if (!rec || rec.consult !== true) return;
+    var n = Number(rec.consultCount);
+    total += (isFinite(n) && n >= 1 && Math.floor(n) === n) ? n : 1;
+  });
+  return total;
+}
+
 // รวมจำนวนเคสแยกตามชื่อแพทย์ → [{name, count}] เรียงมาก→น้อย เท่ากันเรียง ก-ฮ (localeCompare('th'))
 // ชื่อว่าง/ช่องว่างล้วน รวมเป็นกลุ่ม 'ไม่ระบุชื่อแพทย์' ซึ่งต้องอยู่ท้ายสุดเสมอไม่ว่าจะมีกี่เคส (เป็นกลุ่มตกค้าง ไม่ใช่ชื่อแพทย์จริง)
 function checkupDoctorCounts(rows) {
@@ -3214,10 +3461,12 @@ function checkupExtraSummaryHtml(rows) {
   rows = rows || [];
   if (rows.length === 0) return ''; // ไม่มีแถวเลย ไม่ต้องวาดกล่อง
   var usCount = checkupUsCount(rows);
-  var consultCount = checkupConsultCount(rows);
+  // รอบ 14 (2026-09-17): consult แยกเป็น "จำนวนครั้ง" (นับซ้ำได้) + "จำนวนคน" (M) — คนเดียว consult ได้หลายครั้ง
+  var consultPeople = checkupConsultCount(rows);
+  var consultTotal = checkupConsultTotalCount(rows);
   var doctors = checkupDoctorCounts(rows);
   var html = '<div class="cu-extra no-print">';
-  html += '<div class="cu-extra-line">ยอด U/S (P3+4) <b>' + usCount + '</b> คน · consult <b>' + consultCount + '</b> เคส</div>';
+  html += '<div class="cu-extra-line">ยอด U/S (P3+4) <b>' + usCount + '</b> คน · consult <b>' + consultTotal + '</b> ครั้ง (<b>' + consultPeople + '</b> คน)</div>';
   if (doctors.length > 0) {
     // ชื่อแพทย์เป็นข้อความที่เจ้าหน้าที่พิมพ์เอง ⇒ ต้องผ่าน escHtml() เสมอ กัน < > โดนอ่านเป็นแท็ก
     var parts = doctors.map(function (d) { return escHtml(d.name) + ' = ' + d.count + ' เคส'; });
@@ -3337,27 +3586,50 @@ var LAST_CU_RECORDS = [];
 /* เจ้าของสั่ง 2026-09-15: ช่อง "ชื่อแพทย์" + "consult" เฉพาะมุมมองนี้ (ไม่ใช่หน้า "รายการวันนี้")
    ⇒ ต่อท้าย recordItemHtml() แทนที่จะแก้ recordItemHtml() เอง เพราะฟังก์ชันนั้นใช้ร่วมกับ renderTodayList()
    consult = ติ๊ก consult/ไม่ consult + ช่องระบุ (ไม่ใช่ช่องข้อความอิสระ) — ช่องระบุ disabled เมื่อยังไม่ติ๊ก
-   แถวที่ยกเลิกแล้ว 3 ช่องนี้ disabled ทั้งหมด (เซิร์ฟเวอร์ปฏิเสธการแก้อยู่แล้ว กันพิมพ์เสียเปล่า) */
+   แถวที่ยกเลิกแล้ว 3 ช่องนี้ disabled ทั้งหมด (เซิร์ฟเวอร์ปฏิเสธการแก้อยู่แล้ว กันพิมพ์เสียเปล่า)
+   รอบ 14 (2026-09-17): เพิ่มจำนวนครั้ง consult (คนเดียว consult ซ้ำได้) + "ส่งออกอีกครั้ง" (ผลตรวจส่งไปแล้วแต่ไม่ถึง
+   ผู้ป่วย ต้องส่งซ้ำ) — ห่อป้าย+ช่องกรอกที่ต้องไม่แยกบรรทัดกันด้วย .cu-note-field (ดู CSS) */
 function cuNoteHtml(rec) {
   var cancelled = rec && rec.status === 'ยกเลิก';
   var doctorName = (rec && rec.doctorName) || '';
   var consult = !!(rec && rec.consult);
   var consultNote = (rec && rec.consultNote) || '';
   var sentDate = (rec && rec.sentDate) || '';
+  var resendDate = (rec && rec.resendDate) || '';
+  // แถวเก่าที่ consult=true แต่ยังไม่มี consultCount (ก่อนรอบ 14) ถือเป็น 1 ครั้ง — ไม่ใช่แถวใหม่ก็ยังกรอกได้ปกติ
+  var rawCount = rec && rec.consultCount;
+  var consultCount = (typeof rawCount === 'number' && rawCount >= 1 && Math.floor(rawCount) === rawCount) ? rawCount : (consult ? 1 : 0);
+  var consultCountVal = consult ? String(consultCount || 1) : '';
+  var consultPrintText = (consult && consultCount >= 2) ? ('× ' + consultCount) : ''; // × N เฉพาะ >= 2 ครั้ง
   var recId = escHtml(rec && rec.recordId);
   var disAttr = cancelled ? ' disabled' : '';
   var disNoteAttr = (cancelled || !consult) ? ' disabled' : '';
+  var disCountAttr = (cancelled || !consult) ? ' disabled' : '';
+  // ส่งออกอีกครั้งกรอกได้ก็ต่อเมื่อมีวันที่ส่งออก(ครั้งแรก)แล้วเท่านั้น — เคลียร์วันที่ส่งออกทีหลังก็แค่ล็อกช่องนี้ไว้ ไม่ล้างค่าทิ้ง
+  var disResendAttr = (cancelled || !sentDate) ? ' disabled' : '';
   return '<div class="cu-note" data-note-row="' + recId + '">' +
     '<label class="field-label">ชื่อแพทย์</label>' +
     '<input type="text" class="cu-note-doctor" data-note-doctor="' + recId + '" value="' + escHtml(doctorName) + '" autocomplete="off"' + disAttr + '>' +
+    '<span class="cu-note-field">' +
     '<label class="check-row">' +
     '<input type="checkbox" class="cu-note-consult" data-note-consult="' + recId + '"' + (consult ? ' checked' : '') + disAttr + '>' +
     '<span class="item-name">Consult</span>' +
     '</label>' +
+    '<input type="number" class="cu-note-consult-count" data-note-consult-count="' + recId + '" min="1" max="20" step="1" value="' + escHtml(consultCountVal) + '"' + disCountAttr + '>' +
+    '<span class="item-name cu-note-consult-unit">ครั้ง</span>' +
+    '<span class="cu-note-consult-count-print" data-note-consult-count-print="' + recId + '">' + escHtml(consultPrintText) + '</span>' +
+    '</span>' +
     '<input type="text" class="cu-note-consult-note" data-note-consult-note="' + recId + '" placeholder="ระบุ (consult ใคร/เรื่องอะไร)" value="' + escHtml(consultNote) + '" autocomplete="off"' + disNoteAttr + '>' +
+    '<span class="cu-note-field">' +
     '<label class="field-label">วันที่ส่งออก</label>' +
     '<input type="date" class="cu-note-sentdate" data-note-sentdate="' + recId + '" value="' + escHtml(sentDate) + '"' + disAttr + '>' +
+    '</span>' +
     '<span class="cu-note-sentdate-print" data-note-sentdate-print="' + recId + '">' + escHtml(sentDate ? formatThaiDate(sentDate) : '') + '</span>' +
+    '<span class="cu-note-field cu-note-resend-field">' +
+    '<label class="field-label">ส่งออกอีกครั้ง</label>' +
+    '<input type="date" class="cu-note-resenddate" data-note-resenddate="' + recId + '" value="' + escHtml(resendDate) + '"' + disResendAttr + '>' +
+    '</span>' +
+    '<span class="cu-note-resenddate-print" data-note-resenddate-print="' + recId + '">' + escHtml(resendDate ? formatThaiDate(resendDate) : '') + '</span>' +
     '<span class="cu-note-state" data-note-state="' + recId + '"></span>' +
     '</div>';
 }
@@ -3370,26 +3642,43 @@ function findCuRecord(recordId) {
   return null;
 }
 
+// รอบ 14 (2026-09-17): จำกัดจำนวนครั้ง consult ให้อยู่ในช่วง 1-20 เสมอ ค่าว่าง/พิมพ์เพี้ยน/นอกช่วง -> ปริยาย 1/เพดาน 20
+function clampConsultCount(v) {
+  var n = parseInt(v, 10);
+  if (!n || n < 1) n = 1;
+  if (n > 20) n = 20;
+  return n;
+}
+
 /* auto-save เมื่อออกจากช่อง (ไม่มีปุ่มบันทึกต่อแถว) — เทียบกับค่าล่าสุดที่รู้ก่อนยิงเสมอ กัน blur/change
-   ที่ไม่ได้เปลี่ยนค่าอะไรเลยยิง API ซ้ำ (เช่นคลิกเข้าช่องแล้วคลิกออกโดยไม่พิมพ์) */
-function maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, sentDateInput, stateEl) {
+   ที่ไม่ได้เปลี่ยนค่าอะไรเลยยิง API ซ้ำ (เช่นคลิกเข้าช่องแล้วคลิกออกโดยไม่พิมพ์)
+   รอบ 14: เพิ่ม consultCountInput (จำนวนครั้ง consult) + resendDateInput (ส่งออกอีกครั้ง) เข้าไปในชุดที่เทียบ/ส่ง */
+function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendDateInput, stateEl) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
   var consultNote = consult ? noteInput.value.trim() : '';
+  var consultCount = consult ? clampConsultCount(consultCountInput.value) : 0;
   var sentDate = sentDateInput.value;
-  if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote && (rec.sentDate || '') === sentDate) {
-    return; // ค่าทั้ง 4 ช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
+  var resendDate = resendDateInput.value;
+  var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
+  if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote &&
+      recConsultCount === consultCount && (rec.sentDate || '') === sentDate && (rec.resendDate || '') === resendDate) {
+    return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
   apiCall('noteUpdate', {
     staffKey: STATE.staffKey, staffName: STATE.staffName,
-    recordId: recordId, doctorName: doctorName, consult: consult, consultNote: consultNote, sentDate: sentDate
+    recordId: recordId, doctorName: doctorName, consult: consult, consultCount: consultCount, consultNote: consultNote,
+    sentDate: sentDate, resendDate: resendDate
   }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
       // อัปเดตค่าล่าสุดที่รู้ ให้ตรงกับที่บันทึกไปแล้ว (กัน blur ครั้งต่อไปที่ค่าไม่เปลี่ยนยิงซ้ำ)
-      if (rec) { rec.doctorName = doctorName; rec.consult = consult; rec.consultNote = consultNote; rec.sentDate = sentDate; }
+      if (rec) {
+        rec.doctorName = doctorName; rec.consult = consult; rec.consultCount = consultCount;
+        rec.consultNote = consultNote; rec.sentDate = sentDate; rec.resendDate = resendDate;
+      }
     } else {
       // ล้มเหลว/reject: ห้ามล้างค่าที่ผู้ใช้พิมพ์ไว้ และห้ามอัปเดต LAST_CU_RECORDS
       // เพื่อให้ blur ครั้งต่อไป (ค่าเดิม) ยังยิงซ้ำได้ ไม่ใช่ถูกมองว่า "ไม่เปลี่ยน" แล้วเงียบไปเลย
@@ -3398,19 +3687,23 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, sentDateI
   });
 }
 
-// ผูก blur (2 ช่องข้อความ) + change (checkbox) ให้ทุกการ์ดใน container — เรียกทุกครั้งหลัง render มุมมองนี้ใหม่
+// ผูก blur (2 ช่องข้อความ) + change (checkbox/ตัวเลข/วันที่) ให้ทุกการ์ดใน container — เรียกทุกครั้งหลัง render มุมมองนี้ใหม่
 function bindCuNoteEvents(container) {
   container.querySelectorAll('.cu-note').forEach(function (box) {
     var recordId = box.getAttribute('data-note-row');
     var doctorInput = box.querySelector('.cu-note-doctor');
     var consultChk = box.querySelector('.cu-note-consult');
+    var consultCountInput = box.querySelector('.cu-note-consult-count');
+    var consultCountPrint = box.querySelector('.cu-note-consult-count-print');
     var noteInput = box.querySelector('.cu-note-consult-note');
     var sentDateInput = box.querySelector('.cu-note-sentdate');
     var sentDatePrint = box.querySelector('.cu-note-sentdate-print');
+    var resendDateInput = box.querySelector('.cu-note-resenddate');
+    var resendDatePrint = box.querySelector('.cu-note-resenddate-print');
     var stateEl = box.querySelector('.cu-note-state');
-    if (!doctorInput || !consultChk || !noteInput || !sentDateInput) return;
+    if (!doctorInput || !consultChk || !consultCountInput || !noteInput || !sentDateInput || !resendDateInput) return;
 
-    function trySave() { maybeSaveCuNote(recordId, doctorInput, consultChk, noteInput, sentDateInput, stateEl); }
+    function trySave() { maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendDateInput, stateEl); }
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
     // ไม่ใช่รอผลบันทึกจากเซิร์ฟเวอร์ ไม่งั้นกรอกแล้วสั่งพิมพ์เลยจะได้กระดาษที่ไม่ตรงกับหน้าจอ (WYSIWYG)
@@ -3419,18 +3712,41 @@ function bindCuNoteEvents(container) {
       var v = sentDateInput.value;
       sentDatePrint.textContent = v ? formatThaiDate(v) : '';
     }
+    function syncResendDatePrint() {
+      if (!resendDatePrint) return;
+      var v = resendDateInput.value;
+      resendDatePrint.textContent = v ? formatThaiDate(v) : '';
+    }
+    function syncConsultCountPrint() {
+      if (!consultCountPrint) return;
+      var n = parseInt(consultCountInput.value, 10);
+      consultCountPrint.textContent = (consultChk.checked && n >= 2) ? ('× ' + n) : '';
+    }
 
     doctorInput.addEventListener('blur', trySave);
     noteInput.addEventListener('blur', trySave);
-    sentDateInput.addEventListener('change', function () { syncSentDatePrint(); trySave(); });
+    sentDateInput.addEventListener('change', function () {
+      syncSentDatePrint();
+      // เคลียร์วันที่ส่งออกแล้ว -> ล็อกช่องส่งออกอีกครั้งไว้ก่อนเท่านั้น ห้ามล้างค่าที่กรอกไว้แล้วทิ้ง (ข้อมูลห้ามหาย)
+      resendDateInput.disabled = !sentDateInput.value;
+      trySave();
+    });
+    resendDateInput.addEventListener('change', function () { syncResendDatePrint(); trySave(); });
+    // เฉพาะ change (ไม่ผูก blur ด้วย) กันยิงซ้ำ 2 ครั้งตอนพิมพ์แล้วคลิกออกช่อง
+    consultCountInput.addEventListener('change', function () { syncConsultCountPrint(); trySave(); });
     consultChk.addEventListener('change', function () {
       if (consultChk.checked) {
         noteInput.disabled = false;
+        consultCountInput.disabled = false;
+        if (!consultCountInput.value) consultCountInput.value = '1'; // ค่าเริ่มต้นตอนเพิ่งติ๊ก
       } else {
-        // ปลดติ๊ก consult ⇒ ล้างช่องระบุ + disabled เสมอ (ตรงกับกติกาเซิร์ฟเวอร์ที่ล้าง consultNote เมื่อ consult=false)
+        // ปลดติ๊ก consult ⇒ ล้างช่องระบุ/จำนวนครั้ง + disabled เสมอ (ตรงกับกติกาเซิร์ฟเวอร์ที่ล้าง consultNote เมื่อ consult=false)
         noteInput.value = '';
         noteInput.disabled = true;
+        consultCountInput.value = '';
+        consultCountInput.disabled = true;
       }
+      syncConsultCountPrint();
       trySave();
     });
   });
@@ -3508,18 +3824,63 @@ function loadCheckupTable(view) {
   var wrap = qs('cuTableWrap');
   var cardsWrap = qs('cuCardsWrap');
   var listWrap = qs('cuListWrap');
-  if (view === 'table' && wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  if (view === 'card' && cardsWrap) cardsWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  if (view === 'list' && listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  setCuView(view);
+
+  // รอบ 15 (2026-09-17) — W2: มีแคชของวันเดียวกันอยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ ไม่ขึ้น "กำลังโหลด..."
+  // แล้วรีเฟรชเบื้องหลัง (ไม่มีแคช -> พฤติกรรมเดิมทุกอย่าง)
+  var cacheHit = !!(CU_CACHE.key === dateStr && CU_CACHE.records);
+  if (cacheHit) {
+    CU_LOADED_DATE = dateStr;
+    // ⚠ ถ้ากำลังพิมพ์ค้างอยู่ใน .cu-note (เช่น ถูกเรียกซ้ำระหว่างเปิดหน้านี้ค้างไว้ จาก onCancelRecord() ของแถวอื่น)
+    // ห้าม render ทับตรงนี้ด้วย — ของเดิมบนจอกำลังแสดงแคชชุดนี้อยู่แล้วพอดี ข้ามการวาดซ้ำไปเลย ปลอดภัยกว่า
+    if (!isFocusInCuNote()) {
+      renderCheckupTable(CU_CACHE.records, dateStr);
+      renderCheckupCards(CU_CACHE.records, dateStr);
+      renderCheckupList(CU_CACHE.records, dateStr);
+      setCuView(view);
+    }
+    setRefreshHint('cuRefreshHint', 'loading');
+  } else {
+    if (view === 'table' && wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+    if (view === 'card' && cardsWrap) cardsWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+    if (view === 'list' && listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+    setCuView(view);
+  }
+
   // ทุกจุดบริการเสมอ (allPoints:true ตายตัว ไม่มีช่องติ๊กให้เลือก — ตามคำตอบยืนยันของเจ้าของ)
   apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
+    // เปลี่ยนวันที่ระหว่างรอ -> คีย์ไม่ตรงกับที่หน้าจอควรแสดงอยู่แล้ว ทิ้งคำตอบนี้
+    if ((qs('cuDate').value || todayStr()) !== dateStr) return;
+
     if (resp && resp.status === 'ok') {
+      var records = resp.records || [];
+      var json = JSON.stringify(records);
+      if (cacheHit && json === CU_CACHE.json) {
+        setRefreshHint('cuRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
+        return;
+      }
+      if (cacheHit && isFocusInCuNote()) {
+        // กำลังพิมพ์ค้างอยู่ในช่องชื่อแพทย์/consult/วันที่ส่งออก — ห้าม render ทับ เก็บของใหม่ไว้ก่อน
+        // ให้เจ้าหน้าที่กดป้ายเพื่อรีเฟรชเอง (ดู setRefreshHint mode 'stale')
+        CU_CACHE = { key: dateStr, records: records, json: json };
+        setRefreshHint('cuRefreshHint', 'stale', function () {
+          CU_LOADED_DATE = dateStr;
+          renderCheckupTable(records, dateStr);
+          renderCheckupCards(records, dateStr);
+          renderCheckupList(records, dateStr);
+          setCuView(CU_VIEW);
+          setRefreshHint('cuRefreshHint', 'none');
+        });
+        return;
+      }
       CU_LOADED_DATE = dateStr; // โหลดสำเร็จแล้ว — จำวันที่ไว้กันปุ่มมุมมองอื่นยิง API ซ้ำถ้าเป็นวันเดียวกัน
-      renderCheckupTable(resp.records || [], dateStr);
-      renderCheckupCards(resp.records || [], dateStr); // วาดครบ 3 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
-      renderCheckupList(resp.records || [], dateStr);
+      CU_CACHE = { key: dateStr, records: records, json: json };
+      renderCheckupTable(records, dateStr);
+      renderCheckupCards(records, dateStr); // วาดครบ 3 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
+      renderCheckupList(records, dateStr);
       setCuView(view); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
+      setRefreshHint('cuRefreshHint', 'none');
+    } else if (cacheHit) {
+      setRefreshHint('cuRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ
     } else {
       var errHtml = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
       if (view === 'table' && wrap) wrap.innerHTML = errHtml;
@@ -3689,17 +4050,17 @@ function renderReport(summary) {
     '<div class="line">ยอดเงินใบรับรองมี lab: ' + money(numOr0(medcert.labMoney)) + ' บาท</div>' +
     '<div class="line">ยอดเงินหมวดใบรับรอง: ' + money(numOr0(medcert.money)) + ' บาท</div></div>';
 
-  // ส่งตรวจพิเศษ — summary.special.items (object map {id: {prep, sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
+  // ส่งตรวจพิเศษ — summary.special.items (object map {id: {reg, prep, sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
+  // 🗑 เจ้าของสั่งตัดออก 2026-09-17 (ส่งภาพหน้าจอมาชี้): คอลัมน์สถานะ "คีย์ consult / ส่ง line" · "ส่งไปแล้ว" · "กลับมาแล้ว"
+  //    รายงานรายเดือนต้องการแค่ "จำนวน" ต่อรายการ = reg (เซิร์ฟเวอร์บังคับ reg ⊇ prep/sent/back ⇒ นับครบทุกคน)
+  //    ฝั่ง Apps Script ยังส่ง prep/sent/back มาเหมือนเดิม (ไม่ได้แตะ backend) — สถานะรายคนดูที่กระดานส่งตรวจพิเศษ
   var special = summary.special || { items: {} };
   var specialItems = special.items || {};
   html += '<div class="card"><h2>ส่งตรวจพิเศษ</h2><div class="scroll-x"><table class="report-table"><thead><tr>' +
-    '<th>รายการ</th><th>ลงชื่อไว้</th><th>คีย์ consult / ส่ง line</th><th>ส่งไปแล้ว</th><th>กลับมาแล้ว</th></tr></thead><tbody>';
+    '<th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
   SPECIAL_SENDS.forEach(function (item) {
-    // รอบ 8 (B5): เพิ่มคอลัมน์ "ลงชื่อไว้" จาก summary.special.items[id].reg — คนที่ลงชื่อไว้แต่ยังไม่ติ๊กสถานะ
-    // จะไม่หายไปจากรายงานปริมาณงาน (ถ้าไม่นับ reg คนกลุ่มนี้จะไม่ปรากฏในรายงานเลย)
-    var row = specialItems[item.id] || { reg: 0, prep: 0, sent: 0, back: 0 };
-    var prepCell = (item.prepLabel != null) ? numOr0(row.prep) : '—';
-    html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.reg) + '</td><td>' + prepCell + '</td><td>' + numOr0(row.sent) + '</td><td>' + numOr0(row.back) + '</td></tr>';
+    var row = specialItems[item.id] || { reg: 0 };
+    html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.reg) + '</td></tr>';
   });
   html += '</tbody></table></div></div>';
 
@@ -3851,7 +4212,11 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   qs('btnStickySave').addEventListener('click', triggerSubmit);
   qs('btnDraftSave').addEventListener('click', triggerSubmit);
-  qs('btnDraftClear').addEventListener('click', function () { resetLogForm(); showToast('ล้างร่างแล้ว'); });
+  qs('btnDraftClear').addEventListener('click', function () {
+    // กันบันทึกซ้ำ (2026-09-16): ล้างร่างระหว่างรอบันทึกจะโดน resp ที่ยังค้างมา resetLogForm() ซ้ำทับอีกที
+    if (STATE.saving) { showToast('รอบันทึกรายการก่อนหน้าให้เสร็จก่อน'); return; }
+    resetLogForm(); showToast('ล้างร่างแล้ว');
+  });
 
   // รอบ 9 (ก้อน B, B3) — กล่องพับได้ของจอแคบ: จอกว้าง (>=1100px) ถูก CSS บังคับเปิดเสมออยู่แล้ว ไม่ต้องฟัง resize
   document.querySelectorAll('.log-panel-head[data-panel]').forEach(function (head) {
