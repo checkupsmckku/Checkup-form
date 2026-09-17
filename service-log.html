@@ -276,7 +276,12 @@
   .cu-note-field { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
   .cu-note-consult-count { width: 52px; flex: 0 0 auto; }
   .cu-note-consult-count-print { display: none; }
-  .cu-note-resenddate { flex: 0 0 auto; width: auto; min-width: 140px; }
+  /* รอบ 16 (2026-09-17): "ส่งออกอีกครั้ง" เป็นรายการต่อกันไม่จำกัดจำนวน — .cu-note-resend กว้างเต็มบรรทัดเสมอ
+     (flex: 1 1 100% เหมือน .cu-note เอง) แต่ละแถวใช้ .cu-note-field ซ้ำ (nowrap กันป้าย/ช่องแยกคนละบรรทัด) */
+  .cu-note-resend { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; }
+  .cu-note-resend-date, .cu-note-resend-method { flex: 0 0 auto; width: auto; min-width: 120px; }
+  .cu-note-resend-del { flex: 0 0 auto; padding: 2px 10px; }
+  .cu-note-resend-add { flex: 0 0 auto; }
   .cu-note-resenddate-print { display: none; }
   .cu-note-state { flex: 0 0 auto; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .cu-note-state.saving { color: var(--text-muted); }
@@ -528,12 +533,10 @@
     /* หน่วย "ครั้ง" ต่อท้ายช่องกรอกตัวเลข มีความหมายแค่ตอนกรอกบนจอ — ช่องตัวเลขถูกซ่อนไปแล้วข้างบน
        ถ้าไม่ซ่อนป้ายนี้ด้วย กระดาษจะโชว์ "Consult ครั้ง" ลอย ๆ โดยไม่มีเลขกำกับ */
     .cu-note-consult-unit { display: none; }
-    /* รอบ 14: "ส่งออกอีกครั้ง" เป็นช่องทางเลือก — เจ้าของไม่ได้ขอเส้นใต้ให้เขียนมือเหมือนวันที่ส่งออกช่องแรก
-       ⇒ ซ่อน input เฉย ๆ แล้วโชว์วันที่ไทยเฉพาะตอนมีค่า (ว่างก็คือไม่พิมพ์อะไรเลย ไม่ใช่เส้นว่าง)
-       ป้าย "ส่งออกอีกครั้ง" เดิมพิมพ์ทุกกรณีแม้ไม่มีวันที่ ⇒ ซ่อนป้าย+input ทั้งคู่ แล้วให้ ::before ของ span
-       ที่ไม่ว่างพิมพ์ป้ายกำกับแทน (span ว่าง = ไม่มีอะไรพิมพ์เลย ไม่ใช่ป้ายลอย) */
-    .cu-note-resenddate { display: none; }
-    .cu-note-resend-field { display: none; }
+    /* รอบ 16 (2026-09-17): "ส่งออกอีกครั้ง" เป็นรายการต่อกันได้หลายครั้ง — ซ่อนบล็อกกรอก (.cu-note-resend) ทั้งก้อน
+       แล้วโชว์ข้อความสรุปทุกรายการจาก span.cu-note-resenddate-print แทน (ไม่มีรายการ = ไม่พิมพ์อะไรเลย ไม่ใช่ป้ายลอย)
+       ป้าย "ส่งออกอีกครั้ง" มาจาก ::before ของ span ที่ไม่ว่างเท่านั้น (เดิมมาจากรอบ 14 ใช้ต่อได้เป๊ะ) */
+    .cu-note-resend { display: none; }
     .cu-note-resenddate-print { display: inline-block; }
     .cu-note-resenddate-print:not(:empty)::before { content: 'ส่งออกอีกครั้ง '; }
     /* ตารางนี้มี 9 คอลัมน์ ⇒ ถ้าปล่อยให้กว้างตามเนื้อหาจะล้นขอบขวาของ A4 แล้วคอลัมน์ลายเซ็นหายไปทั้งคอลัมน์
@@ -3583,19 +3586,79 @@ function renderCheckupCards(records, dateStr) {
    ไปแทน จะเช็คซ้ำผิดคน/ผิดวัน */
 var LAST_CU_RECORDS = [];
 
+// รอบ 16 (2026-09-17): ช่องทางของ "ส่งออกอีกครั้ง" — อ่านสดจาก select#deliveryMethod ของฟอร์มบันทึก
+// (ที่เดียวที่ประกาศรายการช่องทางรับผลฝั่งเว็บ) ข้ามตัวเลือกค่าว่าง — เพิ่มช่องทางที่นั่นแล้วช่องนี้ตามเอง
+// ⚠ ฝั่งเซิร์ฟเวอร์ต้องเพิ่มใน DELIVERY_METHODS ด้วย ไม่งั้น normDeliveryMethod_ ล้างค่าใหม่ทิ้ง
+function resendMethodOptions() {
+  var sel = qs('deliveryMethod');
+  if (!sel) return [];
+  var out = [];
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value) out.push(sel.options[i].value);
+  }
+  return out;
+}
+
+function cuNoteResendMethodOptionsHtml(selected) {
+  var html = '<option value="">— ช่องทาง —</option>';
+  resendMethodOptions().forEach(function (m) {
+    html += '<option value="' + escHtml(m) + '"' + (m === selected ? ' selected' : '') + '>' + escHtml(m) + '</option>';
+  });
+  return html;
+}
+
+// แถวเดียวของ "ส่งออกอีกครั้ง" — idx เริ่มที่ 0 แต่ label เริ่มที่ "ครั้งที่ 2" เพราะครั้งที่ 1 คือช่อง "วันที่ส่งออก" ข้างบน
+function cuNoteResendRowHtml(idx, item, disabled) {
+  var d = (item && item.date) || '';
+  var m = (item && item.method) || '';
+  var disAttr = disabled ? ' disabled' : '';
+  return '<div class="cu-note-resend-row cu-note-field" data-resend-idx="' + idx + '">' +
+    '<span class="item-name">ครั้งที่ ' + (idx + 2) + '</span>' +
+    '<input type="date" class="cu-note-resend-date" value="' + escHtml(d) + '"' + disAttr + '>' +
+    '<select class="cu-note-resend-method"' + disAttr + '>' + cuNoteResendMethodOptionsHtml(m) + '</select>' +
+    '<button type="button" class="btn danger small cu-note-resend-del"' + disAttr + '>✕</button>' +
+    '</div>';
+}
+
+// อ่านรายการ "ส่งออกอีกครั้ง" ปัจจุบันจาก DOM — เฉพาะแถวที่มีวันที่ (แถวที่เพิ่งกด "+" ยังไม่มีวันที่จะไม่ถูกนับ/ไม่ถูกส่ง)
+// ตามลำดับที่ปรากฏบนจอ
+function readResendListFromDom(resendBox) {
+  var out = [];
+  if (!resendBox) return out;
+  resendBox.querySelectorAll('.cu-note-resend-row').forEach(function (row) {
+    var dateInput = row.querySelector('.cu-note-resend-date');
+    var methodSelect = row.querySelector('.cu-note-resend-method');
+    var d = dateInput ? dateInput.value : '';
+    if (!d) return;
+    out.push({ date: d, method: methodSelect ? methodSelect.value : '' });
+  });
+  return out;
+}
+
+// ข้อความสรุปสำหรับใบพิมพ์ (span.cu-note-resenddate-print) — ใช้ทั้งตอน render ครั้งแรกและตอน sync ทันทีที่จอเปลี่ยน
+function cuNoteResendPrintText(list) {
+  if (!list || !list.length) return '';
+  return list.map(function (x) {
+    return formatThaiDate(x.date) + (x.method ? (' · ' + x.method) : '');
+  }).join(' ; ');
+}
+
 /* เจ้าของสั่ง 2026-09-15: ช่อง "ชื่อแพทย์" + "consult" เฉพาะมุมมองนี้ (ไม่ใช่หน้า "รายการวันนี้")
    ⇒ ต่อท้าย recordItemHtml() แทนที่จะแก้ recordItemHtml() เอง เพราะฟังก์ชันนั้นใช้ร่วมกับ renderTodayList()
    consult = ติ๊ก consult/ไม่ consult + ช่องระบุ (ไม่ใช่ช่องข้อความอิสระ) — ช่องระบุ disabled เมื่อยังไม่ติ๊ก
    แถวที่ยกเลิกแล้ว 3 ช่องนี้ disabled ทั้งหมด (เซิร์ฟเวอร์ปฏิเสธการแก้อยู่แล้ว กันพิมพ์เสียเปล่า)
    รอบ 14 (2026-09-17): เพิ่มจำนวนครั้ง consult (คนเดียว consult ซ้ำได้) + "ส่งออกอีกครั้ง" (ผลตรวจส่งไปแล้วแต่ไม่ถึง
-   ผู้ป่วย ต้องส่งซ้ำ) — ห่อป้าย+ช่องกรอกที่ต้องไม่แยกบรรทัดกันด้วย .cu-note-field (ดู CSS) */
+   ผู้ป่วย ต้องส่งซ้ำ) — ห่อป้าย+ช่องกรอกที่ต้องไม่แยกบรรทัดกันด้วย .cu-note-field (ดู CSS)
+   รอบ 16 (2026-09-17): "ส่งออกอีกครั้ง" เปลี่ยนจากช่องวันที่เดียวเป็นรายการต่อกันไม่จำกัดจำนวน + เลือกช่องทางต่อรายการ
+   (ชุดเดียวกับ #deliveryMethod) — ดู cuNoteResendRowHtml/readResendListFromDom/cuNoteResendPrintText ด้านบน */
 function cuNoteHtml(rec) {
   var cancelled = rec && rec.status === 'ยกเลิก';
   var doctorName = (rec && rec.doctorName) || '';
   var consult = !!(rec && rec.consult);
   var consultNote = (rec && rec.consultNote) || '';
   var sentDate = (rec && rec.sentDate) || '';
-  var resendDate = (rec && rec.resendDate) || '';
+  // รับได้ทั้งแบบใหม่ (resendList) และ rec ที่ยังไม่มีคีย์นี้เลย (ปริยาย [])
+  var resendList = (rec && Array.isArray(rec.resendList)) ? rec.resendList : [];
   // แถวเก่าที่ consult=true แต่ยังไม่มี consultCount (ก่อนรอบ 14) ถือเป็น 1 ครั้ง — ไม่ใช่แถวใหม่ก็ยังกรอกได้ปกติ
   var rawCount = rec && rec.consultCount;
   var consultCount = (typeof rawCount === 'number' && rawCount >= 1 && Math.floor(rawCount) === rawCount) ? rawCount : (consult ? 1 : 0);
@@ -3605,8 +3668,12 @@ function cuNoteHtml(rec) {
   var disAttr = cancelled ? ' disabled' : '';
   var disNoteAttr = (cancelled || !consult) ? ' disabled' : '';
   var disCountAttr = (cancelled || !consult) ? ' disabled' : '';
-  // ส่งออกอีกครั้งกรอกได้ก็ต่อเมื่อมีวันที่ส่งออก(ครั้งแรก)แล้วเท่านั้น — เคลียร์วันที่ส่งออกทีหลังก็แค่ล็อกช่องนี้ไว้ ไม่ล้างค่าทิ้ง
-  var disResendAttr = (cancelled || !sentDate) ? ' disabled' : '';
+  // ส่งออกอีกครั้งกรอกได้ก็ต่อเมื่อมีวันที่ส่งออก(ครั้งแรก)แล้วเท่านั้น — เคลียร์วันที่ส่งออกทีหลังก็แค่ล็อกบล็อกนี้ไว้ ไม่ล้างค่าทิ้ง
+  var resendLocked = cancelled || !sentDate;
+  var disResendAttr = resendLocked ? ' disabled' : '';
+  var resendRowsHtml = resendList.map(function (item, idx) {
+    return cuNoteResendRowHtml(idx, item, resendLocked);
+  }).join('');
   return '<div class="cu-note" data-note-row="' + recId + '">' +
     '<label class="field-label">ชื่อแพทย์</label>' +
     '<input type="text" class="cu-note-doctor" data-note-doctor="' + recId + '" value="' + escHtml(doctorName) + '" autocomplete="off"' + disAttr + '>' +
@@ -3625,11 +3692,12 @@ function cuNoteHtml(rec) {
     '<input type="date" class="cu-note-sentdate" data-note-sentdate="' + recId + '" value="' + escHtml(sentDate) + '"' + disAttr + '>' +
     '</span>' +
     '<span class="cu-note-sentdate-print" data-note-sentdate-print="' + recId + '">' + escHtml(sentDate ? formatThaiDate(sentDate) : '') + '</span>' +
-    '<span class="cu-note-field cu-note-resend-field">' +
+    '<div class="cu-note-resend" data-note-resend="' + recId + '">' +
     '<label class="field-label">ส่งออกอีกครั้ง</label>' +
-    '<input type="date" class="cu-note-resenddate" data-note-resenddate="' + recId + '" value="' + escHtml(resendDate) + '"' + disResendAttr + '>' +
-    '</span>' +
-    '<span class="cu-note-resenddate-print" data-note-resenddate-print="' + recId + '">' + escHtml(resendDate ? formatThaiDate(resendDate) : '') + '</span>' +
+    resendRowsHtml +
+    '<button type="button" class="btn secondary small cu-note-resend-add"' + disResendAttr + '>+ ส่งออกอีกครั้ง</button>' +
+    '</div>' +
+    '<span class="cu-note-resenddate-print" data-note-resenddate-print="' + recId + '">' + escHtml(cuNoteResendPrintText(resendList)) + '</span>' +
     '<span class="cu-note-state" data-note-state="' + recId + '"></span>' +
     '</div>';
 }
@@ -3652,32 +3720,38 @@ function clampConsultCount(v) {
 
 /* auto-save เมื่อออกจากช่อง (ไม่มีปุ่มบันทึกต่อแถว) — เทียบกับค่าล่าสุดที่รู้ก่อนยิงเสมอ กัน blur/change
    ที่ไม่ได้เปลี่ยนค่าอะไรเลยยิง API ซ้ำ (เช่นคลิกเข้าช่องแล้วคลิกออกโดยไม่พิมพ์)
-   รอบ 14: เพิ่ม consultCountInput (จำนวนครั้ง consult) + resendDateInput (ส่งออกอีกครั้ง) เข้าไปในชุดที่เทียบ/ส่ง */
-function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendDateInput, stateEl) {
+   รอบ 14: เพิ่ม consultCountInput (จำนวนครั้ง consult) เข้าไปในชุดที่เทียบ/ส่ง
+   รอบ 16 (2026-09-17): "ส่งออกอีกครั้ง" เปลี่ยนจากช่องเดียวเป็นรายการ — resendBox คือ div.cu-note-resend ทั้งก้อน
+   อ่านรายการปัจจุบันจาก DOM ทุกครั้ง (readResendListFromDom) แทนอ่านค่าจาก input เดียว · ส่งคีย์ resendList
+   (ไม่ส่ง resendDate แล้ว) */
+function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox, stateEl) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
   var consultNote = consult ? noteInput.value.trim() : '';
   var consultCount = consult ? clampConsultCount(consultCountInput.value) : 0;
   var sentDate = sentDateInput.value;
-  var resendDate = resendDateInput.value;
+  var resendList = readResendListFromDom(resendBox);
   var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
+  var recResendList = (rec && Array.isArray(rec.resendList)) ? rec.resendList : [];
   if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote &&
-      recConsultCount === consultCount && (rec.sentDate || '') === sentDate && (rec.resendDate || '') === resendDate) {
+      recConsultCount === consultCount && (rec.sentDate || '') === sentDate &&
+      JSON.stringify(recResendList) === JSON.stringify(resendList)) {
     return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
   apiCall('noteUpdate', {
     staffKey: STATE.staffKey, staffName: STATE.staffName,
     recordId: recordId, doctorName: doctorName, consult: consult, consultCount: consultCount, consultNote: consultNote,
-    sentDate: sentDate, resendDate: resendDate
+    sentDate: sentDate, resendList: resendList
   }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
-      // อัปเดตค่าล่าสุดที่รู้ ให้ตรงกับที่บันทึกไปแล้ว (กัน blur ครั้งต่อไปที่ค่าไม่เปลี่ยนยิงซ้ำ)
+      // อัปเดตค่าล่าสุดที่รู้ ให้ตรงกับที่บันทึกไปแล้ว (กัน blur/change ครั้งต่อไปที่ค่าไม่เปลี่ยนยิงซ้ำ)
       if (rec) {
         rec.doctorName = doctorName; rec.consult = consult; rec.consultCount = consultCount;
-        rec.consultNote = consultNote; rec.sentDate = sentDate; rec.resendDate = resendDate;
+        rec.consultNote = consultNote; rec.sentDate = sentDate;
+        rec.resendList = resendList; rec.resendDate = resendList.length ? resendList[0].date : '';
       }
     } else {
       // ล้มเหลว/reject: ห้ามล้างค่าที่ผู้ใช้พิมพ์ไว้ และห้ามอัปเดต LAST_CU_RECORDS
@@ -3688,6 +3762,8 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
 }
 
 // ผูก blur (2 ช่องข้อความ) + change (checkbox/ตัวเลข/วันที่) ให้ทุกการ์ดใน container — เรียกทุกครั้งหลัง render มุมมองนี้ใหม่
+// รอบ 16 (2026-09-17): "ส่งออกอีกครั้ง" เป็นรายการต่อกันได้ไม่จำกัดจำนวนแล้ว — bindResendRow ผูก change ของ
+// date/select ในแต่ละแถว + ปุ่ม ✕ ของแถวนั้น ๆ ส่วนปุ่ม "+" เพิ่มแถวใหม่ (ยังไม่ยิง API จนกว่าจะเลือกวันที่)
 function bindCuNoteEvents(container) {
   container.querySelectorAll('.cu-note').forEach(function (box) {
     var recordId = box.getAttribute('data-note-row');
@@ -3698,12 +3774,13 @@ function bindCuNoteEvents(container) {
     var noteInput = box.querySelector('.cu-note-consult-note');
     var sentDateInput = box.querySelector('.cu-note-sentdate');
     var sentDatePrint = box.querySelector('.cu-note-sentdate-print');
-    var resendDateInput = box.querySelector('.cu-note-resenddate');
-    var resendDatePrint = box.querySelector('.cu-note-resenddate-print');
+    var resendBox = box.querySelector('.cu-note-resend');
+    var resendPrint = box.querySelector('.cu-note-resenddate-print');
+    var resendAddBtn = resendBox ? resendBox.querySelector('.cu-note-resend-add') : null;
     var stateEl = box.querySelector('.cu-note-state');
-    if (!doctorInput || !consultChk || !consultCountInput || !noteInput || !sentDateInput || !resendDateInput) return;
+    if (!doctorInput || !consultChk || !consultCountInput || !noteInput || !sentDateInput || !resendBox) return;
 
-    function trySave() { maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendDateInput, stateEl); }
+    function trySave() { maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox, stateEl); }
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
     // ไม่ใช่รอผลบันทึกจากเซิร์ฟเวอร์ ไม่งั้นกรอกแล้วสั่งพิมพ์เลยจะได้กระดาษที่ไม่ตรงกับหน้าจอ (WYSIWYG)
@@ -3712,26 +3789,58 @@ function bindCuNoteEvents(container) {
       var v = sentDateInput.value;
       sentDatePrint.textContent = v ? formatThaiDate(v) : '';
     }
-    function syncResendDatePrint() {
-      if (!resendDatePrint) return;
-      var v = resendDateInput.value;
-      resendDatePrint.textContent = v ? formatThaiDate(v) : '';
+    function syncResendPrint() {
+      if (!resendPrint) return;
+      resendPrint.textContent = cuNoteResendPrintText(readResendListFromDom(resendBox));
     }
     function syncConsultCountPrint() {
       if (!consultCountPrint) return;
       var n = parseInt(consultCountInput.value, 10);
       consultCountPrint.textContent = (consultChk.checked && n >= 2) ? ('× ' + n) : '';
     }
+    // เลขลำดับ "ครั้งที่ N" ต้องรียงใหม่ตามตำแหน่งบนจอเสมอหลังเพิ่ม/ลบแถว (N = ลำดับ + 2 เพราะครั้งที่ 1 คือวันที่ส่งออก)
+    function renumberResendRows() {
+      resendBox.querySelectorAll('.cu-note-resend-row').forEach(function (row, idx) {
+        var label = row.querySelector('.item-name');
+        if (label) label.textContent = 'ครั้งที่ ' + (idx + 2);
+      });
+    }
+    function bindResendRow(row) {
+      var dateInput = row.querySelector('.cu-note-resend-date');
+      var methodSelect = row.querySelector('.cu-note-resend-method');
+      var delBtn = row.querySelector('.cu-note-resend-del');
+      if (dateInput) dateInput.addEventListener('change', function () { syncResendPrint(); trySave(); });
+      if (methodSelect) methodSelect.addEventListener('change', function () { syncResendPrint(); trySave(); });
+      if (delBtn) delBtn.addEventListener('click', function () {
+        if (row.parentNode) row.parentNode.removeChild(row);
+        renumberResendRows();
+        syncResendPrint();
+        trySave();
+      });
+    }
+    resendBox.querySelectorAll('.cu-note-resend-row').forEach(bindResendRow);
+    if (resendAddBtn) {
+      resendAddBtn.addEventListener('click', function () {
+        var idx = resendBox.querySelectorAll('.cu-note-resend-row').length;
+        var wrap = document.createElement('div');
+        wrap.innerHTML = cuNoteResendRowHtml(idx, null, false);
+        var newRow = wrap.firstChild;
+        resendBox.insertBefore(newRow, resendAddBtn);
+        bindResendRow(newRow);
+        // แถวใหม่ยังไม่มีวันที่ -> readResendListFromDom กรองทิ้งเอง ⇒ ยังไม่ยิง API จนกว่าจะเลือกวันที่ (trySave ไม่เรียกที่นี่)
+      });
+    }
 
     doctorInput.addEventListener('blur', trySave);
     noteInput.addEventListener('blur', trySave);
     sentDateInput.addEventListener('change', function () {
       syncSentDatePrint();
-      // เคลียร์วันที่ส่งออกแล้ว -> ล็อกช่องส่งออกอีกครั้งไว้ก่อนเท่านั้น ห้ามล้างค่าที่กรอกไว้แล้วทิ้ง (ข้อมูลห้ามหาย)
-      resendDateInput.disabled = !sentDateInput.value;
+      // เคลียร์วันที่ส่งออกแล้ว -> ล็อกทั้งบล็อก "ส่งออกอีกครั้ง" ไว้ก่อนเท่านั้น ห้ามล้างค่าที่กรอกไว้แล้วทิ้ง (ข้อมูลห้ามหาย)
+      var locked = !sentDateInput.value;
+      resendBox.querySelectorAll('.cu-note-resend-date, .cu-note-resend-method, .cu-note-resend-del').forEach(function (el) { el.disabled = locked; });
+      if (resendAddBtn) resendAddBtn.disabled = locked;
       trySave();
     });
-    resendDateInput.addEventListener('change', function () { syncResendDatePrint(); trySave(); });
     // เฉพาะ change (ไม่ผูก blur ด้วย) กันยิงซ้ำ 2 ครั้งตอนพิมพ์แล้วคลิกออกช่อง
     consultCountInput.addEventListener('change', function () { syncConsultCountPrint(); trySave(); });
     consultChk.addEventListener('change', function () {
