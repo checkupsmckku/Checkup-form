@@ -404,7 +404,11 @@
     #panelTotals .log-panel-body { display: block; padding: 0 16px 16px; }
     #panelTotals #formWarning, #panelTotals #formError { font-size: 14px; padding: 10px 12px; margin-top: 10px; }
     #panelTotals .totals-box { background: var(--gray-pale); padding: 12px; margin-top: 12px; }
-    #panelTotals .totals-box .grand { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-size: 20px; }
+    #panelTotals .totals-box .grand { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-size: 20px; align-items: baseline; gap: 10px; }
+    /* เจ้าของสั่ง 2026-09-18: จอคอม ยอดราคาต้องใหญ่กว่านี้ (เดิม 20px เท่าป้าย "รวม") — ขยายเฉพาะตัวเลข ป้ายคงเดิม · มือถือไม่แตะ */
+    #panelTotals #totGrand { font-size: 32px; font-weight: 800; line-height: 1.1; white-space: nowrap; }
+    /* ป้าย "💰 รวม" ห้ามแตกบรรทัด (ยอด 6 หลักเคยดันจน 💰 กับ รวม แยกกันคนละบรรทัด) */
+    #panelTotals .totals-box .grand > span:first-child { white-space: nowrap; flex: 0 0 auto; }
     #panelTotals .row { margin-top: 10px !important; }
     #panelTotals .row > * { flex: 1 1 auto; }
     #panelTotals #btnDraftSave, #panelTotals #btnDraftClear { padding: 12px 18px; min-height: 44px; font-size: 16px; }
