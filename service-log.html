@@ -274,12 +274,24 @@
   /* รอบ 14 (2026-09-17): ห่อป้าย+ช่องกรอกเป็นคู่ด้วย .cu-note-field กัน "ป้ายค้างท้ายบรรทัดบน ช่องกรอกตกบรรทัดล่าง"
      ตอน .cu-note (flex-wrap) ตัดบรรทัดกลางคู่ — ให้ทั้งคู่ wrap ไปด้วยกันเป็นก้อนเดียวเสมอ (ใช้กับวันที่ส่งออก/ส่งออกอีกครั้ง/consult+จำนวนครั้ง) */
   .cu-note-field { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
-  .cu-note-consult-count { width: 52px; flex: 0 0 auto; }
+  /* ⚠ ต้องขึ้นต้นด้วย .cu-note — กฎกลาง input[type=number]{width:100%} (บรรทัด ~79) specificity สูงกว่าคลาสเดี่ยว
+     ถ้าแพ้ ช่องจะยืดเต็ม .cu-note-field แล้วล้นไปทับคำว่า "ครั้ง" + ช่องระบุ consult (เจ้าของเจอ 2026-09-17 จอ >= 768px) */
+  .cu-note .cu-note-consult-count { width: 64px; min-width: 0; flex: 0 0 auto; padding-left: 8px; padding-right: 4px; }
   .cu-note-consult-count-print { display: none; }
   /* รอบ 16 (2026-09-17): "ส่งออกอีกครั้ง" เป็นรายการต่อกันไม่จำกัดจำนวน — .cu-note-resend กว้างเต็มบรรทัดเสมอ
      (flex: 1 1 100% เหมือน .cu-note เอง) แต่ละแถวใช้ .cu-note-field ซ้ำ (nowrap กันป้าย/ช่องแยกคนละบรรทัด) */
-  .cu-note-resend { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; }
+  .cu-note-resend { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; min-width: 0; }
   .cu-note-resend-date, .cu-note-resend-method { flex: 0 0 auto; width: auto; min-width: 120px; }
+  /* จอมือถือ (เจ้าของถาม "กล่อง consult ซ้อนกันมั้ย" 2026-09-17): แถว nowrap กว้าง ~400px ดัน .cu-note ทั้งกล่องให้กว้างเกินการ์ด
+     (.record-item overflow:hidden ⇒ ปุ่ม ✕ / ช่องระบุ consult ถูกตัดหายไปเงียบ ๆ) ⇒ ให้ .cu-note + แถวหดได้ และให้ดรอปดาวน์ช่องทางยอมหดก่อน */
+  .record-item > .cu-note { min-width: 0; max-width: 100%; }
+  .cu-note .cu-note-resend-row { flex: 0 1 auto; max-width: 100%; min-width: 0; }
+  .cu-note .cu-note-resend-row .cu-note-resend-method { flex: 1 1 auto; min-width: 0; }
+  /* จอแคบมาก ดรอปดาวน์ที่หดเหลือ "ส่งทา…" อ่านช่องทางไม่ออก ⇒ ยอมให้ดรอปดาวน์ + ✕ ตกลงบรรทัดที่ 2 ของแถวนั้น (กว้างเต็ม) แทน */
+  @media (max-width: 480px) {
+    .cu-note .cu-note-resend-row { flex: 1 1 100%; flex-wrap: wrap; white-space: normal; }
+    .cu-note .cu-note-resend-row .cu-note-resend-method { flex: 1 1 150px; }
+  }
   .cu-note-resend-del { flex: 0 0 auto; padding: 2px 10px; }
   .cu-note-resend-add { flex: 0 0 auto; }
   .cu-note-resenddate-print { display: none; }
@@ -330,6 +342,10 @@
     font-size: 14px; font-weight: 600; z-index: 999; display: none; max-width: 90vw;
     pointer-events: none;
   }
+  /* รอบ 17 (2026-09-17): แถบ #panelTotals ล่างจอมือถือสูงขึ้นได้ถึง ~110px เมื่อมีคำเตือน ⇒ bottom 84px ทับแถวคำเตือน
+     จอกว้าง กล่องลอยขวาล่าง 340px ⇒ toast กึ่งกลางชนกล่องที่ 768px ⇒ ย้าย toast ไปซ้ายล่าง พ้นกล่องเสมอ */
+  @media (max-width: 699px) { #toast { bottom: 132px; } }
+  @media (min-width: 700px) { #toast { left: 16px; bottom: 16px; transform: none; max-width: calc(100vw - 388px); } }
 
   #gateScreen .gate-wrap { max-width: 420px; margin: 40px auto; padding: 12px; }
   #gateScreen .card { text-align: center; }
@@ -338,18 +354,62 @@
   .draft-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
   .draft-strip .draft-text { flex: 1 1 240px; font-weight: 600; }
 
-  #svcFormWrap { padding-bottom: 78px; }
-  .sticky-bar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 500;
-    background: var(--surface); border-top: 2px solid var(--border);
-    padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,.10); max-width: 100%;
+  /* รอบ 17 (2026-09-17): เจ้าของสั่งเอาแถบล่างเต็มจอ #stickyBar ออก — #panelTotals เป็นกล่องลอยอันเดียวแทน (ดูกฎ #panelTotals
+     ด้านล่าง) #svcFormWrap เองไม่ต้องเผื่อที่พ้นกล่องแล้ว ให้ .wrap-log ข้างในเผื่อที่แทนที่เดียว กันเผื่อซ้อนกันสองชั้น */
+  #svcFormWrap { padding-bottom: 0; }
+
+  /* รอบ 17: #panelTotals ลอยตายตัว — จอแคบ (< 700px) เป็นแถบเดียวเต็มความกว้างล่างจอ (แทน #stickyBar เดิม) ·
+     จอกว้าง (>= 700px) เป็นกล่องลอยมุมขวาล่าง (ดู @media ด้านล่าง) ยังอยู่ที่เดิมใน DOM (คอลัมน์ 3 ของฟอร์ม)
+     ย้ายด้วย CSS ล้วน ๆ ไม่แตะ HTML/JS ⚠ overflow ต้อง auto (ทับกฎ overflow:hidden ของ .log-panel เดิม)
+     กันคำเตือน/ข้อความ error ยาว ๆ ดันกล่องล้นจอไป */
+  #panelTotals {
+    position: fixed;
+    left: 0; right: 0; bottom: 0; top: auto;
+    z-index: 500;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 -4px 16px rgba(26,30,64,.18);
+    max-height: 45vh;
+    overflow: auto;
   }
-  /* ยอด + ปุ่มบันทึกอยู่กลุ่มเดียวกัน แล้ววางคู่นี้ไว้ "กึ่งกลางจอ" (เจ้าของสั่ง 2026-09-15 · เดิมชิดขวา)
-     ⚠ จัดกึ่งกลางที่ตัว .sticky-bar เท่านั้น ห้ามไปตั้ง margin auto ที่ปุ่ม — ปุ่มกับยอดต้องติดกันอยู่ */
-  .sticky-bar { justify-content: center; }
-  .sticky-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; flex: 0 1 auto; }
-  .sticky-bar .sticky-total { font-weight: 800; font-size: 16px; color: var(--primary-dark); }
+  /* มือถือ: ซ่อนหัว "ยอดรวม / บันทึก" ประหยัดที่แนวตั้ง — เนื้อหาย่อเหลือแถวเดียว */
+  #panelTotals .log-panel-head-static { display: none; }
+  #panelTotals .log-panel-body {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+    padding: 10px 12px;
+  }
+  /* กล่องเตือน/error (ถ้ามี) ขึ้นบรรทัดบนสุดเต็มความกว้างเสมอ (flex-basis 100% ดันรายการถัดไปตกบรรทัดใหม่เอง) */
+  #panelTotals #formWarning, #panelTotals #formError {
+    flex: 1 1 100%; order: 0; margin-top: 0; font-size: 12px; padding: 6px 8px;
+  }
+  /* ยอดรวมย่อ ไม่ต้องมีกล่องเทา (เจ้าของสั่ง) อยู่ซ้าย ส่วนปุ่มบันทึก+ล้างอยู่ขวา — บรรทัดเดียวกัน */
+  #panelTotals .totals-box { order: 1; flex: 1 1 auto; background: none; padding: 0; margin: 0; }
+  #panelTotals .totals-box .grand { border-top: none; margin-top: 0; padding-top: 0; font-size: 16px; }
+  #panelTotals .row { order: 2; flex: 0 0 auto; margin-top: 0 !important; gap: 6px; }
+  #panelTotals .row > * { flex: 0 0 auto; }
+  #panelTotals #btnDraftSave, #panelTotals #btnDraftClear { padding: 8px 12px; min-height: 38px; font-size: 14px; }
+  /* ปุ่มล้างย่อเหลือแค่ไอคอนบนจอแคบ — ห้ามแก้ข้อความใน JS (ยังเป็น "🗑 ล้างร่าง" เหมือนเดิม) ซ่อนด้วย font-size:0
+     แล้วแทนด้วย ::before ที่ตั้ง font-size คืนมาเฉพาะไอคอน */
+  #panelTotals #btnDraftClear { font-size: 0; }
+  #panelTotals #btnDraftClear::before { content: "🗑"; font-size: 16px; }
+
+  @media (min-width: 700px) {
+    #panelTotals {
+      left: auto; right: 16px; bottom: 16px; top: auto;
+      width: 340px; max-width: calc(100vw - 32px);
+      border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(26,30,64,.22);
+      max-height: calc(100vh - 32px);
+    }
+    #panelTotals .log-panel-head-static { display: block; }
+    #panelTotals .log-panel-body { display: block; padding: 0 16px 16px; }
+    #panelTotals #formWarning, #panelTotals #formError { font-size: 14px; padding: 10px 12px; margin-top: 10px; }
+    #panelTotals .totals-box { background: var(--gray-pale); padding: 12px; margin-top: 12px; }
+    #panelTotals .totals-box .grand { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-size: 20px; }
+    #panelTotals .row { margin-top: 10px !important; }
+    #panelTotals .row > * { flex: 1 1 auto; }
+    #panelTotals #btnDraftSave, #panelTotals #btnDraftClear { padding: 12px 18px; min-height: 44px; font-size: 16px; }
+    #panelTotals #btnDraftClear::before { content: none; }
+  }
 
   /* ปุ่มโปรแกรม 5 สี — ต้องเข้มพอให้อ่านออก + ตอนเลือกต้องดูออกโดยไม่พึ่งสีอย่างเดียว (ขอบหนา + เครื่องหมายถูก) */
   .opt-btn.prog-c1 { background: #FFF4C9; border-color: #E0B400; color: #1A1E40; }
@@ -433,21 +493,21 @@
   .sp-board-status { margin: 4px 0; font-weight: 600; }
   .sp-saving { font-size: 12px; color: var(--text-muted); } /* รอบ 9.2 — ตัวบอกสถานะระหว่างรอ apiCall() ของปุ่มสถานะรายคน */
 
-  /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่ */
+  /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่
+     รอบ 17 (2026-09-17): padding-bottom เผื่อที่ท้ายหน้าไม่ให้ #panelTotals (ลอยอยู่แล้ว) บังช่องกรอกสุดท้าย —
+     ค่าฐาน (จอแคบ) ~90px พอสำหรับแถบเดียวล่างจอ · จอกว้าง ≥700px เพิ่มเป็น ~240px เผื่อความสูงกล่องลอยเต็มรูป */
   .wrap-log { max-width: 1400px; margin: 0 auto; padding: 12px; padding-bottom: 90px; }
+  @media (min-width: 700px) { .wrap-log { padding-bottom: 240px; } }
   .log-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
   /* กันบันทึกซ้ำ (2026-09-16): ระหว่างรอ apiCall ตอบ ล็อกทั้งฟอร์มด้วย inert แล้วหรี่ให้เห็นว่ากดไม่ได้ */
   #logForm[inert] { opacity: .6; }
   .log-col { display: flex; flex-direction: column; gap: 12px; }
   /* จุดตัดจอกว้าง/จอแคบ — ทดสอบจริงที่ 390px และ 1440px แล้ว ใช้ 1100px (ดูรายงานตรวจรับ) */
   @media (min-width: 1100px) {
-    /* ⚠ align-items ต้องเป็น stretch (ไม่ใช่ start เหมือนเดิม) — คอลัมน์ต้องสูงเท่าแถว
-       ไม่งั้น #panelTotals ที่เป็น element ตัวสุดท้ายของคอลัมน์จะ sticky ไม่ขยับเลย
-       (กรอบเลื่อนของ sticky = กล่องพ่อ .log-col ซึ่งถ้าสูงเท่าเนื้อหาจะไม่เหลือระยะให้เลื่อน)
-       พาเนลข้างในไม่มี flex-grow ⇒ ความสูงที่เห็นเท่าเดิมทุกใบ เปลี่ยนแค่ความสูงของคอลัมน์ */
+    /* คอลัมน์สูงเท่ากันดูเป็นระเบียบกว่า (align-items: stretch แทน start เดิม) */
     .log-grid { grid-template-columns: repeat(3, 1fr); align-items: stretch; }
-    /* เจ้าของสั่ง 2026-09-15: กล่อง 'ยอดรวม / บันทึก' ต้องติดหนึบอยู่บนจอ เลื่อนดูรายการแล้วยังเห็นยอด + ปุ่มบันทึก */
-    #panelTotals { position: sticky; top: 12px; z-index: 5; box-shadow: 0 4px 14px rgba(26,30,64,.12); }
+    /* รอบ 17 (2026-09-17): ลบกฎ position: sticky ของ #panelTotals ที่นี่ออกแล้ว — เจ้าของสั่งให้เป็นกล่องลอยมุมขวาล่าง
+       (position: fixed) แทน ดูกฎ #panelTotals ที่ต้นไฟล์ (มี @media (min-width:700px) ควบคุมอยู่แล้ว) */
   }
 
   .log-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
@@ -798,8 +858,12 @@
             </div>
           </section>
 
-          <!-- แผง "ยอดรวม/บันทึก" — ห้ามพับ (ต้องเห็นตลอด) -->
-          <section class="log-panel" id="panelTotals">
+          <!-- แผง "ยอดรวม/บันทึก" — ห้ามพับ (ต้องเห็นตลอด)
+               รอบ 17 (2026-09-17): เจ้าของสั่งเอา #stickyBar แถบล่างเต็มจอออก ให้แผงนี้เป็นกล่องลอยเดียว (ไม่มีปุ่มบันทึก 2 ที่แล้ว)
+               ยังอยู่ที่เดิมใน DOM (คอลัมน์ 3 ของฟอร์ม) — ย้ายตำแหน่งด้วย CSS ล้วน ๆ (ดูกฎ #panelTotals) ⇒ หน้าอื่นซ่อนไปเองเพราะ
+               #svcFormWrap ของหน้าพ่อเป็น display:none · เพิ่ม no-print ตรงนี้ให้ชัดเจนด้วย (ปกติก็ไม่ติดพิมพ์อยู่แล้วเพราะ
+               #logForm มีคลาส no-print ครอบอยู่) -->
+          <section class="log-panel no-print" id="panelTotals">
             <div class="log-panel-head-static"><span class="log-panel-title">ยอดรวม / บันทึก</span></div>
             <div class="log-panel-body">
               <div id="formWarning" class="warning-box" hidden></div>
@@ -816,23 +880,12 @@
                 <button type="button" class="btn secondary no-print" id="btnDraftClear">🗑 ล้างร่าง</button>
               </div>
 
-              <!-- ปุ่มบันทึกจริง — ซ่อนไว้ (ใช้ sticky bar/ปุ่มในแผงนี้แทน) แต่ยังเป็นตัวเก็บสถานะ disabled ของฟอร์ม -->
+              <!-- ปุ่มบันทึกจริง — ซ่อนไว้ (ใช้ปุ่มในแผงลอยนี้แทน) แต่ยังเป็นตัวเก็บสถานะ disabled ของฟอร์ม -->
               <button type="submit" class="btn block" id="btnSubmitLog" hidden disabled>บันทึก</button>
             </div>
           </section>
         </div>
       </form>
-    </div>
-
-    <div class="sticky-bar no-print" id="stickyBar">
-      <!-- เจ้าของสั่ง 2026-09-15: ยอดต้องอยู่ "ติด" ปุ่มบันทึก — เดิมแถบนี้เป็น space-between
-           ยอดจึงไปซ้ายสุด ปุ่มไปขวาสุด ต้องกวาดตาข้ามจอทุกครั้งที่จะกดบันทึก
-           ⇒ จับ 2 อย่างไว้ในกลุ่มเดียวกันชิดขวา · ห้ามใช้คลาส .row ตรงนี้ เพราะ .row > * ตั้ง flex:1 1 auto
-             ซึ่งจะดันข้อความยอดให้ยืดออกจนห่างปุ่มอีก (กลับไปเป็นปัญหาเดิม) -->
-      <div class="sticky-actions">
-        <span>ยอดรวมตอนนี้ <b id="stickyTotal">0</b> บาท</span>
-        <button type="button" class="btn" id="btnStickySave">💾 บันทึก</button>
-      </div>
     </div>
   </div>
 
@@ -1973,13 +2026,16 @@ function validateForm(ctx) {
   syncStickyButtons();
 }
 
+// รอบ 17 (2026-09-17): เดิมคัดลอกป้าย/สถานะ disabled ไปทั้ง #btnStickySave (แถบล่างเต็มจอ) และ #btnDraftSave
+// (ปุ่มในแผง #panelTotals) — เจ้าของสั่งเอา #stickyBar/#btnStickySave ออก เหลือปุ่มเดียวคือ #btnDraftSave
+// (คงชื่อฟังก์ชันเดิมไว้ ไม่ย้ายไปเรียกตรง ๆ เพราะมีจุดเรียกอื่นอีกจุด — setSubmitLabel())
 function syncStickyButtons() {
   var src = qs('btnSubmitLog');
   var disabled = src.disabled;
   // #btnSubmitLog ถูก hidden ไว้ ⇒ ป้าย 'บันทึกการแก้ไข' ที่มันถืออยู่ไม่มีใครเห็น ต้องคัดลอกมาที่ปุ่มที่มองเห็นจริงด้วย
   // ไม่งั้นกล่องยืนยันรวมแถว (ข้อ 4.6) กับแถบโหมดแก้ไขจะสั่งให้กดปุ่มที่ไม่มีอยู่บนจอ
   var label = '💾 ' + src.textContent;
-  ['btnStickySave', 'btnDraftSave'].forEach(function (id) {
+  ['btnDraftSave'].forEach(function (id) {
     var b = qs(id);
     if (b) { b.disabled = disabled; b.textContent = label; }
   });
@@ -2084,8 +2140,8 @@ function recalcTotals() {
   updateProgramLabels();
   updatePelvicPriceLabels();
 
-  var stickyTotalEl = qs('stickyTotal');
-  if (stickyTotalEl) stickyTotalEl.textContent = money(grand);
+  // รอบ 17 (2026-09-17): เดิมมีอีกบรรทัดเขียน #stickyTotal (ยอดในแถบล่างเต็มจอ #stickyBar) — องค์ประกอบนั้นถูกลบไปแล้ว
+  // #totGrand (เขียนไว้ข้างบนแล้ว) คือยอดที่แสดงจริงในกล่องลอย #panelTotals ตอนนี้
 
   updateDraftStrip({ checkupOn: checkupOn, vaccineOn: vaccineOn, medOn: medOn, specialOn: specialOn, patientName: patientName, grand: grand });
   updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
@@ -4319,7 +4375,7 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('[data-back-menu]').forEach(function (b) {
     b.addEventListener('click', function () { showScreen('log'); });
   });
-  qs('btnStickySave').addEventListener('click', triggerSubmit);
+  // รอบ 17 (2026-09-17): #btnStickySave (แถบล่างเต็มจอ #stickyBar เดิม) ถูกลบออกจากหน้าเว็บแล้ว — เหลือปุ่มเดียว
   qs('btnDraftSave').addEventListener('click', triggerSubmit);
   qs('btnDraftClear').addEventListener('click', function () {
     // กันบันทึกซ้ำ (2026-09-16): ล้างร่างระหว่างรอบันทึกจะโดน resp ที่ยังค้างมา resetLogForm() ซ้ำทับอีกที
