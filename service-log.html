@@ -657,7 +657,7 @@
       <div class="row" style="gap:6px;flex-wrap:wrap;">
         <button type="button" class="btn secondary small nav-link" data-target="today">📋 รายการวันนี้</button>
         <button type="button" class="btn secondary small nav-link" data-target="checkupTable">🩺 รายชื่อตรวจสุขภาพรายวัน</button>
-        <button type="button" class="btn secondary small nav-link" data-target="report">📊 รายงานรายเดือน</button>
+        <button type="button" class="btn secondary small nav-link" data-target="report">📊 รายงานรายวัน/รายเดือน</button>
         <button type="button" class="btn secondary small nav-link" data-target="spBoard">📣 รวมรายชื่อส่งตรวจพิเศษ</button>
       </div>
     </div>
@@ -915,16 +915,28 @@
     </div>
   </div>
 
-  <!-- ---------- รายงานรายเดือน ---------- -->
+  <!-- ---------- รายงานรายวัน/รายเดือน ---------- -->
   <section id="tabReport" style="display:none;">
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
       <div class="card no-print">
-        <label class="field-label" for="reportMonth">เลือกเดือน</label>
-        <input type="month" id="reportMonth">
-        <div class="row" id="reportMonthFallback" hidden style="margin-top:8px;">
-          <select id="reportMonthSel"></select>
-          <select id="reportYearSel"></select>
+        <!-- เจ้าของสั่ง 2026-09-18: รายงานรายวัน (รวมทุกจุด ไม่ต้องพิมพ์) — สลับโหมดรายวัน/รายเดือน
+             รายเดือนเป็นค่าเริ่มต้นเสมอ (ปุ่ม active ใช้ pattern เดียวกับ setCuView()/renderSpBoardSwitchBar(): active = 'btn small', ไม่ active = 'btn small secondary') -->
+        <div class="row" id="reportModeSwitch" style="margin-bottom:10px;">
+          <button type="button" class="btn small" id="btnReportModeMonth" data-report-mode="month">รายเดือน</button>
+          <button type="button" class="btn small secondary" id="btnReportModeDay" data-report-mode="day">รายวัน</button>
+        </div>
+        <div id="reportMonthPickerWrap">
+          <label class="field-label" for="reportMonth">เลือกเดือน</label>
+          <input type="month" id="reportMonth">
+          <div class="row" id="reportMonthFallback" hidden style="margin-top:8px;">
+            <select id="reportMonthSel"></select>
+            <select id="reportYearSel"></select>
+          </div>
+        </div>
+        <div id="reportDayPickerWrap" hidden>
+          <label class="field-label" for="reportDay">เลือกวันที่</label>
+          <input type="date" id="reportDay">
         </div>
         <div class="row" style="margin-top:10px;">
           <button type="button" class="btn" id="btnLoadReport">ดูรายงาน</button>
@@ -1428,12 +1440,16 @@ function handleGateKeySubmit(e) {
   if (!key) { showGateKeyMsg('กรุณากรอกรหัสผ่านเจ้าหน้าที่', true); return; }
   showGateKeyMsg('');
   setGateKeyLoading(true);
-  apiCall('config', { staffKey: key }).then(function (resp) {
+  var configPromise = apiCall('config', { staffKey: key });
+  // รอบ 18: ยิง today คู่ขนานไปกับ config เลย ไม่ต้องรอ config ตอบก่อน — ใช้จุดบริการที่จำไว้จากรอบก่อน (ถ้ามี)
+  startTodayPrefetch(key, safeGetItem('svcLogPoint'));
+  configPromise.then(function (resp) {
     setGateKeyLoading(false);
     if (resp && resp.status === 'ok') {
       applyConfigResponse(resp, key);
       enterAppScreen();
     } else {
+      TODAY_PREFETCH = null; // รหัสผ่านไม่ผ่าน -> ทิ้ง prefetch ที่ยิงคู่ไปด้วย ห้ามให้ข้อมูลหลุดออกมาโดยไม่ผ่านรหัส
       showGateKeyMsg((resp && resp.message) ? resp.message : 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่', true);
     }
   });
@@ -1464,13 +1480,17 @@ function tryRestoreSession() {
   var savedPoint = safeGetItem('svcLogPoint');
   var savedStaff = safeGetItem('svcLogStaffName');
   if (!savedKey) return;
-  apiCall('config', { staffKey: savedKey }).then(function (resp) {
+  var configPromise = apiCall('config', { staffKey: savedKey });
+  // รอบ 18: ยิง today คู่ขนานไปกับ config เลย ไม่ต้องรอ config ตอบก่อน (เดิมต้องรอ config ~3-3.8s แล้วค่อยเริ่ม today)
+  startTodayPrefetch(savedKey, savedPoint);
+  configPromise.then(function (resp) {
     if (resp && resp.status === 'ok') {
       applyConfigResponse(resp, savedKey);
       if (savedPoint && STATE.points.indexOf(savedPoint) !== -1) STATE.point = savedPoint;
       if (savedStaff && STATE.staffList.indexOf(savedStaff) !== -1) STATE.staffName = savedStaff;
       enterAppScreen();
     } else {
+      TODAY_PREFETCH = null; // config ไม่ผ่าน -> ทิ้ง prefetch ที่ยิงคู่ไปด้วย ห้ามให้ข้อมูลหลุดออกมาโดยไม่ผ่านรหัส
       safeRemoveItem('svcLogStaffKey');
       safeRemoveItem('svcLogPoint');
       safeRemoveItem('svcLogStaffName');
@@ -1541,9 +1561,11 @@ function updatePersonCardLabels() {
   var needPerson = checkupOn || isSpecialOn();
 
   if (queueLabelEl) queueLabelEl.textContent = checkupOn ? 'คิว *' : 'คิว';
-  if (hnLabelEl) hnLabelEl.textContent = needPerson ? 'HN *' : 'HN';
+  // เจ้าของสั่ง 2026-09-18: วัคซีนบังคับ HN (ชื่อ-สกุลไม่บังคับ) — คู่กับด่านใน validateForm()
+  var needHn = needPerson || isVaccineOn();
+  if (hnLabelEl) hnLabelEl.textContent = needHn ? 'HN *' : 'HN';
   if (nameLabelEl) nameLabelEl.textContent = needPerson ? 'ชื่อ-นามสกุลผู้รับบริการ *' : 'ชื่อ-นามสกุลผู้รับบริการ';
-  if (hnEl) hnEl.placeholder = needPerson ? reqPh : normalPh;
+  if (hnEl) hnEl.placeholder = needHn ? reqPh : normalPh;
   if (nameEl) nameEl.placeholder = needPerson ? reqPh : normalPh;
 }
 
@@ -2001,6 +2023,9 @@ function validateForm(ctx) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
   } else if (ctx.checkupOn && checkupMissing.length) {
     msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
+  } else if (ctx.vaccineOn && !ctx.patientHn) {
+    // เจ้าของสั่ง 2026-09-18 — บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4 ข้างบน: แถวเก่าไม่มี HN ต้องยังแก้ไขได้ที่เซิร์ฟเวอร์)
+    msg = 'วัคซีนต้องกรอก HN ก่อนบันทึก';
   } else if (ctx.labCount > 0 && ctx.labAmount <= 0) {
     msg = 'กรุณากรอกยอดเงินใบรับรองมี lab';
   } else if (ctx.labAmount > 0 && ctx.labCount <= 0) {
@@ -2576,6 +2601,20 @@ var SP_CACHE = { key: '', records: null, json: '' };
 // ห้ามให้คำตอบรีเฟรชเบื้องหลังของ loadSpBoard() ทับสถานะที่เพิ่งติ๊กไปแล้ว (SPEC ข้อ W2 ท้ายสุด)
 var SP_PENDING_COUNT = 0;
 
+// รอบ 18 (2026-09-18): ยิง apiCall('today') คู่ขนานไปกับ apiCall('config') ตอนเปิดหน้า/ใส่รหัส แทนที่จะรอ config
+// ตอบก่อนแล้วค่อยเริ่ม today ทีละขั้น (เดิม: config ~3-3.8s แล้ว today ต่ออีก ~2-3s = รวม 5-7s ถึงจะเห็นรายการวันนี้)
+// รูปร่าง: { key: point + '|' + วันนี้, promise: <apiCall('today') ที่กำลังทำงานอยู่> } — ใช้ครั้งเดียวแล้วทิ้ง (one-shot)
+// อยู่ในหน่วยความจำล้วน ห้ามเขียนลง localStorage/sessionStorage (กติกาเดิมจากรอบ 15 — มีข้อมูลผู้ป่วย)
+var TODAY_PREFETCH = null;
+
+// เริ่มยิง apiCall('today') ล่วงหน้าไว้ก่อนที่ config จะตอบกลับ — point ว่าง (ยังไม่เคยเลือก/จำไว้) แปลว่าไม่มีอะไรให้ทำ
+// staffKey ที่ใช้คือตัวเดียวกับที่ config กำลังตรวจอยู่ ถ้ารหัสผิด config จะ fail ก่อน แล้ว TODAY_PREFETCH ถูกทิ้งไปเฉย ๆ
+// (ดู tryRestoreSession/handleGateKeySubmit กิ่ง else) ⇒ ไม่มีทางที่ผลจาก prefetch หลุดไปแสดงโดยที่รหัสยังไม่ผ่าน
+function startTodayPrefetch(staffKey, point) {
+  if (!point) { TODAY_PREFETCH = null; return; }
+  TODAY_PREFETCH = { key: point + '|' + todayStr(), promise: apiCall('today', { staffKey: staffKey, point: point, date: todayStr() }) };
+}
+
 // แทรก/แทนที่ record เดียวในอาร์เรย์ตาม recordId (ไม่เจอ ⇒ ใส่หัวรายการ) — คืนอาร์เรย์ใหม่เสมอ ไม่แก้ของเดิมในที่
 function upsertRecordInList(list, record) {
   var out = (list || []).slice();
@@ -2855,7 +2894,11 @@ function loadToday() {
     renderTodayList(TODAY_CACHE.records);
     setRefreshHint('todayRefreshHint', 'loading');
   }
-  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr }).then(function (resp) {
+  // รอบ 18: มี today ที่ยิงคู่ขนานไปกับ config ไว้ล่วงหน้าแล้วตรงคีย์นี้พอดี -> ใช้ผลอันนั้นแทนยิงซ้ำ
+  // one-shot เสมอ (ล้างทิ้งไม่ว่าจะได้ใช้หรือไม่) — prefetch ของจุด/วันอื่นที่ค้างอยู่ก็ถูกทิ้งไปด้วย ไม่มีความหมายอีกต่อไป
+  var todayPromise = (TODAY_PREFETCH && TODAY_PREFETCH.key === key) ? TODAY_PREFETCH.promise : apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr });
+  TODAY_PREFETCH = null;
+  todayPromise.then(function (resp) {
     // เปลี่ยนจุดบริการ/ข้ามวันระหว่างรอ -> คีย์ที่หน้าจอควรแสดงตอนนี้ไม่ตรงกับคำขอนี้แล้ว ทิ้งคำตอบนี้ไปเลย
     if (STATE.point + '|' + todayStr() !== key) return;
     if (resp && resp.status === 'ok') {
@@ -4072,8 +4115,12 @@ function showCuView(view) {
 }
 
 /* =========================================================================
-   9. แท็บรายงานรายเดือน
+   9. แท็บรายงานรายวัน/รายเดือน
    ========================================================================= */
+// เจ้าของสั่ง 2026-09-18: รายงานรายวัน (รวมทุกจุด ไม่ต้องพิมพ์) — โหมดปัจจุบันของแท็บ + ตัวนับกันผลเก่ามาทับผลใหม่
+var REPORT_MODE = 'month';
+var REPORT_SEQ = 0;
+
 function supportsMonthInput() {
   var i = document.createElement('input');
   i.setAttribute('type', 'month');
@@ -4120,6 +4167,30 @@ function getSelectedReportMonth() {
   return y + '-' + (m.length < 2 ? '0' + m : m);
 }
 
+// เจ้าของสั่ง 2026-09-18: รายงานรายวัน — ค่าเริ่มต้นของช่องเลือกวันที่คือวันนี้ (เขต Asia/Bangkok เหมือน todayStr())
+function initReportDayPicker() {
+  qs('reportDay').value = todayStr();
+}
+
+function getSelectedReportDay() {
+  return qs('reportDay').value || '';
+}
+
+// เจ้าของสั่ง 2026-09-18: สลับมุมมองรายวัน/รายเดือนของแท็บรายงาน — โชว์/ซ่อนช่องเลือกวันที่ vs เดือน (รวม fallback เดิม),
+// ซ่อนปุ่มพิมพ์เฉพาะโหมดรายวัน (รายวันดูจอเท่านั้นไม่ต้องพิมพ์), ล้าง #reportContent กันตารางโหมดเก่าค้างอยู่ใต้หัวข้อใหม่
+// + บัมพ์ REPORT_SEQ ให้ผลตอบจากโหมดก่อนหน้าที่ยังไม่มาถูกทิ้งเสมอ (กันหน้าจอโชว์รายงานผิดโหมด)
+function setReportMode(mode) {
+  REPORT_MODE = (mode === 'day') ? 'day' : 'month';
+  var isDay = REPORT_MODE === 'day';
+  qs('reportMonthPickerWrap').hidden = isDay;
+  qs('reportDayPickerWrap').hidden = !isDay;
+  qs('btnPrintReport').hidden = isDay;
+  qs('btnReportModeMonth').className = 'btn small' + (isDay ? ' secondary' : '');
+  qs('btnReportModeDay').className = 'btn small' + (isDay ? '' : ' secondary');
+  qs('reportContent').innerHTML = '';
+  REPORT_SEQ++;
+}
+
 function numOr0(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
 
 /* summary.extra.items / summary.vaccine.items เป็น object map {'ชื่อ': count, ...} ไม่ใช่ array
@@ -4149,14 +4220,31 @@ function countMoneyMapToArray(obj) {
   return out;
 }
 
-function renderReport(summary) {
+// เจ้าของสั่ง 2026-09-18: รายงานรายวัน — เดิมการ์ด "สรุปรวม" บอกแค่จำนวน/ยอดเงิน ไม่บอกว่าเป็นของช่วงไหน
+// เพิ่มบรรทัดชื่อ "เดือน .../วันที่ ..." บนสุด ใช้ THAI_MONTH_NAMES_CU ชุดเดียวกับ formatThaiDate() (บรรทัด ~3383)
+function formatThaiMonthYear(monthStr) {
+  var parts = String(monthStr || '').split('-');
+  if (parts.length !== 2) return String(monthStr || '');
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+  if (!y || !m || m < 1 || m > 12) return String(monthStr || '');
+  return THAI_MONTH_NAMES_CU[m - 1] + ' ' + (y + 543);
+}
+
+// เจ้าของสั่ง 2026-09-18: renderReport(summary, period) — period = {mode:'day'|'month', value} ใช้บอกช่วงเวลาบนหัวการ์ด
+// "สรุปรวม" + เปลี่ยนคำ "ทั้งเดือน"->"ทั้งวัน" เฉพาะโหมดรายวัน · เรียกแบบเดิม renderReport(summary) ไม่มี period
+// (มี caller เก่าอยู่ในเทสต์ — grep แล้ว) ยังทำงานได้เหมือนเดิมทุกอย่าง ถือเป็นโหมดรายเดือนไม่มีบรรทัดช่วงเวลา
+function renderReport(summary, period) {
   var el = qs('reportContent');
   if (!summary) { el.innerHTML = '<p class="muted">ไม่มีข้อมูล</p>'; return; }
+  var isDay = !!(period && period.mode === 'day');
 
   var html = '';
-  html += '<div class="card"><h2>สรุปรวม</h2>' +
-    '<div class="line">จำนวนผู้รับบริการรวม: <b>' + escHtml(numOr0(summary.totalPeople)) + '</b> คน</div>' +
-    '<div class="line">ยอดเงินรวมทั้งเดือน: <b>' + escHtml(money(numOr0(summary.grandTotal))) + '</b> บาท</div>' +
+  html += '<div class="card"><h2>สรุปรวม</h2>';
+  if (period && period.value) {
+    html += '<div class="line">' + (isDay ? ('วันที่ ' + formatThaiDate(period.value)) : ('เดือน ' + formatThaiMonthYear(period.value))) + '</div>';
+  }
+  html += '<div class="line">จำนวนผู้รับบริการรวม: <b>' + escHtml(numOr0(summary.totalPeople)) + '</b> คน</div>' +
+    '<div class="line">ยอดเงินรวมทั้ง' + (isDay ? 'วัน' : 'เดือน') + ': <b>' + escHtml(money(numOr0(summary.grandTotal))) + '</b> บาท</div>' +
     '</div>';
 
   // ตรวจสุขภาพ — summary.checkup.programs[p] = { ชาย, หญิง } (คีย์ภาษาไทย, p เป็นสตริง '1'..'4')
@@ -4240,13 +4328,27 @@ function renderReport(summary) {
   el.innerHTML = html;
 }
 
+// เจ้าของสั่ง 2026-09-18: รายงานรายวัน (รวมทุกจุด ไม่ต้องพิมพ์) — โหมดรายวันต้องส่งวันที่เต็มรูปแบบ YYYY-MM-DD
+// เท่านั้น (ห้ามส่งวันที่ไม่ครบ เช่น "2026-09-1" ซึ่งฝั่ง Apps Script handleReport_ จะจับคู่แบบ indexOf(...) === 0
+// แล้วกวาดวันที่ 10-19 มาปนกันหมด) โหมดรายเดือนยังคงส่ง YYYY-MM เหมือนเดิม ชื่อฟิลด์ 'month' ไม่เปลี่ยนทั้ง 2 โหมด
+// (ฝั่งเซิร์ฟเวอร์ไม่ได้แตะ) · REPORT_SEQ กันผลตอบที่มาช้าจากการโหลด/โหมดก่อนหน้าทับของใหม่กว่า
 function loadReport() {
-  var month = getSelectedReportMonth();
-  if (!month) { showToast('กรุณาเลือกเดือน'); return; }
+  var period;
+  if (REPORT_MODE === 'day') {
+    var day = getSelectedReportDay();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) { showToast('กรุณาเลือกวันที่'); return; }
+    period = { mode: 'day', value: day };
+  } else {
+    var month = getSelectedReportMonth();
+    if (!/^\d{4}-\d{2}$/.test(month)) { showToast('กรุณาเลือกเดือน'); return; }
+    period = { mode: 'month', value: month };
+  }
+  var seq = ++REPORT_SEQ;
   qs('reportContent').innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  apiCall('report', { staffKey: STATE.staffKey, month: month }).then(function (resp) {
+  apiCall('report', { staffKey: STATE.staffKey, month: period.value }).then(function (resp) {
+    if (seq !== REPORT_SEQ) return; // ผลตอบของการโหลด/โหมดที่เลิกใช้ไปแล้ว — ทิ้งเงียบ ๆ ไม่วาดทับของใหม่กว่า
     if (resp && resp.status === 'ok') {
-      renderReport(resp.summary);
+      renderReport(resp.summary, period);
     } else {
       qs('reportContent').innerHTML = '<div class="error-box">โหลดรายงานไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
     }
@@ -4424,7 +4526,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   qs('btnLoadReport').addEventListener('click', loadReport);
   qs('btnPrintReport').addEventListener('click', function () { window.print(); });
+  // เจ้าของสั่ง 2026-09-18: รายงานรายวัน (รวมทุกจุด ไม่ต้องพิมพ์) — ปุ่มสลับโหมด + ค่าเริ่มต้นวันที่ + เข้าโหมดรายเดือนเสมอตอนเปิดหน้า
+  qs('btnReportModeMonth').addEventListener('click', function () { setReportMode('month'); });
+  qs('btnReportModeDay').addEventListener('click', function () { setReportMode('day'); });
   initReportMonthPicker();
+  initReportDayPicker();
+  setReportMode('month');
 
   // รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager
   qs('btnSpBoardRefresh').addEventListener('click', loadSpBoard);
