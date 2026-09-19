@@ -445,6 +445,9 @@
 
   /* รอบ 8 (B7) — ช่องลายเซ็นรับเอกสารบนใบพิมพ์รายชื่อตรวจสุขภาพรายวัน: กว้าง/สูงพอเซ็นจริงด้วยปากกาบนกระดาษ */
   .cu-sig-line { display: inline-block; width: 100%; min-width: 35mm; border-bottom: 1px solid #000; }
+  /* รอบ 19 (2026-09-18) — บรรทัดย่อยใต้ป้ายตรวจภายในของตารางรายชื่อตรวจสุขภาพรายวัน: "ส่งผลภายใน ..."
+     ⚠ ไม่ใช้คลาส no-print เพราะต้องขึ้นทั้งบนจอและบนกระดาษ (คนละกติกากับกล่องสรุป .cu-extra ข้างล่าง) */
+  .cu-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   /* รอบ 8 (B7 เพิ่มเติม 2026-09-03) — ใบพิมพ์ "แบบการ์ด" ตามภาพที่เจ้าของส่งมา
      เจ้าของสั่ง: "แบบการ์ดเอาให้อยู่ใน 1 หน้าได้เยอะที่สุด จะได้ไม่เปลืองกระดาษ ไซส์ A4"
      ⇒ 2 ใบ/แถว · ตัวอักษรเล็กแต่ยังอ่านออก · break-inside:avoid กันการ์ดถูกตัดครึ่งข้ามหน้า */
@@ -744,6 +747,11 @@
                       <label class="opt-btn"><input type="radio" name="pelvic" value="pap"> Pap smear <span class="opt-price" data-pelvic="pap"></span></label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep"> Thinprep <span class="opt-price" data-pelvic="thinprep"></span></label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep_hpv"> Thinprep + HPV <span class="opt-price" data-pelvic="thinprep_hpv"></span></label>
+                    </div>
+                    <!-- รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่เฉพาะตอนเลือกตรวจภายใน (pelvic ≠ 'no') บังคับกรอกฝั่งเว็บ -->
+                    <div id="pelvicDueWrap" hidden>
+                      <label class="field-label" for="pelvicDue">ส่งออกผลภายในวันที่ *</label>
+                      <input type="date" id="pelvicDue">
                     </div>
                   </div>
 
@@ -1923,6 +1931,19 @@ function updatePelvicSection(checkupOn, gender) {
   }
 }
 
+/* รอบ 19 (2026-09-18): ช่อง "ส่งออกผลภายในวันที่" — โผล่เฉพาะตอนตรวจภายในถูกเลือกจริง (pelvic ต้องไม่ใช่ 'no')
+   ซ่อนเมื่อไหร่ต้องล้างค่าจริงด้วยเหมือน updatePelvicSection ข้างบน (กันค่าที่มองไม่เห็นหลุดไปกับ payload) */
+function updatePelvicDueVisibility(pelvic) {
+  var wrap = qs('pelvicDueWrap');
+  if (!wrap) return;
+  var show = !!(pelvic && pelvic !== 'no');
+  wrap.hidden = !show;
+  if (!show) {
+    var input = qs('pelvicDue');
+    if (input) input.value = '';
+  }
+}
+
 /* รอบ 6: Pap ไม่บวกเงินอัตโนมัติแล้ว (ยอดรวมอยู่ในช่องกรอกเอง #checkupAmount) — ป้ายราคาเป็นแค่ "อ้างอิง" เช่นกัน */
 function updatePelvicPriceLabels() {
   ['pap', 'thinprep', 'thinprep_hpv'].forEach(function (code) {
@@ -2023,6 +2044,10 @@ function validateForm(ctx) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
   } else if (ctx.checkupOn && checkupMissing.length) {
     msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
+  } else if (ctx.checkupOn && ctx.pelvic !== 'no' && !ctx.pelvicDue) {
+    // รอบ 19 (2026-09-18): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4/วัคซีน ข้างบน — ห้ามบังคับฝั่งเซิร์ฟเวอร์
+    // เพราะจะแก้ไขแถวเก่าที่ยังไม่มีวันที่นี้ไม่ได้เลย)
+    msg = 'ตรวจภายในต้องกรอกวันที่ส่งออกผล';
   } else if (ctx.vaccineOn && !ctx.patientHn) {
     // เจ้าของสั่ง 2026-09-18 — บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4 ข้างบน: แถวเก่าไม่มี HN ต้องยังแก้ไขได้ที่เซิร์ฟเวอร์)
     msg = 'วัคซีนต้องกรอก HN ก่อนบันทึก';
@@ -2118,6 +2143,9 @@ function recalcTotals() {
   // เจ้าของสั่ง 2026-09-17: ไม่ใช่แค่วิทยุเพศแล้ว — isMaleForMmg() เดาจากคำนำหน้าด้วยเมื่อยังไม่เลือกวิทยุเพศ
   applyMmgGenderLock(isMaleForMmg() ? 'male' : '');
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
+  updatePelvicDueVisibility(pelvic); // รอบ 19 (2026-09-18): แสดง/ซ่อน+ล้างช่องวันที่ตามค่า pelvic ล่าสุดเสมอ
+  var pelvicDueEl = qs('pelvicDue');
+  var pelvicDue = (pelvic !== 'no') ? ((pelvicDueEl && pelvicDueEl.value) || '') : '';
 
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่อีกแล้ว — extraIds มีค่าได้เฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่มมาก่อน
   var extraIds = STATE.editExtraIds || [];
@@ -2182,7 +2210,8 @@ function recalcTotals() {
     extraIds: extraIds, labCount: labCount, labAmount: labAmount,
     specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn,
     patientName: patientName, patientHn: patientHn,
-    queue: queue, deliveryMethod: deliveryMethod
+    queue: queue, deliveryMethod: deliveryMethod,
+    pelvic: pelvic, pelvicDue: pelvicDue // รอบ 19 (2026-09-18)
   });
 
   return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
@@ -2229,6 +2258,7 @@ function applyLogLocks() {
 function resetLogForm() {
   qs('logForm').reset();
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === 'no'); });
+  qs('pelvicDue').value = ''; // รอบ 19 (2026-09-18)
   qs('queueSelect').value = '';
   qs('patientName').value = '';
   qs('patientHn').value = '';
@@ -2277,6 +2307,8 @@ function enterEditMode(rec) {
 
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
+  var pelvicDueEditEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
+  if (pelvicDueEditEl) pelvicDueEditEl.value = rec.pelvicDue || '';
 
   var checkupAmountVal = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
   qs('checkupAmount').value = hasCheckup ? String(checkupAmountVal) : '';
@@ -2355,6 +2387,8 @@ function mergeDraftIntoTodayRecord(rec, draft) {
     document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === draft.genderDom); });
     updatePelvicSection(true, draft.genderDom);
     document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (draft.pelvic || 'no')); });
+    var pelvicDueMergeEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
+    if (pelvicDueMergeEl) pelvicDueMergeEl.value = draft.pelvicDue || '';
     qs('checkupAmount').value = String(draft.checkupAmount || 0);
     qs('deliveryMethod').value = draft.deliveryMethod || '';
   }
@@ -2416,6 +2450,8 @@ function onSubmitLog(e) {
   var genderDom = checkupOn ? getSelectedGender() : '';
   var gender = genderToThai(genderDom); // ชีตต้องเก็บภาษาไทยเสมอ ('ชาย'/'หญิง') ไม่ใช่ 'male'/'female'
   var pelvic = (checkupOn && genderDom === 'female') ? getSelectedPelvic() : 'no';
+  // รอบ 19 (2026-09-18): ส่ง pelvicDue เสมอ (คีย์ต้องมีทุกครั้ง) — ค่าจริงเฉพาะตอน pelvic ≠ 'no' เท่านั้น
+  var pelvicDue = (pelvic !== 'no') ? ((qs('pelvicDue') && qs('pelvicDue').value) || '') : '';
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่แล้ว — ส่ง STATE.editExtraIds กลับไป (มีค่าเฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่ม)
   var extraIds = STATE.editExtraIds || [];
   var checkupAmountNum = getCheckupAmountNum();
@@ -2457,7 +2493,7 @@ function onSubmitLog(e) {
         'ยกเลิก = บันทึกเป็นแถวใหม่';
       if (window.confirm(mergeConfirmMsg)) {
         mergeDraftIntoTodayRecord(existingTodayRec, {
-          program: program, genderDom: genderDom, pelvic: pelvic, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
+          program: program, genderDom: genderDom, pelvic: pelvic, pelvicDue: pelvicDue, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
           vaccineCodes: vaccineCodes, medCert5: medCert5, medCertDriver: medCertDriver,
           medCertLabCount: medCertLabCount, medCertLabAmount: medCertLabAmount,
           specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix
@@ -2475,6 +2511,7 @@ function onSubmitLog(e) {
     program: program,
     gender: gender,
     pelvic: pelvic,
+    pelvicDue: pelvicDue, // รอบ 19 (2026-09-18)
     checkupAmount: checkupAmount,
     patientName: patientName,
     patientHn: patientHn,
@@ -2557,6 +2594,8 @@ function summarizeRecordParts(rec) {
   if (rec.queue) parts.push('คิว ' + rec.queue); // รอบ 6: โชว์เลขคิวหน้าชื่อ
   if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
   if (rec.pelvicLabel) parts.push(rec.pelvicLabel);
+  // รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่ต่อจากป้ายตรวจภายในทันที (มีเฉพาะแถวที่ pelvic ≠ 'no')
+  if (rec.pelvicDue) parts.push('ส่งออกผลภายในวันที่ ' + formatThaiDate(rec.pelvicDue));
   // เจ้าของสั่ง 2026-09-12: การ์ด "รายการวันนี้" ต้องเห็นช่องทางรับผลด้วย (เดิมเห็นได้เฉพาะตอนกดแก้ไข
   // หรือในใบรายชื่อผู้รับบริการตรวจสุขภาพ) — ใช้คำเดียวกับป้ายในฟอร์มคือ "ช่องทางรับผล"
   // ค่านี้มีเฉพาะแถวที่มีโปรแกรมตรวจสุขภาพ (เซิร์ฟเวอร์เก็บ '' เมื่อไม่มีโปรแกรม) จึงไม่ต้องเช็ค program ซ้ำ
@@ -3621,7 +3660,10 @@ function renderCheckupTable(records, dateStr) {
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td>' + escHtml(rec.gender || '') + '</td>' +
       '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
-      '<td>' + escHtml(rec.pelvicLabel || '—') + '</td>' +
+      '<td>' + escHtml(rec.pelvicLabel || '—') +
+        // รอบ 19 (2026-09-18): ไม่เพิ่มคอลัมน์ใหม่ (A4 แคบเกินไปแล้ว) — ใส่เป็นบรรทัดย่อยในช่องตรวจภายในแทน
+        (rec.pelvicDue ? '<div class="cu-sub">ส่งผลภายใน ' + escHtml(formatThaiDate(rec.pelvicDue)) + '</div>' : '') +
+      '</td>' +
       '<td>' + escHtml(rec.deliveryMethod || '—') + '</td>' +
       '<td>' + money(amt) + '</td>' +
       '<td class="cu-sig-cell">' + sigCell + '</td>' +
@@ -3667,6 +3709,8 @@ function renderCheckupCards(records, dateStr) {
         '<div class="cu-line">' + escHtml(programLabelForPrint(rec.program)) + '</div>' +
         '<div class="cu-line">ราคา : ' + money(amt) + '</div>' +
         '<div class="cu-line">ตรวจภายใน : ' + escHtml(rec.pelvicLabel || '—') + '</div>' +
+        // รอบ 19 (2026-09-18): ขึ้นเฉพาะแถวที่มีค่า (pelvic ≠ 'no')
+        (rec.pelvicDue ? '<div class="cu-line">ส่งออกผลภายในวันที่ : ' + escHtml(formatThaiDate(rec.pelvicDue)) + '</div>' : '') +
         '<div class="cu-line">ช่องทางการส่ง : ' + escHtml(rec.deliveryMethod || '—') + '</div>' +
         (isWaitPickup
           ? '<div class="cu-line cu-sign">เซ็นรับ <span class="cu-sig-line"></span></div>'
