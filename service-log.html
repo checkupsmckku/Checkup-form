@@ -90,6 +90,59 @@
   .row { display: flex; flex-wrap: wrap; gap: 8px; }
   .row > * { flex: 1 1 auto; }
 
+  /* รอบ 20 (2026-09-19): Thai date picker — เจ้าของสั่ง "ต้องการภาษาไทย"
+     ปฏิทิน native ของ input[type=date] ในเบราว์เซอร์ (Chrome) เป็นภาษาอังกฤษเสมอ ("09/18/2026", "September", "Su Mo Tu…")
+     ไม่มีทาง localize ด้วย CSS/lang attribute ⇒ ทำปุ่ม+ป็อปอัปของเราเองบังปฏิทิน native แทน (ดูฟังก์ชัน thd* ในโค้ด JS ท้ายไฟล์)
+     input[type=date] เดิมยังอยู่ใน DOM เป็น source of truth เดียว (ซ่อนด้วย opacity ไม่ใช่ display:none ให้ logic
+     ของ wrapper อื่น ๆ ที่คุม .hidden/display ของทั้งช่องยังทำงานได้เหมือนเดิม — ห้ามเปลี่ยนเป็น display:none) */
+  input.thd-native {
+    position: absolute !important; opacity: 0 !important; width: 1px !important; height: 1px !important;
+    padding: 0 !important; margin: 0 !important; border: 0 !important; overflow: hidden !important;
+    pointer-events: none !important;
+  }
+  .thd-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    width: 100%; box-sizing: border-box; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: 8px; font-size: 16px; font-family: inherit;
+    background: #fff; color: var(--text); text-align: left; cursor: pointer; max-width: 100%;
+  }
+  .thd-btn::after { content: '📅'; flex: 0 0 auto; font-size: 14px; }
+  .thd-btn.thd-empty { color: var(--text-muted); }
+  .thd-btn:disabled { background: var(--gray-pale); color: var(--text-muted); cursor: not-allowed; }
+  /* ช่องวันที่ที่อยู่ในคู่ .cu-note-field (วันที่ส่งออก/ส่งออกอีกครั้ง) เดิมกว้างแค่เนื้อหา (auto/min-width)
+     ไม่ใช่เต็มบรรทัดแบบช่องอื่น — ถ้าปล่อยกฎ width:100% ของ .thd-btn ข้างบนจะดันแถวล้น */
+  .cu-note-field .thd-btn {
+    display: inline-flex; width: auto; min-width: 120px; flex: 0 0 auto; padding: 6px 10px; font-size: 14px;
+  }
+
+  .thd-pop {
+    position: fixed; z-index: 999; background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2); padding: 10px; width: 280px; max-width: calc(100vw - 16px);
+    box-sizing: border-box; font-size: 14px;
+  }
+  .thd-pop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .thd-pop-head button {
+    background: none; border: none; font-size: 18px; line-height: 1; padding: 6px 10px; cursor: pointer;
+    color: var(--primary); border-radius: 6px;
+  }
+  .thd-pop-head button:hover { background: var(--gray-pale); }
+  .thd-pop-title { font-weight: 700; color: var(--primary-dark); }
+  .thd-pop-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+  .thd-pop-wd { font-size: 12px; color: var(--text-muted); font-weight: 600; padding: 4px 0; }
+  .thd-pop-day {
+    padding: 6px 0; border-radius: 6px; cursor: pointer; font-size: 14px; background: none; border: none;
+    font-family: inherit; color: var(--text);
+  }
+  .thd-pop-day:hover:not(:disabled) { background: var(--gray-pale); }
+  .thd-pop-day.thd-today { outline: 1px solid var(--primary); outline-offset: -1px; }
+  .thd-pop-day.thd-selected { background: var(--primary); color: #fff; font-weight: 700; }
+  .thd-pop-day:disabled { color: #ccc; cursor: not-allowed; }
+  .thd-pop-foot { display: flex; gap: 8px; margin-top: 8px; }
+  .thd-pop-foot button {
+    flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--gray-pale);
+    cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+
   header.topbar {
     background: linear-gradient(135deg, #1A2060 0%, #2D3481 60%, #4050B5 100%);
     color: #fff;
@@ -621,6 +674,11 @@
     table.cu-table th:nth-child(9), table.cu-table td:nth-child(9) { width: 18%; }  /* ลายเซ็น ~35 mm */
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     #cuCardsFoot { font-size: 10pt; margin-top: 2mm; }
+    /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
+       ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (pelvicDue/reportDay/reportMonth/cuDate อยู่ใต้ .no-print
+       ทั้งหมด) และ .cu-note-sentdate/.cu-note-resend-date มีกฎ print เดิมซ่อน native input + โชว์ span แทนอยู่แล้ว
+       บรรทัดนี้ครอบไว้อีกชั้นให้ชัดเจน กันทุกจุดไม่ให้หลุดไปพิมพ์ */
+    .thd-btn, .thd-pop { display: none !important; }
   }
 </style>
 </head>
@@ -4171,40 +4229,39 @@ function supportsMonthInput() {
   return i.type === 'month';
 }
 
+// รอบ 20 (2026-09-19): เลิกใช้ native <input type=month> เสมอ แม้เบราว์เซอร์จะรองรับ (supportsMonthInput() === true
+// ใน Chrome ทุกเครื่อง) เพราะปฏิทินของมันเป็นภาษาอังกฤษเสมอ ("September 2026") ไม่มีทาง localize — ใช้ fallback
+// เดือน/ปีแบบ dropdown ภาษาไทยที่มีอยู่แล้วเป็นดีฟอลต์ทุกเบราว์เซอร์แทน ⚠ เก็บ supportsMonthInput() ไว้เฉยๆ เผื่อโค้ด/เทสต์อื่นอ้างถึง
+// ตัวเลือกปี: TEXT โชว์ พ.ศ. (ปี+543) แต่ VALUE ยังเป็น ค.ศ. เดิม — getSelectedReportMonth() อ่าน .value ไม่ใช่ .textContent
+// จึงยังคืน 'YYYY-MM' แบบ ค.ศ. เหมือนเดิมทุกประการ (payload ที่ยิงไป Apps Script ไม่เปลี่ยน)
 function initReportMonthPicker() {
   var now = new Date();
   var bkkParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit' }).format(now); // YYYY-MM
-  if (supportsMonthInput()) {
-    qs('reportMonth').value = bkkParts;
-  } else {
-    qs('reportMonth').hidden = true;
-    qs('reportMonthFallback').hidden = false;
-    var monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    var curYear = Number(bkkParts.split('-')[0]);
-    var curMonth = Number(bkkParts.split('-')[1]);
-    var monthSel = qs('reportMonthSel');
-    var yearSel = qs('reportYearSel');
-    monthSel.innerHTML = '';
-    monthNames.forEach(function (name, idx) {
-      var opt = document.createElement('option');
-      opt.value = String(idx + 1);
-      opt.textContent = name;
-      monthSel.appendChild(opt);
-    });
-    monthSel.value = String(curMonth);
-    yearSel.innerHTML = '';
-    for (var y = curYear - 2; y <= curYear + 1; y++) {
-      var yopt = document.createElement('option');
-      yopt.value = String(y);
-      yopt.textContent = String(y);
-      yearSel.appendChild(yopt);
-    }
-    yearSel.value = String(curYear);
+  qs('reportMonth').hidden = true;
+  qs('reportMonthFallback').hidden = false;
+  var curYear = Number(bkkParts.split('-')[0]);
+  var curMonth = Number(bkkParts.split('-')[1]);
+  var monthSel = qs('reportMonthSel');
+  var yearSel = qs('reportYearSel');
+  monthSel.innerHTML = '';
+  THAI_MONTH_NAMES_CU.forEach(function (name, idx) {
+    var opt = document.createElement('option');
+    opt.value = String(idx + 1);
+    opt.textContent = name;
+    monthSel.appendChild(opt);
+  });
+  monthSel.value = String(curMonth);
+  yearSel.innerHTML = '';
+  for (var y = curYear - 2; y <= curYear + 1; y++) {
+    var yopt = document.createElement('option');
+    yopt.value = String(y); // ค.ศ. — payload ต้องใช้ตัวนี้
+    yopt.textContent = String(y + 543); // พ.ศ. — โชว์ให้คนอ่านเท่านั้น
+    yearSel.appendChild(yopt);
   }
+  yearSel.value = String(curYear);
 }
 
 function getSelectedReportMonth() {
-  if (supportsMonthInput()) return qs('reportMonth').value;
   var m = qs('reportMonthSel').value;
   var y = qs('reportYearSel').value;
   if (!m || !y) return '';
@@ -4433,6 +4490,250 @@ function showScreen(name) {
 }
 
 /* =========================================================================
+   10.5 (รอบ 20, 2026-09-19) Thai date picker — เจ้าของสั่ง "ต้องการภาษาไทย"
+   ปฏิทิน native ของ Chrome ที่ผูกกับ <input type=date> เป็นภาษาอังกฤษเสมอ (09/18/2026, September, Su Mo Tu…)
+   และไม่มีทาง localize ด้วย CSS/lang attribute ⇒ ทำปุ่ม+ป็อปอัปของเราเองมาบังปฏิทิน native แทน
+   ⚠ input[type=date] เดิมยังอยู่ใน DOM เป็น source of truth เดียว (ไม่ทำ state คู่ขนาน) — โค้ดเดิมทั้งหมดที่อ่าน/ตั้ง
+   .value และฟัง input/change บน native input ยังทำงานเหมือนเดิมทุกจุด (ดู thdEnhanceInput ด้านล่าง: defineProperty
+   ทับ .value ของ input ตัวนั้นเฉยๆ + ยิง event บน native input เท่านั้น ไม่ได้สร้างช่องเก็บค่าใหม่)
+   ========================================================================= */
+var THD_MONTH_ABBR = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+var THD_WEEKDAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']; // อาทิตย์เริ่มก่อนเสมอ
+var THD_POP = null;       // กล่องป็อปอัป (class thd-pop) เดียวที่ใช้ร่วมกันทุกช่อง (สร้างครั้งแรกตอนเปิดครั้งแรก)
+var THD_POP_INPUT = null; // native input ที่ป็อปอัปกำลังผูกอยู่ตอนนี้ (null = ปิดอยู่)
+var THD_POP_VIEW = null;  // {y, m} เดือน/ปีที่กำลังเลื่อนดูอยู่ในป็อปอัป (m = 1-12, y = ค.ศ.)
+
+function thdPad2(n) { return (n < 10 ? '0' : '') + n; }
+
+function thdParseDate(v) {
+  var parts = String(v || '').split('-');
+  if (parts.length !== 3) return null;
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+  if (!y || !m || !d || m < 1 || m > 12) return null;
+  return { y: y, m: m, d: d };
+}
+
+function thdFormatDisplay(v) {
+  var p = thdParseDate(v);
+  if (!p) return '';
+  return p.d + ' ' + THD_MONTH_ABBR[p.m - 1] + ' ' + (p.y + 543);
+}
+
+function thdDaysInMonth(y, m) { return new Date(y, m, 0).getDate(); } // m = 1-12
+
+// รีเฟรชข้อความปุ่มให้ตรงกับ native input.value ปัจจุบัน (เรียกทุกครั้งที่ value เปลี่ยนไม่ว่าจะจากคนคลิกหรือโค้ดตั้งเอง)
+function thdRefreshButton(input) {
+  var btn = input && input._thdBtn;
+  if (!btn) return;
+  var text = thdFormatDisplay(input.value);
+  if (text) {
+    btn.textContent = text;
+    btn.classList.remove('thd-empty');
+  } else {
+    btn.textContent = 'เลือกวันที่';
+    btn.classList.add('thd-empty');
+  }
+  btn.disabled = !!input.disabled;
+}
+
+function thdOutsideClick(e) {
+  if (!THD_POP || !THD_POP_INPUT) return;
+  if (THD_POP.contains(e.target) || e.target === THD_POP_INPUT._thdBtn) return;
+  thdClosePopup();
+}
+function thdKeydown(e) { if (e.key === 'Escape') thdClosePopup(); }
+
+function thdClosePopup() {
+  if (THD_POP) THD_POP.style.display = 'none';
+  THD_POP_INPUT = null;
+  THD_POP_VIEW = null;
+  document.removeEventListener('mousedown', thdOutsideClick, true);
+  document.removeEventListener('keydown', thdKeydown, true);
+}
+
+function thdEnsurePop() {
+  if (THD_POP) return THD_POP;
+  var pop = document.createElement('div');
+  pop.className = 'thd-pop no-print';
+  pop.style.display = 'none';
+  pop.innerHTML =
+    '<div class="thd-pop-head">' +
+      '<button type="button" data-thd-nav="-1" aria-label="เดือนก่อนหน้า">‹</button>' +
+      '<span class="thd-pop-title"></span>' +
+      '<button type="button" data-thd-nav="1" aria-label="เดือนถัดไป">›</button>' +
+    '</div>' +
+    '<div class="thd-pop-grid thd-pop-wds">' +
+      THD_WEEKDAYS.map(function (w) { return '<div class="thd-pop-wd">' + w + '</div>'; }).join('') +
+    '</div>' +
+    '<div class="thd-pop-grid thd-pop-days"></div>' +
+    '<div class="thd-pop-foot">' +
+      '<button type="button" data-thd-today>วันนี้</button>' +
+      '<button type="button" data-thd-clear>ล้าง</button>' +
+    '</div>';
+  document.body.appendChild(pop);
+  pop.querySelector('[data-thd-nav="-1"]').addEventListener('click', function () { thdNavMonth(-1); });
+  pop.querySelector('[data-thd-nav="1"]').addEventListener('click', function () { thdNavMonth(1); });
+  pop.querySelector('[data-thd-today]').addEventListener('click', function () {
+    if (THD_POP_INPUT) thdSetValue(THD_POP_INPUT, todayStr());
+  });
+  pop.querySelector('[data-thd-clear]').addEventListener('click', function () {
+    if (THD_POP_INPUT) thdSetValue(THD_POP_INPUT, '');
+  });
+  THD_POP = pop;
+  return pop;
+}
+
+function thdNavMonth(delta) {
+  if (!THD_POP_VIEW) return;
+  THD_POP_VIEW.m += delta;
+  if (THD_POP_VIEW.m < 1) { THD_POP_VIEW.m = 12; THD_POP_VIEW.y--; }
+  else if (THD_POP_VIEW.m > 12) { THD_POP_VIEW.m = 1; THD_POP_VIEW.y++; }
+  thdRenderPopup();
+}
+
+function thdRenderPopup() {
+  if (!THD_POP || !THD_POP_INPUT || !THD_POP_VIEW) return;
+  var y = THD_POP_VIEW.y, m = THD_POP_VIEW.m;
+  THD_POP.querySelector('.thd-pop-title').textContent = THAI_MONTH_NAMES_CU[m - 1] + ' ' + (y + 543);
+  var grid = THD_POP.querySelector('.thd-pop-days');
+  var firstWeekday = new Date(y, m - 1, 1).getDay(); // 0 = อา
+  var daysInMonth = thdDaysInMonth(y, m);
+  var todayP = thdParseDate(todayStr());
+  var selP = thdParseDate(THD_POP_INPUT.value);
+  var minP = thdParseDate(THD_POP_INPUT.getAttribute('min'));
+  var maxP = thdParseDate(THD_POP_INPUT.getAttribute('max'));
+  function keyOf(p) { return p ? (p.y * 10000 + p.m * 100 + p.d) : null; }
+  var minKey = keyOf(minP), maxKey = keyOf(maxP);
+  var html = '';
+  for (var i = 0; i < firstWeekday; i++) html += '<div></div>';
+  for (var d = 1; d <= daysInMonth; d++) {
+    var key = y * 10000 + m * 100 + d;
+    var disabled = (minKey !== null && key < minKey) || (maxKey !== null && key > maxKey);
+    var cls = 'thd-pop-day';
+    if (todayP && todayP.y === y && todayP.m === m && todayP.d === d) cls += ' thd-today';
+    if (selP && selP.y === y && selP.m === m && selP.d === d) cls += ' thd-selected';
+    html += '<button type="button" class="' + cls + '" data-thd-day="' + thdPad2(d) + '"' +
+      (disabled ? ' disabled' : '') + '>' + d + '</button>';
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('[data-thd-day]').forEach(function (dayBtn) {
+    dayBtn.addEventListener('click', function () {
+      var dd = dayBtn.getAttribute('data-thd-day');
+      thdSetValue(THD_POP_INPUT, y + '-' + thdPad2(m) + '-' + dd);
+    });
+  });
+}
+
+function thdPositionPopup(btn, pop) {
+  var rect = btn.getBoundingClientRect();
+  var popW = pop.offsetWidth || 280;
+  var popH = pop.offsetHeight || 320;
+  var vw = document.documentElement.clientWidth;
+  var vh = document.documentElement.clientHeight;
+  var left = rect.left;
+  if (left + popW > vw - 8) left = vw - popW - 8;
+  if (left < 8) left = 8;
+  var top = rect.bottom + 4;
+  if (top + popH > vh - 8) {
+    var above = rect.top - popH - 4;
+    top = above >= 8 ? above : Math.max(8, vh - popH - 8);
+  }
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+
+function thdOpenPopup(input) {
+  var btn = input._thdBtn;
+  if (!btn || btn.disabled) return;
+  var pop = thdEnsurePop();
+  THD_POP_INPUT = input;
+  var p = thdParseDate(input.value) || thdParseDate(todayStr());
+  THD_POP_VIEW = { y: p.y, m: p.m };
+  pop.style.display = 'block';
+  thdRenderPopup();
+  thdPositionPopup(btn, pop);
+  document.addEventListener('mousedown', thdOutsideClick, true);
+  document.addEventListener('keydown', thdKeydown, true);
+}
+
+function thdSetValue(input, dateStr) {
+  input.value = dateStr; // ผ่าน defineProperty ของ thdOverrideValueProperty() ⇒ รีเฟรชปุ่มให้เองด้วย
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+  thdClosePopup();
+}
+
+// override .value ของ native input ด้วย getter/setter ที่ห่อ descriptor เดิมของ HTMLInputElement ไว้
+// ⇒ ทุกจุดในโค้ดเดิมที่เขียน input.value = '...' (ensureCuDateDefault, resetLogForm, amendSave ฯลฯ) ยังทำงาน
+// ปกติทุกอย่างเป๊ะ แค่ปุ่มไทยถูกรีเฟรชให้อัตโนมัติไปด้วยเฉยๆ โดยไม่ต้องแก้จุดเรียกเดิมสักที่เดียว
+function thdOverrideValueProperty(input) {
+  var desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  if (!desc || !desc.set || !desc.get) return; // กันไว้เฉยๆ ถ้าเบราว์เซอร์ไหนไม่มี descriptor นี้ (ไม่ควรเกิดขึ้นจริง)
+  Object.defineProperty(input, 'value', {
+    configurable: true,
+    enumerable: true,
+    get: function () { return desc.get.call(input); },
+    set: function (v) { desc.set.call(input, v); thdRefreshButton(input); }
+  });
+}
+
+function thdEnhanceInput(input) {
+  if (!input || input.getAttribute('data-thd') === '1') return;
+  input.setAttribute('data-thd', '1');
+  input.classList.add('thd-native');
+  input.tabIndex = -1; // มีปุ่มไทยที่โฟกัสได้จริงอยู่ข้างๆ แล้ว ไม่ต้องให้ native input แทรกคิว tab ซ้ำ
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'thd-btn no-print';
+  input._thdBtn = btn;
+  if (input.parentNode) input.parentNode.insertBefore(btn, input.nextSibling);
+
+  btn.addEventListener('click', function () { thdOpenPopup(input); });
+  btn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); thdOpenPopup(input); }
+  });
+
+  thdOverrideValueProperty(input);
+  thdRefreshButton(input);
+
+  input.addEventListener('input', function () { thdRefreshButton(input); });
+  input.addEventListener('change', function () { thdRefreshButton(input); });
+
+  // mirror disabled: โค้ดเดิมบางจุดตั้ง .disabled เป็น property ตรงๆ (เช่น resend row ตอนล็อก/ปลดล็อก) —
+  // property `disabled` ของ input เป็น reflected attribute อยู่แล้วตามสเปก HTML ⇒ เปลี่ยนค่า property จะสะท้อนไปที่
+  // attribute เสมอ ⇒ สังเกตแค่ attribute ผ่าน MutationObserver ตัวเดียวก็จับได้ครบทั้ง 2 ทาง (setAttribute ตรงๆ ด้วย)
+  var mo = new MutationObserver(function () { thdRefreshButton(input); });
+  mo.observe(input, { attributes: true, attributeFilter: ['disabled'] });
+}
+
+function thdEnhanceAll(root) {
+  (root || document).querySelectorAll('input[type="date"]:not([data-thd])').forEach(function (input) {
+    thdEnhanceInput(input);
+  });
+}
+
+// ช่องวันที่ที่ถูก render ซ้ำเป็น HTML string บ่อยๆ (.cu-note-sentdate / .cu-note-resend-date) ต้องจับด้วย
+// MutationObserver บน document.body แทนการเรียก thdEnhanceAll ซ้ำเองทุกจุดที่ render — cheap เพราะสแกนแค่
+// node ที่เพิ่งถูกเพิ่มเข้ามาจริงๆ ไม่ได้ query ทั้งหน้าใหม่ทุกครั้ง
+function thdWatchDynamic() {
+  var mo = new MutationObserver(function (mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      var added = mutations[i].addedNodes;
+      for (var j = 0; j < added.length; j++) {
+        var node = added[j];
+        if (!node || node.nodeType !== 1) continue;
+        if (node.matches && node.matches('input[type="date"]') && node.getAttribute('data-thd') !== '1') {
+          thdEnhanceInput(node);
+        }
+        if (node.querySelectorAll) thdEnhanceAll(node);
+      }
+    }
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+}
+
+/* =========================================================================
    11. Bootstrap
    ========================================================================= */
 document.addEventListener('DOMContentLoaded', function () {
@@ -4590,6 +4891,11 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   tryRestoreSession();
+
+  // รอบ 20 (2026-09-19): Thai date picker — enhance ช่อง input[type=date] คงที่ทั้งหมดที่มีอยู่ตอนโหลดหน้า
+  // แล้วตั้ง MutationObserver ไว้จับช่องที่ยัง render เพิ่มเข้ามาทีหลัง (.cu-note-sentdate/.cu-note-resend-date)
+  thdEnhanceAll(document);
+  thdWatchDynamic();
 });
 </script>
 
