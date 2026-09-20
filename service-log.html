@@ -242,6 +242,11 @@
     background: #FFF8E8; border: 1px solid #F0C040; color: #7A5A00;
     border-radius: 8px; padding: 6px 10px; margin-top: 4px; font-size: 13px; font-weight: 600;
   }
+  /* เจ้าของสั่ง 2026-09-20: ป้ายบอกว่า "ระบบเลือกเพศให้เอง" — โทนข้อมูล ไม่ใช่โทนเตือน จึงแยกสีจาก field-hint-warn */
+  .field-hint-auto {
+    background: #E8F2FF; border: 1px solid #7FB0F0; color: #14497A;
+    border-radius: 8px; padding: 6px 10px; margin-top: 4px; font-size: 13px; font-weight: 600;
+  }
   /* เจ้าของสั่ง 2026-09-13: "ดูด้วยตาเปล่าไม่ออกว่าพิมพ์ภาษาไทยไว้ เจ้าหน้าที่จะคิดว่าระบบบัค"
      สาเหตุ: สระ/วรรณยุกต์ไทย (◌ิ ◌ี ◌ั ◌่ ◌้ ◌์ ...) เป็นอักขระที่ "เกาะ" ตัวหน้า ไม่กินที่ ไม่มีรูปของตัวเอง
      ⇒ ช่องที่มี "NN1234" + สระไทยซ่อนอยู่ จะดูเหมือน NN1234 เฉย ๆ ทั้งที่ค่าจริงไม่ใช่
@@ -495,6 +500,10 @@
   #progButtons, #pelvicButtons { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
   #svcCheckup .opt-btn { justify-content: flex-start; padding: 12px 12px; }
   .prog-btn input:checked ~ .prog-check::before { content: "✓ "; font-weight: 800; }
+  /* เจ้าของสั่ง 2026-09-20: แถวปุ่มคำนำหน้า — grid ที่ยืดตามจอ ต้องไม่ล้นแนวนอนที่จอแคบ (390px) */
+  #prefixButtons { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; }
+  #prefixButtons .opt-btn { justify-content: center; text-align: center; font: inherit; color: inherit; }
+  #prefixButtons .opt-btn.is-active { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
 
   /* รอบ 8 (B7) — ช่องลายเซ็นรับเอกสารบนใบพิมพ์รายชื่อตรวจสุขภาพรายวัน: กว้าง/สูงพอเซ็นจริงด้วยปากกาบนกระดาษ */
   .cu-sig-line { display: inline-block; width: 100%; min-width: 35mm; border-bottom: 1px solid #000; }
@@ -755,16 +764,22 @@
                 <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
                 <div id="patientHnHint" class="field-hint-warn" hidden></div>
 
+                <!-- เจ้าของแจ้งบั๊ก 2026-09-20: เดิมช่องนี้เป็น input+datalist -- เบราว์เซอร์กรองตัวเลือกตามข้อความ
+                     ที่ค้างอยู่ในช่อง พอมี "นาย" ค้างอยู่ ตัวเลือกที่เหลือมีแค่ "นาย" เอง เลยเลือกตัวอื่นไม่ได้
+                     จนกว่าจะลบข้อความก่อน ⇒ เปลี่ยนเป็นแถวปุ่มกด (แบบเดียวกับ #genderButtons) + ปุ่ม "อื่น ๆ"
+                     #patientPrefix ยังเป็น input ตัวเก็บค่าเดียวเหมือนเดิม (ซ่อนไว้) ห้ามเปลี่ยน id/ลบทิ้ง —
+                     โค้ดที่เหลือทั้งไฟล์ยังอ่าน/เขียน qs('patientPrefix').value เหมือนเดิมทุกจุด -->
                 <label class="field-label" for="patientPrefix" id="patientPrefixLabel">คำนำหน้า</label>
-                <input type="text" id="patientPrefix" list="prefixOptions" autocomplete="off" placeholder="เลือกหรือพิมพ์เอง (ไม่บังคับ)">
-                <datalist id="prefixOptions">
-                  <option value="นาย"></option>
-                  <option value="นาง"></option>
-                  <option value="น.ส."></option>
-                  <option value="Mr."></option>
-                  <option value="Miss"></option>
-                  <option value="Mrs."></option>
-                </datalist>
+                <input type="hidden" id="patientPrefix" autocomplete="off">
+                <div class="row" id="prefixButtons">
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="นาย">นาย</button>
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="นาง">นาง</button>
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="น.ส.">น.ส.</button>
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="ด.ช.">ด.ช.</button>
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="ด.ญ.">ด.ญ.</button>
+                  <button type="button" class="opt-btn prefix-btn" id="prefixOtherBtn" data-prefix="__other__">อื่น ๆ</button>
+                </div>
+                <input type="text" id="patientPrefixOther" autocomplete="off" placeholder="พิมพ์คำนำหน้าเอง เช่น ร.ต.ต.หญิง" hidden style="margin-top:6px;">
 
                 <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
                 <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
@@ -788,6 +803,7 @@
                     <label class="opt-btn"><input type="radio" name="gender" value="male"> ชาย</label>
                     <label class="opt-btn"><input type="radio" name="gender" value="female"> หญิง</label>
                   </div>
+                  <div id="genderAutoHint" class="field-hint-auto" hidden>ℹ ระบบเลือกเพศให้จากคำนำหน้า — กดปุ่มเพศเองได้ถ้าไม่ตรง</div>
 
                   <label class="field-label">โปรแกรม</label>
                   <div class="row" id="progButtons">
@@ -823,7 +839,13 @@
                     <option value="ส่งทางไปรษณีย์">ส่งทางไปรษณีย์</option>
                     <option value="ส่งทาง E-mail">ส่งทาง E-mail</option>
                     <option value="ส่งทาง Whatsapp">ส่งทาง Whatsapp</option>
+                    <option value="นัดรับวันที่">นัดรับวันที่</option>
                   </select>
+
+                  <div id="pickupDateWrap" hidden>
+                    <label class="field-label" for="pickupDate">นัดรับวันที่ *</label>
+                    <input type="date" id="pickupDate">
+                  </div>
 
                   <p class="muted" id="legacyExtraInfo" hidden></p>
 
@@ -1727,6 +1749,72 @@ function isMalePrefix(raw) {
   return MALE_PREFIX_WORDS.indexOf(p) !== -1;
 }
 
+/* เจ้าของสั่ง 2026-09-20: "เลือกคำนำหน้าหญิง/ชาย แล้วไม่ต้องมาเลือกเพศอีก"
+   ตัดสินแบบ: ติ๊กวิทยุเพศให้อัตโนมัติเมื่อคำนำหน้าบอกเพศชัดเจน · ปุ่มเพศยังกดแก้เองได้เสมอ
+   ⚠ ห้ามทับค่าที่เจ้าหน้าที่เลือกเพศไว้เองแล้ว (getSelectedGender() ไม่ว่าง = มีคนเลือกไว้แล้ว ไม่แตะ)
+   เรียกได้เฉพาะตอนผู้ใช้พิมพ์/เลือกคำนำหน้าเองเท่านั้น (listener ของ #patientPrefix) —
+   ห้ามเรียกจาก recalcTotals()/enterEditMode()/ตัวเรียกคืนร่าง ไม่งั้นเปิดแถวเก่ามาแก้จะโดนเปลี่ยนเพศให้เงียบ ๆ */
+function genderFromPrefix_(raw) {
+  if (isFemalePrefix(raw)) return 'female';
+  if (isMalePrefix(raw)) return 'male';
+  return '';
+}
+function setGenderAutoHint(on) {
+  var el = qs('genderAutoHint');
+  if (el) el.hidden = !on;
+}
+function autoGenderFromPrefix() {
+  var want = genderFromPrefix_(qs('patientPrefix').value);
+  // คำนำหน้าไม่บอกเพศแล้ว (ลบทิ้ง/พิมพ์คำกำกวมทับ) — ซ่อนป้าย "ระบบเลือกให้" เสมอ แต่ไม่ไปล้าง/แตะค่าที่ติ๊กไว้
+  // (เช็คก่อน getSelectedGender() ตั้งใจ — ต้องซ่อนป้ายได้แม้เพศจะถูกติ๊กไว้แล้วจากตอนพิมพ์คำนำหน้าก่อนหน้านี้)
+  if (!want) { setGenderAutoHint(false); return false; }
+  if (getSelectedGender()) return false; // มีคนเลือกไว้แล้ว (เองหรือระบบติ๊กให้ก่อนหน้า) ห้ามทับ/ห้ามยุ่งกับป้าย
+  var el = document.querySelector('input[name="gender"][value="' + want + '"]');
+  if (!el) return false;
+  el.checked = true;
+  setGenderAutoHint(true);
+  return true;
+}
+
+/* เจ้าของสั่ง 2026-09-20 (บั๊ก "คำนำหน้าเลือกไม่ได้"): แถวปุ่มกด #prefixButtons + ปุ่ม "อื่น ๆ" ที่เปิดช่องพิมพ์เอง
+   (#patientPrefixOther) แทนช่อง input+datalist เดิม — #patientPrefix ยังเป็นตัวเก็บค่าเดียว (hidden) เหมือนเดิม
+   ⚠ setPatientPrefix() คือทางเดียวที่ควรใช้ "เปลี่ยนค่า" จากปุ่ม/ช่องพิมพ์เอง (ยิง input event ให้ listener เดิม
+   ที่ผูกกับ #patientPrefix ทำงานต่อ — autoGenderFromPrefix + recalcTotals) ส่วน syncPrefixButtons() มีไว้ "อ่าน"
+   ค่าปัจจุบันมาแสดงผลที่ปุ่ม เรียกทุกจุดที่โค้ดเดิมตั้ง #patientPrefix.value ตรง ๆ โดยไม่ผ่าน setPatientPrefix()
+   (resetLogForm / enterEditMode / mergeDraftIntoTodayRecord / ตอนโหลดหน้าครั้งแรก) ไม่งั้นปุ่มค้างสถานะเก่า */
+var PREFIX_BUTTON_VALUES = ['นาย', 'นาง', 'น.ส.', 'ด.ช.', 'ด.ญ.'];
+function setPatientPrefix(value) {
+  var px = qs('patientPrefix');
+  if (!px) return;
+  px.value = value == null ? '' : value;
+  px.dispatchEvent(new Event('input', { bubbles: true }));
+  syncPrefixButtons();
+}
+function syncPrefixButtons() {
+  var val = (qs('patientPrefix').value || '').trim();
+  var otherInput = qs('patientPrefixOther');
+  var otherBtn = qs('prefixOtherBtn');
+  var isKnown = PREFIX_BUTTON_VALUES.indexOf(val) !== -1;
+  document.querySelectorAll('#prefixButtons .prefix-btn[data-prefix]').forEach(function (btn) {
+    if (btn === otherBtn) return;
+    btn.classList.toggle('is-active', isKnown && btn.getAttribute('data-prefix') === val);
+  });
+  if (val && !isKnown) {
+    // ไม่ว่างแต่ไม่ตรงปุ่มไหนเลย (เช่น "ร.ต.ต.หญิง" จากแถวเก่า) -> ปุ่ม "อื่น ๆ" active + โชว์ช่องพิมพ์พร้อมค่านั้น
+    if (otherBtn) otherBtn.classList.add('is-active');
+    if (otherInput) {
+      otherInput.hidden = false;
+      if (otherInput.value !== val) otherInput.value = val; // กันตั้งค่าซ้ำระหว่างผู้ใช้พิมพ์อยู่ (เคอร์เซอร์กระโดด)
+    }
+  } else {
+    // แก้ 2026-09-20 (ตรวจรับ): ถ้าเคอร์เซอร์ยังอยู่ในช่อง "อื่น ๆ" ห้ามซ่อน/ล้างทิ้ง —
+    // ผู้ใช้ที่ลบข้อความจนหมดเพื่อพิมพ์ใหม่จะโดนช่องหายไปกลางคันและหลุดโฟกัส
+    var otherFocused = !!(otherInput && document.activeElement === otherInput);
+    if (otherBtn) otherBtn.classList.toggle('is-active', otherFocused);
+    if (otherInput && !otherFocused) { otherInput.hidden = true; otherInput.value = ''; }
+  }
+}
+
 var THAI_CHAR_RE = /[ก-๙]/;
 /* เจ้าของสั่ง 2026-09-12: เตือนที่ตัวช่อง HN ทันที (ไม่ใช่แค่ท้ายฟอร์มใต้ยอดรวม) เพราะเคสที่เจอบ่อยคือ
    เจ้าหน้าที่ลืมเปลี่ยนแป้นพิมพ์ พิมพ์ HN เป็นภาษาไทยไปทั้งช่อง กว่าจะเห็น error ท้ายฟอร์มก็กรอกอย่างอื่นจนจบแล้ว
@@ -1989,6 +2077,24 @@ function updatePelvicSection(checkupOn, gender) {
   }
 }
 
+/* รอบ 21 (2026-09-20, เจ้าของสั่ง "ช่องทางการรับผล เพิ่ม นัดรับวันที่"):
+   ค่าช่องทางนี้ต้องสะกดตรงกับ DELIVERY_METHODS ฝั่ง Apps Script เป๊ะ ไม่งั้น normDeliveryMethod_ ปัดทิ้งเป็นค่าว่าง
+   ประกาศไว้ที่เดียวตรงนี้ ห้ามพิมพ์สตริงนี้ซ้ำที่อื่นในไฟล์ */
+var DELIVERY_PICKUP_APPOINTMENT = 'นัดรับวันที่';
+
+/* รอบ 21: ช่อง "นัดรับวันที่" — โผล่เฉพาะตอนเลือกช่องทางรับผลเป็น 'นัดรับวันที่'
+   ซ่อนเมื่อไหร่ต้องล้างค่าจริงด้วย (กติกาเดียวกับ updatePelvicDueVisibility ข้างล่าง — กันค่าที่มองไม่เห็นหลุดไปกับ payload) */
+function updatePickupDateVisibility(deliveryMethod) {
+  var wrap = qs('pickupDateWrap');
+  if (!wrap) return;
+  var show = (deliveryMethod === DELIVERY_PICKUP_APPOINTMENT);
+  wrap.hidden = !show;
+  if (!show) {
+    var input = qs('pickupDate');
+    if (input) input.value = '';
+  }
+}
+
 /* รอบ 19 (2026-09-18): ช่อง "ส่งออกผลภายในวันที่" — โผล่เฉพาะตอนตรวจภายในถูกเลือกจริง (pelvic ต้องไม่ใช่ 'no')
    ซ่อนเมื่อไหร่ต้องล้างค่าจริงด้วยเหมือน updatePelvicSection ข้างบน (กันค่าที่มองไม่เห็นหลุดไปกับ payload) */
 function updatePelvicDueVisibility(pelvic) {
@@ -2106,6 +2212,10 @@ function validateForm(ctx) {
     // รอบ 19 (2026-09-18): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4/วัคซีน ข้างบน — ห้ามบังคับฝั่งเซิร์ฟเวอร์
     // เพราะจะแก้ไขแถวเก่าที่ยังไม่มีวันที่นี้ไม่ได้เลย)
     msg = 'ตรวจภายในต้องกรอกวันที่ส่งออกผล';
+  } else if (ctx.checkupOn && ctx.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT && !ctx.pickupDate) {
+    // รอบ 21 (2026-09-20): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ pelvicDue/HN/วัคซีน —
+    // ถ้าบังคับที่เซิร์ฟเวอร์ แถวเก่าที่ยังไม่มีค่านี้จะกลายเป็นแถวที่แก้ไขไม่ได้เลย)
+    msg = 'เลือกช่องทาง "นัดรับวันที่" แล้วต้องกรอกวันที่นัดรับ';
   } else if (ctx.vaccineOn && !ctx.patientHn) {
     // เจ้าของสั่ง 2026-09-18 — บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4 ข้างบน: แถวเก่าไม่มี HN ต้องยังแก้ไขได้ที่เซิร์ฟเวอร์)
     msg = 'วัคซีนต้องกรอก HN ก่อนบันทึก';
@@ -2234,6 +2344,10 @@ function recalcTotals() {
   var patientHn = (qs('patientHn').value || '').trim();
   var queue = (qs('queueSelect') ? qs('queueSelect').value : '') || '';
   var deliveryMethod = (qs('deliveryMethod') ? qs('deliveryMethod').value : '') || '';
+  // รอบ 21 (2026-09-20): แสดง/ซ่อน+ล้างช่องวันนัดรับตามช่องทางล่าสุดเสมอ (แพตเทิร์นเดียวกับ updatePelvicDueVisibility)
+  updatePickupDateVisibility(deliveryMethod);
+  var pickupDateEl = qs('pickupDate');
+  var pickupDate = (deliveryMethod === DELIVERY_PICKUP_APPOINTMENT) ? ((pickupDateEl && pickupDateEl.value) || '') : '';
 
   var checkupAmountNum = getCheckupAmountNum();
   var checkupTotal = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
@@ -2269,7 +2383,8 @@ function recalcTotals() {
     specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn,
     patientName: patientName, patientHn: patientHn,
     queue: queue, deliveryMethod: deliveryMethod,
-    pelvic: pelvic, pelvicDue: pelvicDue // รอบ 19 (2026-09-18)
+    pelvic: pelvic, pelvicDue: pelvicDue, // รอบ 19 (2026-09-18)
+    pickupDate: pickupDate // รอบ 21 (2026-09-20)
   });
 
   return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
@@ -2317,11 +2432,15 @@ function resetLogForm() {
   qs('logForm').reset();
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === 'no'); });
   qs('pelvicDue').value = ''; // รอบ 19 (2026-09-18)
+  if (qs('pickupDate')) qs('pickupDate').value = ''; // รอบ 21 (2026-09-20)
+  updatePickupDateVisibility(''); // ซ่อนช่องวันนัดกลับไปด้วย ไม่ใช่แค่ล้างค่า
   qs('queueSelect').value = '';
   qs('patientName').value = '';
   qs('patientHn').value = '';
   qs('patientPrefix').value = '';
+  syncPrefixButtons(); // ล้างร่างแล้วปุ่มคำนำหน้า/ช่อง "อื่น ๆ" ต้องกลับเป็นค่าว่างตามไปด้วย
   updateHnHint();
+  setGenderAutoHint(false); // เจ้าของสั่ง 2026-09-20: ล้างร่างแล้วต้องซ่อนป้าย "ระบบเลือกเพศให้" ด้วย
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
@@ -2362,11 +2481,17 @@ function enterEditMode(rec) {
   document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = hasCheckup && (r.value === String(rec.program)); });
   var genderVal = genderFromThai(rec.gender);
   document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = hasCheckup && (r.value === genderVal); });
+  // เจ้าของสั่ง 2026-09-20: เพศของแถวเก่ามาจากข้อมูลจริง ไม่ใช่ระบบเดา ⇒ ไม่ต้องโชว์ป้าย "ระบบเลือกให้"
+  setGenderAutoHint(false);
 
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
   var pelvicDueEditEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
   if (pelvicDueEditEl) pelvicDueEditEl.value = rec.pelvicDue || '';
+  // รอบ 21 (2026-09-20): ต้องเซ็ตค่า "ก่อน" เรียก updatePickupDateVisibility ไม่งั้นค่าที่เพิ่งเติมโดนล้างทิ้ง
+  var pickupEditEl = qs('pickupDate');
+  if (pickupEditEl) pickupEditEl.value = rec.pickupDate || '';
+  updatePickupDateVisibility(rec.deliveryMethod || '');
 
   var checkupAmountVal = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
   qs('checkupAmount').value = hasCheckup ? String(checkupAmountVal) : '';
@@ -2374,6 +2499,7 @@ function enterEditMode(rec) {
   qs('patientName').value = rec.patientName || '';
   qs('patientHn').value = rec.patientHn || '';
   qs('patientPrefix').value = rec.patientPrefix || '';
+  syncPrefixButtons(); // เปิดแถวเก่ามาแก้ไข -- ปุ่มคำนำหน้าต้อง sync ตามค่าจริงของแถวนั้น
   updateHnHint();
   qs('deliveryMethod').value = rec.deliveryMethod || '';
 
@@ -2447,6 +2573,9 @@ function mergeDraftIntoTodayRecord(rec, draft) {
     document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (draft.pelvic || 'no')); });
     var pelvicDueMergeEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
     if (pelvicDueMergeEl) pelvicDueMergeEl.value = draft.pelvicDue || '';
+    var pickupMergeEl = qs('pickupDate'); // รอบ 21 (2026-09-20)
+    if (pickupMergeEl) pickupMergeEl.value = draft.pickupDate || '';
+    updatePickupDateVisibility(draft.deliveryMethod || '');
     qs('checkupAmount').value = String(draft.checkupAmount || 0);
     qs('deliveryMethod').value = draft.deliveryMethod || '';
   }
@@ -2484,6 +2613,7 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   if (!(qs('patientPrefix').value || '').trim() && draft.patientPrefix) {
     qs('patientPrefix').value = draft.patientPrefix;
   }
+  syncPrefixButtons(); // ค่าคำนำหน้าอาจเปลี่ยนจากบรรทัดข้างบน -- ปุ่มต้อง sync ตาม
 
   applyVaccineFilter();
   applyLogLocks();
@@ -2525,6 +2655,11 @@ function onSubmitLog(e) {
   var patientHn = (qs('patientHn').value || '').trim();
   var patientPrefix = (qs('patientPrefix').value || '').trim();
   var deliveryMethod = checkupOn ? (qs('deliveryMethod').value || '') : '';
+  // รอบ 21 (2026-09-20): ส่งคีย์ pickupDate ทุกครั้ง — ค่าจริงเฉพาะตอนช่องทาง = 'นัดรับวันที่'
+  // 🐞 กับดักที่เจอจริงตอนเขียนเทสต์: ถ้าไม่ประกาศตัวแปรนี้ในฟังก์ชัน ชื่อ pickupDate จะไปตรงกับ
+  // ตัวแปร global ที่เบราว์เซอร์สร้างให้อัตโนมัติจาก id ของ element (window.pickupDate = ตัว input)
+  // ⇒ payload ส่ง "ตัว DOM element" ออกไปแทนสตริงวันที่ โดยไม่มี error ให้เห็นเลย
+  var pickupDate = (deliveryMethod === DELIVERY_PICKUP_APPOINTMENT) ? ((qs('pickupDate') && qs('pickupDate').value) || '') : '';
   // รอบ 9 (ก้อน B, B6): ไม่มี element sp_sent_*/sp_back_*/sp_prep_* ให้อ่านจาก DOM แล้ว — ส่ง STATE.editSpecial*
   // กลับไปแทน (มีค่าเฉพาะตอนแก้ไขแถวเก่าที่เคยมีสถานะอยู่ก่อน · บันทึกรายใหม่เป็น [] เสมอเพราะ exitEditMode() ล้างไว้)
   var specialSentIds = STATE.editSpecialSent || [];
@@ -2552,6 +2687,7 @@ function onSubmitLog(e) {
       if (window.confirm(mergeConfirmMsg)) {
         mergeDraftIntoTodayRecord(existingTodayRec, {
           program: program, genderDom: genderDom, pelvic: pelvic, pelvicDue: pelvicDue, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
+          pickupDate: pickupDate, // รอบ 21 (2026-09-20)
           vaccineCodes: vaccineCodes, medCert5: medCert5, medCertDriver: medCertDriver,
           medCertLabCount: medCertLabCount, medCertLabAmount: medCertLabAmount,
           specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix
@@ -2570,6 +2706,9 @@ function onSubmitLog(e) {
     gender: gender,
     pelvic: pelvic,
     pelvicDue: pelvicDue, // รอบ 19 (2026-09-18)
+    // รอบ 21 (2026-09-20): ส่งคีย์ pickupDate ทุกครั้ง — ค่าจริงเฉพาะตอนช่องทางเป็น 'นัดรับวันที่'
+    // (ฝั่งเซิร์ฟเวอร์: ไม่มีคีย์ = คงค่าเดิมในชีต · มีคีย์ค่าว่าง = ล้างค่า ⇒ ต้องส่งเสมอเพื่อให้ "สลับช่องทางแล้วล้าง" ทำงาน)
+    pickupDate: pickupDate,
     checkupAmount: checkupAmount,
     patientName: patientName,
     patientHn: patientHn,
@@ -2658,6 +2797,8 @@ function summarizeRecordParts(rec) {
   // หรือในใบรายชื่อผู้รับบริการตรวจสุขภาพ) — ใช้คำเดียวกับป้ายในฟอร์มคือ "ช่องทางรับผล"
   // ค่านี้มีเฉพาะแถวที่มีโปรแกรมตรวจสุขภาพ (เซิร์ฟเวอร์เก็บ '' เมื่อไม่มีโปรแกรม) จึงไม่ต้องเช็ค program ซ้ำ
   if (rec.deliveryMethod) parts.push('ช่องทางรับผล : ' + rec.deliveryMethod);
+  // รอบ 21 (2026-09-20): วันที่นัดรับ — ต่อท้ายช่องทางทันที (มีเฉพาะแถวที่ช่องทาง = 'นัดรับวันที่')
+  if (rec.pickupDate) parts.push('นัดรับวันที่ ' + formatThaiDate(rec.pickupDate));
   if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
   if (rec.vaccineCount) parts.push('วัคซีน ' + rec.vaccineCount + ' เข็ม');
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
@@ -3722,7 +3863,10 @@ function renderCheckupTable(records, dateStr) {
         // รอบ 19 (2026-09-18): ไม่เพิ่มคอลัมน์ใหม่ (A4 แคบเกินไปแล้ว) — ใส่เป็นบรรทัดย่อยในช่องตรวจภายในแทน
         (rec.pelvicDue ? '<div class="cu-sub">ส่งผลภายใน ' + escHtml(formatThaiDate(rec.pelvicDue)) + '</div>' : '') +
       '</td>' +
-      '<td>' + escHtml(rec.deliveryMethod || '—') + '</td>' +
+      '<td>' + escHtml(rec.deliveryMethod || '—') +
+        // รอบ 21 (2026-09-20): ไม่เพิ่มคอลัมน์ใหม่ (A4 แคบ — บทเรียนรอบ 19) ใส่เป็นบรรทัดย่อยในช่องช่องทางรับผลแทน
+        (rec.pickupDate ? '<div class="cu-sub">นัดรับ ' + escHtml(formatThaiDate(rec.pickupDate)) + '</div>' : '') +
+      '</td>' +
       '<td>' + money(amt) + '</td>' +
       '<td class="cu-sig-cell">' + sigCell + '</td>' +
       '</tr>';
@@ -3770,6 +3914,8 @@ function renderCheckupCards(records, dateStr) {
         // รอบ 19 (2026-09-18): ขึ้นเฉพาะแถวที่มีค่า (pelvic ≠ 'no')
         (rec.pelvicDue ? '<div class="cu-line">ส่งออกผลภายในวันที่ : ' + escHtml(formatThaiDate(rec.pelvicDue)) + '</div>' : '') +
         '<div class="cu-line">ช่องทางการส่ง : ' + escHtml(rec.deliveryMethod || '—') + '</div>' +
+        // รอบ 21 (2026-09-20): ขึ้นเฉพาะแถวที่มีค่า (ช่องทาง = 'นัดรับวันที่')
+        (rec.pickupDate ? '<div class="cu-line">นัดรับวันที่ : ' + escHtml(formatThaiDate(rec.pickupDate)) + '</div>' : '') +
         (isWaitPickup
           ? '<div class="cu-line cu-sign">เซ็นรับ <span class="cu-sig-line"></span></div>'
           : '') +
@@ -3799,7 +3945,9 @@ function resendMethodOptions() {
   if (!sel) return [];
   var out = [];
   for (var i = 0; i < sel.options.length; i++) {
-    if (sel.options[i].value) out.push(sel.options[i].value);
+    // รอบ 21 (2026-09-20): ข้าม 'นัดรับวันที่' — ช่องนี้เก็บแค่ "ช่องทางที่ส่งซ้ำ" ไม่มีที่เก็บวันที่นัดต่อครั้ง
+    // ถ้าปล่อยให้เลือกได้จะได้ข้อความ "นัดรับวันที่" ลอย ๆ โดยไม่มีวันที่ ซึ่งอ่านแล้วเข้าใจผิด
+    if (sel.options[i].value && sel.options[i].value !== DELIVERY_PICKUP_APPOINTMENT) out.push(sel.options[i].value);
   }
   return out;
 }
@@ -4772,7 +4920,12 @@ document.addEventListener('DOMContentLoaded', function () {
   // รอบ 9 (ก้อน B, B7) — radio program/checkbox วัคซีน/medCert*/checkbox sp_reg_* sync คิวด้วย ช่องอื่นไม่ต้อง
   document.querySelectorAll('input[name="program"]').forEach(function (r) { r.addEventListener('change', onServiceFieldChange); });
   document.querySelectorAll('input[name="gender"]').forEach(function (r) {
-    r.addEventListener('change', recalcTotals);
+    r.addEventListener('change', function () {
+      // เจ้าของสั่ง 2026-09-20: เจ้าหน้าที่กดปุ่มเพศเอง = ตัดสินใจเองแล้ว ซ่อนป้าย "ระบบเลือกให้" ทันที
+      // (ไม่ต้องเช็คว่าค่าที่กดตรงกับที่ autoGenderFromPrefix() จะเดาไหม — กดเองคือกดเอง)
+      setGenderAutoHint(false);
+      recalcTotals();
+    });
   });
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.addEventListener('change', recalcTotals); });
   // แก้ 2026-09-08: queueSelect เป็น <input list> แล้ว ต้องฟัง 'input' ด้วยไม่ใช่แค่ 'change' (ผู้ใช้พิมพ์เองได้)
@@ -4783,7 +4936,45 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('checkupAmount').addEventListener('input', recalcTotals);
   // เพิ่ม 2026-09-13: ช่องคำนำหน้าตอนสร้าง (09-12) ไม่มี listener — ตอนนั้นไม่มีด่านจึงยังไม่เป็นไร
   // ตอนนี้มีด่านเพศแล้ว ถ้าไม่ผูก listener คำเตือนจะไม่ขึ้นจนกว่าผู้ใช้จะไปแตะช่องอื่น (พันธุ์เดียวกับบั๊ก #vaccineWithCheckup)
-  ['input', 'change'].forEach(function (ev) { qs('patientPrefix').addEventListener(ev, recalcTotals); });
+  // แก้ 2026-09-20: เพิ่ม autoGenderFromPrefix() — ต้องรันก่อน recalcTotals() เสมอ เพราะ recalcTotals()
+  // อ่าน getSelectedGender() สดเพื่อโชว์แผงตรวจภายใน/ล็อก MMG/คิดยอดเงิน ถ้าเรียกสลับกันหน้าจอจะช้าไป 1 จังหวะ
+  // เพิ่ม syncPrefixButtons() วันเดียวกัน — เทสต์เก่าบางไฟล์ยังตั้งค่า #patientPrefix.value ตรง ๆ แล้วยิง
+  // 'input' เอง (ไม่ผ่าน setPatientPrefix()) ปุ่มจึงต้อง sync ผ่าน listener นี้ด้วยไม่ใช่แค่ทางเดียวจาก setPatientPrefix()
+  ['input', 'change'].forEach(function (ev) {
+    qs('patientPrefix').addEventListener(ev, function () { autoGenderFromPrefix(); syncPrefixButtons(); recalcTotals(); });
+  });
+  // แถวปุ่มคำนำหน้า (#prefixButtons) — แก้บั๊ก 2026-09-20 "เลือกคำนำหน้าไม่ได้" (ดูคอมเมนต์ที่ setPatientPrefix())
+  document.querySelectorAll('#prefixButtons .prefix-btn[data-prefix]').forEach(function (btn) {
+    if (btn.id === 'prefixOtherBtn') return; // ปุ่ม "อื่น ๆ" ผูก listener แยกด้านล่าง (ไม่เปลี่ยนค่าทันทีที่คลิก)
+    btn.addEventListener('click', function () {
+      var val = btn.getAttribute('data-prefix');
+      var current = (qs('patientPrefix').value || '').trim();
+      // คลิกปุ่มที่ active อยู่ซ้ำ = ยกเลิกเลือก (ค่ากลับเป็นว่าง)
+      if (btn.classList.contains('is-active') && current === val) { setPatientPrefix(''); }
+      else { setPatientPrefix(val); }
+    });
+  });
+  var prefixOtherBtnEl = qs('prefixOtherBtn');
+  if (prefixOtherBtnEl) {
+    prefixOtherBtnEl.addEventListener('click', function () {
+      // เจ้าของสั่ง: คลิก "อื่น ๆ" แค่เปิดช่องพิมพ์ + focus — ค่ายังเป็นค่าเดิมจนกว่าจะพิมพ์ (ไม่เรียก setPatientPrefix())
+      var otherInput = qs('patientPrefixOther');
+      if (!otherInput) return;
+      // แก้ 2026-09-20 (ตรวจรับ): ค่าเดิมเป็นคำนำหน้าสำเร็จรูป -> ล้างทิ้งก่อน เพื่อให้สิ่งที่เห็น (ปุ่ม "อื่น ๆ")
+      // ตรงกับค่าจริงใน #patientPrefix เสมอ · ถ้าเป็นข้อความพิมพ์เองอยู่แล้ว (เช่น "ร.ต.ต.หญิง") ให้คงไว้ให้แก้ต่อ
+      if (PREFIX_BUTTON_VALUES.indexOf((qs('patientPrefix').value || '').trim()) !== -1) setPatientPrefix('');
+      otherInput.hidden = false;
+      document.querySelectorAll('#prefixButtons .prefix-btn[data-prefix]').forEach(function (b) {
+        b.classList.toggle('is-active', b === prefixOtherBtnEl);
+      });
+      otherInput.focus();
+    });
+  }
+  var prefixOtherInputEl = qs('patientPrefixOther');
+  if (prefixOtherInputEl) {
+    prefixOtherInputEl.addEventListener('input', function () { setPatientPrefix(prefixOtherInputEl.value); });
+  }
+  syncPrefixButtons(); // สถานะเริ่มต้นตอนโหลดหน้า (ปกติค่าว่างอยู่แล้ว แต่ sync ไว้กันกรณีค่าเริ่มต้นเปลี่ยนในอนาคต)
   qs('deliveryMethod').addEventListener('change', recalcTotals);
   // 🐞 แก้ 2026-09-13: ช่องนี้ไม่เคยมี listener มาตั้งแต่วันที่สร้าง (2026-09-11) ⇒ ติ๊ก/ติ๊กออกด้วยมือแล้ว
   // ยอดรวมกับป้ายราคาไม่เปลี่ยน (ค้างเรตเดิม) ทั้งที่ onSubmitLog() อ่าน .checked สด ๆ ⇒ ยอดบนจอ ≠ ยอดที่ลงชีต
