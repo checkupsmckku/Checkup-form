@@ -1649,8 +1649,9 @@ function updatePersonCardLabels() {
   var needPerson = checkupOn || isSpecialOn();
 
   if (queueLabelEl) queueLabelEl.textContent = checkupOn ? 'คิว *' : 'คิว';
-  // เจ้าของสั่ง 2026-09-18: วัคซีนบังคับ HN (ชื่อ-สกุลไม่บังคับ) — คู่กับด่านใน validateForm()
-  var needHn = needPerson || isVaccineOn();
+  // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN)
+  // ⇒ HN บังคับเฉพาะตรวจสุขภาพ/ส่งตรวจพิเศษเหมือนเดิม (เดิมเคยบังคับวัคซีนด้วยตามคำสั่ง 2026-09-18)
+  var needHn = needPerson;
   if (hnLabelEl) hnLabelEl.textContent = needHn ? 'HN *' : 'HN';
   if (nameLabelEl) nameLabelEl.textContent = needPerson ? 'ชื่อ-นามสกุลผู้รับบริการ *' : 'ชื่อ-นามสกุลผู้รับบริการ';
   if (hnEl) hnEl.placeholder = needHn ? reqPh : normalPh;
@@ -1751,7 +1752,9 @@ function isMalePrefix(raw) {
 
 /* เจ้าของสั่ง 2026-09-20: "เลือกคำนำหน้าหญิง/ชาย แล้วไม่ต้องมาเลือกเพศอีก"
    ตัดสินแบบ: ติ๊กวิทยุเพศให้อัตโนมัติเมื่อคำนำหน้าบอกเพศชัดเจน · ปุ่มเพศยังกดแก้เองได้เสมอ
-   ⚠ ห้ามทับค่าที่เจ้าหน้าที่เลือกเพศไว้เองแล้ว (getSelectedGender() ไม่ว่าง = มีคนเลือกไว้แล้ว ไม่แตะ)
+   แก้ 2026-09-21: เดิม "getSelectedGender() ไม่ว่าง = ห้ามทับ" ทำให้เปลี่ยนใจคำนำหน้า (นาย→นาง) แล้ว
+   เพศที่ระบบติ๊กให้ไว้ก่อนหน้าไม่ยอมเปลี่ยนตาม ⇒ เปลี่ยนเป็นดู GENDER_AUTO_PICKED แทน:
+   เพศที่ "ระบบเดา" ไว้ ทับได้เสมอเมื่อคำนำหน้าใหม่บอกเพศอื่น · เพศที่ "เจ้าหน้าที่กดเอง" ห้ามทับเหมือนเดิม
    เรียกได้เฉพาะตอนผู้ใช้พิมพ์/เลือกคำนำหน้าเองเท่านั้น (listener ของ #patientPrefix) —
    ห้ามเรียกจาก recalcTotals()/enterEditMode()/ตัวเรียกคืนร่าง ไม่งั้นเปิดแถวเก่ามาแก้จะโดนเปลี่ยนเพศให้เงียบ ๆ */
 function genderFromPrefix_(raw) {
@@ -1763,15 +1766,21 @@ function setGenderAutoHint(on) {
   var el = qs('genderAutoHint');
   if (el) el.hidden = !on;
 }
+// true = เพศปัจจุบันมาจากการเดาของระบบ (autoGenderFromPrefix) ⇒ คำนำหน้าเปลี่ยนแล้วทับได้
+// false = เจ้าหน้าที่กดเพศเอง หรือเพศมาจากข้อมูลแถวเก่า/ร่าง ⇒ ห้ามทับ
+var GENDER_AUTO_PICKED = false;
 function autoGenderFromPrefix() {
   var want = genderFromPrefix_(qs('patientPrefix').value);
   // คำนำหน้าไม่บอกเพศแล้ว (ลบทิ้ง/พิมพ์คำกำกวมทับ) — ซ่อนป้าย "ระบบเลือกให้" เสมอ แต่ไม่ไปล้าง/แตะค่าที่ติ๊กไว้
   // (เช็คก่อน getSelectedGender() ตั้งใจ — ต้องซ่อนป้ายได้แม้เพศจะถูกติ๊กไว้แล้วจากตอนพิมพ์คำนำหน้าก่อนหน้านี้)
+  // ⚠ ห้ามล้าง GENDER_AUTO_PICKED ตรงนี้ — เพศที่ค้างอยู่ยังเป็นของระบบ ถ้าพิมพ์คำนำหน้าที่บอกเพศทีหลังต้องทับได้
   if (!want) { setGenderAutoHint(false); return false; }
-  if (getSelectedGender()) return false; // มีคนเลือกไว้แล้ว (เองหรือระบบติ๊กให้ก่อนหน้า) ห้ามทับ/ห้ามยุ่งกับป้าย
+  var cur = getSelectedGender();
+  if (cur && !GENDER_AUTO_PICKED) return false; // เจ้าหน้าที่เลือกเอง/มาจากแถวเก่า — ห้ามทับ (ด่านใน validateForm() จะเตือนแทน)
   var el = document.querySelector('input[name="gender"][value="' + want + '"]');
   if (!el) return false;
   el.checked = true;
+  GENDER_AUTO_PICKED = true;
   setGenderAutoHint(true);
   return true;
 }
@@ -2216,9 +2225,8 @@ function validateForm(ctx) {
     // รอบ 21 (2026-09-20): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ pelvicDue/HN/วัคซีน —
     // ถ้าบังคับที่เซิร์ฟเวอร์ แถวเก่าที่ยังไม่มีค่านี้จะกลายเป็นแถวที่แก้ไขไม่ได้เลย)
     msg = 'เลือกช่องทาง "นัดรับวันที่" แล้วต้องกรอกวันที่นัดรับ';
-  } else if (ctx.vaccineOn && !ctx.patientHn) {
-    // เจ้าของสั่ง 2026-09-18 — บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4 ข้างบน: แถวเก่าไม่มี HN ต้องยังแก้ไขได้ที่เซิร์ฟเวอร์)
-    msg = 'วัคซีนต้องกรอก HN ก่อนบันทึก';
+  // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN) — เดิมมีด่าน
+  // ctx.vaccineOn && !ctx.patientHn อยู่ตรงนี้ ตอนนี้ลบทิ้งแล้ว (ด่านรูปแบบ HN ด้านล่างยังทำงานเหมือนเดิมถ้ากรอกมาผิด)
   } else if (ctx.labCount > 0 && ctx.labAmount <= 0) {
     msg = 'กรุณากรอกยอดเงินใบรับรองมี lab';
   } else if (ctx.labAmount > 0 && ctx.labCount <= 0) {
@@ -2233,6 +2241,9 @@ function validateForm(ctx) {
     // ⚠ ใช้ getSelectedGender() ดิบ ไม่ใช่ ctx.gender — ctx.gender เป็น checkupOn ? getSelectedGender() : ''
     //   ⇒ เลือกเพศชายไว้แต่ยังไม่ได้เลือกโปรแกรม จะได้ '' แล้วด่านนี้หลุด (บทเรียนเดียวกับด่าน MMG ข้างบน)
     msg = 'คำนำหน้า "' + String(qs('patientPrefix').value).trim() + '" เป็นของผู้หญิง แต่เลือกเพศชายไว้ — แก้อย่างใดอย่างหนึ่งก่อนบันทึก';
+  } else if (getSelectedGender() === 'female' && isMalePrefix(qs('patientPrefix').value)) {
+    // เพิ่ม 2026-09-21 (คู่ขนานกับด่านข้างบน — เดิมมีเฉพาะทาง "ชาย + คำนำหน้าหญิง" ทางเดียว)
+    msg = 'คำนำหน้า "' + String(qs('patientPrefix').value).trim() + '" เป็นของผู้ชาย แต่เลือกเพศหญิงไว้ — แก้อย่างใดอย่างหนึ่งก่อนบันทึก';
   }
 
   if (msg) {
@@ -2440,6 +2451,7 @@ function resetLogForm() {
   qs('patientPrefix').value = '';
   syncPrefixButtons(); // ล้างร่างแล้วปุ่มคำนำหน้า/ช่อง "อื่น ๆ" ต้องกลับเป็นค่าว่างตามไปด้วย
   updateHnHint();
+  GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: reset แล้วกติกา "ห้ามทับ" ต้องกลับเป็นเริ่มต้นด้วย
   setGenderAutoHint(false); // เจ้าของสั่ง 2026-09-20: ล้างร่างแล้วต้องซ่อนป้าย "ระบบเลือกเพศให้" ด้วย
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
@@ -2482,6 +2494,7 @@ function enterEditMode(rec) {
   var genderVal = genderFromThai(rec.gender);
   document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = hasCheckup && (r.value === genderVal); });
   // เจ้าของสั่ง 2026-09-20: เพศของแถวเก่ามาจากข้อมูลจริง ไม่ใช่ระบบเดา ⇒ ไม่ต้องโชว์ป้าย "ระบบเลือกให้"
+  GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: เพศแถวเก่ามาจากข้อมูลจริง ⇒ ห้ามให้คำนำหน้าทับ
   setGenderAutoHint(false);
 
   updatePelvicSection(hasCheckup, genderVal);
@@ -2569,6 +2582,7 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   if (draft.program) {
     document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = (r.value === draft.program); });
     document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === draft.genderDom); });
+    GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: เพศของร่างมาจาก draft.genderDom (ข้อมูลจริง) ไม่ใช่ระบบเดา ⇒ ห้ามให้คำนำหน้าทับ
     updatePelvicSection(true, draft.genderDom);
     document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (draft.pelvic || 'no')); });
     var pelvicDueMergeEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
@@ -3945,9 +3959,9 @@ function resendMethodOptions() {
   if (!sel) return [];
   var out = [];
   for (var i = 0; i < sel.options.length; i++) {
-    // รอบ 21 (2026-09-20): ข้าม 'นัดรับวันที่' — ช่องนี้เก็บแค่ "ช่องทางที่ส่งซ้ำ" ไม่มีที่เก็บวันที่นัดต่อครั้ง
-    // ถ้าปล่อยให้เลือกได้จะได้ข้อความ "นัดรับวันที่" ลอย ๆ โดยไม่มีวันที่ ซึ่งอ่านแล้วเข้าใจผิด
-    if (sel.options[i].value && sel.options[i].value !== DELIVERY_PICKUP_APPOINTMENT) out.push(sel.options[i].value);
+    // เจ้าของสั่งเพิ่ม 2026-09-21 · ช่อง "วันที่" ของแถวส่งออกอีกครั้งจะทำหน้าที่เป็นวันนัดรับของครั้งนั้น ·
+    // ฝั่งเซิร์ฟเวอร์รับค่านี้อยู่แล้ว (DELIVERY_METHODS มี 'นัดรับวันที่' ตั้งแต่ deploy @21) จึงไม่ต้องแก้ Apps Script
+    if (sel.options[i].value) out.push(sel.options[i].value);
   }
   return out;
 }
@@ -4455,6 +4469,19 @@ function itemsMapToSortedArray(itemsObj) {
   return out;
 }
 
+/* เจ้าของสั่ง 2026-09-21: รายงานวัคซีนต้องโชว์ราคา/คน (2 เรต) ไม่ใช่แค่จำนวนเข็ม
+   summary.vaccine.items ใช้ "ชื่อไทย" เป็นคีย์ (มาจากข้อมูลที่บันทึกไว้จริง) ส่วน STATE.vaccines เป็น
+   array ของ {code, name, price} ⇒ ต้องแปลงชื่อ -> code ก่อนเรียก calcVaccineTotal()
+   หาไม่เจอ (ชื่อเก่าที่ถูกเปลี่ยนไปแล้ว หรือ config ยังโหลดไม่เสร็จ) ต้องคืน null แล้วให้ผู้เรียกแสดง '—'
+   ห้ามส่ง code ที่ไม่รู้จักเข้า calcVaccineTotal() เพราะมันจะคิดราคาเปล่า = 0 แล้วได้เลขที่ดูเหมือนจริงแต่ผิด */
+function vaccineCodeByName_(name) {
+  var list = STATE.vaccines || [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].name === name) return list[i].code;
+  }
+  return null;
+}
+
 /* summary.byPoint และ summary.byStaff เป็น object map {'ชื่อ': {count, money}, ...} โครงเดียวกัน — ใช้ตัวแปลงร่วมกันได้ */
 // ⚠ 2026-09-13: ผู้เรียกทั้ง 2 ตัว (byPoint/byStaff ในรายงานรายเดือน) ถูกตัดออกตามคำสั่งเจ้าของ
 //    คงฟังก์ชันไว้เพราะเป็นตัวแปลงกลาง ถ้าเอาการ์ดกลับมาเมื่อไรใช้ตัวนี้ได้เลย
@@ -4535,14 +4562,22 @@ function renderReport(summary, period) {
   html += '</tbody></table></div><div class="line" style="margin-top:8px;">ยอดเงินหมวดตรวจเพิ่ม: ' + money(numOr0(extra.money)) + ' บาท</div></div>';
 
   // วัคซีน — summary.vaccine.items (object map), summary.vaccine.money
+  // เจ้าของสั่ง 2026-09-21: โชว์ "ชื่อวัคซีน + ราคา (2 เรต) + จำนวนคนที่ฉีด" แทนจำนวนเข็มอย่างเดียว
+  // ราคาต้องมาจาก calcVaccineTotal() ตัวเดียวกับที่ฟอร์มใช้ ห้ามคิดเลขเอง/ฝังตัวเลขตายตัว —
+  // ส่ง code เดียวเข้าไปต่อครั้งเพราะสูตร DF/PE/10% คิดครั้งเดียวต่อคน ไม่ใช่ต่อเข็ม
+  // (ส่ง code เดียว = ได้ "ราคาของคนที่ฉีดวัคซีนตัวนั้นตัวเดียว" ซึ่งตรงกับความหมายของหัวคอลัมน์)
   var vaccine = summary.vaccine || {};
   var vaccineItems = itemsMapToSortedArray(vaccine.items);
-  html += '<div class="card"><h2>วัคซีน</h2><div class="scroll-x"><table class="report-table"><thead><tr><th>วัคซีน</th><th>จำนวนเข็ม</th></tr></thead><tbody>';
+  html += '<div class="card"><h2>วัคซีน</h2><div class="scroll-x"><table class="report-table"><thead><tr>' +
+    '<th>วัคซีน</th><th>ราคา/คน เมื่อมาตรวจสุขภาพด้วย</th><th>ราคา/คน ฉีดอย่างเดียว</th><th>จำนวนคนที่ฉีด</th></tr></thead><tbody>';
   if (vaccineItems.length === 0) {
-    html += '<tr><td colspan="2">ไม่มีข้อมูล</td></tr>';
+    html += '<tr><td colspan="4">ไม่มีข้อมูล</td></tr>';
   } else {
     vaccineItems.forEach(function (it) {
-      html += '<tr><td>' + escHtml(it.name) + '</td><td>' + numOr0(it.count) + '</td></tr>';
+      var vCode = vaccineCodeByName_(it.name);
+      var priceWithCheckup = vCode ? money(calcVaccineTotal([vCode], true, STATE.vaccines, STATE.prices)) : '—';
+      var priceAlone = vCode ? money(calcVaccineTotal([vCode], false, STATE.vaccines, STATE.prices)) : '—';
+      html += '<tr><td>' + escHtml(it.name) + '</td><td>' + priceWithCheckup + '</td><td>' + priceAlone + '</td><td>' + numOr0(it.count) + '</td></tr>';
     });
   }
   html += '</tbody></table></div><div class="line" style="margin-top:8px;">ยอดเงินหมวดวัคซีน: ' + money(numOr0(vaccine.money)) + ' บาท</div></div>';
@@ -4923,6 +4958,7 @@ document.addEventListener('DOMContentLoaded', function () {
     r.addEventListener('change', function () {
       // เจ้าของสั่ง 2026-09-20: เจ้าหน้าที่กดปุ่มเพศเอง = ตัดสินใจเองแล้ว ซ่อนป้าย "ระบบเลือกให้" ทันที
       // (ไม่ต้องเช็คว่าค่าที่กดตรงกับที่ autoGenderFromPrefix() จะเดาไหม — กดเองคือกดเอง)
+      GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: กดเองแล้ว ห้ามให้คำนำหน้ามาทับอีกจนกว่าจะ reset
       setGenderAutoHint(false);
       recalcTotals();
     });
