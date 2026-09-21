@@ -1752,11 +1752,17 @@ function isMalePrefix(raw) {
 
 /* เจ้าของสั่ง 2026-09-20: "เลือกคำนำหน้าหญิง/ชาย แล้วไม่ต้องมาเลือกเพศอีก"
    ตัดสินแบบ: ติ๊กวิทยุเพศให้อัตโนมัติเมื่อคำนำหน้าบอกเพศชัดเจน · ปุ่มเพศยังกดแก้เองได้เสมอ
-   แก้ 2026-09-21: เดิม "getSelectedGender() ไม่ว่าง = ห้ามทับ" ทำให้เปลี่ยนใจคำนำหน้า (นาย→นาง) แล้ว
-   เพศที่ระบบติ๊กให้ไว้ก่อนหน้าไม่ยอมเปลี่ยนตาม ⇒ เปลี่ยนเป็นดู GENDER_AUTO_PICKED แทน:
-   เพศที่ "ระบบเดา" ไว้ ทับได้เสมอเมื่อคำนำหน้าใหม่บอกเพศอื่น · เพศที่ "เจ้าหน้าที่กดเอง" ห้ามทับเหมือนเดิม
-   เรียกได้เฉพาะตอนผู้ใช้พิมพ์/เลือกคำนำหน้าเองเท่านั้น (listener ของ #patientPrefix) —
-   ห้ามเรียกจาก recalcTotals()/enterEditMode()/ตัวเรียกคืนร่าง ไม่งั้นเปิดแถวเก่ามาแก้จะโดนเปลี่ยนเพศให้เงียบ ๆ */
+   แก้ 2026-09-21 (รอบที่ 2 ของวันเดียวกัน — เจ้าของยกเลิกกติกาเช้า "เจ้าหน้าที่กดเอง = ห้ามทับ" แล้ว):
+   ตอนนี้กติกาคือ **คำนำหน้าชนะเสมอ** — เปลี่ยนคำนำหน้าเมื่อไหร่ วิทยุเพศเปลี่ยนตามทันที แม้เจ้าหน้าที่จะกด
+   ปุ่มเพศเองไว้ก่อนหน้าก็ตาม (ไม่มีสถานะ "ห้ามทับ" ค้างอีกต่อไป — เดิมมีตัวแปร flag แยกทำหน้าที่นี้ ตัดออกแล้ว)
+   กติกาที่ยังคงไว้:
+   - กดปุ่มเพศเองยังใช้ได้เสมอ ค่าที่กดอยู่จนกว่าจะมีการแตะคำนำหน้าอีกครั้ง (จำเป็นสำหรับคำนำหน้าที่ไม่บอกเพศ
+     เช่น "ดร." และเคสที่คำนำหน้ากับเพศไม่ตรงกันจริง ๆ)
+   - คำนำหน้าที่ไม่บอกเพศ (ดร./ผศ./ว่าง) ห้ามไปล้าง/เปลี่ยนเพศที่ติ๊กไว้ — แค่ซ่อนป้าย #genderAutoHint
+   - เรียกได้เฉพาะตอนผู้ใช้พิมพ์/เลือกคำนำหน้าเองเท่านั้น (listener ของ #patientPrefix) —
+     ห้ามเรียกจาก recalcTotals()/enterEditMode()/ตัวเรียกคืนร่าง ไม่งั้นเปิดแถวเก่ามาแก้จะโดนเปลี่ยนเพศให้เงียบ ๆ
+   ผลคือด่านเตือนใน validateForm() (mismatch เพศ/คำนำหน้า) ตอนนี้เกิดได้ทางเดียวคือ "ตั้งคำนำหน้าไว้ก่อน
+   แล้วเจ้าหน้าที่กดปุ่มเพศทับทีหลัง" — ดูคอมเมนต์ที่ด่านนั้นด้วย */
 function genderFromPrefix_(raw) {
   if (isFemalePrefix(raw)) return 'female';
   if (isMalePrefix(raw)) return 'male';
@@ -1766,21 +1772,14 @@ function setGenderAutoHint(on) {
   var el = qs('genderAutoHint');
   if (el) el.hidden = !on;
 }
-// true = เพศปัจจุบันมาจากการเดาของระบบ (autoGenderFromPrefix) ⇒ คำนำหน้าเปลี่ยนแล้วทับได้
-// false = เจ้าหน้าที่กดเพศเอง หรือเพศมาจากข้อมูลแถวเก่า/ร่าง ⇒ ห้ามทับ
-var GENDER_AUTO_PICKED = false;
 function autoGenderFromPrefix() {
   var want = genderFromPrefix_(qs('patientPrefix').value);
-  // คำนำหน้าไม่บอกเพศแล้ว (ลบทิ้ง/พิมพ์คำกำกวมทับ) — ซ่อนป้าย "ระบบเลือกให้" เสมอ แต่ไม่ไปล้าง/แตะค่าที่ติ๊กไว้
-  // (เช็คก่อน getSelectedGender() ตั้งใจ — ต้องซ่อนป้ายได้แม้เพศจะถูกติ๊กไว้แล้วจากตอนพิมพ์คำนำหน้าก่อนหน้านี้)
-  // ⚠ ห้ามล้าง GENDER_AUTO_PICKED ตรงนี้ — เพศที่ค้างอยู่ยังเป็นของระบบ ถ้าพิมพ์คำนำหน้าที่บอกเพศทีหลังต้องทับได้
+  // คำนำหน้าไม่บอกเพศแล้ว (ลบทิ้ง/พิมพ์คำกำกวมทับ) — ซ่อนป้าย "ระบบเลือกให้" เสมอ แต่ไม่ไปล้าง/แตะค่าเพศที่ติ๊กไว้
+  // (กติกาข้อ 2: ดร./ผศ./ว่าง ห้ามล้างเพศที่ติ๊กไว้ ไม่ว่าจะติ๊กเองหรือระบบติ๊กให้มาก่อนหน้า)
   if (!want) { setGenderAutoHint(false); return false; }
-  var cur = getSelectedGender();
-  if (cur && !GENDER_AUTO_PICKED) return false; // เจ้าหน้าที่เลือกเอง/มาจากแถวเก่า — ห้ามทับ (ด่านใน validateForm() จะเตือนแทน)
   var el = document.querySelector('input[name="gender"][value="' + want + '"]');
   if (!el) return false;
   el.checked = true;
-  GENDER_AUTO_PICKED = true;
   setGenderAutoHint(true);
   return true;
 }
@@ -2240,9 +2239,12 @@ function validateForm(ctx) {
   } else if (getSelectedGender() === 'male' && isFemalePrefix(qs('patientPrefix').value)) {
     // ⚠ ใช้ getSelectedGender() ดิบ ไม่ใช่ ctx.gender — ctx.gender เป็น checkupOn ? getSelectedGender() : ''
     //   ⇒ เลือกเพศชายไว้แต่ยังไม่ได้เลือกโปรแกรม จะได้ '' แล้วด่านนี้หลุด (บทเรียนเดียวกับด่าน MMG ข้างบน)
+    // กติกา 2026-09-21 "คำนำหน้าชนะเสมอ": mismatch ทางนี้เกิดได้ทางเดียวคือตั้งคำนำหน้าไว้ก่อน (ระบบติ๊กเพศตาม
+    //   คำนำหน้าให้แล้ว) แล้วเจ้าหน้าที่กดปุ่มเพศทับทีหลัง — ถ้าแตะคำนำหน้าอีกครั้งคำนำหน้าจะชนะเองโดยไม่ต้องพึ่งด่านนี้
     msg = 'คำนำหน้า "' + String(qs('patientPrefix').value).trim() + '" เป็นของผู้หญิง แต่เลือกเพศชายไว้ — แก้อย่างใดอย่างหนึ่งก่อนบันทึก';
   } else if (getSelectedGender() === 'female' && isMalePrefix(qs('patientPrefix').value)) {
     // เพิ่ม 2026-09-21 (คู่ขนานกับด่านข้างบน — เดิมมีเฉพาะทาง "ชาย + คำนำหน้าหญิง" ทางเดียว)
+    // เกิดได้ทางเดียวเหมือนด่านข้างบน: ตั้งคำนำหน้า "นาย" ไว้ก่อน แล้วเจ้าหน้าที่กดปุ่มเพศหญิงทับทีหลัง
     msg = 'คำนำหน้า "' + String(qs('patientPrefix').value).trim() + '" เป็นของผู้ชาย แต่เลือกเพศหญิงไว้ — แก้อย่างใดอย่างหนึ่งก่อนบันทึก';
   }
 
@@ -2451,7 +2453,6 @@ function resetLogForm() {
   qs('patientPrefix').value = '';
   syncPrefixButtons(); // ล้างร่างแล้วปุ่มคำนำหน้า/ช่อง "อื่น ๆ" ต้องกลับเป็นค่าว่างตามไปด้วย
   updateHnHint();
-  GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: reset แล้วกติกา "ห้ามทับ" ต้องกลับเป็นเริ่มต้นด้วย
   setGenderAutoHint(false); // เจ้าของสั่ง 2026-09-20: ล้างร่างแล้วต้องซ่อนป้าย "ระบบเลือกเพศให้" ด้วย
   qs('checkupAmount').value = '';
   qs('deliveryMethod').value = '';
@@ -2494,7 +2495,8 @@ function enterEditMode(rec) {
   var genderVal = genderFromThai(rec.gender);
   document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = hasCheckup && (r.value === genderVal); });
   // เจ้าของสั่ง 2026-09-20: เพศของแถวเก่ามาจากข้อมูลจริง ไม่ใช่ระบบเดา ⇒ ไม่ต้องโชว์ป้าย "ระบบเลือกให้"
-  GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: เพศแถวเก่ามาจากข้อมูลจริง ⇒ ห้ามให้คำนำหน้าทับ
+  // (กติกา 2026-09-21 ข้อ 3: enterEditMode() ห้ามเดาเพศให้เอง — ห้ามเรียก autoGenderFromPrefix() จากที่นี่ —
+  //  ถ้าเจ้าหน้าที่แตะคำนำหน้าเองระหว่างแก้ไขแถวนี้ทีหลัง คำนำหน้าจะชนะตามปกติผ่าน listener ของ #patientPrefix)
   setGenderAutoHint(false);
 
   updatePelvicSection(hasCheckup, genderVal);
@@ -2582,7 +2584,8 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   if (draft.program) {
     document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = (r.value === draft.program); });
     document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === draft.genderDom); });
-    GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: เพศของร่างมาจาก draft.genderDom (ข้อมูลจริง) ไม่ใช่ระบบเดา ⇒ ห้ามให้คำนำหน้าทับ
+    // เพศของร่างมาจาก draft.genderDom (ข้อมูลจริงที่กรอกไว้แล้ว) ไม่ใช่ระบบเดา — ป้าย #genderAutoHint ถูกซ่อนไว้แล้วจาก
+    // enterEditMode() ด้านบน และที่นี่ไม่เรียก autoGenderFromPrefix() จึงไม่โผล่ขึ้นมาเอง (กติกาข้อ 3)
     updatePelvicSection(true, draft.genderDom);
     document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (draft.pelvic || 'no')); });
     var pelvicDueMergeEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
@@ -4958,7 +4961,8 @@ document.addEventListener('DOMContentLoaded', function () {
     r.addEventListener('change', function () {
       // เจ้าของสั่ง 2026-09-20: เจ้าหน้าที่กดปุ่มเพศเอง = ตัดสินใจเองแล้ว ซ่อนป้าย "ระบบเลือกให้" ทันที
       // (ไม่ต้องเช็คว่าค่าที่กดตรงกับที่ autoGenderFromPrefix() จะเดาไหม — กดเองคือกดเอง)
-      GENDER_AUTO_PICKED = false; // แก้ 2026-09-21: กดเองแล้ว ห้ามให้คำนำหน้ามาทับอีกจนกว่าจะ reset
+      // กติกา 2026-09-21: ค่าที่กดเองอยู่ได้จนกว่าจะมีการแตะคำนำหน้าอีกครั้ง (ตอนนั้นคำนำหน้าจะชนะทันที — ไม่มีสถานะ
+      // "ห้ามทับ" ค้างแยกต่างหากอีกแล้ว ดูคอมเมนต์ที่ autoGenderFromPrefix())
       setGenderAutoHint(false);
       recalcTotals();
     });
