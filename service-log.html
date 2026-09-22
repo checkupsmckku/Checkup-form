@@ -5433,6 +5433,15 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   syncPrefixButtons(); // สถานะเริ่มต้นตอนโหลดหน้า (ปกติค่าว่างอยู่แล้ว แต่ sync ไว้กันกรณีค่าเริ่มต้นเปลี่ยนในอนาคต)
   qs('deliveryMethod').addEventListener('change', recalcTotals);
+  // 🐞 แก้ 2026-09-22 (เจ้าของเจอ: "นัดรับเลือกวันที่แล้วแต่บันทึกไม่ได้"): #pickupDate ไม่เคยมี listener มาตั้งแต่รอบ 21
+  // ⇒ เลือกวันแล้วคำเตือน "ต้องกรอกวันที่นัดรับ" ค้าง + ปุ่มบันทึกกดไม่ได้ จนกว่าจะไปแตะช่องอื่น
+  // (ก่อนรอบ 24 ถูกบังไว้เพราะหลังเลือกวันยังต้องไปกรอกช่องตรวจภายในในฟอร์ม ซึ่งเรียก recalcTotals ให้)
+  // ต้องผูกทั้ง input และ change — ปฏิทินไทย (thdSetValue) ยิงทั้งคู่ · ช่อง native บางเบราว์เซอร์ยิงแค่ตัวเดียว
+  // เทสต์: tests/test_pickup_date_recalc.js (ห้ามเรียก recalcTotals เองในเทสต์ ไม่งั้นบั๊กนี้จะถูกบังอีก)
+  if (qs('pickupDate')) {
+    qs('pickupDate').addEventListener('input', recalcTotals);
+    qs('pickupDate').addEventListener('change', recalcTotals);
+  }
   // 🐞 แก้ 2026-09-13: ช่องนี้ไม่เคยมี listener มาตั้งแต่วันที่สร้าง (2026-09-11) ⇒ ติ๊ก/ติ๊กออกด้วยมือแล้ว
   // ยอดรวมกับป้ายราคาไม่เปลี่ยน (ค้างเรตเดิม) ทั้งที่ onSubmitLog() อ่าน .checked สด ๆ ⇒ ยอดบนจอ ≠ ยอดที่ลงชีต
   // ⚠ ใช้ recalcTotals ตรง ๆ ไม่ใช่ onServiceFieldChange — ช่องนี้ไม่เปลี่ยน isCheckupOn()/isVaccineOn() จึงไม่ต้อง sync คิว
