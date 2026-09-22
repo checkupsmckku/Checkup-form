@@ -711,7 +711,7 @@
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     #cuCardsFoot { font-size: 10pt; margin-top: 2mm; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
-       ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (pelvicDue/reportDay/reportMonth/cuDate อยู่ใต้ .no-print
+       ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (reportDay/reportMonth/cuDate อยู่ใต้ .no-print
        ทั้งหมด) และ .cu-note-sentdate/.cu-note-resend-date มีกฎ print เดิมซ่อน native input + โชว์ span แทนอยู่แล้ว
        บรรทัดนี้ครอบไว้อีกชั้นให้ชัดเจน กันทุกจุดไม่ให้หลุดไปพิมพ์ */
     .thd-btn, .thd-pop { display: none !important; }
@@ -862,20 +862,6 @@
                       <label class="opt-btn"><input type="radio" name="pelvic" value="pap"> Pap smear <span class="opt-price" data-pelvic="pap"></span></label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep"> Thinprep <span class="opt-price" data-pelvic="thinprep"></span></label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep_hpv"> Thinprep + HPV <span class="opt-price" data-pelvic="thinprep_hpv"></span></label>
-                    </div>
-                    <!-- รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่เฉพาะตอนเลือกตรวจภายใน (pelvic ≠ 'no') บังคับกรอกฝั่งเว็บ -->
-                    <div id="pelvicDueWrap" hidden>
-                      <label class="field-label" for="pelvicDue">ส่งออกผลภายในวันที่ *</label>
-                      <input type="date" id="pelvicDue">
-                    </div>
-                    <!-- รอบ 23 (2026-09-21, เจ้าของสั่ง "ผลตรวจภายในส่งแยกกับตรวจสุขภาพ"): ช่องทางส่งผลตรวจภายใน
-                         โผล่/ซ่อนคู่กับ #pelvicDueWrap เสมอ (isPelvicChosen_() เดียวกัน) — ตัวเลือกอ่านสดจาก
-                         #deliveryMethod ผ่าน populatePelvicMethodOptions()/resendMethodOptions() ห้ามพิมพ์รายการช่องทางซ้ำ -->
-                    <div id="pelvicMethodWrap" hidden>
-                      <label class="field-label" for="pelvicMethod">ช่องทางส่งผลตรวจภายใน *</label>
-                      <select id="pelvicMethod">
-                        <option value="">— เลือกช่องทางส่งผล —</option>
-                      </select>
                     </div>
                   </div>
 
@@ -2228,7 +2214,7 @@ function updatePelvicSection(checkupOn, gender) {
 var DELIVERY_PICKUP_APPOINTMENT = 'นัดรับวันที่';
 
 /* รอบ 21: ช่อง "นัดรับวันที่" — โผล่เฉพาะตอนเลือกช่องทางรับผลเป็น 'นัดรับวันที่'
-   ซ่อนเมื่อไหร่ต้องล้างค่าจริงด้วย (กติกาเดียวกับ updatePelvicDueVisibility ข้างล่าง — กันค่าที่มองไม่เห็นหลุดไปกับ payload) */
+   ซ่อนเมื่อไหร่ต้องล้างค่าจริงด้วย (กันค่าที่มองไม่เห็นหลุดไปกับ payload) */
 function updatePickupDateVisibility(deliveryMethod) {
   var wrap = qs('pickupDateWrap');
   if (!wrap) return;
@@ -2237,34 +2223,6 @@ function updatePickupDateVisibility(deliveryMethod) {
   if (!show) {
     var input = qs('pickupDate');
     if (input) input.value = '';
-  }
-}
-
-/* รอบ 19 (2026-09-18): ช่อง "ส่งออกผลภายในวันที่" — โผล่เฉพาะตอนตรวจภายในถูกเลือกจริง (pelvic เป็นหนึ่งใน pap/thinprep/thinprep_hpv)
-   ซ่อนเมื่อไหร่ต้องล้างค่าจริงด้วยเหมือน updatePelvicSection ข้างบน (กันค่าที่มองไม่เห็นหลุดไปกับ payload)
-   ก้อน C (2026-09-21): ใช้ isPelvicChosen_() แทนเทียบ `pelvic !== 'no'` ตรง ๆ — ตอนนี้ '' (ยังไม่เลือก) ก็ !== 'no'
-   เหมือนกัน แต่ไม่ควรโชว์ช่องนี้เมื่อยังไม่ได้เลือกอะไรเลย */
-function updatePelvicDueVisibility(pelvic) {
-  var wrap = qs('pelvicDueWrap');
-  if (!wrap) return;
-  var show = isPelvicChosen_(pelvic);
-  wrap.hidden = !show;
-  if (!show) {
-    var input = qs('pelvicDue');
-    if (input) input.value = '';
-  }
-}
-
-/* รอบ 23 (2026-09-21, เจ้าของสั่ง "ผลตรวจภายในจะส่งแยกกับตรวจสุขภาพ"): ช่องทางส่งผลตรวจภายใน —
-   โผล่/ซ่อนคู่กับ #pelvicDueWrap เสมอ (เงื่อนไขเดียวกันเป๊ะ: isPelvicChosen_()) ซ่อนแล้วต้องล้างค่าจริงเหมือนกัน */
-function updatePelvicMethodVisibility(pelvic) {
-  var wrap = qs('pelvicMethodWrap');
-  if (!wrap) return;
-  var show = isPelvicChosen_(pelvic);
-  wrap.hidden = !show;
-  if (!show) {
-    var sel = qs('pelvicMethod');
-    if (sel) sel.value = '';
   }
 }
 
@@ -2372,21 +2330,10 @@ function validateForm(ctx) {
     msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
   } else if (ctx.checkupOn && ctx.gender === 'female' && !ctx.pelvic) {
     // ก้อน C (2026-09-21, เจ้าของสั่ง): ผู้หญิงต้องเลือกให้ชัดว่า "ตรวจภายใน" หรือ "ไม่ตรวจภายใน" — ห้ามมีค่าตั้งต้น
-    // ctx.pelvic ว่างได้เฉพาะกรณีนี้เท่านั้น (ชาย/ไม่ตรวจสุขภาพ ได้ 'no' เสมอจาก recalcTotals()) ต้องมาก่อนด่าน
-    // pelvicDue ข้างล่าง ไม่งั้นด่านนั้นจะเด้งข้อความผิด (ดูคอมเมนต์ isPelvicChosen_)
+    // ctx.pelvic ว่างได้เฉพาะกรณีนี้เท่านั้น (ชาย/ไม่ตรวจสุขภาพ ได้ 'no' เสมอจาก recalcTotals())
     msg = 'ผู้หญิงต้องเลือกว่าตรวจภายในหรือไม่';
-  } else if (ctx.checkupOn && isPelvicChosen_(ctx.pelvic) && !ctx.pelvicDue) {
-    // รอบ 19 (2026-09-18): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ B4/วัคซีน ข้างบน — ห้ามบังคับฝั่งเซิร์ฟเวอร์
-    // เพราะจะแก้ไขแถวเก่าที่ยังไม่มีวันที่นี้ไม่ได้เลย)
-    // ก้อน C (2026-09-21): เดิมเทียบ `ctx.pelvic !== 'no'` ตรง ๆ — ตอนนี้ '' (ยังไม่เลือก) ก็ !== 'no' เหมือนกัน
-    // แต่ด่านข้างบนดักไปแล้วถ้ายังไม่เลือก ⇒ ใช้ isPelvicChosen_() ให้ตรงความหมายจริง ๆ (pap/thinprep/thinprep_hpv เท่านั้น)
-    msg = 'ตรวจภายในต้องกรอกวันที่ส่งออกผล';
-  } else if (ctx.checkupOn && isPelvicChosen_(ctx.pelvic) && !ctx.pelvicMethod) {
-    // รอบ 23 (2026-09-21, เจ้าของสั่ง "ผลตรวจภายในจะส่งแยกกับตรวจสุขภาพ"): บังคับฝั่งเว็บเท่านั้น เหตุผลเดียวกับ
-    // pelvicDue ข้างบน — ห้ามบังคับฝั่งเซิร์ฟเวอร์ ไม่งั้นแก้ไขแถวเก่าที่ยังไม่มีช่องทางนี้ไม่ได้เลย
-    msg = 'ตรวจภายในต้องเลือกช่องทางส่งผล';
   } else if (ctx.checkupOn && ctx.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT && !ctx.pickupDate) {
-    // รอบ 21 (2026-09-20): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ pelvicDue/HN/วัคซีน —
+    // รอบ 21 (2026-09-20): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ HN/วัคซีน —
     // ถ้าบังคับที่เซิร์ฟเวอร์ แถวเก่าที่ยังไม่มีค่านี้จะกลายเป็นแถวที่แก้ไขไม่ได้เลย)
     msg = 'เลือกช่องทาง "นัดรับวันที่" แล้วต้องกรอกวันที่นัดรับ';
   // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN) — เดิมมีด่าน
@@ -2489,13 +2436,6 @@ function recalcTotals() {
   // เจ้าของสั่ง 2026-09-17: ไม่ใช่แค่วิทยุเพศแล้ว — isMaleForMmg() เดาจากคำนำหน้าด้วยเมื่อยังไม่เลือกวิทยุเพศ
   applyMmgGenderLock(isMaleForMmg() ? 'male' : '');
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
-  updatePelvicDueVisibility(pelvic); // รอบ 19 (2026-09-18): แสดง/ซ่อน+ล้างช่องวันที่ตามค่า pelvic ล่าสุดเสมอ
-  updatePelvicMethodVisibility(pelvic); // รอบ 23 (2026-09-21): แสดง/ซ่อน+ล้างช่องทางส่งผลตรวจภายในตามค่า pelvic ล่าสุดเสมอ
-  var pelvicDueEl = qs('pelvicDue');
-  // ก้อน C (2026-09-21): isPelvicChosen_() แทน `pelvic !== 'no'` — '' (ยังไม่เลือก) ต้องไม่นับว่า "เลือกตรวจภายใน" แล้ว
-  var pelvicDue = isPelvicChosen_(pelvic) ? ((pelvicDueEl && pelvicDueEl.value) || '') : '';
-  var pelvicMethodEl = qs('pelvicMethod');
-  var pelvicMethod = isPelvicChosen_(pelvic) ? ((pelvicMethodEl && pelvicMethodEl.value) || '') : '';
 
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่อีกแล้ว — extraIds มีค่าได้เฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่มมาก่อน
   var extraIds = STATE.editExtraIds || [];
@@ -2526,7 +2466,7 @@ function recalcTotals() {
   var patientHn = (qs('patientHn').value || '').trim();
   var queue = (qs('queueSelect') ? qs('queueSelect').value : '') || '';
   var deliveryMethod = (qs('deliveryMethod') ? qs('deliveryMethod').value : '') || '';
-  // รอบ 21 (2026-09-20): แสดง/ซ่อน+ล้างช่องวันนัดรับตามช่องทางล่าสุดเสมอ (แพตเทิร์นเดียวกับ updatePelvicDueVisibility)
+  // รอบ 21 (2026-09-20): แสดง/ซ่อน+ล้างช่องวันนัดรับตามช่องทางล่าสุดเสมอ
   updatePickupDateVisibility(deliveryMethod);
   var pickupDateEl = qs('pickupDate');
   var pickupDate = (deliveryMethod === DELIVERY_PICKUP_APPOINTMENT) ? ((pickupDateEl && pickupDateEl.value) || '') : '';
@@ -2565,8 +2505,7 @@ function recalcTotals() {
     specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn,
     patientName: patientName, patientHn: patientHn,
     queue: queue, deliveryMethod: deliveryMethod,
-    pelvic: pelvic, pelvicDue: pelvicDue, // รอบ 19 (2026-09-18)
-    pelvicMethod: pelvicMethod, // รอบ 23 (2026-09-21)
+    pelvic: pelvic,
     pickupDate: pickupDate // รอบ 21 (2026-09-20)
   });
 
@@ -2617,8 +2556,6 @@ function resetLogForm() {
   // ก้อน C (2026-09-21, เจ้าของสั่ง): ล้างร่างแล้วต้องไม่มีตัวไหนถูกเลือกเลย (ห้ามมีค่าตั้งต้นเป็น 'no' อีกต่อไป)
   // logForm.reset() ข้างบนพอแล้วจริง ๆ (ไม่มี attribute checked ค้างในไฟล์ HTML แล้วหลังก้อน C1) แต่เขียนชัด ๆ ไว้กันพลาด
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = false; });
-  qs('pelvicDue').value = ''; // รอบ 19 (2026-09-18)
-  if (qs('pelvicMethod')) qs('pelvicMethod').value = ''; // รอบ 23 (2026-09-21)
   if (qs('pickupDate')) qs('pickupDate').value = ''; // รอบ 21 (2026-09-20)
   updatePickupDateVisibility(''); // ซ่อนช่องวันนัดกลับไปด้วย ไม่ใช่แค่ล้างค่า
   qs('queueSelect').value = '';
@@ -2681,10 +2618,6 @@ function enterEditMode(rec) {
 
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
-  var pelvicDueEditEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
-  if (pelvicDueEditEl) pelvicDueEditEl.value = rec.pelvicDue || '';
-  var pelvicMethodEditEl = qs('pelvicMethod'); // รอบ 23 (2026-09-21)
-  if (pelvicMethodEditEl) pelvicMethodEditEl.value = rec.pelvicMethod || '';
   // รอบ 21 (2026-09-20): ต้องเซ็ตค่า "ก่อน" เรียก updatePickupDateVisibility ไม่งั้นค่าที่เพิ่งเติมโดนล้างทิ้ง
   var pickupEditEl = qs('pickupDate');
   if (pickupEditEl) pickupEditEl.value = rec.pickupDate || '';
@@ -2772,10 +2705,6 @@ function mergeDraftIntoTodayRecord(rec, draft) {
     // enterEditMode() ด้านบน และที่นี่ไม่เรียก autoGenderFromPrefix() จึงไม่โผล่ขึ้นมาเอง (กติกาข้อ 3)
     updatePelvicSection(true, draft.genderDom);
     document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (draft.pelvic || 'no')); });
-    var pelvicDueMergeEl = qs('pelvicDue'); // รอบ 19 (2026-09-18)
-    if (pelvicDueMergeEl) pelvicDueMergeEl.value = draft.pelvicDue || '';
-    var pelvicMethodMergeEl = qs('pelvicMethod'); // รอบ 23 (2026-09-21)
-    if (pelvicMethodMergeEl) pelvicMethodMergeEl.value = draft.pelvicMethod || '';
     var pickupMergeEl = qs('pickupDate'); // รอบ 21 (2026-09-20)
     if (pickupMergeEl) pickupMergeEl.value = draft.pickupDate || '';
     updatePickupDateVisibility(draft.deliveryMethod || '');
@@ -2845,12 +2774,6 @@ function onSubmitLog(e) {
   var genderDom = getSelectedGender();
   var gender = genderToThai(genderDom); // ชีตต้องเก็บภาษาไทยเสมอ ('ชาย'/'หญิง') ไม่ใช่ 'male'/'female'
   var pelvic = (checkupOn && genderDom === 'female') ? getSelectedPelvic() : 'no';
-  // รอบ 19 (2026-09-18): ส่ง pelvicDue เสมอ (คีย์ต้องมีทุกครั้ง) — ค่าจริงเฉพาะตอนเลือกตรวจภายในจริงเท่านั้น
-  // ก้อน C (2026-09-21): isPelvicChosen_() แทน `pelvic !== 'no'` — validateForm() บล็อกไว้แล้วถ้ายังไม่ได้เลือก
-  // (pelvic ว่าง) จึงไม่มีทางบันทึกได้ในสถานะนั้น แต่คงเช็คให้ถูกความหมายไว้เผื่ออนาคต
-  var pelvicDue = isPelvicChosen_(pelvic) ? ((qs('pelvicDue') && qs('pelvicDue').value) || '') : '';
-  // รอบ 23 (2026-09-21): ช่องทางส่งผลตรวจภายใน — ส่งเสมอ (คีย์ต้องมีทุกครั้ง) เหตุผลเดียวกับ pelvicDue ข้างบน
-  var pelvicMethod = isPelvicChosen_(pelvic) ? ((qs('pelvicMethod') && qs('pelvicMethod').value) || '') : '';
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่แล้ว — ส่ง STATE.editExtraIds กลับไป (มีค่าเฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่ม)
   var extraIds = STATE.editExtraIds || [];
   var checkupAmountNum = getCheckupAmountNum();
@@ -2897,7 +2820,7 @@ function onSubmitLog(e) {
         'ยกเลิก = บันทึกเป็นแถวใหม่';
       if (window.confirm(mergeConfirmMsg)) {
         mergeDraftIntoTodayRecord(existingTodayRec, {
-          program: program, genderDom: genderDom, pelvic: pelvic, pelvicDue: pelvicDue, pelvicMethod: pelvicMethod, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
+          program: program, genderDom: genderDom, pelvic: pelvic, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
           pickupDate: pickupDate, // รอบ 21 (2026-09-20)
           vaccineCodes: vaccineCodes, medCert5: medCert5, medCertDriver: medCertDriver,
           medCertLabCount: medCertLabCount, medCertLabAmount: medCertLabAmount,
@@ -2916,8 +2839,6 @@ function onSubmitLog(e) {
     program: program,
     gender: gender,
     pelvic: pelvic,
-    pelvicDue: pelvicDue, // รอบ 19 (2026-09-18)
-    pelvicMethod: pelvicMethod, // รอบ 23 (2026-09-21)
     // รอบ 21 (2026-09-20): ส่งคีย์ pickupDate ทุกครั้ง — ค่าจริงเฉพาะตอนช่องทางเป็น 'นัดรับวันที่'
     // (ฝั่งเซิร์ฟเวอร์: ไม่มีคีย์ = คงค่าเดิมในชีต · มีคีย์ค่าว่าง = ล้างค่า ⇒ ต้องส่งเสมอเพื่อให้ "สลับช่องทางแล้วล้าง" ทำงาน)
     pickupDate: pickupDate,
@@ -4200,20 +4121,21 @@ function cuNoteResendMethodOptionsHtml(selected) {
   return html;
 }
 
-// รอบ 23 (2026-09-21, เจ้าของสั่ง "ผลตรวจภายในจะส่งแยกกับตรวจสุขภาพ"): ตัวเลือกของ #pelvicMethod — อ่านสดจาก
-// resendMethodOptions() ตัวเดียวกับข้างบน (ที่เดียวที่ประกาศรายการช่องทางรับผลฝั่งเว็บคือ select#deliveryMethod)
-// ห้ามพิมพ์รายการช่องทางซ้ำใน HTML — เรียกครั้งเดียวตอนโหลดหน้า (ตัวเลือกของ #deliveryMethod เป็น static ในไฟล์
-// ไม่เปลี่ยนขณะรันเว็บ) เก็บค่าที่เลือกไว้เดิมไว้ด้วยถ้ายังอยู่ในลิสต์
-function populatePelvicMethodOptions() {
-  var sel = qs('pelvicMethod');
-  if (!sel) return;
-  var current = sel.value;
+// รอบ 24 (2026-09-22, เจ้าของสั่งย้าย "ช่องทางส่งผลตรวจภายใน" จากฟอร์มบันทึกไปหน้ารายชื่อ): ตัวเลือกของ
+// select ช่องทางส่งผลตรวจภายในใน .cu-note — อ่านสดจาก resendMethodOptions() ตัวเดียวกับข้างบน ห้ามพิมพ์รายการซ้ำ
+// ⚠ ต่างจาก cuNoteResendMethodOptionsHtml() ตรงที่ต้องกัน "ค่าเก่าที่ไม่อยู่ในลิสต์ปัจจุบันแล้ว" ไม่ให้หาย —
+// ถ้า selected ไม่ว่างและไม่อยู่ใน resendMethodOptions() (เช่น ช่องทางถูกลบออกจาก #deliveryMethod ไปแล้ว)
+// ให้เติม <option> พิเศษของค่านั้นเข้าไปด้วยแล้วติ๊ก selected ให้ ไม่งั้นเจ้าหน้าที่จะเห็นค่าที่เคยกรอกไว้หายไปเงียบ ๆ
+function cuNotePelvicMethodOptionsHtml(selected) {
+  var opts = resendMethodOptions();
   var html = '<option value="">— เลือกช่องทางส่งผล —</option>';
-  resendMethodOptions().forEach(function (m) {
-    html += '<option value="' + escHtml(m) + '">' + escHtml(m) + '</option>';
+  opts.forEach(function (m) {
+    html += '<option value="' + escHtml(m) + '"' + (m === selected ? ' selected' : '') + '>' + escHtml(m) + '</option>';
   });
-  sel.innerHTML = html;
-  sel.value = current;
+  if (selected && opts.indexOf(selected) === -1) {
+    html += '<option value="' + escHtml(selected) + '" selected>' + escHtml(selected) + '</option>';
+  }
+  return html;
 }
 
 // แถวเดียวของ "ส่งออกอีกครั้ง" — idx เริ่มที่ 0 แต่ label เริ่มที่ "ครั้งที่ 2" เพราะครั้งที่ 1 คือช่อง "วันที่ส่งออก" ข้างบน
@@ -4313,7 +4235,18 @@ function cuNoteHtml(rec) {
       return cuNoteResendRowHtml(idx, item, pelvicResendLocked);
     }).join('');
     var pelvicReceivedDate = (rec && rec.pelvicReceivedDate) || '';
+    var pelvicMethodVal = (rec && rec.pelvicMethod) || '';
     pelvicBlockHtml =
+      // รอบ 24 (2026-09-22, เจ้าของสั่งย้ายช่องนี้จากฟอร์มบันทึกมาไว้ที่นี่แทน): "ช่องทางส่งผลตรวจภายใน" —
+      // ต้องมาก่อน "ส่งออกผลตรวจภายในวันที่" เสมอ (ลำดับที่เจ้าของสั่ง) · ตัวเลือกอ่านสดจาก resendMethodOptions()
+      // ผ่าน cuNotePelvicMethodOptionsHtml() ซึ่งกันค่าเก่าที่หลุดจากลิสต์ปัจจุบันไม่ให้หายด้วย
+      // ⚠ ห้ามมี print span คู่กัน — เจ้าของสั่งให้ A4 ไม่แสดงช่องทางนี้เลย (ของเดิมก็ไม่เคยแสดงอยู่แล้ว)
+      '<span class="cu-note-field no-print">' +
+      '<label class="field-label">ช่องทางส่งผลตรวจภายใน</label>' +
+      '<select class="cu-note-pelvic-method" data-note-pelvic-method="' + recId + '"' + disAttr + '>' +
+      cuNotePelvicMethodOptionsHtml(pelvicMethodVal) +
+      '</select>' +
+      '</span>' +
       '<span class="cu-note-field">' +
       '<label class="field-label">ส่งออกผลตรวจภายในวันที่</label>' +
       '<input type="date" class="cu-note-pelvic-sentdate" data-note-pelvic-sentdate="' + recId + '" value="' + escHtml(pelvicSentDate) + '"' + disAttr + '>' +
@@ -4386,8 +4319,12 @@ function clampConsultCount(v) {
 // รอบ 23 (2026-09-21): เพิ่มพารามิเตอร์ pelvicSentDateInput/pelvicResendBox/receivedBtn/pelvicReceivedBtn —
 // ทุกครั้งที่มีอะไรเปลี่ยน (ของผลตรวจสุขภาพหรือผลตรวจภายในก็ตาม) ส่งค่าปัจจุบันของ "ทุกช่อง" กลับไปด้วยเสมอ
 // (แพตเทิร์นเดียวกับที่มีอยู่แล้ว: doctorName/consult/sentDate ส่งรวมกันมาตั้งแต่ต้น)
+// รอบ 24 (2026-09-22): เพิ่มพารามิเตอร์ pelvicMethodSelect — "ช่องทางส่งผลตรวจภายใน" ย้ายมาแก้ที่นี่แทนฟอร์มบันทึก
+// ⚠ ต่างจากช่องอื่นข้างบนทุกตัว: pelvicMethodSelect เป็น null สำหรับแถวที่ไม่มีบล็อกตรวจภายในเลย (ไม่ใช่แค่ค่าว่าง)
+// ⇒ ต้อง "ไม่ส่งคีย์ pelvicMethod เลย" สำหรับแถวนั้น (ต่างจาก pelvicSentDate ที่ส่ง '' เสมอแม้แถวไม่มีบล็อก) —
+// เพราะ handleNoteUpdate_ ฝั่งเซิร์ฟเวอร์ตัดสิน "ตรวจภายในหรือไม่" จาก COL.PELVIC ของแถวเองอยู่แล้ว ไม่ต้องพึ่งคีย์นี้
 function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, stateEl) {
+    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, stateEl) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
@@ -4399,6 +4336,8 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var pelvicResendList = pelvicResendBox ? readResendListFromDom(pelvicResendBox) : [];
   var receivedDate = receivedBtn ? (receivedBtn.getAttribute('data-value') || '') : '';
   var pelvicReceivedDate = pelvicReceivedBtn ? (pelvicReceivedBtn.getAttribute('data-value') || '') : '';
+  var hasPelvicMethod = !!pelvicMethodSelect;
+  var pelvicMethod = hasPelvicMethod ? pelvicMethodSelect.value : '';
 
   var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
   var recResendList = (rec && Array.isArray(rec.resendList)) ? rec.resendList : [];
@@ -4406,21 +4345,25 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var recPelvicResendList = (rec && Array.isArray(rec.pelvicResendList)) ? rec.pelvicResendList : [];
   var recReceivedDate = (rec && rec.receivedDate) || '';
   var recPelvicReceivedDate = (rec && rec.pelvicReceivedDate) || '';
+  var recPelvicMethod = (rec && rec.pelvicMethod) || '';
   if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote &&
       recConsultCount === consultCount && (rec.sentDate || '') === sentDate &&
       JSON.stringify(recResendList) === JSON.stringify(resendList) &&
       recPelvicSentDate === pelvicSentDate && JSON.stringify(recPelvicResendList) === JSON.stringify(pelvicResendList) &&
-      recReceivedDate === receivedDate && recPelvicReceivedDate === pelvicReceivedDate) {
+      recReceivedDate === receivedDate && recPelvicReceivedDate === pelvicReceivedDate &&
+      (!hasPelvicMethod || recPelvicMethod === pelvicMethod)) {
     return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
-  return apiCall('noteUpdate', {
+  var payload = {
     staffKey: STATE.staffKey, staffName: STATE.staffName,
     recordId: recordId, doctorName: doctorName, consult: consult, consultCount: consultCount, consultNote: consultNote,
     sentDate: sentDate, resendList: resendList,
     pelvicSentDate: pelvicSentDate, pelvicResendList: pelvicResendList,
     receivedDate: receivedDate, pelvicReceivedDate: pelvicReceivedDate
-  }).then(function (resp) {
+  };
+  if (hasPelvicMethod) payload.pelvicMethod = pelvicMethod; // แถวไม่มีบล็อกตรวจภายใน -> ไม่ส่งคีย์นี้เลย
+  return apiCall('noteUpdate', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
       // อัปเดตค่าล่าสุดที่รู้ ให้ตรงกับที่บันทึกไปแล้ว (กัน blur/change ครั้งต่อไปที่ค่าไม่เปลี่ยนยิงซ้ำ)
@@ -4432,6 +4375,7 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
         rec.pelvicResendList = pelvicResendList; rec.pelvicResendDate = pelvicResendList.length ? pelvicResendList[0].date : '';
         rec.receivedDate = receivedDate;
         rec.pelvicReceivedDate = pelvicReceivedDate;
+        if (hasPelvicMethod) rec.pelvicMethod = pelvicMethod;
       }
     } else {
       // ล้มเหลว/reject: ห้ามล้างค่าที่ผู้ใช้พิมพ์ไว้ และห้ามอัปเดต LAST_CU_RECORDS
@@ -4523,12 +4467,14 @@ function bindCuNoteEvents(container) {
     var receivedPrint = box.querySelector('.cu-note-received-print');
     var pelvicReceivedBtn = box.querySelector('.cu-note-pelvic-received-btn');
     var pelvicReceivedPrint = box.querySelector('.cu-note-pelvic-received-print');
+    // รอบ 24 (2026-09-22): "ช่องทางส่งผลตรวจภายใน" — ย้ายมาไว้ในรายชื่อแทนฟอร์มบันทึก (null สำหรับแถวไม่มีตรวจภายใน)
+    var pelvicMethodSelect = box.querySelector('.cu-note-pelvic-method');
     var stateEl = box.querySelector('.cu-note-state');
     if (!doctorInput || !consultChk || !consultCountInput || !noteInput || !sentDateInput || !resendBox) return;
 
     function trySave() {
       return maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, stateEl);
+        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, stateEl);
     }
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
@@ -4579,6 +4525,9 @@ function bindCuNoteEvents(container) {
     }
     if (pelvicReceivedBtn) {
       pelvicReceivedBtn.addEventListener('click', function () { toggleReceivedBtn(pelvicReceivedBtn, pelvicReceivedPrint, 'รับผลตรวจภายในแล้ว', trySave); });
+    }
+    if (pelvicMethodSelect) {
+      pelvicMethodSelect.addEventListener('change', trySave);
     }
     // เฉพาะ change (ไม่ผูก blur ด้วย) กันยิงซ้ำ 2 ครั้งตอนพิมพ์แล้วคลิกออกช่อง
     consultCountInput.addEventListener('change', function () { syncConsultCountPrint(); trySave(); });
@@ -5484,9 +5433,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   syncPrefixButtons(); // สถานะเริ่มต้นตอนโหลดหน้า (ปกติค่าว่างอยู่แล้ว แต่ sync ไว้กันกรณีค่าเริ่มต้นเปลี่ยนในอนาคต)
   qs('deliveryMethod').addEventListener('change', recalcTotals);
-  // รอบ 23 (2026-09-21): ตัวเลือกช่องทางส่งผลตรวจภายใน — สร้างจาก #deliveryMethod ตอนโหลดหน้าครั้งเดียว
-  populatePelvicMethodOptions();
-  if (qs('pelvicMethod')) qs('pelvicMethod').addEventListener('change', recalcTotals);
   // 🐞 แก้ 2026-09-13: ช่องนี้ไม่เคยมี listener มาตั้งแต่วันที่สร้าง (2026-09-11) ⇒ ติ๊ก/ติ๊กออกด้วยมือแล้ว
   // ยอดรวมกับป้ายราคาไม่เปลี่ยน (ค้างเรตเดิม) ทั้งที่ onSubmitLog() อ่าน .checked สด ๆ ⇒ ยอดบนจอ ≠ ยอดที่ลงชีต
   // ⚠ ใช้ recalcTotals ตรง ๆ ไม่ใช่ onServiceFieldChange — ช่องนี้ไม่เปลี่ยน isCheckupOn()/isVaccineOn() จึงไม่ต้อง sync คิว
