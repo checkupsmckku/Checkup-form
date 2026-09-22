@@ -355,17 +355,20 @@
   .cu-note-resend-del { flex: 0 0 auto; padding: 2px 10px; }
   .cu-note-resend-add { flex: 0 0 auto; }
   .cu-note-resenddate-print { display: none; }
-  /* รอบ 23 (2026-09-21): ผลตรวจภายในเดินคนละเส้นทางกับผลตรวจสุขภาพ — คู่ขนานกับ .cu-note-sentdate/.cu-note-resend
+  /* รอบ 23 (2026-09-21): ผลตรวจมะเร็งปากมดลูกเดินคนละเส้นทางกับผลตรวจสุขภาพ — คู่ขนานกับ .cu-note-sentdate/.cu-note-resend
      ข้างบนทุกประการ (คลาส .cu-note-resend-row/.cu-note-resend-date/.cu-note-resend-method/.cu-note-resend-del
-     ใช้ร่วมกัน — สโคปด้วย container ที่ผูก ไม่ชนกัน) */
+     ใช้ร่วมกัน — สโคปด้วย container ที่ผูก ไม่ชนกัน)
+     รอบ 26 (2026-09-22, เจ้าของสั่งกลับคำ): คงบล็อก "ส่งออกอีกครั้ง" ไว้เหมือนเดิม (.cu-note-pelvic-resend) —
+     เอาออกเฉพาะปุ่ม "รับผลตรวจภายในแล้ว" (.cu-note-pelvic-received-btn) + span พิมพ์คู่กัน */
   .cu-note-pelvic-sentdate { flex: 0 0 auto; width: auto; min-width: 140px; }
   .cu-note-pelvic-sentdate-print { display: none; }
   .cu-note-pelvic-resend { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 2px; min-width: 0; }
   .cu-note-pelvic-resenddate-print { display: none; }
-  /* ปุ่ม "รับผลตรวจสุขภาพแล้ว/รับผลตรวจภายในแล้ว" — no-print (ซ่อนบนกระดาษด้วยกฎ .no-print ที่มีอยู่แล้ว)
-     ช่องพิมพ์คู่กันซ่อนบนจอเสมอ โชว์เฉพาะตอนพิมพ์ (ว่าง = ไม่พิมพ์อะไรเลย ไม่ใช่ป้ายลอย) */
-  .cu-note-received-btn, .cu-note-pelvic-received-btn { flex: 0 0 auto; }
-  .cu-note-received-print, .cu-note-pelvic-received-print { display: none; }
+  /* ปุ่ม "รับผลตรวจสุขภาพแล้ว" — no-print (ซ่อนบนกระดาษด้วยกฎ .no-print ที่มีอยู่แล้ว)
+     ช่องพิมพ์คู่กันซ่อนบนจอเสมอ โชว์เฉพาะตอนพิมพ์ (ว่าง = ไม่พิมพ์อะไรเลย ไม่ใช่ป้ายลอย)
+     รอบ 26: ปุ่ม "รับผลตรวจภายในแล้ว" (.cu-note-pelvic-received-btn) ถูกถอดออกแล้ว เหลือแค่ของผลตรวจสุขภาพ */
+  .cu-note-received-btn { flex: 0 0 auto; }
+  .cu-note-received-print { display: none; }
   .cu-note-state { flex: 0 0 auto; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .cu-note-state.saving { color: var(--text-muted); }
   .cu-note-state.ok { color: var(--success); }
@@ -580,6 +583,20 @@
   .sp-board-status { margin: 4px 0; font-weight: 600; }
   .sp-saving { font-size: 12px; color: var(--text-muted); } /* รอบ 9.2 — ตัวบอกสถานะระหว่างรอ apiCall() ของปุ่มสถานะรายคน */
 
+  /* รอบ 26 (2026-09-22, ข้อ 11): #spBoardHeading เดิมเป็นข้อความบรรทัดเดียวยาว ๆ ตัดคำกลางวลีบนจอแคบ — แยกเป็น
+     3 ชั้น (ชื่อรายการ / วันที่ / อัลไพล์สถิติ 2 เม็ด) แต่ละเม็ดห้ามตัดคำ (white-space:nowrap) ทั้งเม็ด ตัวเม็ด
+     ล้อมด้วย flex-wrap ⇒ ล้นจอแคบก็แค่ตกบรรทัดไปทั้งเม็ด ไม่ตัดกลางคำ */
+  .sp-board-heading { margin-top: 10px; }
+  .sp-board-heading-title { font-size: 22px; font-weight: 700; color: var(--text); }
+  .sp-board-heading-date { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+  .sp-board-heading-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .sp-board-pill {
+    display: inline-block; white-space: nowrap; font-size: 13px; font-weight: 700;
+    padding: 4px 10px; border-radius: 999px; background: var(--gray-pale); color: var(--text);
+  }
+  .sp-board-pill.sp-pill-warn { background: #FDECEA; color: var(--danger); }
+  .sp-board-pill.sp-pill-ok { background: var(--green-pale); color: var(--success); }
+
   /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่
      รอบ 17 (2026-09-17): padding-bottom เผื่อที่ท้ายหน้าไม่ให้ #panelTotals (ลอยอยู่แล้ว) บังช่องกรอกสุดท้าย —
      ค่าฐาน (จอแคบ) ~90px พอสำหรับแถบเดียวล่างจอ · จอกว้าง ≥700px เพิ่มเป็น ~240px เผื่อความสูงกล่องลอยเต็มรูป */
@@ -686,30 +703,35 @@
     .cu-note-resend { display: none; }
     .cu-note-resenddate-print { display: inline-block; }
     .cu-note-resenddate-print:not(:empty)::before { content: 'ส่งออกอีกครั้ง '; }
-    /* รอบ 23 (2026-09-21): ผลตรวจภายในแยกเส้นทาง — คู่ขนานกับกฎ .cu-note-sentdate/.cu-note-resend ข้างบนทุกประการ
+    /* รอบ 23 (2026-09-21): ผลตรวจมะเร็งปากมดลูกแยกเส้นทาง — คู่ขนานกับกฎ .cu-note-sentdate/.cu-note-resend ข้างบนทุกประการ
        ปุ่ม "รับผลแล้ว" มีคลาส no-print อยู่แล้ว (กฎ .no-print{display:none!important} มีอยู่แล้วในไฟล์) —
-       ช่องพิมพ์สถานะรับผลไม่มีเส้นใต้ให้เขียนมือ (ต่างจากช่องวันที่) เพราะ "ยังไม่รับ" ต้องไม่พิมพ์อะไรเลย ไม่ใช่ป้ายลอย */
+       รอบ 26 (2026-09-22, เจ้าของสั่งกลับคำ): คงบล็อก "ส่งออกอีกครั้ง" ไว้ — เอาออกเฉพาะปุ่ม "รับผลตรวจภายในแล้ว" */
     .cu-note-pelvic-sentdate { display: none; }
     .cu-note-pelvic-sentdate-print {
       display: inline-block; min-width: 30mm; border-bottom: 1px solid #000; padding: 2px 0;
     }
     .cu-note-pelvic-resend { display: none; }
     .cu-note-pelvic-resenddate-print { display: inline-block; }
-    .cu-note-pelvic-resenddate-print:not(:empty)::before { content: 'ส่งออกผลตรวจภายในอีกครั้ง '; }
-    .cu-note-received-print, .cu-note-pelvic-received-print { display: inline-block; }
+    .cu-note-pelvic-resenddate-print:not(:empty)::before { content: 'ส่งออกผลตรวจมะเร็งปากมดลูกอีกครั้ง '; }
+    .cu-note-received-print { display: inline-block; }
     /* ตารางนี้มี 9 คอลัมน์ ⇒ ถ้าปล่อยให้กว้างตามเนื้อหาจะล้นขอบขวาของ A4 แล้วคอลัมน์ลายเซ็นหายไปทั้งคอลัมน์
        (เจอจริงตอนทดสอบพิมพ์ 2026-09-03) ⇒ ล็อกความกว้างเป็น % ด้วย table-layout: fixed และให้ข้อความตัดบรรทัดได้ */
     table.cu-table { font-size: 8.5pt; width: 100%; min-width: 0; table-layout: fixed; }
     table.cu-table th, table.cu-table td { padding: 2px 3px; white-space: normal; word-break: break-word; }
-    table.cu-table th:nth-child(1), table.cu-table td:nth-child(1) { width: 6%; }
-    table.cu-table th:nth-child(2), table.cu-table td:nth-child(2) { width: 17%; }
-    table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { width: 9%; }
-    table.cu-table th:nth-child(4), table.cu-table td:nth-child(4) { width: 5%; }
-    table.cu-table th:nth-child(5), table.cu-table td:nth-child(5) { width: 12%; }
-    table.cu-table th:nth-child(6), table.cu-table td:nth-child(6) { width: 12%; }
-    table.cu-table th:nth-child(7), table.cu-table td:nth-child(7) { width: 13%; }
-    table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 8%; }
-    table.cu-table th:nth-child(9), table.cu-table td:nth-child(9) { width: 18%; }  /* ลายเซ็น ~35 mm */
+    /* รอบ 26 (2026-09-23): ลำดับคอลัมน์ใหม่ คิว·HN·ชื่อ-สกุล·โปรแกรม·ค่าบริการ·ตรวจมะเร็งปากมดลูก·ช่องทางส่งผลมะเร็งฯ·
+       ช่องทางส่งผลตรวจสุขภาพ·เซ็นรับ — ⚠ แก้ลำดับคอลัมน์ใน renderCheckupTable() ต้องแก้ % ชุดนี้ตามทุกครั้ง
+       (เจอจริง: สลับคอลัมน์แล้วลืมแก้ ⇒ HN กว้างเกิน ชื่อ/โปรแกรมถูกตัดกลางคำ "โปรแ/กรม") */
+    table.cu-table th:nth-child(1), table.cu-table td:nth-child(1) { width: 5%; }
+    table.cu-table th:nth-child(2), table.cu-table td:nth-child(2) { width: 10%; }
+    table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { width: 16%; }
+    table.cu-table th:nth-child(4), table.cu-table td:nth-child(4) { width: 10%; }
+    table.cu-table th:nth-child(5), table.cu-table td:nth-child(5) { width: 8%; }
+    table.cu-table th:nth-child(6), table.cu-table td:nth-child(6) { width: 11%; }
+    table.cu-table th:nth-child(7), table.cu-table td:nth-child(7) { width: 11%; }
+    table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 11%; }
+    table.cu-table th:nth-child(9), table.cu-table td:nth-child(9) { width: 18%; }  /* เซ็นรับ ~35 mm */
+    /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
+    table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     #cuCardsFoot { font-size: 10pt; margin-top: 2mm; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
@@ -790,7 +812,7 @@
                 </div>
 
                 <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
-                <input type="text" id="patientHn" autocomplete="off" placeholder="ไม่บังคับกรอก">
+                <input type="text" id="patientHn" autocomplete="off" placeholder="บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ">
                 <div id="patientHnHint" class="field-hint-warn" hidden></div>
 
                 <!-- เจ้าของแจ้งบั๊ก 2026-09-20: เดิมช่องนี้เป็น input+datalist -- เบราว์เซอร์กรองตัวเลือกตามข้อความ
@@ -804,14 +826,17 @@
                   <button type="button" class="opt-btn prefix-btn" data-prefix="นาย">นาย</button>
                   <button type="button" class="opt-btn prefix-btn" data-prefix="นาง">นาง</button>
                   <button type="button" class="opt-btn prefix-btn" data-prefix="น.ส.">น.ส.</button>
-                  <button type="button" class="opt-btn prefix-btn" data-prefix="ด.ช.">ด.ช.</button>
-                  <button type="button" class="opt-btn prefix-btn" data-prefix="ด.ญ.">ด.ญ.</button>
+                  <!-- รอบ 26 (2026-09-22, เจ้าของสั่ง): เอา ด.ช./ด.ญ. ออก เพิ่ม Mr./Miss/Mrs. — data-prefix ตรงตัวอักษรที่แสดงเป๊ะ
+                       (MALE_PREFIX_WORDS/FEMALE_PREFIX_WORDS มี mr/miss/mrs อยู่แล้ว ไม่ต้องแก้) -->
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="Mr.">Mr.</button>
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="Miss">Miss</button>
+                  <button type="button" class="opt-btn prefix-btn" data-prefix="Mrs.">Mrs.</button>
                   <button type="button" class="opt-btn prefix-btn" id="prefixOtherBtn" data-prefix="__other__">อื่น ๆ</button>
                 </div>
                 <input type="text" id="patientPrefixOther" autocomplete="off" placeholder="พิมพ์คำนำหน้าเอง เช่น ร.ต.ต.หญิง" hidden style="margin-top:6px;">
 
                 <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
-                <input type="text" id="patientName" autocomplete="off" placeholder="ไม่บังคับกรอก">
+                <input type="text" id="patientName" autocomplete="off" placeholder="บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ">
 
                 <!-- ก้อน A (2026-09-21, เจ้าของสั่ง): ย้ายเพศมาจาก #svcCheckup — เพศเป็นของ "คน" ไม่ใช่ของบริการตรวจสุขภาพ
                      ห้ามเปลี่ยน id/name/value — ย้ายตำแหน่ง DOM อย่างเดียว (ยังอยู่นอก checkupLockWrap เสมอ ไม่ถูกล็อกตาม HN/ชื่อ) -->
@@ -856,11 +881,13 @@
                   </div>
 
                   <div id="pelvicSection" style="margin-top:10px;" hidden>
-                    <label class="field-label">ตรวจภายใน</label>
-                    <!-- ก้อน C (2026-09-21, เจ้าของสั่ง): ห้ามมีค่าตั้งต้น — เอา checked ออกจาก "ไม่ตรวจภายใน"
+                    <!-- รอบ 26 (2026-09-22, เจ้าของสั่ง): "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก" (ข้อความที่ผู้ใช้เห็นเท่านั้น
+                         id/class/คีย์ JSON/ป้ายที่เก็บลงชีตฝั่งเซิร์ฟเวอร์ ไม่เปลี่ยน) -->
+                    <label class="field-label">ตรวจมะเร็งปากมดลูก</label>
+                    <!-- ก้อน C (2026-09-21, เจ้าของสั่ง): ห้ามมีค่าตั้งต้น — เอา checked ออกจาก "ไม่ตรวจมะเร็งปากมดลูก"
                          ผู้หญิงต้องเลือกเองว่าตรวจหรือไม่ตรวจ (validateForm() บังคับผ่านด่านใหม่ ดู isPelvicChosen_) -->
                     <div class="row" id="pelvicButtons">
-                      <label class="opt-btn"><input type="radio" name="pelvic" value="no"> ไม่ตรวจภายใน</label>
+                      <label class="opt-btn"><input type="radio" name="pelvic" value="no"> ไม่ตรวจมะเร็งปากมดลูก</label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="pap"> Pap smear <span class="opt-price" data-pelvic="pap"></span></label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep"> Thinprep <span class="opt-price" data-pelvic="thinprep"></span></label>
                       <label class="opt-btn"><input type="radio" name="pelvic" value="thinprep_hpv"> Thinprep + HPV <span class="opt-price" data-pelvic="thinprep_hpv"></span></label>
@@ -886,10 +913,6 @@
                   </div>
 
                   <p class="muted" id="legacyExtraInfo" hidden></p>
-
-                  <!-- รอบ 9 (ก้อน B, B5) — InBody ย้ายเข้าแผงตรวจสุขภาพ: id เดิมเป๊ะ (sp_reg_inbody) ไม่มีขั้น prep/sent/back
-                       ⚠ ห้ามเอาไปรวมใน isCheckupOn() — ไม่ใช่เหตุให้บังคับ 7 ช่องของตรวจสุขภาพ -->
-                  <label class="opt-btn" style="margin-top:16px;"><input type="checkbox" id="sp_reg_inbody"> ทำ InBody (วิเคราะห์องค์ประกอบร่างกาย)</label>
                 </section>
                 <div class="log-lock-overlay" id="checkupLockOverlay" hidden></div>
               </div>
@@ -973,7 +996,6 @@
 
               <section id="svcMedcertLab" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
                 <label class="field-label" style="margin-top:2px;">ใบรับรองแพทย์มี Lab</label>
-                <p class="muted">ใบรับรองมี lab คิดราคาไม่ตายตัว ต้องกรอกยอดที่เก็บจริงเอง</p>
                 <div class="row">
                   <div>
                     <label class="field-label" for="medCertLabCount">ใบรับรองมี lab (จำนวนใบ)</label>
@@ -1138,7 +1160,7 @@
       <div id="spBoardLayer2" hidden>
         <button type="button" class="btn secondary small" id="spBoardBackBtn">← กลับ</button>
         <div class="row" id="spBoardSwitchBar" style="margin-top:8px;"></div>
-        <h2 id="spBoardHeading" style="margin-top:10px;"></h2>
+        <div id="spBoardHeading" class="sp-board-heading" role="heading" aria-level="2"></div>
         <div class="row" id="spBoardBulkRow">
           <button type="button" class="btn small" id="btnSpBoardBulkPrep">✔ ติ๊กว่าส่งรายชื่อแล้วทั้งชุด</button>
         </div>
@@ -1250,7 +1272,10 @@ var SPECIAL_SENDS = [
   { id: 'mmg', name: 'MMG (แมมโมแกรม)', group: 'checkup', prepLabel: 'ส่ง line แล้ว' },
   { id: 'vision3d', name: 'ห้องตรวจตา', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' }, // รอบ 6 (0.2.2): เปลี่ยนป้ายจาก 'ตรวจสายตาสามมิติ' — id/ลำดับ/group/prepLabel คงเดิม
   { id: 'ent', name: 'ตรวจหูคอจมูก', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
-  { id: 'ent_hearing', name: 'ตรวจหูคอจมูก + การได้ยิน', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' }
+  { id: 'ent_hearing', name: 'ตรวจหูคอจมูก + การได้ยิน', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
+  // รอบ 26 (2026-09-22, เจ้าของสั่ง): CT Low dose — "นับยอดอย่างเดียว" เหมือน inbody ต่อท้ายสุดเท่านั้น
+  // ห้ามแก้/ลบ/เรียงใหม่ของเดิม 6 ตัวข้างบน — ต้องตรงกับ สถิติบริการ.js เป๊ะ (test_special_sends.js เทียบ)
+  { id: 'ct_lowdose', name: 'CT Low dose', group: 'checkup', prepLabel: null }
 ];
 
 // รอบ 7 (B7) — สร้างตัวช่วยค้นหาแบบเดียวกับฝั่งเซิร์ฟเวอร์ (SPECIAL_SEND_BY_ID ใน สถิติบริการ.js)
@@ -1270,7 +1295,9 @@ var SPECIAL_ICONS = {
   mmg: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="5" width="6" height="38" rx="3" fill="#1A1E40"/><rect x="24" y="20" width="13" height="9" rx="4.5" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><rect x="11" y="15" width="29" height="5" rx="2.5" fill="#1A1E40"/><rect x="11" y="29" width="29" height="5" rx="2.5" fill="#2C7BC4"/><rect x="6" y="5" width="6" height="38" rx="3" fill="#1A1E40"/></svg>',
   vision3d: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="15" cy="24" r="10" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><circle cx="33" cy="24" r="10" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><line x1="25" y1="24" x2="23" y2="24" stroke="#1A1E40" stroke-width="2"/><circle cx="15" cy="24" r="3.5" fill="#2C7BC4"/><circle cx="33" cy="24" r="3.5" fill="#2C7BC4"/></svg>',
   ent: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="29" y="27" width="14" height="5.5" rx="2.5" fill="#2C7BC4" transform="rotate(28 29 27)"/><circle cx="42" cy="36" r="3.5" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/></svg>',
-  ent_hearing: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 19 Q33 24 30 29" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M35 15 Q41 24 35 33" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M40 11 Q47 24 40 37" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/></svg>'
+  ent_hearing: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M17 36 C6 36 4 22 11 13 C15 7 26 8 27 17 C28 24 21 23 21 29 C21 33 25 33 25 29" fill="none" stroke="#1A1E40" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 19 Q33 24 30 29" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M35 15 Q41 24 35 33" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/><path d="M40 11 Q47 24 40 37" fill="none" stroke="#2C7BC4" stroke-width="2" stroke-linecap="round"/></svg>',
+  // รอบ 26 (2026-09-22): CT Low dose — วงแหวนแทนช่องสแกน (gantry) + แท่นนอนพาดผ่านกึ่งกลาง
+  ct_lowdose: '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="20" r="14" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><circle cx="24" cy="20" r="7" fill="#fff" stroke="#2C7BC4" stroke-width="2"/><rect x="4" y="34" width="40" height="6" rx="3" fill="#1A1E40"/><rect x="14" y="27" width="20" height="7" rx="2" fill="#2C7BC4"/></svg>'
 };
 
 // รอบ 9 ก้อน A (SPEC_รอบ9.md หัวข้อ 3.2) — กระดานงานค้างของ manager
@@ -1321,6 +1348,17 @@ function spBoardStatusLabel(rec, activeId) {
   if (sent.indexOf(activeId) !== -1) return { icon: '🚶', text: 'ส่งตัวไปแล้ว' };
   if (prep.indexOf(activeId) !== -1) return { icon: '✅', text: 'ส่งรายชื่อแล้ว' };
   return { icon: '⏳', text: 'ยังไม่ส่งรายชื่อ' };
+}
+
+// รอบ 26 (2026-09-22, เจ้าของสั่ง): เวลาส่งตัว BMD — เซิร์ฟเวอร์ประทับให้ (rec.bmdSentTime รูปแบบ 'yyyy-MM-dd HH:mm')
+// ใช้ทั้งการ์ดกระดาน spBoard (renderSpPeopleCards) และ "รายการวันนี้" (summarizeRecordParts)
+function bmdSentTimeLabel(rec) {
+  var v = (rec && rec.bmdSentTime) || '';
+  if (!v || v.length < 16) return '';
+  var datePart = v.slice(0, 10);
+  var timePart = v.slice(11, 16);
+  var sameDay = !(rec && rec.date) || datePart === rec.date;
+  return sameDay ? ('ส่งตัว ' + timePart + ' น.') : ('ส่งตัว ' + formatThaiDateShort(datePart) + ' ' + timePart + ' น.');
 }
 
 // รายชื่อเจ้าหน้าที่ตั้งต้น — ใช้ก่อนโหลด config สำเร็จเท่านั้น หลังจากนั้นใช้รายชื่อจาก action=config (resp.staff) เสมอ
@@ -1717,7 +1755,10 @@ function updatePersonCardLabels() {
   var nameLabelEl = qs('patientNameLabel');
   var hnEl = qs('patientHn');
   var nameEl = qs('patientName');
-  var reqPh = 'บังคับกรอก', normalPh = 'ไม่บังคับกรอก';
+  // รอบ 26 (2026-09-22): เดิม normalPh = 'ไม่บังคับกรอก' ทั้งที่ตรวจสุขภาพ/ส่งตรวจพิเศษบังคับจริง — ตอนพิมพ์ชื่อ/HN
+  // ยังไม่มีโปรแกรม/รายการส่งตรวจ (needPerson ยังเป็น false) ⇒ ใช้ normalPh ซึ่งเคยบอกผิดว่า "ไม่บังคับ"
+  // กติกาบังคับจริง (validateForm) ไม่เปลี่ยน — แก้แค่ข้อความ placeholder ให้ไม่หลอกผู้ใช้
+  var reqPh = 'บังคับกรอก', normalPh = 'บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ';
   var checkupOn = isCheckupOn();
   var needPerson = checkupOn || isSpecialOn();
 
@@ -2041,6 +2082,11 @@ function buildSpecialRow(item) {
   return row;
 }
 
+// รอบ 26 (2026-09-22, เจ้าของสั่ง): รายการ "นับยอดอย่างเดียว (ไม่ติดตามสถานะ)" — prepLabel === null (inbody, ct_lowdose)
+// ไม่มีขั้นส่งรายชื่อ/ส่งตัว/กลับมาแล้ว ⇒ ไม่โผล่ใน SP_BOARD_ITEMS (กรองด้วย prepLabel != null อยู่แล้ว) — เดิม inbody
+// เคยแยกเป็น checkbox static ในแผงตรวจสุขภาพ (sp_reg_inbody) ตอนนี้ย้ายมาอยู่ในแผงนี้ท้ายรายการติดตาม 5 ตัว
+var SP_COUNT_ONLY_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel == null; });
+
 function buildSpecialSendsUI() {
   var wrap = qs('specialSendsList');
   if (wrap) wrap.innerHTML = '';
@@ -2051,6 +2097,19 @@ function buildSpecialSendsUI() {
     var regCb = qs('sp_reg_' + item.id);
     if (regCb) regCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
   });
+  if (wrap && SP_COUNT_ONLY_ITEMS.length) {
+    var heading = document.createElement('p');
+    heading.className = 'muted';
+    heading.style.marginTop = '12px';
+    heading.textContent = 'นับยอดอย่างเดียว (ไม่ติดตามสถานะ)';
+    wrap.appendChild(heading);
+    SP_COUNT_ONLY_ITEMS.forEach(function (item) {
+      var row = buildSpecialRow(item);
+      wrap.appendChild(row);
+      var regCb = qs('sp_reg_' + item.id);
+      if (regCb) regCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
+    });
+  }
 }
 
 // เจ้าของสั่ง 2026-09-11: เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้ ⇒ ล็อกช่องติ๊ก sp_reg_mmg ตามเพศที่เลือก
@@ -2155,6 +2214,21 @@ function getSelectedPelvic() {
 // แต่ความหมายคนละอย่าง ใช้ helper นี้แทนทุกจุดที่ต้องเช็คว่า "มีการเลือกตรวจภายในชนิดใดชนิดหนึ่งจริงไหม"
 var PELVIC_CHOSEN_CODES = ['pap', 'thinprep', 'thinprep_hpv'];
 function isPelvicChosen_(p) { return PELVIC_CHOSEN_CODES.indexOf(String(p || '')) !== -1; }
+
+// รอบ 26 (2026-09-22, เจ้าของสั่งเปลี่ยนคำ "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก" บนจอ): เว็บแสดงแค่ "ชนิด" ของการตรวจ
+// เช่น "Pap smear" / "Thinprep" / "Thinprep + HPV" — ไม่แสดงคำว่า "ตรวจภายใน (...)" ที่มากับ rec.pelvicLabel จาก
+// เซิร์ฟเวอร์ตรงๆ อีกต่อไป ⚠ ป้ายที่เก็บลงชีตจริง (PELVIC_OPTIONS.label ฝั่งเซิร์ฟเวอร์) ห้ามเปลี่ยน — ใช้ฟังก์ชันนี้
+// ที่เดียวทุกจุดที่แสดงชนิดตรวจมะเร็งปากมดลูกบนจอ/ใบพิมพ์
+var PELVIC_TYPE_SHORT_LABEL = { pap: 'Pap smear', thinprep: 'Thinprep', thinprep_hpv: 'Thinprep + HPV' };
+function pelvicTypeLabel(rec) {
+  var code = rec && rec.pelvic;
+  if (code && PELVIC_TYPE_SHORT_LABEL[code]) return PELVIC_TYPE_SHORT_LABEL[code];
+  var label = (rec && rec.pelvicLabel) || '';
+  if (!label) return label;
+  // ไม่มี code ที่รู้จักใน rec (เผื่ออนาคต) -> ตัด "ตรวจภายใน (" นำหน้า และ ")" ท้ายออกจาก label ดิบแทน
+  var m = /^ตรวจภายใน \((.+)\)$/.exec(label);
+  return m ? m[1] : label;
+}
 function getCheckedVaccineCodes() {
   var out = [];
   document.querySelectorAll('#vaccineList input[type="checkbox"]:checked').forEach(function (cb) {
@@ -2331,12 +2405,15 @@ function validateForm(ctx) {
   } else if (ctx.checkupOn && checkupMissing.length) {
     msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
   } else if (ctx.checkupOn && ctx.gender === 'female' && !ctx.pelvic) {
-    // ก้อน C (2026-09-21, เจ้าของสั่ง): ผู้หญิงต้องเลือกให้ชัดว่า "ตรวจภายใน" หรือ "ไม่ตรวจภายใน" — ห้ามมีค่าตั้งต้น
+    // ก้อน C (2026-09-21, เจ้าของสั่ง): ผู้หญิงต้องเลือกให้ชัดว่า "ตรวจ" หรือ "ไม่ตรวจ" มะเร็งปากมดลูก — ห้ามมีค่าตั้งต้น
     // ctx.pelvic ว่างได้เฉพาะกรณีนี้เท่านั้น (ชาย/ไม่ตรวจสุขภาพ ได้ 'no' เสมอจาก recalcTotals())
-    msg = 'ผู้หญิงต้องเลือกว่าตรวจภายในหรือไม่';
+    // รอบ 26 (2026-09-22, เจ้าของสั่งเปลี่ยนคำ "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก"): ข้อความผู้ใช้เห็นเท่านั้นที่เปลี่ยน
+    msg = 'ผู้หญิงต้องเลือกว่าตรวจมะเร็งปากมดลูกหรือไม่';
   } else if (ctx.checkupOn && ctx.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT && !ctx.pickupDate) {
     // รอบ 21 (2026-09-20): บังคับฝั่งเว็บเท่านั้น (เหตุผลเดียวกับ HN/วัคซีน —
     // ถ้าบังคับที่เซิร์ฟเวอร์ แถวเก่าที่ยังไม่มีค่านี้จะกลายเป็นแถวที่แก้ไขไม่ได้เลย)
+    // รอบ 26 (2026-09-22): เจ้าของสั่งกลับคำ — ด่านนี้ต้องบังคับเหมือนเดิม (ไม่ได้ลบทิ้งแล้ว) ยังต้องกรอกวันนัดรับ
+    // ตอนบันทึกครั้งแรก แก้ทีหลังในรายชื่อได้ผ่าน .cu-note-pickupdate เหมือนเดิม (เป็นทางเสริม ไม่ใช่ทางแทน)
     msg = 'เลือกช่องทาง "นัดรับวันที่" แล้วต้องกรอกวันที่นัดรับ';
   // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN) — เดิมมีด่าน
   // ctx.vaccineOn && !ctx.patientHn อยู่ตรงนี้ ตอนนี้ลบทิ้งแล้ว (ด่านรูปแบบ HN ด้านล่างยังทำงานเหมือนเดิมถ้ากรอกมาผิด)
@@ -2534,7 +2611,8 @@ function updatePanelSummaries(ctx) {
 
   var spSumEl = qs('panelSpecialSummary');
   if (spSumEl) {
-    var n = getSpecialRegIds().filter(function (id) { return id !== 'inbody'; }).length;
+    // รอบ 26 (2026-09-22, เจ้าของสั่ง): InBody ย้ายเข้าแผงนี้แล้ว (เดิมอยู่แผงตรวจสุขภาพจึงต้องกรองออก) — นับทุกตัวที่ติ๊ก
+    var n = getSpecialRegIds().length;
     spSumEl.textContent = n > 0 ? (n + ' รายการ') : '—';
   }
 }
@@ -2925,9 +3003,10 @@ function summarizeRecordParts(rec) {
   var parts = [];
   if (rec.queue) parts.push('คิว ' + rec.queue); // รอบ 6: โชว์เลขคิวหน้าชื่อ
   if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
-  if (rec.pelvicLabel) parts.push(rec.pelvicLabel);
-  // รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่ต่อจากป้ายตรวจภายในทันที (มีเฉพาะแถวที่ pelvic ≠ 'no')
-  if (rec.pelvicDue) parts.push('ส่งออกผลภายในวันที่ ' + formatThaiDate(rec.pelvicDue));
+  // รอบ 26 (2026-09-22): แสดงแค่ "ชนิด" ผ่าน pelvicTypeLabel() แทน rec.pelvicLabel ดิบ (เดิมมีคำว่า "ตรวจภายใน (...)")
+  if (rec.pelvicLabel) parts.push('ตรวจมะเร็งปากมดลูก : ' + pelvicTypeLabel(rec));
+  // รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่ต่อจากป้ายตรวจมะเร็งปากมดลูกทันที (มีเฉพาะแถวที่ pelvic ≠ 'no')
+  if (rec.pelvicDue) parts.push('ส่งออกผลตรวจมะเร็งปากมดลูกวันที่ ' + formatThaiDate(rec.pelvicDue));
   // เจ้าของสั่ง 2026-09-12: การ์ด "รายการวันนี้" ต้องเห็นช่องทางรับผลด้วย (เดิมเห็นได้เฉพาะตอนกดแก้ไข
   // หรือในใบรายชื่อผู้รับบริการตรวจสุขภาพ) — ใช้คำเดียวกับป้ายในฟอร์มคือ "ช่องทางรับผล"
   // ค่านี้มีเฉพาะแถวที่มีโปรแกรมตรวจสุขภาพ (เซิร์ฟเวอร์เก็บ '' เมื่อไม่มีโปรแกรม) จึงไม่ต้องเช็ค program ซ้ำ
@@ -2939,7 +3018,15 @@ function summarizeRecordParts(rec) {
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
   if (rec.medCertLabCount) parts.push('ใบรับรองมี lab ' + rec.medCertLabCount + ' ใบ');
   if (rec.specialPrepItems) parts.push('คีย์ consult/ส่ง line: ' + rec.specialPrepItems);
-  if (rec.specialSentItems) parts.push('ส่งตรวจ: ' + rec.specialSentItems);
+  if (rec.specialSentItems) {
+    var sentText = 'ส่งตรวจ: ' + rec.specialSentItems;
+    // รอบ 26 (2026-09-22, เจ้าของสั่ง): แถวที่มี BMD ส่งตัวแล้ว แสดงเวลาต่อท้ายรายการ BMD ด้วย
+    if ((rec.specialSent || []).indexOf('bmd') !== -1) {
+      var bmdTime = bmdSentTimeLabel(rec);
+      if (bmdTime) sentText += ' (' + bmdTime + ')';
+    }
+    parts.push(sentText);
+  }
   if (rec.specialBackItems) parts.push('กลับมาแล้ว: ' + rec.specialBackItems);
   // เจ้าของสั่ง 2026-09-11: ชื่อ-สกุล/HN ย้ายไปอยู่สติกเกอร์ซ้ายของการ์ดแล้ว (ดู renderTodayList) — ไม่ใส่ซ้ำตรงนี้
   if (rec.staffName) parts.push('ผู้บันทึก: ' + rec.staffName);
@@ -3450,8 +3537,34 @@ function renderSpPeopleCards(id) {
   var dateStr = (qs('spBoardDate') && qs('spBoardDate').value) || todayStr();
   // รอบ 9.2 — เพิ่ม "ไปตรวจแล้ว X / N คน" ต่อท้ายหัวข้อ (นับจาก specialSent ของแถวที่ยังไม่ยกเลิก/อยู่หมวดนี้)
   var sentCount = rows.filter(function (r) { return (r.specialSent || []).indexOf(id) !== -1; }).length;
-  if (headingEl) headingEl.textContent = (item ? item.name : '') + ' · ' + formatThaiDate(dateStr) + ' · รวม ' + rows.length + ' คน' +
-    ' · ไปตรวจแล้ว ' + sentCount + ' / ' + rows.length + ' คน';
+  // รอบ 26 (2026-09-22, ข้อ 11): เดิมยัดทุกอย่างเป็น textContent บรรทัดเดียว ยาวจนตัดคำกลางวลีบนจอแคบ — สร้าง 3 ชั้น
+  // ด้วย createElement/textContent ล้วน (ไม่ใช้ innerHTML กับข้อมูลผู้ใช้เลย แม้ item.name จะมาจากค่าคงที่ในไฟล์เองก็ตาม
+  // — กันพลาดถ้าใครเผลอเปลี่ยนที่มาในอนาคต): ชื่อรายการ(ใหญ่/หนา) · วันที่(เล็ก/จาง) · เม็ดสถิติ 2 เม็ด(ไม่ตัดคำ)
+  if (headingEl) {
+    headingEl.textContent = '';
+    var hTitle = document.createElement('div');
+    hTitle.className = 'sp-board-heading-title';
+    hTitle.textContent = item ? item.name : '';
+    var hDate = document.createElement('div');
+    hDate.className = 'sp-board-heading-date';
+    hDate.textContent = formatThaiDate(dateStr);
+    var hPills = document.createElement('div');
+    hPills.className = 'sp-board-heading-pills';
+    var pillTotal = document.createElement('span');
+    pillTotal.className = 'sp-board-pill';
+    pillTotal.textContent = 'รวม ' + rows.length + ' คน';
+    var pillSent = document.createElement('span');
+    // สี: N=0 -> เป็นกลาง · X<N -> เตือน (ยังไปไม่ครบ) · X===N && N>0 -> สำเร็จ (ไปครบแล้ว)
+    var pillClass = 'sp-board-pill';
+    if (rows.length > 0) pillClass += (sentCount < rows.length) ? ' sp-pill-warn' : ' sp-pill-ok';
+    pillSent.className = pillClass;
+    pillSent.textContent = 'ไปตรวจแล้ว ' + sentCount + ' / ' + rows.length + ' คน';
+    hPills.appendChild(pillTotal);
+    hPills.appendChild(pillSent);
+    headingEl.appendChild(hTitle);
+    headingEl.appendChild(hDate);
+    headingEl.appendChild(hPills);
+  }
 
   var wrap = qs('spBoardPeopleWrap');
   if (!wrap) return;
@@ -3466,12 +3579,15 @@ function renderSpPeopleCards(id) {
     var label = spBoardStatusLabel(rec, id);
     var isSent = (rec.specialSent || []).indexOf(id) !== -1;
     var isBack = (rec.specialBack || []).indexOf(id) !== -1;
+    // รอบ 26 (2026-09-22, เจ้าของสั่ง): BMD ที่ส่งตัวแล้ว แสดง "ส่งตัว HH:mm น." ต่อท้ายสถานะ (วันที่ด้วยถ้าไม่ใช่วันเดียวกับแถว)
+    var bmdTimeText = (id === 'bmd' && isSent) ? bmdSentTimeLabel(rec) : '';
     // รอบ 9.2 — renderSpPeopleCards() rebuild การ์ดใหม่ทั้งหมดทุกครั้ง ⇒ ตัวบอก "กำลังบันทึก…" ต้องอ่านจาก
     // rec._spSaving (state บนตัวเรคคอร์ดเอง) ไม่ใช่ disabled ของปุ่ม เพราะปุ่มเดิมถูกทิ้งไปแล้วทุกรอบ render
     card.innerHTML =
       // เจ้าของสั่ง 2026-09-13: รูปแบบเดียวกับที่อื่น (เดิมแยก 2 บรรทัด และ**ไม่มีคำนำหน้า**)
       '<div class="sp-board-name">' + (idx + 1) + '. ' + hnNameHtml(rec) + '</div>' +
       '<div class="sp-board-status">' + label.icon + ' ' + escHtml(label.text) +
+      (bmdTimeText ? ' · ' + escHtml(bmdTimeText) : '') +
       (rec._spSaving ? ' <span class="sp-saving">กำลังบันทึก…</span>' : '') + '</div>';
 
     var btnRow = document.createElement('div');
@@ -3562,6 +3678,8 @@ function onSpBoardStatusClick(rec, stage) {
       rec.specialSent = resp.specialSent || [];
       rec.specialBack = resp.specialBack || [];
       rec.specialReg = resp.specialReg || rec.specialReg || [];
+      // รอบ 26 (2026-09-22): เวลาส่งตัว BMD ที่เซิร์ฟเวอร์ประทับให้ — อัปเดตทันทีไม่ต้องรอโหลด spBoard ใหม่
+      rec.bmdSentTime = resp.bmdSentTime || '';
       rec._spSaving = false;
       renderSpBoardCards();
       renderSpBoardSwitchBar();
@@ -3774,6 +3892,33 @@ function formatThaiDate(dateStr) {
   return d + ' ' + THAI_MONTH_NAMES_CU[m - 1] + ' ' + (y + 543);
 }
 
+// รอบ 26 (2026-09-22): วันที่แบบย่อ (พ.ศ. 2 หลัก) — ใช้ใน shortDeliveryLabel() เท่านั้น เช่น "25 ก.ย. 69"
+var THAI_MONTH_ABBR_CU = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+// ⚠ รูปแบบผิด/พาร์สไม่ได้ -> คืนสตริงดิบกลับไปเหมือน formatThaiDate() ทุกประการ (ไม่ใช่ '') เพื่อให้ผู้เรียกยัง
+// escHtml() ค่านี้ได้ตามกติกากลางของไฟล์นี้ ("ค่าจากผู้ใช้ผ่าน escHtml() ทุกค่า") แทนที่จะกลืนค่าทิ้งเงียบ ๆ
+function formatThaiDateShort(dateStr) {
+  var parts = String(dateStr || '').split('-');
+  if (parts.length !== 3) return String(dateStr || '');
+  var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+  if (!y || !m || !d || m < 1 || m > 12) return String(dateStr || '');
+  var beYear2 = String(y + 543).slice(-2);
+  return d + ' ' + THAI_MONTH_ABBR_CU[m - 1] + ' ' + beYear2;
+}
+
+// รอบ 26 (2026-09-22, เจ้าของสั่ง): "ช่องทางแบบสั้น" — ใช้ทั้งใบพิมพ์แบบการ์ด (renderCheckupCards) และแบบตาราง
+// (renderCheckupTable) ที่เดียว ห้ามเขียนตรรกะแปลงช่องทางซ้ำที่อื่น
+function shortDeliveryLabel(method, pickupDate) {
+  if (!method) return '—';
+  if (method === 'รอรับด้วยตนเอง') return 'รอรับ';
+  if (method === 'ส่งทางไปรษณีย์') return 'ส่งไปรษณีย์';
+  if (method === 'ส่งทาง E-mail') return 'E-mail';
+  if (method === 'ส่งทาง Whatsapp') return 'Whatsapp';
+  if (method === DELIVERY_PICKUP_APPOINTMENT) {
+    return pickupDate ? ('นัดรับ ' + formatThaiDateShort(pickupDate)) : 'นัดรับ (ยังไม่ระบุวัน)';
+  }
+  return method; // ค่าอื่น (เช่นแถวเก่าที่ไม่อยู่ใน whitelist ปัจจุบัน) -> แสดงตามเดิม
+}
+
 function programLabelForPrint(program) {
   var p = String(program == null ? '' : program);
   if (p === 'pea') return 'การไฟฟ้าเรียกเก็บ'; // ป้ายเดียวกับที่ใช้ในรายงานรายเดือน (renderReport)
@@ -3803,12 +3948,12 @@ function cuHnQuery() {
   return el ? normHnQuery(el.value) : '';
 }
 
-/* รอบ 23 (2026-09-21, เจ้าของสั่ง): ตัวกรอง "ยังไม่รับผล" — เหลือเฉพาะแถวที่ยังมีผลค้างอย่างน้อย 1 อย่าง
-   (ตรวจสุขภาพยังไม่รับ หรือ มีตรวจภายในแล้วยังไม่รับผลตรวจภายใน) กรองจากข้อมูลในหน่วยความจำ ไม่ยิง API ใหม่ */
+/* รอบ 23 (2026-09-21, เจ้าของสั่ง): ตัวกรอง "ยังไม่รับผล" — เหลือเฉพาะแถวที่ยังไม่รับผลตรวจสุขภาพ กรองจากข้อมูลใน
+   หน่วยความจำ ไม่ยิง API ใหม่
+   รอบ 26 (2026-09-22, เจ้าของสั่ง "ไม่มีการนัดรับผลตรวจมะเร็งปากมดลูก"): ตัดเงื่อนไขมะเร็งปากมดลูกออก — นับเฉพาะ
+   ผลตรวจสุขภาพที่ยังไม่รับเท่านั้น (rec.pelvicReceivedDate ยังอยู่ในข้อมูล ไม่ได้ลบคอลัมน์ แค่ไม่ใช้ตัดสินตัวกรองนี้แล้ว) */
 function recordHasPendingResults(rec) {
-  var checkupPending = !(rec && rec.receivedDate);
-  var pelvicPending = isPelvicChosen_(rec && rec.pelvic) && !(rec && rec.pelvicReceivedDate);
-  return checkupPending || pelvicPending;
+  return !(rec && rec.receivedDate);
 }
 function cuUnreceivedOnly() {
   var el = qs('cuUnreceivedOnly');
@@ -4006,32 +4151,29 @@ function renderCheckupTable(records, dateStr) {
     totalMoney += amt;
   });
 
+  // รอบ 26 (2026-09-22, เจ้าของสั่ง): 9 คอลัมน์ใหม่ — ลบ "เพศ" · หัวข้อใช้คำเดียวกับใบพิมพ์แบบการ์ด · คง "คิว" ไว้
+  // คิว · HN · ชื่อ-สกุล · โปรแกรม · ค่าบริการ · ตรวจมะเร็งปากมดลูก · ช่องทางส่งผลตรวจมะเร็งปากมดลูก · ช่องทางส่งผลตรวจสุขภาพ · เซ็นรับ
   var html = '<div class="scroll-x"><table class="report-table cu-table"><thead><tr>' +
-    '<th>คิว</th><th>ชื่อ-สกุล</th><th>HN</th><th>เพศ</th><th>โปรแกรม</th><th>ตรวจภายใน</th>' +
-    '<th>ช่องทางรับผล</th><th>ยอดเงินตรวจสุขภาพ</th><th>ลายเซ็นรับเอกสาร</th></tr></thead><tbody>';
+    '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
+    '<th>ช่องทางส่งผลตรวจมะเร็งปากมดลูก</th><th>ช่องทางส่งผลตรวจสุขภาพ</th><th>เซ็นรับ</th></tr></thead><tbody>';
 
   if (shownRows.length === 0) html += '<tr><td colspan="9" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
   shownRows.forEach(function (rec) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
-    // ⚠ คำสั่งเจ้าของเพิ่มเติม: เฉพาะ "รอรับด้วยตนเอง" + "นัดรับวันที่" (09-22) เว้นช่องว่างให้เซ็นจริง · ไปรษณีย์/E-mail/ไม่ระบุ ใส่ — เสมอ
-    // (กันเจ้าหน้าที่ไล่ให้คนที่ไม่ได้รอรับเซ็น)
+    // ⚠ คำสั่งเจ้าของเพิ่มเติม: เฉพาะ "รอรับด้วยตนเอง" + "นัดรับวันที่" (09-22) เว้นช่องว่างให้เซ็นจริง · ไปรษณีย์/E-mail/ไม่ระบุ ใส่ "-" เสมอ
+    // (กันเจ้าหน้าที่ไล่ให้คนที่ไม่ได้รอรับเซ็น) — รอบ 26: ขีดสั้น ASCII "-" ไม่ใช่เครื่องหมาย em dash "—"
     var isWaitPickup = needsPickupSignature(rec);
-    var sigCell = isWaitPickup ? '<span class="cu-sig-line"></span>' : '—';
+    var sigCell = isWaitPickup ? '<span class="cu-sig-line"></span>' : '-';
+    var pelvicTested = isPelvicChosen_(rec.pelvic);
     html += '<tr>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
-      '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
-      '<td>' + escHtml(rec.gender || '') + '</td>' +
+      '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
       '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
-      '<td>' + escHtml(rec.pelvicLabel || '—') +
-        // รอบ 19 (2026-09-18): ไม่เพิ่มคอลัมน์ใหม่ (A4 แคบเกินไปแล้ว) — ใส่เป็นบรรทัดย่อยในช่องตรวจภายในแทน
-        (rec.pelvicDue ? '<div class="cu-sub">ส่งผลภายใน ' + escHtml(formatThaiDate(rec.pelvicDue)) + '</div>' : '') +
-      '</td>' +
-      '<td>' + escHtml(rec.deliveryMethod || '—') +
-        // รอบ 21 (2026-09-20): ไม่เพิ่มคอลัมน์ใหม่ (A4 แคบ — บทเรียนรอบ 19) ใส่เป็นบรรทัดย่อยในช่องช่องทางรับผลแทน
-        (rec.pickupDate ? '<div class="cu-sub">นัดรับ ' + escHtml(formatThaiDate(rec.pickupDate)) + '</div>' : '') +
-      '</td>' +
       '<td>' + money(amt) + '</td>' +
+      '<td>' + (pelvicTested ? escHtml(pelvicTypeLabel(rec)) : '-') + '</td>' +
+      '<td>' + (pelvicTested ? escHtml(shortDeliveryLabel(rec.pelvicMethod)) : '-') + '</td>' +
+      '<td>' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</td>' +
       '<td class="cu-sig-cell">' + sigCell + '</td>' +
       '</tr>';
   });
@@ -4067,20 +4209,20 @@ function renderCheckupCards(records, dateStr) {
     // เจ้าของสั่ง 2026-09-13: "ถ้าจะเรียงก็จะต้องเป็น HN : AB1234 นาง.... .... ไปเลย"
     // ⇒ ยุบ 3 บรรทัด (HN / ชื่อ / สกุล) เป็นบรรทัดเดียวพาดเต็มความกว้างการ์ด แล้วเอารายละเอียดไปเรียง 2 คอลัมน์ข้างล่าง
     //   (ถ้าปล่อยบรรทัดยาวไว้ในคอลัมน์ซ้าย 42% เดิม มันจะตัดบรรทัดเองกลายเป็น 3 บรรทัดเหมือนเดิม)
+    // รอบ 26 (2026-09-22, เจ้าของสั่งตามภาพมอคอัพ): เนื้อในการ์ดใหม่ทั้งชุด — เอาบรรทัด "ส่งออกผลภายในวันที่"
+    // (pelvicDue) และ "นัดรับวันที่" แยกออก (ยุบเข้าช่องทางแบบสั้นผ่าน shortDeliveryLabel() แล้ว)
+    var pelvicTested = isPelvicChosen_(rec.pelvic);
     html += '<div class="cu-card">' +
       '<div class="cu-hn">' + hnNameHtml(rec) + '</div>' +
       '<div class="cu-body">' +
       '<div class="cu-right">' +
         '<div class="cu-line">' + escHtml(programLabelForPrint(rec.program)) + '</div>' +
-        '<div class="cu-line">ราคา : ' + money(amt) + '</div>' +
-        '<div class="cu-line">ตรวจภายใน : ' + escHtml(rec.pelvicLabel || '—') + '</div>' +
-        // รอบ 19 (2026-09-18): ขึ้นเฉพาะแถวที่มีค่า (pelvic ≠ 'no')
-        (rec.pelvicDue ? '<div class="cu-line">ส่งออกผลภายในวันที่ : ' + escHtml(formatThaiDate(rec.pelvicDue)) + '</div>' : '') +
-        '<div class="cu-line">ช่องทางการส่ง : ' + escHtml(rec.deliveryMethod || '—') + '</div>' +
-        // รอบ 21 (2026-09-20): ขึ้นเฉพาะแถวที่มีค่า (ช่องทาง = 'นัดรับวันที่')
-        (rec.pickupDate ? '<div class="cu-line">นัดรับวันที่ : ' + escHtml(formatThaiDate(rec.pickupDate)) + '</div>' : '') +
+        '<div class="cu-line">ค่าบริการ : ' + money(amt) + '</div>' +
+        (pelvicTested ? '<div class="cu-line">ตรวจมะเร็งปากมดลูก : ' + escHtml(pelvicTypeLabel(rec)) + '</div>' : '') +
+        (pelvicTested ? '<div class="cu-line">ช่องทางส่งผลตรวจมะเร็งปากมดลูก : ' + escHtml(shortDeliveryLabel(rec.pelvicMethod)) + '</div>' : '') +
+        '<div class="cu-line">ช่องทางส่งผลตรวจสุขภาพ : ' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</div>' +
         (isWaitPickup
-          ? '<div class="cu-line cu-sign">เซ็นรับ <span class="cu-sig-line"></span></div>'
+          ? '<div class="cu-line cu-sign">เซ็นรับ : <span class="cu-sig-line"></span></div>'
           : '') +
       '</div>' +
       '</div>' +
@@ -4124,12 +4266,15 @@ function cuNoteResendMethodOptionsHtml(selected) {
 }
 
 // รอบ 24 (2026-09-22, เจ้าของสั่งย้าย "ช่องทางส่งผลตรวจภายใน" จากฟอร์มบันทึกไปหน้ารายชื่อ): ตัวเลือกของ
-// select ช่องทางส่งผลตรวจภายในใน .cu-note — อ่านสดจาก resendMethodOptions() ตัวเดียวกับข้างบน ห้ามพิมพ์รายการซ้ำ
+// select ช่องทางส่งผลตรวจมะเร็งปากมดลูกใน .cu-note — อ่านสดจาก resendMethodOptions() ตัวเดียวกับข้างบน ห้ามพิมพ์รายการซ้ำ
 // ⚠ ต่างจาก cuNoteResendMethodOptionsHtml() ตรงที่ต้องกัน "ค่าเก่าที่ไม่อยู่ในลิสต์ปัจจุบันแล้ว" ไม่ให้หาย —
 // ถ้า selected ไม่ว่างและไม่อยู่ใน resendMethodOptions() (เช่น ช่องทางถูกลบออกจาก #deliveryMethod ไปแล้ว)
 // ให้เติม <option> พิเศษของค่านั้นเข้าไปด้วยแล้วติ๊ก selected ให้ ไม่งั้นเจ้าหน้าที่จะเห็นค่าที่เคยกรอกไว้หายไปเงียบ ๆ
+// รอบ 26 (2026-09-22, เจ้าของสั่ง "ไม่มีการนัดรับผลตรวจมะเร็งปากมดลูก"): ตัดตัวเลือก DELIVERY_PICKUP_APPOINTMENT
+// ('นัดรับวันที่') ออกจากลิสต์นี้โดยเฉพาะ — #deliveryMethod (ของผลตรวจสุขภาพ) ยังมีตัวเลือกนี้ตามปกติ ไม่ได้แตะ
+// ⚠ แถวเก่าที่เคยมีค่า 'นัดรับวันที่' อยู่แล้วในคอลัมน์นี้ ยังแสดงได้ผ่านกลไก "option พิเศษ" ข้างล่างเหมือนเดิม
 function cuNotePelvicMethodOptionsHtml(selected) {
-  var opts = resendMethodOptions();
+  var opts = resendMethodOptions().filter(function (m) { return m !== DELIVERY_PICKUP_APPOINTMENT; });
   var html = '<option value="">— เลือกช่องทางส่งผล —</option>';
   opts.forEach(function (m) {
     html += '<option value="' + escHtml(m) + '"' + (m === selected ? ' selected' : '') + '>' + escHtml(m) + '</option>';
@@ -4239,9 +4384,10 @@ function cuNoteHtml(rec) {
       '</span>';
   }
 
-  // แถวที่มีตรวจภายในจริง (pap/thinprep/thinprep_hpv) เท่านั้น — แถวอื่นไม่มี element 3 อย่างนี้ใน DOM เลย
-  // (ไม่ใช่ซ่อนด้วย CSS) ⚠ ใช้ cuNoteResendRowHtml/readResendListFromDom/cuNoteResendPrintText ร่วมกับผลตรวจสุขภาพ
-  // ข้างบนได้ตรง ๆ (ฟังก์ชันพวกนั้น generic ตาม container ที่ส่งเข้าไปอยู่แล้ว ไม่ต้องก๊อปโค้ด)
+  // แถวที่มีตรวจมะเร็งปากมดลูกจริง (pap/thinprep/thinprep_hpv) เท่านั้น — แถวอื่นไม่มี element 2 อย่างนี้ใน DOM เลย
+  // (ไม่ใช่ซ่อนด้วย CSS)
+  // รอบ 26 (2026-09-22, เจ้าของสั่งแก้ล่าสุด): เหลือ 3 ช่อง — ช่องทางส่งผล + วันที่ส่งออก + ส่งออกอีกครั้ง (คงไว้ตามเดิม
+  // แค่เปลี่ยนคำ "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก") — เอาออกเฉพาะปุ่ม "รับผลตรวจภายในแล้ว" + span พิมพ์คู่กัน
   var pelvicBlockHtml = '';
   if (isPelvicChosen_(rec && rec.pelvic)) {
     var pelvicSentDate = (rec && rec.pelvicSentDate) || '';
@@ -4251,37 +4397,33 @@ function cuNoteHtml(rec) {
     var pelvicResendRowsHtml = pelvicResendList.map(function (item, idx) {
       return cuNoteResendRowHtml(idx, item, pelvicResendLocked);
     }).join('');
-    var pelvicReceivedDate = (rec && rec.pelvicReceivedDate) || '';
     var pelvicMethodVal = (rec && rec.pelvicMethod) || '';
     pelvicBlockHtml =
-      // รอบ 24 (2026-09-22, เจ้าของสั่งย้ายช่องนี้จากฟอร์มบันทึกมาไว้ที่นี่แทน): "ช่องทางส่งผลตรวจภายใน" —
-      // ต้องมาก่อน "ส่งออกผลตรวจภายในวันที่" เสมอ (ลำดับที่เจ้าของสั่ง) · ตัวเลือกอ่านสดจาก resendMethodOptions()
+      // รอบ 24 (2026-09-22, เจ้าของสั่งย้ายช่องนี้จากฟอร์มบันทึกมาไว้ที่นี่แทน): "ช่องทางส่งผลตรวจมะเร็งปากมดลูก" —
+      // ต้องมาก่อน "ส่งออกผลตรวจมะเร็งปากมดลูกวันที่" เสมอ (ลำดับที่เจ้าของสั่ง) · ตัวเลือกอ่านสดจาก resendMethodOptions()
       // ผ่าน cuNotePelvicMethodOptionsHtml() ซึ่งกันค่าเก่าที่หลุดจากลิสต์ปัจจุบันไม่ให้หายด้วย
       // ⚠ ห้ามมี print span คู่กัน — เจ้าของสั่งให้ A4 ไม่แสดงช่องทางนี้เลย (ของเดิมก็ไม่เคยแสดงอยู่แล้ว)
       // 2026-09-22 เจ้าของสั่ง "ย้ายช่องทางส่งผลตรวจภายในลงมา 1 บรรทัด" — เดิมต่อท้ายปุ่ม "รับผลตรวจสุขภาพแล้ว"
       // บรรทัดเดียวกัน (.cu-note เป็น flex-wrap) ⇒ ตัวคั่นกว้าง 100% สูง 0 บังคับขึ้นบรรทัดใหม่
       '<span class="cu-note-break" aria-hidden="true"></span>' +
       '<span class="cu-note-field no-print">' +
-      '<label class="field-label">ช่องทางส่งผลตรวจภายใน</label>' +
+      '<label class="field-label">ช่องทางส่งผลตรวจมะเร็งปากมดลูก</label>' +
       '<select class="cu-note-pelvic-method" data-note-pelvic-method="' + recId + '"' + disAttr + '>' +
       cuNotePelvicMethodOptionsHtml(pelvicMethodVal) +
       '</select>' +
       '</span>' +
       '<span class="cu-note-field">' +
-      '<label class="field-label">ส่งออกผลตรวจภายในวันที่</label>' +
+      '<label class="field-label">ส่งออกผลตรวจมะเร็งปากมดลูกวันที่</label>' +
       '<input type="date" class="cu-note-pelvic-sentdate" data-note-pelvic-sentdate="' + recId + '" value="' + escHtml(pelvicSentDate) + '"' + disAttr + '>' +
       '</span>' +
       '<span class="cu-note-pelvic-sentdate-print" data-note-pelvic-sentdate-print="' + recId + '">' + escHtml(pelvicSentDate ? formatThaiDate(pelvicSentDate) : '') + '</span>' +
+      // รอบ 26 (2026-09-22, เจ้าของสั่งกลับคำ): คงบล็อก "ส่งออกอีกครั้ง" ไว้เหมือนเดิม — เปลี่ยนแค่คำ "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก"
       '<div class="cu-note-pelvic-resend" data-note-pelvic-resend="' + recId + '">' +
-      '<label class="field-label">ส่งออกผลตรวจภายในอีกครั้ง</label>' +
+      '<label class="field-label">ส่งออกผลตรวจมะเร็งปากมดลูกอีกครั้ง</label>' +
       pelvicResendRowsHtml +
-      '<button type="button" class="btn secondary small cu-note-resend-add"' + disPelvicResendAttr + '>+ ส่งออกผลตรวจภายในอีกครั้ง</button>' +
+      '<button type="button" class="btn secondary small cu-note-resend-add"' + disPelvicResendAttr + '>+ ส่งออกผลตรวจมะเร็งปากมดลูกอีกครั้ง</button>' +
       '</div>' +
-      '<span class="cu-note-pelvic-resenddate-print" data-note-pelvic-resenddate-print="' + recId + '">' + escHtml(cuNoteResendPrintText(pelvicResendList)) + '</span>' +
-      '<button type="button" class="btn secondary small cu-note-pelvic-received-btn no-print" data-note-pelvic-received="' + recId + '" data-value="' + escHtml(pelvicReceivedDate) + '"' + disAttr + '>' +
-      escHtml(receivedBtnLabel('รับผลตรวจภายในแล้ว', pelvicReceivedDate)) +
-      '</button>' +
-      '<span class="cu-note-pelvic-received-print" data-note-pelvic-received-print="' + recId + '">' + escHtml(receivedPrintText('รับผลตรวจภายในแล้ว', pelvicReceivedDate)) + '</span>';
+      '<span class="cu-note-pelvic-resenddate-print" data-note-pelvic-resenddate-print="' + recId + '">' + escHtml(cuNoteResendPrintText(pelvicResendList)) + '</span>';
   }
 
   return '<div class="cu-note" data-note-row="' + recId + '">' +
@@ -4348,8 +4490,12 @@ function clampConsultCount(v) {
 // pelvicMethodSelect ทุกประการ: null สำหรับแถวที่ deliveryMethod ไม่ใช่ 'นัดรับวันที่' (ไม่มี element ใน DOM เลย)
 // ⇒ ไม่ส่งคีย์ pickupDate เลยสำหรับแถวนั้น — handleNoteUpdate_ ฝั่งเซิร์ฟเวอร์ตัดสิน "ช่องทางตรงกันไหม" จาก
 // COL.DELIVERY ของแถวเองอยู่แล้วเช่นกัน
+// รอบ 26 (2026-09-22, เจ้าของสั่ง "ไม่มีการนัดรับผลตรวจมะเร็งปากมดลูก"): เอาพารามิเตอร์ pelvicReceivedBtn ออก ⇒ payload
+// ที่ยิงออกไปต้อง "ไม่มีคีย์" pelvicReceivedDate อีกต่อไป (ไม่ใช่ส่ง '' — เซิร์ฟเวอร์ถือว่า "ไม่มีคีย์ = คงค่าเดิม"
+// ถ้าส่งค่าว่างจะล้างข้อมูลเก่าในชีตทิ้งทันที) — pelvicResendBox/pelvicResendList "ยังอยู่เหมือนเดิม" ไม่ได้ถูกถอดออก
+// (เจ้าของแก้คำสั่งอีกที 2026-09-22 ช่วงบ่าย: เอาแค่ปุ่ม "รับผลตรวจภายในแล้ว" ออก ไม่ได้เอาบล็อกส่งออกอีกครั้งออกด้วย)
 function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, pickupDateInput, stateEl) {
+    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
@@ -4360,7 +4506,6 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var pelvicSentDate = pelvicSentDateInput ? pelvicSentDateInput.value : '';
   var pelvicResendList = pelvicResendBox ? readResendListFromDom(pelvicResendBox) : [];
   var receivedDate = receivedBtn ? (receivedBtn.getAttribute('data-value') || '') : '';
-  var pelvicReceivedDate = pelvicReceivedBtn ? (pelvicReceivedBtn.getAttribute('data-value') || '') : '';
   var hasPelvicMethod = !!pelvicMethodSelect;
   var pelvicMethod = hasPelvicMethod ? pelvicMethodSelect.value : '';
   var hasPickupDate = !!pickupDateInput;
@@ -4371,14 +4516,14 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var recPelvicSentDate = (rec && rec.pelvicSentDate) || '';
   var recPelvicResendList = (rec && Array.isArray(rec.pelvicResendList)) ? rec.pelvicResendList : [];
   var recReceivedDate = (rec && rec.receivedDate) || '';
-  var recPelvicReceivedDate = (rec && rec.pelvicReceivedDate) || '';
   var recPelvicMethod = (rec && rec.pelvicMethod) || '';
   var recPickupDate = (rec && rec.pickupDate) || '';
   if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote &&
       recConsultCount === consultCount && (rec.sentDate || '') === sentDate &&
       JSON.stringify(recResendList) === JSON.stringify(resendList) &&
-      recPelvicSentDate === pelvicSentDate && JSON.stringify(recPelvicResendList) === JSON.stringify(pelvicResendList) &&
-      recReceivedDate === receivedDate && recPelvicReceivedDate === pelvicReceivedDate &&
+      recPelvicSentDate === pelvicSentDate &&
+      JSON.stringify(recPelvicResendList) === JSON.stringify(pelvicResendList) &&
+      recReceivedDate === receivedDate &&
       (!hasPelvicMethod || recPelvicMethod === pelvicMethod) &&
       (!hasPickupDate || recPickupDate === pickupDate)) {
     return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
@@ -4388,10 +4533,11 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
     staffKey: STATE.staffKey, staffName: STATE.staffName,
     recordId: recordId, doctorName: doctorName, consult: consult, consultCount: consultCount, consultNote: consultNote,
     sentDate: sentDate, resendList: resendList,
-    pelvicSentDate: pelvicSentDate, pelvicResendList: pelvicResendList,
-    receivedDate: receivedDate, pelvicReceivedDate: pelvicReceivedDate
+    pelvicSentDate: pelvicSentDate,
+    pelvicResendList: pelvicResendList,
+    receivedDate: receivedDate
   };
-  if (hasPelvicMethod) payload.pelvicMethod = pelvicMethod; // แถวไม่มีบล็อกตรวจภายใน -> ไม่ส่งคีย์นี้เลย
+  if (hasPelvicMethod) payload.pelvicMethod = pelvicMethod; // แถวไม่มีบล็อกตรวจมะเร็งปากมดลูก -> ไม่ส่งคีย์นี้เลย
   if (hasPickupDate) payload.pickupDate = pickupDate; // แถวช่องทางไม่ใช่ 'นัดรับวันที่' -> ไม่ส่งคีย์นี้เลย
   return apiCall('noteUpdate', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
@@ -4404,7 +4550,6 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
         rec.pelvicSentDate = pelvicSentDate;
         rec.pelvicResendList = pelvicResendList; rec.pelvicResendDate = pelvicResendList.length ? pelvicResendList[0].date : '';
         rec.receivedDate = receivedDate;
-        rec.pelvicReceivedDate = pelvicReceivedDate;
         if (hasPelvicMethod) rec.pelvicMethod = pelvicMethod;
         if (hasPickupDate) rec.pickupDate = pickupDate;
       }
@@ -4504,9 +4649,7 @@ function bindCuNoteEvents(container) {
     var pelvicResendPrint = box.querySelector('.cu-note-pelvic-resenddate-print');
     var receivedBtn = box.querySelector('.cu-note-received-btn');
     var receivedPrint = box.querySelector('.cu-note-received-print');
-    var pelvicReceivedBtn = box.querySelector('.cu-note-pelvic-received-btn');
-    var pelvicReceivedPrint = box.querySelector('.cu-note-pelvic-received-print');
-    // รอบ 24 (2026-09-22): "ช่องทางส่งผลตรวจภายใน" — ย้ายมาไว้ในรายชื่อแทนฟอร์มบันทึก (null สำหรับแถวไม่มีตรวจภายใน)
+    // รอบ 24 (2026-09-22): "ช่องทางส่งผลตรวจมะเร็งปากมดลูก" — ย้ายมาไว้ในรายชื่อแทนฟอร์มบันทึก (null สำหรับแถวไม่มีตรวจ)
     var pelvicMethodSelect = box.querySelector('.cu-note-pelvic-method');
     // รอบ 25 (2026-09-22): "นัดรับวันที่" ของผลตรวจสุขภาพ — null สำหรับแถวที่ deliveryMethod ไม่ใช่ 'นัดรับวันที่'
     var pickupDateInput = box.querySelector('.cu-note-pickupdate');
@@ -4515,7 +4658,7 @@ function bindCuNoteEvents(container) {
 
     function trySave() {
       return maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, pickupDateInput, stateEl);
+        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl);
     }
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
@@ -4537,7 +4680,7 @@ function bindCuNoteEvents(container) {
     }
 
     bindResendBox(resendBox, resendPrint, trySave);
-    bindResendBox(pelvicResendBox, pelvicResendPrint, trySave); // no-op ถ้า pelvicResendBox เป็น null (แถวไม่มีตรวจภายใน)
+    bindResendBox(pelvicResendBox, pelvicResendPrint, trySave);
 
     doctorInput.addEventListener('blur', trySave);
     noteInput.addEventListener('blur', trySave);
@@ -4552,20 +4695,18 @@ function bindCuNoteEvents(container) {
     if (pelvicSentDateInput) {
       pelvicSentDateInput.addEventListener('change', function () {
         syncPelvicSentDatePrint();
-        var locked = !pelvicSentDateInput.value;
+        // เคลียร์วันที่ส่งออกแล้ว -> ล็อกบล็อก "ส่งออกผลตรวจมะเร็งปากมดลูกอีกครั้ง" ไว้ก่อนเท่านั้น (เหมือน sentDateInput ข้างบน)
         if (pelvicResendBox) {
-          pelvicResendBox.querySelectorAll('.cu-note-resend-date, .cu-note-resend-method, .cu-note-resend-del').forEach(function (el) { el.disabled = locked; });
+          var pelvicLocked = !pelvicSentDateInput.value;
+          pelvicResendBox.querySelectorAll('.cu-note-resend-date, .cu-note-resend-method, .cu-note-resend-del').forEach(function (el) { el.disabled = pelvicLocked; });
           var pelvicAddBtn = pelvicResendBox.querySelector('.cu-note-resend-add');
-          if (pelvicAddBtn) pelvicAddBtn.disabled = locked;
+          if (pelvicAddBtn) pelvicAddBtn.disabled = pelvicLocked;
         }
         trySave();
       });
     }
     if (receivedBtn) {
       receivedBtn.addEventListener('click', function () { toggleReceivedBtn(receivedBtn, receivedPrint, 'รับผลตรวจสุขภาพแล้ว', trySave); });
-    }
-    if (pelvicReceivedBtn) {
-      pelvicReceivedBtn.addEventListener('click', function () { toggleReceivedBtn(pelvicReceivedBtn, pelvicReceivedPrint, 'รับผลตรวจภายในแล้ว', trySave); });
     }
     if (pelvicMethodSelect) {
       pelvicMethodSelect.addEventListener('change', trySave);
@@ -4662,7 +4803,8 @@ function loadCheckupTable(view) {
   var dateStr = qs('cuDate').value || todayStr();
   var headEl = qs('cuTableHeading');
   // เจ้าของสั่งตัดคำว่า "รวมทุกจุดบริการ" ออกจากหัวใบพิมพ์ 2026-09-03 (ยังยิง allPoints:true เหมือนเดิม แค่ไม่พิมพ์ข้อความนี้)
-  if (headEl) headEl.textContent = 'รายชื่อผู้รับบริการตรวจสุขภาพ · วันที่ ' + formatThaiDate(dateStr);
+  // รอบ 26 (2026-09-22): หัวใบต้องตรงกับที่เจ้าของกำหนดในภาพมอคอัพเป๊ะ — ตัวคั่นเป็น "-" ไม่ใช่ "·"
+  if (headEl) headEl.textContent = 'รายชื่อผู้รับบริการตรวจสุขภาพ - วันที่ ' + formatThaiDate(dateStr);
   var wrap = qs('cuTableWrap');
   var cardsWrap = qs('cuCardsWrap');
   var listWrap = qs('cuListWrap');
@@ -4891,12 +5033,12 @@ function renderReport(summary, period) {
 
   // รอบ 23 (2026-09-21, เจ้าของสั่ง "ผลตรวจภายในจะส่งแยกกับตรวจสุขภาพ"): การ์ด "การรับผล" — อ่านจาก summary.results
   // ⚠ ถ้าเซิร์ฟเวอร์ยังไม่ deploy (response ไม่มีคีย์นี้) ต้องไม่โชว์การ์ดนี้เลย ห้ามโชว์ 0 ปลอม ๆ และห้าม crash
+  // รอบ 26 (2026-09-22, เจ้าของสั่ง "ไม่มีการนัดรับผลตรวจมะเร็งปากมดลูก"): ตัดบรรทัดของตรวจภายในออก เหลือบรรทัด
+  // ตรวจสุขภาพอย่างเดียว — summary.results.pelvic ฝั่งเซิร์ฟเวอร์ยังคืนข้อมูลเดิมได้ ไม่ต้องแก้ (แค่ไม่แสดงบนจอ)
   if (summary.results && typeof summary.results === 'object') {
     var resCheckup = summary.results.checkup || {};
-    var resPelvic = summary.results.pelvic || {};
     html += '<div class="card"><h2>การรับผล</h2>' +
       '<div class="line">ตรวจสุขภาพ: รับแล้ว <b>' + escHtml(numOr0(resCheckup.received)) + '</b> คน · ค้าง <b>' + escHtml(numOr0(resCheckup.pending)) + '</b> คน</div>' +
-      '<div class="line">ตรวจภายใน: รับแล้ว <b>' + escHtml(numOr0(resPelvic.received)) + '</b> คน · ค้าง <b>' + escHtml(numOr0(resPelvic.pending)) + '</b> คน</div>' +
       '</div>';
   }
 
@@ -4932,17 +5074,17 @@ function renderReport(summary, period) {
       '<div class="line">วันอาทิตย์: ' + numOr0(checkup.bySet.sun.people) + ' คน · ' + money(numOr0(checkup.bySet.sun.money)) + ' บาท</div>';
   }
 
-  // ตรวจภายใน — แยกตามชนิด (summary.checkup.papByType: {pap, thinprep, thinprep_hpv}) + papMoney
+  // รอบ 26 (2026-09-22): "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก" ในข้อความที่ผู้ใช้เห็น — แยกตามชนิด
+  // (summary.checkup.papByType: {pap, thinprep, thinprep_hpv}) + papMoney · ใช้ PELVIC_TYPE_SHORT_LABEL ตัวกลาง
   var papByType = checkup.papByType || {};
-  var PELVIC_TYPE_LABELS = { pap: 'Pap smear', thinprep: 'Thinprep', thinprep_hpv: 'Thinprep + HPV' };
-  html += '<div class="scroll-x" style="margin-top:8px;"><table class="report-table"><thead><tr><th>ตรวจภายใน</th><th>จำนวน</th></tr></thead><tbody>';
+  html += '<div class="scroll-x" style="margin-top:8px;"><table class="report-table"><thead><tr><th>ตรวจมะเร็งปากมดลูก</th><th>จำนวน</th></tr></thead><tbody>';
   ['pap', 'thinprep', 'thinprep_hpv'].forEach(function (code) {
-    html += '<tr><td>' + escHtml(PELVIC_TYPE_LABELS[code]) + '</td><td>' + numOr0(papByType[code]) + '</td></tr>';
+    html += '<tr><td>' + escHtml(PELVIC_TYPE_SHORT_LABEL[code]) + '</td><td>' + numOr0(papByType[code]) + '</td></tr>';
   });
   html += '</tbody></table></div>' +
-    '<div class="line" style="margin-top:8px;">จำนวนตรวจภายในรวมทุกชนิด: ' + numOr0(checkup.papCount) + ' ราย</div>' +
-    '<div class="line">ยอดเงินตรวจภายใน: ' + money(numOr0(checkup.papMoney)) + ' บาท</div>' +
-    '<div class="line">ยอดเงินหมวดตรวจสุขภาพ (รวมตรวจภายใน): ' + money(numOr0(checkup.money)) + ' บาท</div></div>';
+    '<div class="line" style="margin-top:8px;">จำนวนตรวจมะเร็งปากมดลูกรวมทุกชนิด: ' + numOr0(checkup.papCount) + ' ราย</div>' +
+    '<div class="line">ยอดเงินตรวจมะเร็งปากมดลูก: ' + money(numOr0(checkup.papMoney)) + ' บาท</div>' +
+    '<div class="line">ยอดเงินหมวดตรวจสุขภาพ (รวมตรวจมะเร็งปากมดลูก): ' + money(numOr0(checkup.money)) + ' บาท</div></div>';
 
   // ตรวจเพิ่ม — summary.extra.items (object map), summary.extra.money
   var extra = summary.extra || {};
@@ -5518,9 +5660,8 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('logForm').addEventListener('submit', onSubmitLog);
   qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); showScreen('log'); });
 
-  // รอบ 9 (ก้อน B, B5) — checkbox sp_reg_inbody เขียนไว้แบบ static ในแผงตรวจสุขภาพ (ไม่ได้ผ่าน buildSpecialSendsUI())
-  var inbodyReg = qs('sp_reg_inbody');
-  if (inbodyReg) inbodyReg.addEventListener('change', function () { onSpecialRegChange('inbody'); });
+  // รอบ 26 (2026-09-22): sp_reg_inbody ย้ายเข้า #specialSendsList แล้ว (ดู buildSpecialSendsUI()) — ผูก listener
+  // ผ่าน buildSpecialSendsUI() เหมือนตัวอื่นทุกตัวแล้ว ไม่ต้องผูกซ้ำที่นี่
 
   // รอบ 9 (ก้อน B, B1) — แถบลิงก์บนสุดแทนที่การ์ดเมนูเดิม (ตัวดัก click แบบเดิม แค่เปลี่ยนคลาสเป้าหมาย)
   document.querySelectorAll('.nav-link[data-target]').forEach(function (b) {
