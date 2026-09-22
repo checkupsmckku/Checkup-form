@@ -4055,6 +4055,13 @@ function checkupExtraSummaryHtml(rows) {
   return html;
 }
 
+/* ช่องเซ็นรับเอกสารในใบ A4 (ทั้งแบบตาราง + แบบการ์ด) — คนที่มารับผลเองที่เคาน์เตอร์
+   เจ้าของสั่ง 2026-09-22: "นัดรับวันที่" ก็มารับเอง ⇒ เว้นเส้นเซ็นเหมือน "รอรับด้วยตนเอง"
+   ไปรษณีย์/E-mail/ไม่ระบุ ยังเป็น — เหมือนเดิม */
+function needsPickupSignature(rec) {
+  return rec.deliveryMethod === 'รอรับด้วยตนเอง' || rec.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT;
+}
+
 function renderCheckupTable(records, dateStr) {
   var wrap = qs('cuTableWrap');
   if (!wrap) return;
@@ -4083,9 +4090,9 @@ function renderCheckupTable(records, dateStr) {
   if (shownRows.length === 0) html += '<tr><td colspan="9" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
   shownRows.forEach(function (rec) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
-    // ⚠ คำสั่งเจ้าของเพิ่มเติม: เฉพาะ "รอรับด้วยตนเอง" เว้นช่องว่างให้เซ็นจริง · ไปรษณีย์/E-mail/ไม่ระบุ ใส่ — เสมอ
+    // ⚠ คำสั่งเจ้าของเพิ่มเติม: เฉพาะ "รอรับด้วยตนเอง" + "นัดรับวันที่" (09-22) เว้นช่องว่างให้เซ็นจริง · ไปรษณีย์/E-mail/ไม่ระบุ ใส่ — เสมอ
     // (กันเจ้าหน้าที่ไล่ให้คนที่ไม่ได้รอรับเซ็น)
-    var isWaitPickup = rec.deliveryMethod === 'รอรับด้วยตนเอง';
+    var isWaitPickup = needsPickupSignature(rec);
     var sigCell = isWaitPickup ? '<span class="cu-sig-line"></span>' : '—';
     html += '<tr>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
@@ -4116,7 +4123,7 @@ function renderCheckupTable(records, dateStr) {
 
 /* รอบ 8 (B7 เพิ่มเติม) — ใบพิมพ์ "แบบการ์ด" ตามภาพที่เจ้าของส่งมา 2026-09-03
    เนื้อในการ์ด = ค่าจริงที่บันทึกไว้ (เจ้าของเลือก "พิมพ์ค่าจริง" ไม่ใช่พิมพ์ตัวเลือกให้วงกลม)
-   ⚠ ช่องเซ็นชื่อขึ้นเฉพาะคนที่ "รอรับด้วยตนเอง" เท่านั้น — กติกาเดียวกับคอลัมน์ลายเซ็นในแบบตาราง */
+   ⚠ ช่องเซ็นชื่อขึ้นเฉพาะคนที่ "รอรับด้วยตนเอง" / "นัดรับวันที่" เท่านั้น — กติกาเดียวกับคอลัมน์ลายเซ็นในแบบตาราง */
 function renderCheckupCards(records, dateStr) {
   var wrap = qs('cuCardsWrap');
   if (!wrap) return;
@@ -4133,7 +4140,7 @@ function renderCheckupCards(records, dateStr) {
   if (shownRows.length === 0) html += '<p class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</p>';
   shownRows.forEach(function (rec) {
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
-    var isWaitPickup = rec.deliveryMethod === 'รอรับด้วยตนเอง';
+    var isWaitPickup = needsPickupSignature(rec);
     // เจ้าของสั่ง 2026-09-13: "ถ้าจะเรียงก็จะต้องเป็น HN : AB1234 นาง.... .... ไปเลย"
     // ⇒ ยุบ 3 บรรทัด (HN / ชื่อ / สกุล) เป็นบรรทัดเดียวพาดเต็มความกว้างการ์ด แล้วเอารายละเอียดไปเรียง 2 คอลัมน์ข้างล่าง
     //   (ถ้าปล่อยบรรทัดยาวไว้ในคอลัมน์ซ้าย 42% เดิม มันจะตัดบรรทัดเองกลายเป็น 3 บรรทัดเหมือนเดิม)
