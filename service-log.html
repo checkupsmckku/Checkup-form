@@ -329,6 +329,8 @@
   /* รอบ 13 (2026-09-16): ช่อง "วันที่ส่งออก" — <span> คู่กันมีไว้สำหรับใบพิมพ์เท่านั้น บนจอซ่อนไว้ */
   .cu-note-sentdate { flex: 0 0 auto; width: auto; min-width: 140px; }
   .cu-note-sentdate-print { display: none; }
+  /* 2026-09-22: ตัวขึ้นบรรทัดใหม่ใน .cu-note (flex-wrap) — ใช้ก่อนบล็อกตรวจภายใน */
+  .cu-note-break { flex: 0 0 100%; height: 0; }
   /* รอบ 14 (2026-09-17): ห่อป้าย+ช่องกรอกเป็นคู่ด้วย .cu-note-field กัน "ป้ายค้างท้ายบรรทัดบน ช่องกรอกตกบรรทัดล่าง"
      ตอน .cu-note (flex-wrap) ตัดบรรทัดกลางคู่ — ให้ทั้งคู่ wrap ไปด้วยกันเป็นก้อนเดียวเสมอ (ใช้กับวันที่ส่งออก/ส่งออกอีกครั้ง/consult+จำนวนครั้ง) */
   .cu-note-field { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; flex-wrap: nowrap; white-space: nowrap; }
@@ -4222,6 +4224,21 @@ function cuNoteHtml(rec) {
     '</button>' +
     '<span class="cu-note-received-print" data-note-received-print="' + recId + '">' + escHtml(receivedPrintText('รับผลตรวจสุขภาพแล้ว', receivedDate)) + '</span>';
 
+  // รอบ 25 (2026-09-22, เจ้าของสั่ง): "นัดรับวันที่" ของผลตรวจสุขภาพ (COL.PICKUP_DATE) — เดิมกรอกได้ครั้งเดียวตอนบันทึก
+  // (deliveryMethod = 'นัดรับวันที่' เท่านั้น) เพิ่มช่องนี้ให้แก้ทีหลังได้ในหน้ารายชื่อ หลักการเดียวกับ
+  // ช่องทางส่งผลตรวจภายใน (.cu-note-pelvic-method รอบ 24 ข้างบน): มีเฉพาะแถวที่ deliveryMethod ตรงกันเท่านั้น
+  // (ไม่ใช่แค่ซ่อนด้วย CSS) · ไม่มี print span คู่กัน — A4 แสดงวันนัดรับผ่าน cu-sub/cu-line ของตาราง/การ์ดอยู่แล้ว
+  // (checkupTableRows / renderCheckupTable / renderCheckupCards อ่าน rec.pickupDate โดยตรง) ห้ามซ้ำซ้อนกัน
+  var pickupDateFieldHtml = '';
+  if (rec && rec.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT) {
+    var pickupDateVal = (rec && rec.pickupDate) || '';
+    pickupDateFieldHtml =
+      '<span class="cu-note-field no-print">' +
+      '<label class="field-label">นัดรับวันที่</label>' +
+      '<input type="date" class="cu-note-pickupdate" data-note-pickupdate="' + recId + '" value="' + escHtml(pickupDateVal) + '"' + disAttr + '>' +
+      '</span>';
+  }
+
   // แถวที่มีตรวจภายในจริง (pap/thinprep/thinprep_hpv) เท่านั้น — แถวอื่นไม่มี element 3 อย่างนี้ใน DOM เลย
   // (ไม่ใช่ซ่อนด้วย CSS) ⚠ ใช้ cuNoteResendRowHtml/readResendListFromDom/cuNoteResendPrintText ร่วมกับผลตรวจสุขภาพ
   // ข้างบนได้ตรง ๆ (ฟังก์ชันพวกนั้น generic ตาม container ที่ส่งเข้าไปอยู่แล้ว ไม่ต้องก๊อปโค้ด)
@@ -4241,6 +4258,9 @@ function cuNoteHtml(rec) {
       // ต้องมาก่อน "ส่งออกผลตรวจภายในวันที่" เสมอ (ลำดับที่เจ้าของสั่ง) · ตัวเลือกอ่านสดจาก resendMethodOptions()
       // ผ่าน cuNotePelvicMethodOptionsHtml() ซึ่งกันค่าเก่าที่หลุดจากลิสต์ปัจจุบันไม่ให้หายด้วย
       // ⚠ ห้ามมี print span คู่กัน — เจ้าของสั่งให้ A4 ไม่แสดงช่องทางนี้เลย (ของเดิมก็ไม่เคยแสดงอยู่แล้ว)
+      // 2026-09-22 เจ้าของสั่ง "ย้ายช่องทางส่งผลตรวจภายในลงมา 1 บรรทัด" — เดิมต่อท้ายปุ่ม "รับผลตรวจสุขภาพแล้ว"
+      // บรรทัดเดียวกัน (.cu-note เป็น flex-wrap) ⇒ ตัวคั่นกว้าง 100% สูง 0 บังคับขึ้นบรรทัดใหม่
+      '<span class="cu-note-break" aria-hidden="true"></span>' +
       '<span class="cu-note-field no-print">' +
       '<label class="field-label">ช่องทางส่งผลตรวจภายใน</label>' +
       '<select class="cu-note-pelvic-method" data-note-pelvic-method="' + recId + '"' + disAttr + '>' +
@@ -4288,6 +4308,7 @@ function cuNoteHtml(rec) {
     '<button type="button" class="btn secondary small cu-note-resend-add"' + disResendAttr + '>+ ส่งออกอีกครั้ง</button>' +
     '</div>' +
     '<span class="cu-note-resenddate-print" data-note-resenddate-print="' + recId + '">' + escHtml(cuNoteResendPrintText(resendList)) + '</span>' +
+    pickupDateFieldHtml +
     checkupReceivedHtml +
     pelvicBlockHtml +
     '<span class="cu-note-state" data-note-state="' + recId + '"></span>' +
@@ -4323,8 +4344,12 @@ function clampConsultCount(v) {
 // ⚠ ต่างจากช่องอื่นข้างบนทุกตัว: pelvicMethodSelect เป็น null สำหรับแถวที่ไม่มีบล็อกตรวจภายในเลย (ไม่ใช่แค่ค่าว่าง)
 // ⇒ ต้อง "ไม่ส่งคีย์ pelvicMethod เลย" สำหรับแถวนั้น (ต่างจาก pelvicSentDate ที่ส่ง '' เสมอแม้แถวไม่มีบล็อก) —
 // เพราะ handleNoteUpdate_ ฝั่งเซิร์ฟเวอร์ตัดสิน "ตรวจภายในหรือไม่" จาก COL.PELVIC ของแถวเองอยู่แล้ว ไม่ต้องพึ่งคีย์นี้
+// รอบ 25 (2026-09-22): เพิ่มพารามิเตอร์ pickupDateInput — "นัดรับวันที่" ของผลตรวจสุขภาพ แพตเทิร์นเดียวกับ
+// pelvicMethodSelect ทุกประการ: null สำหรับแถวที่ deliveryMethod ไม่ใช่ 'นัดรับวันที่' (ไม่มี element ใน DOM เลย)
+// ⇒ ไม่ส่งคีย์ pickupDate เลยสำหรับแถวนั้น — handleNoteUpdate_ ฝั่งเซิร์ฟเวอร์ตัดสิน "ช่องทางตรงกันไหม" จาก
+// COL.DELIVERY ของแถวเองอยู่แล้วเช่นกัน
 function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, stateEl) {
+    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, pickupDateInput, stateEl) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
@@ -4338,6 +4363,8 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var pelvicReceivedDate = pelvicReceivedBtn ? (pelvicReceivedBtn.getAttribute('data-value') || '') : '';
   var hasPelvicMethod = !!pelvicMethodSelect;
   var pelvicMethod = hasPelvicMethod ? pelvicMethodSelect.value : '';
+  var hasPickupDate = !!pickupDateInput;
+  var pickupDate = hasPickupDate ? pickupDateInput.value : '';
 
   var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
   var recResendList = (rec && Array.isArray(rec.resendList)) ? rec.resendList : [];
@@ -4346,12 +4373,14 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var recReceivedDate = (rec && rec.receivedDate) || '';
   var recPelvicReceivedDate = (rec && rec.pelvicReceivedDate) || '';
   var recPelvicMethod = (rec && rec.pelvicMethod) || '';
+  var recPickupDate = (rec && rec.pickupDate) || '';
   if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote &&
       recConsultCount === consultCount && (rec.sentDate || '') === sentDate &&
       JSON.stringify(recResendList) === JSON.stringify(resendList) &&
       recPelvicSentDate === pelvicSentDate && JSON.stringify(recPelvicResendList) === JSON.stringify(pelvicResendList) &&
       recReceivedDate === receivedDate && recPelvicReceivedDate === pelvicReceivedDate &&
-      (!hasPelvicMethod || recPelvicMethod === pelvicMethod)) {
+      (!hasPelvicMethod || recPelvicMethod === pelvicMethod) &&
+      (!hasPickupDate || recPickupDate === pickupDate)) {
     return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
@@ -4363,6 +4392,7 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
     receivedDate: receivedDate, pelvicReceivedDate: pelvicReceivedDate
   };
   if (hasPelvicMethod) payload.pelvicMethod = pelvicMethod; // แถวไม่มีบล็อกตรวจภายใน -> ไม่ส่งคีย์นี้เลย
+  if (hasPickupDate) payload.pickupDate = pickupDate; // แถวช่องทางไม่ใช่ 'นัดรับวันที่' -> ไม่ส่งคีย์นี้เลย
   return apiCall('noteUpdate', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
@@ -4376,6 +4406,15 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
         rec.receivedDate = receivedDate;
         rec.pelvicReceivedDate = pelvicReceivedDate;
         if (hasPelvicMethod) rec.pelvicMethod = pelvicMethod;
+        if (hasPickupDate) rec.pickupDate = pickupDate;
+      }
+      // 🐞 2026-09-22: ใบ A4 (แบบตาราง/แบบการ์ด) ถูกวาดครั้งเดียวตอนโหลด แล้ว showCuView() แค่สลับการมองเห็น
+      // ⇒ แก้ค่าในรายชื่อแล้วกด "แบบตาราง" จะเห็น/พิมพ์ค่าเก่า (เจอกับ "นัดรับวันที่" — แก้เป็น 9 ต.ค. แต่ใบ A4 ยังเป็น 25 ก.ย.)
+      // rec เป็น object ตัวเดียวกับใน CU_CACHE.records อยู่แล้ว ⇒ วาดตาราง+การ์ดใหม่จากแคชพอ
+      // ⚠ ห้ามวาด renderCheckupList() ใหม่ตรงนี้ — จะทับช่องที่เจ้าหน้าที่กำลังพิมพ์อยู่ในรายชื่อ
+      if (CU_CACHE.records && CU_LOADED_DATE && CU_CACHE.key === CU_LOADED_DATE) {
+        renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
+        renderCheckupCards(CU_CACHE.records, CU_LOADED_DATE);
       }
     } else {
       // ล้มเหลว/reject: ห้ามล้างค่าที่ผู้ใช้พิมพ์ไว้ และห้ามอัปเดต LAST_CU_RECORDS
@@ -4469,12 +4508,14 @@ function bindCuNoteEvents(container) {
     var pelvicReceivedPrint = box.querySelector('.cu-note-pelvic-received-print');
     // รอบ 24 (2026-09-22): "ช่องทางส่งผลตรวจภายใน" — ย้ายมาไว้ในรายชื่อแทนฟอร์มบันทึก (null สำหรับแถวไม่มีตรวจภายใน)
     var pelvicMethodSelect = box.querySelector('.cu-note-pelvic-method');
+    // รอบ 25 (2026-09-22): "นัดรับวันที่" ของผลตรวจสุขภาพ — null สำหรับแถวที่ deliveryMethod ไม่ใช่ 'นัดรับวันที่'
+    var pickupDateInput = box.querySelector('.cu-note-pickupdate');
     var stateEl = box.querySelector('.cu-note-state');
     if (!doctorInput || !consultChk || !consultCountInput || !noteInput || !sentDateInput || !resendBox) return;
 
     function trySave() {
       return maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, stateEl);
+        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicReceivedBtn, pelvicMethodSelect, pickupDateInput, stateEl);
     }
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
@@ -4528,6 +4569,11 @@ function bindCuNoteEvents(container) {
     }
     if (pelvicMethodSelect) {
       pelvicMethodSelect.addEventListener('change', trySave);
+    }
+    // รอบ 25 (2026-09-22): เฉพาะ change (ไม่ผูก input ด้วย) — เหมือน sentDateInput/pelvicSentDateInput ข้างบน
+    // thdSetValue() (ปฏิทินไทย) dispatch ทั้ง input+change แต่ฟังแค่ change ⇒ 1 ครั้งที่เลือกวัน = ยิง noteUpdate ครั้งเดียว
+    if (pickupDateInput) {
+      pickupDateInput.addEventListener('change', trySave);
     }
     // เฉพาะ change (ไม่ผูก blur ด้วย) กันยิงซ้ำ 2 ครั้งตอนพิมพ์แล้วคลิกออกช่อง
     consultCountInput.addEventListener('change', function () { syncConsultCountPrint(); trySave(); });
