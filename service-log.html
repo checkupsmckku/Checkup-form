@@ -269,19 +269,29 @@
     border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 14px; font-weight: 600;
   }
 
-  /* รอบ 31C (2026-09-28): แถบ "แพทย์ที่ออกตรวจวันนี้" บนหน้ารายชื่อตรวจสุขภาพ */
+  /* รอบ 31C (2026-09-28) + รอบ 32 (2026-09-28, พิมพ์ชื่อเองทุกวัน): แถบ "แพทย์ที่ออกตรวจวันนี้" บนหน้ารายชื่อตรวจสุขภาพ */
   #doctorsTodayBar.dtb-warn { border-color: #F0C040; background: #FFF8E8; }
   .dtb-warn-text { color: #7A5A00; font-weight: 700; margin: 0 0 6px; }
   .dtb-collapsed { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .dtb-label { font-weight: 700; }
   .dtb-names { word-break: break-word; }
-  .dtb-checklist { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 6px; }
-  .dtb-check-row { flex: 0 0 auto; padding: 4px 0; border-bottom: none; }
+  /* รอบ 32: ชิปรายชื่อ draft ของวัน (แทนช่องติ๊กของแท็บ "แพทย์" เดิม) */
+  .dtb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .dtb-chip {
+    display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
+    background: #EEF3FF; border: 1px solid var(--border); border-radius: 999px;
+    padding: 4px 4px 4px 12px; font-weight: 600; word-break: break-word;
+  }
+  .dtb-chip-remove {
+    flex: 0 0 auto; min-width: 32px; min-height: 32px; border: none; background: transparent;
+    color: var(--danger); font-weight: 700; font-size: 16px; line-height: 1; border-radius: 50%; cursor: pointer;
+  }
   .dtb-add-form {
     display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
     margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);
   }
-  .dtb-add-form select, .dtb-add-form input[type=text] { width: auto; flex: 1 1 160px; }
+  /* min-width:0 กัน flex item ไม่ยอมหดต่ำกว่าความกว้างเนื้อหา -> ล้นแนวนอนที่จอแคบ (320px) */
+  .dtb-add-form select, .dtb-add-form input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
 
   /* เจ้าของสั่ง 2026-09-13: แถบสรุปต้องแยก 5 หมวด พร้อมจำนวนคนและยอดเงินของแต่ละหมวด
      ⚠ .summary-bar เดิมเป็น flex แนวนอน (justify-content: space-between) ⇒ ถ้าปล่อยไว้ ตารางย่อยจะถูกดันไปอยู่ข้าง ๆ
@@ -4135,15 +4145,15 @@ var SP_CACHE = { key: '', records: null, json: '' };
    'fallback' (เซิร์ฟเวอร์รุ่นเก่า/ตอบผิดพลาด — ⇒ ปุ่มชื่อแพทย์ในกล่องกลับไปเป็นช่องพิมพ์ + datalist เดิม)
    ตัวตรวจจับ "เซิร์ฟเวอร์เก่า": resp.status !== 'ok' (ครอบทั้ง default branch ของ doPost ที่ตอบ
    'ไม่รู้จัก action นี้' และความผิดพลาดอื่นใดก็ตาม — apiCall() เองก็กลืน network error ให้เป็น {status:'error',...}
-   อยู่แล้ว) — เจตนาให้ครอบคลุมกว้างเพื่อไม่ให้ "ลงชื่อแพทย์ไม่ได้" ไม่ว่าจะพังด้วยเหตุอะไร */
+   อยู่แล้ว) — เจตนาให้ครอบคลุมกว้างเพื่อไม่ให้ "ลงชื่อแพทย์ไม่ได้" ไม่ว่าจะพังด้วยเหตุอะไร
+   รอบ 32 (2026-09-28): แถบเลิกอ่านรายชื่อจากแท็บ "แพทย์" แล้ว (เจ้าหน้าที่พิมพ์ชื่อแพทย์ของวันนั้นเอง) ⇒ ตัดตัวแปร
+   CU_DOCTORS_ALL ทิ้ง (resp.doctors ยังถูกอ่านเพื่อตัดสินโหมด ok/fallback เหมือนเดิม แค่ไม่เก็บไว้ใช้วาดอะไรแล้ว) */
 var CU_DOCTORS_MODE = 'loading';
-var CU_DOCTORS_ALL = []; // [{name, active}] จากแท็บ "แพทย์" ทั้งหมด
 var CU_DOCTORS_TODAY = null; // {date, names:[...]} ของวันที่กำลังโหลดอยู่ · null = ยังไม่มีการเลือกของวันนั้นเลย (ต่างจาก names:[] ซึ่งคือ "เลือกแล้วว่าไม่มีใคร")
-var CU_DOCTORS_DATE_KEY = ''; // วันที่ที่ CU_DOCTORS_ALL/TODAY เป็นข้อมูลของวันนั้นจริง
-var DTB_LAST_DATE = ''; // วันที่ล่าสุดที่ #doctorsTodayBar เคยวาด — เปลี่ยนวันที่ -> รีเซ็ตสถานะกาง/ฟอร์มเพิ่มแพทย์
+var CU_DOCTORS_DATE_KEY = ''; // วันที่ที่ CU_DOCTORS_TODAY เป็นข้อมูลของวันนั้นจริง
+var DTB_LAST_DATE = ''; // วันที่ล่าสุดที่ #doctorsTodayBar เคยวาด — เปลี่ยนวันที่ -> รีเซ็ตสถานะกาง/draft
 var DTB_EXPANDED = false; // กางแถบ #doctorsTodayBar อยู่ไหม (ผู้ใช้กด "แก้ไข"/"ย่อ" หรือถูกบังคับกางเมื่อ CU_DOCTORS_TODAY===null)
-var DTB_ADD_OPEN = false; // ฟอร์มเพิ่มแพทย์ย่อยกางอยู่ไหม
-var DTB_DRAFT_NAMES = null; // null = ใช้ CU_DOCTORS_TODAY.names ปกติ, array = draft ที่ผู้ใช้กำลังติ๊กอยู่ (ยังไม่กดบันทึก) — คงไว้ข้าม re-render ของฟอร์มเพิ่มแพทย์
+var DTB_DRAFT_NAMES = null; // null = ใช้ CU_DOCTORS_TODAY.names ปกติ, array = ชิปที่กำลังแก้อยู่ (ยังไม่กดบันทึก) — คงไว้ข้าม re-render
 // จำนวนคำขอ apiCall('specialStatus') ที่ยังค้างอยู่ (ดู onSpBoardStatusClick/onSpBoardDeleteClick) — ระหว่างนี้
 // ห้ามให้คำตอบรีเฟรชเบื้องหลังของ loadSpBoard() ทับสถานะที่เพิ่งติ๊กไปแล้ว (SPEC ข้อ W2 ท้ายสุด)
 var SP_PENDING_COUNT = 0;
@@ -6563,20 +6573,20 @@ function setCuView(view) {
    รอบ 31C (2026-09-28) — แถบ "แพทย์ที่ออกตรวจวันนี้" (#doctorsTodayBar) + ปุ่มชื่อแพทย์ในกล่อง .cu-note
    ========================================================================= */
 
-// อ่านชื่อที่ถูกติ๊กอยู่ตอนนี้จาก DOM ของแถบ (ใช้เก็บ draft ข้าม re-render ของฟอร์มเพิ่มแพทย์)
-function dtbCurrentChecked_() {
-  var bar = qs('doctorsTodayBar');
-  var out = {};
-  if (!bar) return out;
-  bar.querySelectorAll('.dtb-doc-check:checked').forEach(function (cb) { out[cb.value] = true; });
-  return out;
+// รอบ 32: draft ปัจจุบัน (ที่ยังไม่กดบันทึก) — array เดียว ไม่ใช่ช่องติ๊กอีกต่อไป
+// DTB_DRAFT_NAMES !== null = กำลังแก้อยู่ (ชนะค่าที่บันทึกไว้แล้วเสมอ) ไม่งั้นใช้ CU_DOCTORS_TODAY.names
+function dtbCurrentDraft_() {
+  var savedNames = (CU_DOCTORS_TODAY && Array.isArray(CU_DOCTORS_TODAY.names)) ? CU_DOCTORS_TODAY.names : [];
+  return (DTB_DRAFT_NAMES !== null ? DTB_DRAFT_NAMES : savedNames).slice();
 }
 
 // ชุดชื่อที่ควรเป็นปุ่มในกล่อง .cu-note ของวันที่กำลังโหลดอยู่ — today.names ถ้ามีการเลือกของวันนั้นแล้ว
-// (แม้จะเป็น [] ว่างเปล่าก็ตาม — คนละความหมายกับ today===null) ไม่งั้น fallback เป็นแพทย์ active ทุกคน
+// (แม้จะเป็น [] ว่างเปล่าก็ตาม — คนละความหมายกับ today===null)
+// รอบ 32: วันที่ยังไม่เคยบันทึกเลย (today===null) -> คืน [] เลิก fallback เป็นแพทย์ active จากแท็บ "แพทย์" แล้ว
+// (แท็บนั้นเลิกใช้เป็นแหล่งชื่อของ UI นี้แล้วทั้งหมด — เจ้าหน้าที่ต้องไประบุที่แถบด้านบนก่อน)
 function currentDoctorButtonNames_() {
   if (CU_DOCTORS_TODAY && Array.isArray(CU_DOCTORS_TODAY.names)) return CU_DOCTORS_TODAY.names.slice();
-  return CU_DOCTORS_ALL.filter(function (d) { return d.active; }).map(function (d) { return d.name; });
+  return [];
 }
 
 function doctorBtnHtml_(name, selected, orphan, cancelled) {
@@ -6600,7 +6610,8 @@ function cuDoctorButtonsInnerHtml_(doctorName, cancelled) {
     html += doctorBtnHtml_(nm, nm === current, false, cancelled);
   });
   if (current && !seen[current]) html += doctorBtnHtml_(current, true, true, cancelled);
-  if (!html) html = '<span class="muted cu-doc-btn-empty">— ยังไม่มีแพทย์ให้เลือก —</span>';
+  // รอบ 32: ข้อความเมื่อไม่มีปุ่มเลย ชี้ทางไปแถบด้านบน (แหล่งเดียวที่ตอนนี้กำหนดชื่อแพทย์ของวัน)
+  if (!html) html = '<span class="muted cu-doc-btn-empty">— ระบุแพทย์ที่ออกตรวจที่แถบด้านบนก่อน —</span>';
   return html;
 }
 
@@ -6633,7 +6644,6 @@ function loadDoctorsForDate(dateStr) {
   if (isNewDate) {
     DTB_LAST_DATE = dateStr;
     DTB_EXPANDED = false;
-    DTB_ADD_OPEN = false;
     DTB_DRAFT_NAMES = null;
   }
   if (!isNewDate && CU_DOCTORS_DATE_KEY === dateStr && CU_DOCTORS_MODE !== 'loading') {
@@ -6645,8 +6655,8 @@ function loadDoctorsForDate(dateStr) {
   apiCall('doctors', { staffKey: STATE.staffKey, staffName: STATE.staffName, date: dateStr }).then(function (resp) {
     if ((qs('cuDate').value || todayStr()) !== dateStr) return; // เปลี่ยนวันที่ไปแล้วระหว่างรอ -> ทิ้งคำตอบนี้
     if (resp && resp.status === 'ok' && Array.isArray(resp.doctors)) {
+      // รอบ 32: resp.doctors ยังถูกอ่านเพื่อตัดสินโหมด ok/fallback เหมือนเดิม แค่ไม่เก็บไว้ใช้วาดอะไรแล้ว (ดูคอมเมนต์ที่ประกาศตัวแปรด้านบน)
       CU_DOCTORS_MODE = 'ok';
-      CU_DOCTORS_ALL = resp.doctors;
       CU_DOCTORS_TODAY = resp.today || null;
     } else {
       // เซิร์ฟเวอร์เก่าไม่รู้จัก action 'doctors' (ตอบ 'ไม่รู้จัก action นี้') หรือความผิดพลาดอื่นใดก็ตาม
@@ -6676,87 +6686,162 @@ function renderDoctorsTodayBar() {
 
   var noSelectionYet = (CU_DOCTORS_TODAY === null);
   var expanded = DTB_EXPANDED || noSelectionYet;
-  var savedNames = (CU_DOCTORS_TODAY && Array.isArray(CU_DOCTORS_TODAY.names)) ? CU_DOCTORS_TODAY.names : [];
+  var draftNames = dtbCurrentDraft_();
 
   bar.className = 'card no-print' + (noSelectionYet ? ' dtb-warn' : '');
+
+  // รอบ 32 (SPEC ข้อ 3): เก็บค่าที่พิมพ์ค้างในช่องเพิ่มชื่อ + prefix ที่เลือกไว้ ก่อนวาดทับ DOM แล้วเขียนคืนหลังวาด
+  // (กันของที่พิมพ์ค้างหายตอน re-render จากเหตุอื่น เช่น doctors โหลดเสร็จ/ลบชิประหว่างพิมพ์)
+  var pendingPrefix = 'นพ.', pendingName = '';
+  var prevPrefixEl = qs('dtbAddPrefix'), prevNameEl = qs('dtbAddName');
+  if (prevPrefixEl) pendingPrefix = prevPrefixEl.value;
+  if (prevNameEl) pendingName = prevNameEl.value;
 
   var html = '';
   if (!expanded) {
     var summary;
-    if (!savedNames.length) summary = noSelectionYet ? '(ยังไม่ได้เลือก)' : '(ไม่มีแพทย์ออกตรวจวันนี้)';
-    else summary = savedNames.map(function (n) { return escHtml(n); }).join(' · ');
+    if (!draftNames.length) summary = noSelectionYet ? '(ยังไม่ได้ระบุ)' : '(ไม่มีแพทย์ออกตรวจวันนี้)';
+    else summary = draftNames.map(function (n) { return escHtml(n); }).join(' · ');
     html += '<div class="dtb-collapsed">' +
       '<span class="dtb-label">แพทย์ที่ออกตรวจ ' + escHtml(formatThaiDate(dateStr)) + ':</span> ' +
       '<span class="dtb-names">' + summary + '</span> ' +
       '<button type="button" class="btn secondary small" id="dtbEditBtn">แก้ไข</button>' +
       '</div>';
   } else {
-    if (noSelectionYet) html += '<p class="dtb-warn-text">⚠ ยังไม่ได้เลือกแพทย์ที่ออกตรวจวันนี้</p>';
+    if (noSelectionYet) html += '<p class="dtb-warn-text">⚠ ยังไม่ได้ระบุแพทย์ที่ออกตรวจวันนี้</p>';
     html += '<div class="dtb-label">แพทย์ที่ออกตรวจ ' + escHtml(formatThaiDate(dateStr)) + '</div>';
-    // draft ที่ผู้ใช้กำลังติ๊กอยู่ (ถ้ามี) ชนะค่าที่บันทึกไว้แล้วเสมอ — กันของที่ติ๊กไว้หายตอนเปิด/ปิดฟอร์มเพิ่มแพทย์
-    var checkedSet = {};
-    (DTB_DRAFT_NAMES !== null ? DTB_DRAFT_NAMES : savedNames).forEach(function (n) { checkedSet[n] = true; });
-    // โชว์แพทย์ active ทุกคน + แพทย์ที่ถูกเลือกของวันนี้อยู่แล้วแม้จะปิดใช้งานไปแล้ว (กันหายเงียบ ๆ)
-    var checklistDoctors = CU_DOCTORS_ALL.filter(function (d) { return d.active || checkedSet[d.name]; });
-    html += '<div class="dtb-checklist">';
-    checklistDoctors.forEach(function (d) {
-      html += '<label class="check-row dtb-check-row">' +
-        '<input type="checkbox" class="dtb-doc-check" value="' + escHtml(d.name) + '"' + (checkedSet[d.name] ? ' checked' : '') + '>' +
-        '<span class="item-name">' + escHtml(d.name) + (d.active ? '' : ' (ปิดใช้งาน)') + '</span>' +
-        '</label>';
+
+    html += '<div class="dtb-chips">';
+    draftNames.forEach(function (n) {
+      html += '<span class="dtb-chip">' + escHtml(n) +
+        '<button type="button" class="dtb-chip-remove" data-dtb-remove="' + escHtml(n) + '" aria-label="ลบ ' + escHtml(n) + '">✕</button></span>';
     });
-    if (!checklistDoctors.length) html += '<p class="muted">ยังไม่มีรายชื่อแพทย์ในระบบ — กด "＋ เพิ่มแพทย์" ด้านล่าง</p>';
     html += '</div>';
+    if (!draftNames.length) html += '<p class="muted">ยังไม่มีแพทย์ของวันนี้ — พิมพ์ชื่อแล้วกด "เพิ่ม"</p>';
+
+    // แถวเพิ่มชื่อโชว์ตลอดเมื่อกาง (ไม่ต้องกด "＋ เพิ่มแพทย์" ก่อนอีกต่อไป)
+    html += '<div class="dtb-add-form">' +
+      '<select id="dtbAddPrefix"><option value="นพ.">นพ.</option><option value="พญ.">พญ.</option></select>' +
+      '<input type="text" id="dtbAddName" placeholder="ชื่อแพทย์ (ไม่ต้องใส่ นพ./พญ.)">' +
+      '<button type="button" class="btn small" id="dtbAddConfirmBtn">เพิ่ม</button>' +
+      '</div>' +
+      '<p class="muted small" id="dtbAddMsg"></p>';
+
     html += '<div class="row" style="margin-top:8px;">' +
       '<button type="button" class="btn small" id="dtbSaveBtn">บันทึก</button>' +
-      '<button type="button" class="btn secondary small" id="dtbAddDoctorBtn">＋ เพิ่มแพทย์</button>' +
       (noSelectionYet ? '' : '<button type="button" class="btn secondary small" id="dtbCollapseBtn">ย่อ</button>') +
       '</div>';
     html += '<p class="muted small" id="dtbMsg"></p>';
-    if (DTB_ADD_OPEN) {
-      html += '<div class="dtb-add-form">' +
-        '<select id="dtbAddPrefix"><option value="นพ.">นพ.</option><option value="พญ.">พญ.</option></select>' +
-        '<input type="text" id="dtbAddName" placeholder="ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)">' +
-        '<button type="button" class="btn small" id="dtbAddConfirmBtn">เพิ่ม</button>' +
-        '<button type="button" class="btn secondary small" id="dtbAddCancelBtn">ยกเลิก</button>' +
-        '</div>' +
-        '<p class="muted small" id="dtbAddMsg"></p>';
-    }
   }
   bar.innerHTML = html;
+
+  if (expanded) {
+    var prefixSel = qs('dtbAddPrefix');
+    if (prefixSel) prefixSel.value = pendingPrefix;
+    var nameInput = qs('dtbAddName');
+    if (nameInput) nameInput.value = pendingName;
+    if (nameInput) nameInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' || ev.keyCode === 13) { ev.preventDefault(); onDtbAddConfirmClick(); }
+    });
+  }
 
   var editBtn = qs('dtbEditBtn');
   if (editBtn) editBtn.addEventListener('click', function () { DTB_EXPANDED = true; DTB_DRAFT_NAMES = null; renderDoctorsTodayBar(); });
   var collapseBtn = qs('dtbCollapseBtn');
-  if (collapseBtn) collapseBtn.addEventListener('click', function () { DTB_EXPANDED = false; DTB_ADD_OPEN = false; DTB_DRAFT_NAMES = null; renderDoctorsTodayBar(); });
+  if (collapseBtn) collapseBtn.addEventListener('click', function () { DTB_EXPANDED = false; DTB_DRAFT_NAMES = null; renderDoctorsTodayBar(); });
   var saveBtn = qs('dtbSaveBtn');
   if (saveBtn) saveBtn.addEventListener('click', onDtbSaveClick);
-  var addBtn = qs('dtbAddDoctorBtn');
-  if (addBtn) addBtn.addEventListener('click', onDtbAddDoctorClick);
   var addConfirmBtn = qs('dtbAddConfirmBtn');
   if (addConfirmBtn) addConfirmBtn.addEventListener('click', onDtbAddConfirmClick);
-  var addCancelBtn = qs('dtbAddCancelBtn');
-  if (addCancelBtn) addCancelBtn.addEventListener('click', function () {
-    DTB_DRAFT_NAMES = Object.keys(dtbCurrentChecked_());
-    DTB_ADD_OPEN = false;
-    renderDoctorsTodayBar();
+  bar.querySelectorAll('[data-dtb-remove]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var nm = btn.getAttribute('data-dtb-remove');
+      var draft = dtbCurrentDraft_();
+      var idx = draft.indexOf(nm);
+      if (idx !== -1) draft.splice(idx, 1);
+      DTB_DRAFT_NAMES = draft;
+      renderDoctorsTodayBar();
+    });
   });
 }
 
+// รอบ 32: ตรวจรูปแบบ + สร้างชื่อเต็มจาก prefix (ที่เลือก) + rest (ที่พิมพ์) — ทำในเครื่องล้วน ไม่ยิง API
+// คืน {ok:true, name} หรือ {ok:false, message} (ข้อความเดียวกับฝั่งเซิร์ฟเวอร์ handleSetDoctorsToday_)
+function dtbValidateNameInput_(prefix, rawRest) {
+  var rest = String(rawRest == null ? '' : rawRest).trim().replace(/\s+/g, ' ');
+  rest = doctorNamePretty_(rest); // ตัดคำนำหน้าที่เจ้าหน้าที่พิมพ์ซ้อนมาเอง เช่น "นพ.ตุลยณัฐ" -> "ตุลยณัฐ"
+  rest = rest.replace(/^[.\s]+/, ''); // ตัด "."/ช่องว่างที่หลงเหลืออยู่หัวชื่อ เช่น ".ตุลยณัฐ" -> "ตุลยณัฐ"
+  if (rest.length < 2) return { ok: false, message: 'กรุณาระบุชื่ออย่างน้อย 2 ตัวอักษร' };
+  if (rest.indexOf(',') !== -1) return { ok: false, message: 'ชื่อแพทย์ห้ามมีเครื่องหมาย ,' };
+  var fullName = prefix + rest;
+  if (fullName.length > 60) return { ok: false, message: 'ชื่อยาวเกินไป (ไม่เกิน 60 ตัวอักษร)' };
+  return { ok: true, name: fullName };
+}
+
+// พยายามเพิ่มชื่อจากช่อง #dtbAddName เข้า draft (ปุ่ม "เพิ่ม" และปุ่ม "บันทึก" ที่มีชื่อค้างในช่องเรียกร่วมกัน) —
+// ช่องว่างอยู่แล้ว = ไม่มีอะไรต้องทำ (true) · ตรวจผ่านแล้ว push เข้า draft + ล้างช่อง + โฟกัสต่อ (true) ·
+// ตรวจไม่ผ่าน/ซ้ำ/ครบ 20 = ไม่แก้ draft ใส่เหตุผลใน #dtbAddMsg (false) — ไม่ re-render เอง ผู้เรียกตัดสินใจเอง
+function dtbTryAddFromInput_() {
+  var prefixSel = qs('dtbAddPrefix');
+  var nameInput = qs('dtbAddName');
+  var msgEl = qs('dtbAddMsg');
+  var prefix = prefixSel ? prefixSel.value : 'นพ.';
+  var rawRest = nameInput ? nameInput.value : '';
+  if (!rawRest.trim()) return true;
+
+  var v = dtbValidateNameInput_(prefix, rawRest);
+  if (!v.ok) { if (msgEl) msgEl.textContent = v.message; return false; }
+
+  var draft = dtbCurrentDraft_();
+  if (draft.length >= 20) { if (msgEl) msgEl.textContent = 'เพิ่มแพทย์ได้ไม่เกิน 20 คนต่อวัน'; return false; }
+
+  // กันซ้ำภายในวัน: แกนชื่อเดียวกัน (ตัดคำนำหน้า/ช่องว่าง) ไม่ว่าคำนำหน้าจะต่างกันหรือไม่ -> ไม่เพิ่ม
+  var newCore = doctorNameStrip_(v.name).core;
+  for (var i = 0; i < draft.length; i++) {
+    if (doctorNameStrip_(draft[i]).core === newCore) {
+      if (msgEl) msgEl.textContent = 'มี ' + draft[i] + ' ในรายการวันนี้แล้ว';
+      return false;
+    }
+  }
+
+  draft.push(v.name);
+  DTB_DRAFT_NAMES = draft;
+  if (nameInput) nameInput.value = '';
+  if (msgEl) msgEl.textContent = '';
+  if (nameInput) nameInput.focus();
+  return true;
+}
+
+function onDtbAddConfirmClick() {
+  if (!dtbTryAddFromInput_()) return;
+  renderDoctorsTodayBar();
+  // renderDoctorsTodayBar() สร้าง #dtbAddName ใหม่ทั้งตัว -> focus() ใน dtbTryAddFromInput_ ตกไปอยู่กับ node เก่าที่ถูกทิ้ง
+  // ต้องโฟกัสตัวใหม่ซ้ำหลังวาด ไม่งั้นพิมพ์ชื่อคนถัดไปต่อเลยไม่ได้ (SPEC ข้อ 2)
+  var nameInput = qs('dtbAddName');
+  if (nameInput) nameInput.focus();
+}
+
 function onDtbSaveClick() {
-  var checked = Object.keys(dtbCurrentChecked_());
+  // ชื่อค้างในช่องพิมพ์ (ยังไม่กดเพิ่ม) -> เพิ่มเข้า draft ให้ก่อน ตรวจไม่ผ่าน = ไม่ยิง (SPEC ข้อ 1 ท้าย)
+  var pendingEl = qs('dtbAddName');
+  var hadPending = !!(pendingEl && pendingEl.value.trim());
+  if (!dtbTryAddFromInput_()) return;
+  // วาดชิปของชื่อที่เพิ่งเพิ่มให้เห็นก่อนยิง — ถ้าบันทึกไม่สำเร็จ ชื่อนั้นต้องยังอยู่บนจอ ไม่ใช่หายไปจากช่องพิมพ์เงียบ ๆ
+  // (saveBtn/msgEl ด้านล่างอ่านหลังวาดแล้ว จึงชี้ element ตัวใหม่)
+  if (hadPending) renderDoctorsTodayBar();
+
+  var draft = dtbCurrentDraft_();
   var dateStr = qs('cuDate').value || todayStr();
   var saveBtn = qs('dtbSaveBtn');
   var msgEl = qs('dtbMsg');
   if (saveBtn) saveBtn.disabled = true;
-  apiCall('setDoctorsToday', { staffKey: STATE.staffKey, staffName: STATE.staffName, date: dateStr, names: checked }).then(function (resp) {
+  apiCall('setDoctorsToday', { staffKey: STATE.staffKey, staffName: STATE.staffName, date: dateStr, names: draft }).then(function (resp) {
     if (saveBtn) saveBtn.disabled = false;
     if (resp && resp.status === 'ok') {
       if (dateStr === (qs('cuDate').value || todayStr())) {
-        CU_DOCTORS_TODAY = { date: resp.date, names: Array.isArray(resp.names) ? resp.names : checked };
+        CU_DOCTORS_TODAY = { date: resp.date, names: Array.isArray(resp.names) ? resp.names : draft };
         CU_DOCTORS_DATE_KEY = dateStr;
         DTB_EXPANDED = false;
-        DTB_ADD_OPEN = false;
         DTB_DRAFT_NAMES = null;
         renderDoctorsTodayBar();
         refreshDoctorFieldsAfterDoctorsLoad_();
@@ -6764,63 +6849,6 @@ function onDtbSaveClick() {
       showToast('บันทึกแพทย์ที่ออกตรวจแล้ว');
     } else if (msgEl) {
       msgEl.textContent = '✗ บันทึกไม่สำเร็จ — ' + ((resp && resp.message) || 'ลองใหม่');
-    }
-  });
-}
-
-function onDtbAddDoctorClick() {
-  // จำสถานะติ๊กปัจจุบันไว้ก่อนเปิด/ปิดฟอร์มเพิ่มแพทย์ (กันของที่ติ๊กไว้แล้วหายตอน renderDoctorsTodayBar() วาดใหม่)
-  DTB_DRAFT_NAMES = Object.keys(dtbCurrentChecked_());
-  DTB_ADD_OPEN = !DTB_ADD_OPEN;
-  renderDoctorsTodayBar();
-}
-
-// ก่อนยิง addDoctor: เทียบแกนชื่อ (ตรรกะเดียวกับ groupDoctorNames — ตัดคำนำหน้า/ช่องว่าง ด้วย doctorNameStrip_())
-// กับแพทย์ที่มีอยู่ — คล้าย (แกนตรงกัน หรือแกนหนึ่งเป็นต้นคำของอีกแกน) ⇒ ถาม confirm() ตามข้อความที่สเปกกำหนด
-function onDtbAddConfirmClick() {
-  var prefixSel = qs('dtbAddPrefix');
-  var nameInput = qs('dtbAddName');
-  var msgEl = qs('dtbAddMsg');
-  var prefix = prefixSel ? prefixSel.value : 'นพ.';
-  var rest = nameInput ? nameInput.value.trim() : '';
-  if (rest.length < 2) {
-    if (msgEl) msgEl.textContent = 'กรุณาระบุชื่อหลังคำนำหน้าอย่างน้อย 2 ตัวอักษร';
-    return;
-  }
-  var fullName = prefix + rest;
-  var newCore = doctorNameStrip_(fullName).core;
-  var similar = null;
-  for (var i = 0; i < CU_DOCTORS_ALL.length; i++) {
-    var existingCore = doctorNameStrip_(CU_DOCTORS_ALL[i].name).core;
-    if (!existingCore || !newCore) continue;
-    if (existingCore === newCore || existingCore.indexOf(newCore) === 0 || newCore.indexOf(existingCore) === 0) {
-      similar = CU_DOCTORS_ALL[i].name;
-      break;
-    }
-  }
-  if (similar) {
-    var useExisting = confirm('มี ' + similar + ' อยู่แล้ว ใช่คนเดียวกันไหม?\n\nตกลง = ใช้ชื่อเดิม (ไม่เพิ่มใหม่)\nยกเลิก = เพิ่มเป็นแพทย์คนใหม่');
-    if (useExisting) {
-      var draft = Object.keys(dtbCurrentChecked_());
-      if (draft.indexOf(similar) === -1) draft.push(similar);
-      DTB_DRAFT_NAMES = draft;
-      DTB_ADD_OPEN = false;
-      renderDoctorsTodayBar();
-      return;
-    }
-  }
-  var confirmedDraft = Object.keys(dtbCurrentChecked_());
-  apiCall('addDoctor', { staffKey: STATE.staffKey, staffName: STATE.staffName, name: fullName }).then(function (resp) {
-    if (resp && resp.status === 'ok') {
-      var addedName = resp.name || fullName;
-      CU_DOCTORS_ALL.push({ name: addedName, active: true });
-      if (confirmedDraft.indexOf(addedName) === -1) confirmedDraft.push(addedName);
-      DTB_DRAFT_NAMES = confirmedDraft;
-      DTB_ADD_OPEN = false;
-      renderDoctorsTodayBar();
-      showToast('เพิ่มแพทย์แล้ว — อย่าลืมกดบันทึก');
-    } else if (msgEl) {
-      msgEl.textContent = '✗ เพิ่มไม่สำเร็จ — ' + ((resp && resp.message) || 'ลองใหม่');
     }
   });
 }
@@ -8003,6 +8031,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // (เปลี่ยนไปจุดที่ไม่มี 'รายชื่อ' จะไม่ถูกบังคับย้ายหน้า — maybeAutoOpenListForPoint() เช็คเองแล้ว)
     applyPointLayout();
     maybeAutoOpenListForPoint();
+    // รอบ 32 (เจ้าของสั่ง 2026-09-28: "เปลี่ยนจุดบริการแล้วหน้าบันทึกไม่เปลี่ยนตามรูปแบบ"): ค้างอยู่หน้ารายชื่อ
+    // (เช่น เพิ่งผ่านจุดที่มี 'รายชื่อ' ซึ่งเปิดหน้านี้ให้เอง) แล้วเปลี่ยนไปจุดที่ไม่มี 'รายชื่อ' -> กลับหน้าบันทึกของจุดนั้นทันที
+    // เดิม (31A) ไม่ย้ายหน้า ⇒ แผงถูกจัดใหม่แล้วแต่อยู่คนละหน้า เจ้าหน้าที่เห็นเหมือนไม่เปลี่ยนอะไร
+    // หน้าอื่น (รายการวันนี้/รายงาน/กระดาน) ยังไม่ถูกบังคับย้ายเหมือนเดิม
+    var cuScreenEl = qs('checkupTableScreen');
+    if (currentPointTopics().indexOf('รายชื่อ') === -1 && cuScreenEl && cuScreenEl.style.display === 'block') {
+      showScreen('log');
+    }
   });
 
   // รอบ 9 (ก้อน B, B7) — radio program/checkbox วัคซีน/medCert*/checkbox sp_reg_* sync คิวด้วย ช่องอื่นไม่ต้อง
