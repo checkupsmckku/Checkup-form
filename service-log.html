@@ -1477,7 +1477,10 @@ var VACCINES_DEFAULT = [
   { code: 'shingrix', name: 'Shingrix (งูสวัด)', price: 5199 },
   { code: 'arexvy', name: 'Arexvy (RSV)', price: 7211 },
   { code: 'abrysvo', name: 'Abrysvo (RSV — หญิงตั้งครรภ์/18+)', price: 7308 },
-  { code: 'pfizer', name: 'Pfizer (Covid-19)', price: 1762 }
+  { code: 'pfizer', name: 'Pfizer (Covid-19)', price: 1762 },
+  // SPEC รอบ 33 (2026-09-28): ราคาเหมา แยก 2 ราคา (มาตรวจสุขภาพด้วย / มาอย่างเดียว) — ไม่เข้าสูตร DF/PE/เข็ม/10%
+  // เจ้าของยังไม่รู้ราคา ใส่ 0 ไว้ก่อน (จะไปแก้เองในแท็บ "ราคา") — รูปแบบเดียวกับ vaccines[] ที่ handleConfig_ คืนกลับมา
+  { code: 'tst', name: 'Tuberculin Skin Test (ทดสอบวัณโรคทางผิวหนัง)', flat: true, priceWithCheckup: 0, priceAlone: 0 }
 ];
 
 var TESTS_DEFAULT = [
@@ -1703,27 +1706,42 @@ function money(n) {
 /* =========================================================================
    3. สูตรคิดเงิน (pure function — ทดสอบได้อิสระ ไม่แตะ DOM)
    ========================================================================= */
+// SPEC รอบ 33: วัคซีนราคาเหมา (entry ที่ flat:true เช่น tst) แยกออกจากสูตร DF/PE/เข็ม/10% โดยสิ้นเชิง — บวกยอดเหมาเข้าไปตรง ๆ
+// regular (ไม่ใช่ราคาเหมา) ว่าง = 0 (ไม่มี DF/PE) แม้จะมีรหัสราคาเหมาก็ตาม — สูตร regular เดิมทุกประการเมื่อมีอย่างน้อย 1 ตัว
 function calcVaccineTotal(vaccineCodes, checkupChecked, vaccinesData, priceConsts) {
   vaccineCodes = vaccineCodes || [];
   if (vaccineCodes.length === 0) return 0;
   var needle = (priceConsts && typeof priceConsts.NEEDLE === 'number') ? priceConsts.NEEDLE : PRICE_DEFAULTS.NEEDLE;
+  var regularCount = 0;
   var sumBareNeedle = 0;
+  var flatTotal = 0;
   for (var i = 0; i < vaccineCodes.length; i++) {
     var v = null;
     for (var j = 0; j < vaccinesData.length; j++) {
       if (vaccinesData[j].code === vaccineCodes[i]) { v = vaccinesData[j]; break; }
     }
-    var bare = v ? Number(v.price) : 0;
-    sumBareNeedle += bare + needle;
+    if (v && v.flat) {
+      var flatPrice = checkupChecked ? v.priceWithCheckup : v.priceAlone;
+      flatTotal += (typeof flatPrice === 'number' && !isNaN(flatPrice)) ? flatPrice : 0;
+    } else {
+      var bare = v ? Number(v.price) : 0;
+      sumBareNeedle += bare + needle;
+      regularCount++;
+    }
   }
-  if (checkupChecked) {
-    return sumBareNeedle;
+  var regularTotal = 0;
+  if (regularCount > 0) {
+    if (checkupChecked) {
+      regularTotal = sumBareNeedle;
+    } else {
+      var df = (priceConsts && typeof priceConsts.DF === 'number') ? priceConsts.DF : PRICE_DEFAULTS.DF;
+      var pe = (priceConsts && typeof priceConsts.PE === 'number') ? priceConsts.PE : PRICE_DEFAULTS.PE;
+      var markup = (priceConsts && typeof priceConsts.MARKUP_PERCENT === 'number') ? priceConsts.MARKUP_PERCENT : PRICE_DEFAULTS.MARKUP_PERCENT;
+      var base = df + pe + sumBareNeedle;
+      regularTotal = base + Math.round(base * markup / 100);
+    }
   }
-  var df = (priceConsts && typeof priceConsts.DF === 'number') ? priceConsts.DF : PRICE_DEFAULTS.DF;
-  var pe = (priceConsts && typeof priceConsts.PE === 'number') ? priceConsts.PE : PRICE_DEFAULTS.PE;
-  var markup = (priceConsts && typeof priceConsts.MARKUP_PERCENT === 'number') ? priceConsts.MARKUP_PERCENT : PRICE_DEFAULTS.MARKUP_PERCENT;
-  var base = df + pe + sumBareNeedle;
-  return base + Math.round(base * markup / 100);
+  return regularTotal + flatTotal;
 }
 
 /* pelvic: 'no' | 'pap' | 'thinprep' | 'thinprep_hpv' — ราคาต้องอ่านจาก priceConsts (STATE.prices) เสมอ ห้ามใช้เลขตายตัว
@@ -2070,10 +2088,12 @@ function buildVaccineList() {
     var row = document.createElement('label');
     row.className = 'check-row';
     row.setAttribute('data-name', escHtml((v.name || '').toLowerCase()));
+    // SPEC รอบ 33: วัคซีนราคาเหมา (flat:true เช่น tst) ไม่มีราคาเดี่ยว — ใช้เรต "มาอย่างเดียว" เป็นป้ายราคา (ทำตามแบบเดิม ไม่ออกแบบใหม่)
+    var priceLabel = v.flat ? Number(v.priceAlone) : Number(v.price);
     row.innerHTML =
       '<input type="checkbox" value="' + escHtml(v.code) + '">' +
       '<span class="item-name">' + escHtml(v.name) + '</span>' +
-      '<span class="opt-price">' + escHtml(money(Number(v.price))) + ' บ.</span>';
+      '<span class="opt-price">' + escHtml(money(priceLabel)) + ' บ.</span>';
     row.querySelector('input').addEventListener('change', onServiceFieldChange); // รอบ 9 (B7) — วัคซีนกำหนดบริการ ต้อง sync คิวด้วย
     wrap.appendChild(row);
   });
