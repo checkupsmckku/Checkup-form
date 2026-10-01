@@ -153,6 +153,53 @@
   header.topbar h1 { color: #fff; font-size: 18px; }
   header.topbar .point-name { font-weight: 700; }
 
+  /* รอบ 34 (2026-09-30) W2: แผงสถานะการบันทึกเบื้องหลัง #saveQueuePanel — บันทึกไม่รอ network แล้ว (ดู onSubmitLog())
+     ⇒ ต้องมีที่แสดงรายการที่ "กำลังบันทึก"/"บันทึกไม่สำเร็จ" ลอยอยู่ทุกจอ (ไม่ผูกกับ screen ใด ๆ — วางไว้นอก
+     ['svcFormWrap','todayScreen',...] ที่ showScreen() สลับ display ให้) · no-print · ซ่อนเมื่อคิวว่าง ·
+     width ใช้ min() กัน 320px ล้นแนวนอน
+     🐞 แก้ 2026-09-30 (ตรวจรับพบจากภาพหน้าจอ): เดิมยึดมุมขวาบน "ใต้ topbar" ด้วย top ที่คำนวณจากตำแหน่ง topbar
+     ตอนวาด/resize เท่านั้น ⇒ เลื่อนจอแล้วลอยไปทับ #queueSelect/"ผู้รับบริการ" ของรายถัดไปที่ 390px และทับ medCert5
+     ที่ 1440px (ขัดกับเจตนา "กรอกรายถัดไปได้เลย" ตรง ๆ) ⇒ เปลี่ยนมายึดมุมขวา "ล่าง" เรียงซ้อนเหนือกล่องยอดรวม/บันทึก
+     #panelTotals เสมอ (bottom คำนวณจาก syncSaveQueuePanelPos_() — ดูฟังก์ชันนั้นสำหรับตรรกะเต็ม) ไม่ใช้ top อีกแล้ว
+     max-height ลดจาก 60vh เหลือ min(40vh,320px) กันแผงยาวจนต้องขึ้นไปทับช่องกรอกเองเมื่อคิวยาว */
+  #saveQueuePanel {
+    position: fixed;
+    right: 8px;
+    bottom: 8px; /* ค่าเริ่มต้นก่อน JS คำนวณจริง (syncSaveQueuePanelPos_) — เผื่อกรณีเรียกไม่ทันรอบแรก */
+    z-index: 800;
+    width: min(320px, calc(100vw - 16px));
+    max-height: min(40vh, 320px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* แก้ 2026-09-30: ลดจาก 8px — จอ 320px มีที่ว่างเหนือ #panelTotals แคบกว่าจอกว้าง (เนื้อหาห่อบรรทัดมากกว่า) */
+  }
+  .save-queue-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 12px; /* แก้ 2026-09-30: ลดจาก 8px แนวตั้ง — เหตุผลเดียวกับ gap ข้างบน (ประหยัดที่ทีละรายการ) */
+    font-size: 13px;
+    line-height: 1.4;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+    overflow-wrap: anywhere;
+  }
+  /* แก้ 2026-09-30: รายการ pending บรรทัดเดียวเสมอ (กันแผงสูงเกินจำเป็นตอนมีหลายรายการค้าง) — ข้อความเต็มอยู่ใน
+     attribute title (ผ่าน escHtml() แล้วจากตอนสร้าง) ส่วน failed ยังหลายบรรทัดได้ตามเดิมเพราะมีปุ่ม/ข้อความ error ยาว */
+  .save-queue-item.pending {
+    border-left: 4px solid var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .save-queue-item.failed { background: #FDECEA; border-left: 4px solid var(--danger); }
+  .save-queue-item .sq-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .save-queue-item .sq-actions button {
+    padding: 6px 10px; min-height: 32px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--gray-pale); cursor: pointer; font-family: inherit;
+  }
+  .save-queue-item .sq-actions button.sq-danger { background: #fff; border-color: var(--danger); color: var(--danger); }
+
   .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
   .tabs button {
     flex: 1;
@@ -371,6 +418,14 @@
   #cuListWrap.cu-has-active .cu-person:not(.cu-person-active) { opacity: .45; }
   .record-item.cu-person-active { outline: 3px solid var(--primary-dark); outline-offset: 2px; }
   .cu-person > .record-item .cu-note { border-top: 1px solid var(--border); }
+
+  /* รอบ 36 (W2, เจ้าของสั่งตามภาพหน้าจอ): มุมมองรายการของ "รายชื่อตรวจสุขภาพรายวัน" — ซ่อนกล่อง HN/ชื่อด้านซ้าย
+     (.rec-sticker ซ้ำกับแถบหัว .cu-person-head ที่มีอยู่แล้ว) แล้วขยาย .rec-body ให้เต็มพื้นที่ที่กล่องซ้ายเคยใช้
+     ⇒ scope ด้วย .cu-person เท่านั้น — recordItemHtml()/หน้า "รายการวันนี้" (#todayList) ห้ามถูกกระทบ ไม่แก้โครง HTML
+     (.rec-body มี flex:1 1 240px อยู่แล้ว พอ .rec-sticker หายไปจาก flex layout มันจะขยายเต็มที่เอง) */
+  .cu-person .rec-sticker { display: none; }
+  .cu-person .rec-line { font-size: 16px; }
+  .cu-person .rec-head .rec-time, .cu-person .rec-head .rec-total { font-size: 17px; font-weight: 700; }
 
   /* เจ้าของสั่ง 2026-09-15: ช่อง "ชื่อแพทย์" + "consult" ต่อท้าย .record-item เฉพาะมุมมอง "แบบรายการ (แก้ไขได้)"
      ของหน้ารายชื่อตรวจสุขภาพรายวัน (renderCheckupList) — ห้ามแก้ recordItemHtml() ที่ใช้ร่วมกับหน้า "รายการวันนี้"
@@ -963,6 +1018,10 @@
       </div>
     </div>
   </header>
+
+  <!-- รอบ 34 (2026-09-30) W2: แผงคิวบันทึกเบื้องหลัง — อยู่นอก outerMap ของ showScreen() โดยตั้งใจ ให้แสดงทุกจอ
+       เนื้อหาวาดจาก renderSaveQueuePanel_() ทั้งหมด (ผ่าน escHtml()/textContent เสมอ — ไม่มี innerHTML ดิบจากผู้ใช้) -->
+  <div id="saveQueuePanel" class="no-print" hidden></div>
 
   <!-- ---------- หน้าบันทึกบริการ — แผงเดียวเห็นครบ (รอบ 9 ก้อน B, SPEC_รอบ9.md หัวข้อ 4) ---------- -->
   <div id="svcFormWrap" style="display:none;">
@@ -1563,13 +1622,37 @@ var SPECIAL_ICONS = {
 // อื่นในอนาคตต้องใช้ไอคอนตาม id — ใช้ไอคอนของ mmg ซ้ำตามที่เจ้าของสั่ง
 SPECIAL_ICONS.us_breast = SPECIAL_ICONS.mmg;
 
+// ===================== รอบ 35 (2026-09-30) — CA breast: MMG กับ U/S Breast เลือกได้อย่างเดียว =====================
+// "เลือก mmg ขึ้นแค่ DF XSMC check up 363 จะไม่มีการเลือก mmg + u/s เพราะ mmg มี u/s อยู่แล้ว" (เจ้าของสั่งเอง)
+// นิยามเดียว ใช้ทุกด่านฝั่งเว็บ (onSpecialRegChange/guardBothBreastCheck_/validateForm) ตรงกับ hasBothBreast() ของ
+// สถิติบริการ.js เป๊ะ (คนละไฟล์คนละ runtime ห้ามใช้ require ข้ามกันได้ จึงต้องนิยามซ้ำที่นี่ให้ตรงกัน)
+// ข้อยกเว้น "grandfather": แถวเก่าที่ specialReg เดิมมีทั้งคู่อยู่แล้วก่อนเปิดแก้ไขครั้งนี้ ยังแก้ไข/บันทึกได้ตามปกติ
+function hasBothBreast(ids) {
+  var list = Array.isArray(ids) ? ids : [];
+  return list.indexOf('mmg') !== -1 && list.indexOf('us_breast') !== -1;
+}
+var BOTH_BREAST_MSG = 'เลือกได้อย่างเดียว: MMG หรือ U/S Breast (MMG รวมอัลตราซาวด์แล้ว)';
+
+// ===================== รอบ 35 (W2, 2026-09-30) — ชื่อที่แสดงของแท็บ mmg ในกระดาน spBoard = "CA BREAST" =====================
+// ทุกจุดของกระดาน (การ์ดเมนู/ปุ่มสลับ/หัวแท็บ/หัวโหมดแคป/ข้อความ confirm ลบรายคน) — ห้ามแก้ SPECIAL_SENDS.name (ชีตยังเก็บชื่อเดิม)
+// ไม่มีคีย์ในนี้ ⇒ ใช้ item.name ตามปกติ (เผื่ออนาคตแท็บอื่นอยากมีชื่อแสดงบนกระดานต่างจากชื่อจริง)
+// รอบ 36 (W1, เจ้าของสั่ง): ตัวใหญ่ทุกจุด "CA BREAST" (เดิมรอบ 35 ใส่ 'CA breast' ตัวเล็ก) — จุดเดียวที่ต้องแก้
+// เพราะทุกจุดที่แสดงผล (การ์ดเมนู/ปุ่มสลับ/หัวแท็บ/หัวโหมดแคป/confirm ลบ) อ่านผ่าน spBoardTabDisplayName_() ที่นี่
+var SP_BOARD_TAB_NAME = { mmg: 'CA BREAST' };
+function spBoardTabDisplayName_(id) {
+  var item = SPECIAL_SEND_BY_ID[id];
+  return SP_BOARD_TAB_NAME[id] || (item ? item.name : '');
+}
+
 // รอบ 9 ก้อน A (SPEC_รอบ9.md หัวข้อ 3.2) — กระดานงานค้างของ manager
 // เฉพาะรายการที่มีขั้น "ส่งรายชื่อ" (prepLabel != null) เท่านั้น — inbody (prepLabel:null) จึงไม่โผล่ในกระดานนี้
 // โดยอัตโนมัติ ไม่ต้องลบ id 'inbody' ออกจาก SPECIAL_SENDS (ห้ามลบเด็ดขาด — ดูเหตุผลใน SPEC_รอบ9.md ข้อ 2.3)
 // ⚠ ใช้กับแผงติ๊กของฟอร์ม (buildSpecialSendsUI) และสรุป "รายการวันนี้" (renderSpecialTodaySummary) — ต้องมี us_breast
 // อยู่ในนี้ด้วย (มีช่องติ๊กของตัวเองในฟอร์ม แค่ไม่มีแท็บของตัวเองในกระดาน spBoard — ดู SP_BOARD_TAB_ITEMS ด้านล่าง)
 var SP_BOARD_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel != null; });
-var SP_BOARD_SHORT_LABEL = { mmg: 'MMG', bmd: 'BMD', ent: 'ENT', ent_hearing: 'ENT+ยิน', vision3d: 'ตา' };
+// รอบ 36 (W1, เจ้าของสั่ง): ปุ่มสลับแท็บ = BMD · CA BREAST · EYE · ENT · ENT+AUDIO (ตาม id bmd/mmg/vision3d/ent/ent_hearing)
+// mmg ใช้ SP_BOARD_TAB_NAME แทนอยู่แล้ว (ชนะป้ายย่อยนี้เสมอ) — ent_hearing/vision3d เปลี่ยนป้ายย่อ (เดิม 'ENT+ยิน'/'ตา')
+var SP_BOARD_SHORT_LABEL = { mmg: 'MMG', bmd: 'BMD', ent: 'ENT', ent_hearing: 'ENT+AUDIO', vision3d: 'EYE' };
 
 // รอบ 29 (S7) W7 (ข้อ 7): แท็บของกระดานส่งตรวจพิเศษ (spBoard) เท่านั้น — us_breast ไม่มีแท็บของตัวเอง
 // (รวมอยู่ในแท็บ mmg แทน) ใช้เฉพาะ renderSpBoardCards/renderSpBoardSwitchBar/spBoardCounts (เมนู+แถบสลับของกระดาน)
@@ -1586,13 +1669,17 @@ function spBoardIdForPerson(rec, tabId) {
   return tabId;
 }
 
-// รอบ 29 (S7) W7 (ข้อ 7): ป้ายเล็กบอกชนิดของคนในแท็บ MMG — MMG / U/S Breast / MMG + U/S Breast
-function spBoardMmgTypeLabel_(rec) {
+// ป้ายเล็กบอกชนิดของคนในแท็บ CA breast (เดิมชื่อแท็บ mmg — id ห้ามเปลี่ยน)
+// รอบ 35 (W2, 2026-09-30): มี mmg ⇒ MMG (รวมแถวเก่าที่มีทั้งคู่ — "ในกระดาน แถวที่มีทั้งคู่ถือเป็น MMG")
+// มีแค่ us_breast ⇒ U/S breast · ไม่มีป้าย "MMG + U/S Breast" อีกแล้ว (เลือกได้อย่างเดียวตั้งแต่รอบนี้)
+// capMode = true (โหมดแคปส่งแพทย์ W3): ต่อท้ายด้วยรหัส DF ตัวสะกด/ช่องว่างต้องตรงเป๊ะ
+function spBoardMmgTypeLabel_(rec, capMode) {
   var reg = (rec && rec.specialReg) || [];
   var hasMmg = reg.indexOf('mmg') !== -1;
-  var hasUs = reg.indexOf('us_breast') !== -1;
-  if (hasMmg && hasUs) return 'MMG + U/S Breast';
-  return hasUs ? 'U/S Breast' : 'MMG';
+  if (capMode) {
+    return hasMmg ? 'MMG (DF XSMC check up 363)' : 'U/S breast (DF XSMC check up 315)';
+  }
+  return hasMmg ? 'MMG' : 'U/S breast';
 }
 
 // นิยาม 3 ตัวเลขตาม SPEC หัวข้อ 3.2 เป๊ะ — ห้ามตีความเอง ห้าม union specialReg ซ้ำ (เซิร์ฟเวอร์ทำให้แล้ว)
@@ -1808,9 +1895,9 @@ var STATE = {
   editSpecialPrep: [],
   editSpecialSent: [],
   editSpecialBack: [],
-  // กันบันทึกซ้ำ (2026-09-16): true ระหว่างรอ apiCall('log'/'edit') ตอบกลับ — validateForm() ต้องเช็คค่านี้ด้วย
-  // เพราะแค่ btn.disabled อย่างเดียวไม่พอ (recalcTotals ระหว่างรอ ปลดล็อกปุ่มทับให้เองถ้าฟอร์มยัง valid)
-  saving: false,
+  // รอบ 34 (2026-09-30): ฟิลด์ `saving` (กันบันทึกซ้ำระหว่างรอ apiCall('log'/'edit') ตอบกลับ) ถูกถอดออกไปแล้ว —
+  // บันทึกไม่รอ network อีกต่อไป (ดู SAVE_QUEUE/onSubmitLog()) เทสต์เก่าบางไฟล์ยังตั้ง STATE.saving=false เอง
+  // ในสตับของตัวเอง (ไม่มีผลอะไรแล้ว — แค่สร้าง property เปล่าทิ้งไว้ ไม่กระทบพฤติกรรมจริง)
   // รอบ 22 (2026-09-21): 'week' (จันทร์-ศุกร์) หรือ 'sun' (วันอาทิตย์) — คุมว่าปุ่มโปรแกรมชุดไหนแสดงอยู่ ตั้งค่าผ่าน setProgramSet() เท่านั้น
   progSet: 'week',
   // รอบ 29 (S3) W3 (ข้อ 3): ราคาตรวจสุขภาพเติมอัตโนมัติ — lastPricingKey กันไม่ให้เติมซ้ำเมื่อ recalcTotals() ถูกเรียก
@@ -1839,7 +1926,14 @@ function apiCall(action, payload) {
   }).then(function (res) {
     return res.json();
   }).catch(function (err) {
-    return { status: 'error', message: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ (' + (err && err.message ? err.message : 'network error') + ')' };
+    // รอบ 34 (2026-09-30) W1 (ข้อ 5): ธง networkError — ใช้แยก "เน็ตหลุด/เชื่อมต่อไม่สำเร็จ" ออกจาก error ปกติที่
+    // เซิร์ฟเวอร์ตอบกลับมาจริง (onSubmitLog ต่อท้ายข้อความเตือนเพิ่มเฉพาะกรณีนี้) ไม่ใช่คีย์ที่ส่งไปเซิร์ฟเวอร์ — เป็นแค่
+    // ผลลัพธ์ในเครื่องของ apiCall() เอง ไม่กระทบ payload/contract ใด ๆ ที่ส่งออกไปจริง
+    return {
+      status: 'error',
+      message: 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ (' + (err && err.message ? err.message : 'network error') + ')',
+      networkError: true
+    };
   });
 }
 
@@ -2246,7 +2340,22 @@ function maybeSuggestNextCheckupQueue() {
   if (draftQueuePrefix() !== 'C') return;
   var sel = qs('queueSelect');
   if (!sel || sel.value) return;
-  var suggestion = suggestNextCheckupQueue(LAST_TODAY_RECORDS);
+  // รอบ 34 (2026-09-30) W3 (ข้อ 3): ต้องนับคิวของรายการ kind:'log' ที่ยัง pending/failed อยู่ใน SAVE_QUEUE ด้วย
+  // (บันทึกไม่รอ network แล้ว ⇒ ตอนแนะนำคิวถัดไป แถวที่เพิ่งกดบันทึกไปอาจยังไม่มาถึง LAST_TODAY_RECORDS)
+  // ไม่งั้นจะเสนอเลขคิวซ้ำกับคนที่เพิ่งกดบันทึกไปเมื่อครู่ — suggestNextCheckupQueue() เองยังเป็น pure function เดิม
+  // (ไม่แตะ ไม่งั้น test_round29_web.js ที่เรียกมันตรง ๆ ด้วย records ธรรมดาจะพัง) แค่ประกอบ records ที่ส่งเข้าไปให้ครบ
+  var combined = LAST_TODAY_RECORDS.slice();
+  // รอบ 37 (W5, 2026-09-30): นับคิวจาก CU_CACHE.records ของวันนี้ด้วยถ้ามี (กันแนะนำคิวที่จุดอื่นใช้ไปแล้ว) —
+  // ไม่แตะ suggestNextCheckupQueue() เอง (ยังเป็น pure function เดิม) แค่ประกอบ records ที่ส่งเข้าไปให้ครบขึ้นอีกแหล่ง
+  if (typeof CU_CACHE !== 'undefined' && CU_CACHE.records && CU_CACHE.key === todayStr()) {
+    combined = combined.concat(CU_CACHE.records);
+  }
+  (typeof SAVE_QUEUE !== 'undefined' ? SAVE_QUEUE : []).forEach(function (it) {
+    if (it.kind === 'log' && (it.status === 'pending' || it.status === 'failed') && it.payload && it.payload.queue) {
+      combined.push({ queue: it.payload.queue, status: '' });
+    }
+  });
+  var suggestion = suggestNextCheckupQueue(combined);
   if (suggestion) sel.value = suggestion;
 }
 
@@ -2269,7 +2378,22 @@ function guardSpecialRegUncheck(id) {
     showToast('รายการนี้มีสถานะอยู่แล้ว จึงต้องลงชื่อไว้');
   }
 }
-function onSpecialRegChange(id) { guardSpecialRegUncheck(id); onServiceFieldChange(); }
+// รอบ 35 (W1, 2026-09-30): "เลือกได้อย่างเดียว: MMG หรือ U/S Breast" — บล็อกตอนผู้ใช้ติ๊ก (checked=false ทันที + toast)
+// ห้ามใช้ disabled (ชนกับล็อกเพศชายที่ใช้ disabled อยู่แล้วใน applyGenderLockFor_) · ปลดติ๊กทำได้ปกติเสมอ
+// (เช็คเฉพาะตอนไปเป็นด้านที่ "ติ๊กอยู่" — ถ้ากำลังปลดติ๊ก ไม่ต้องทำอะไร)
+function guardBothBreastCheck_(id) {
+  if (id !== 'mmg' && id !== 'us_breast') return;
+  var cb = qs('sp_reg_' + id);
+  if (!cb || !cb.checked) return;
+  var otherId = (id === 'mmg') ? 'us_breast' : 'mmg';
+  var otherCb = qs('sp_reg_' + otherId);
+  if (otherCb && otherCb.checked) {
+    cb.checked = false;
+    var otherName = (SPECIAL_SEND_BY_ID[otherId] || {}).name || otherId;
+    showToast(BOTH_BREAST_MSG + ' — เอาติ๊ก ' + otherName + ' ออกก่อน');
+  }
+}
+function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastCheck_(id); onServiceFieldChange(); }
 
 /* เจ้าของสั่ง 2026-09-11: HN ต้องเป็นตัวอักษรอังกฤษ 2 ตัว + ตัวเลข 4 หลัก (เช่น AB1234) ผิดรูปแบบห้ามบันทึก
    ⚠ บังคับฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — แถวเก่าจำนวนมากมี HN คนละรูปแบบ
@@ -3063,20 +3187,38 @@ function applyPointLayout() {
     return;
   }
 
-  var needSpecial = topics.indexOf('ตรวจสุขภาพ') !== -1 || topics.indexOf('ใบรับรองทั่วไป') !== -1;
+  var hasCheckupTopic = topics.indexOf('ตรวจสุขภาพ') !== -1;
+  var needSpecial = hasCheckupTopic || topics.indexOf('ใบรับรองทั่วไป') !== -1;
   var placed = {};
   mainIds.forEach(function (id) { placed[id] = true; });
 
-  var order = mainIds.slice();
+  var personEl = qs('panelPerson');
+
+  // รอบ 36 (W4, เจ้าของสั่งตามภาพหน้าจอ "จุดนับ vaccine/จุดเปิดสิทธิ์"): จุดที่มีหัวข้อหลักแต่ "ไม่มี" หัวข้อ
+  // 'ตรวจสุขภาพ' -> แผงใน mainIds (ตามลำดับหัวข้อ) ย้ายไปอยู่ "ก่อน" #panelPerson แทนที่จะอยู่ "หลัง" เหมือนเดิม
+  // จุดที่มี 'ตรวจสุขภาพ' (เช่น จุดคีย์ order) ยังคงพฤติกรรมเดิมทุกประการ (mainIds อยู่หลัง #panelPerson)
+  // ⚠ #panelPerson เองไม่อยู่ใน MOVABLE_PANEL_IDS_ และไม่ถูกย้ายเลย — แค่แทรก mainIds ไว้ข้างหน้ามันเท่านั้น
+  if (!hasCheckupTopic && personEl && personEl.parentNode) {
+    mainIds.forEach(function (id) {
+      var el = qs(id);
+      if (!el) return;
+      personEl.parentNode.insertBefore(el, personEl);
+      el.setAttribute('data-collapsed', '0');
+    });
+  }
+
+  // hasCheckupTopic ⇒ mainIds ยังต่อท้าย #panelPerson เหมือนเดิม (อยู่ใน order) · ไม่ใช่ ⇒ ย้ายไปก่อนหน้าแล้วข้างบน
+  // (ไม่อยู่ใน order อีกต่อไป) — placed[id] ยังตั้งไว้เหมือนเดิมทั้ง 2 กรณี ไม่ให้ไปโผล่ซ้ำในกลุ่ม "บริการอื่น"
+  var order = hasCheckupTopic ? mainIds.slice() : [];
   if (needSpecial) {
     placed.panelSpecial = true;
     order.push('panelSpecial');
     // มีทั้งคู่ / เฉพาะตรวจสุขภาพ -> checkup ก่อน · เฉพาะใบรับรองทั่วไปอย่างเดียว -> medcert ก่อน
-    reorderSpecialSendsRows_(topics.indexOf('ตรวจสุขภาพ') !== -1 ? ['checkup', 'medcert'] : ['medcert', 'checkup']);
+    reorderSpecialSendsRows_(hasCheckupTopic ? ['checkup', 'medcert'] : ['medcert', 'checkup']);
   }
   var remaining = MOVABLE_PANEL_IDS_.filter(function (id) { return !placed[id]; });
 
-  var anchor = qs('panelPerson');
+  var anchor = personEl;
   order.forEach(function (id) {
     var el = qs(id);
     if (!el || !anchor) return;
@@ -3155,6 +3297,10 @@ function validateForm(ctx) {
   var hasAnything = ctx.checkupOn || ctx.vaccineOn || ctx.nCert > 0 ||
                     ctx.labAmount > 0 || ctx.specialOn;
 
+  // รอบ 37 (W3, 2026-09-30): ห้ามคิวซ้ำในวันเดียวกัน — คำนวณไว้ก่อนเข้าเชนเงื่อนไขด้านล่าง (ต้องรู้ผลก่อนตัดสินใจ
+  // ว่าจะขึ้นข้อความนี้หรือไม่) ดู queueDupInfoFor_ ด้านบน (เช็คเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถวในโหมดแก้ไข)
+  var queueDupInfo = queueDupInfoFor_(ctx.queue);
+
   // B4 (รอบ 7, เจ้าของสั่งข้อ 0.1): ตรวจสุขภาพบังคับกรอกทุกช่อง (คิว/HN/ชื่อ-สกุล/เพศ/ราคา/ช่องทางรับผล)
   // ⚠ บังคับแค่ฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — แถวเก่าจำนวนมากไม่มีคิว/HN ถ้าเซิร์ฟเวอร์บังคับด้วย
   //   จะแก้ไขแถวเก่าไม่ได้เลย (ผลข้างเคียงที่ยอมรับแล้ว: แก้แถวเก่าที่ไม่มีข้อมูลครบต้องเติมให้ครบก่อนถึงจะบันทึกได้)
@@ -3173,6 +3319,10 @@ function validateForm(ctx) {
     msg = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
   } else if (!hasAnything) {
     msg = 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+  } else if (queueDupInfo) {
+    // รอบ 37 (W3, ข้อ 3): ขึ้นทันทีตอนพิมพ์/เลือกคิว — อยู่หลังด่าน "ยังไม่เลือกจุด/ผู้บันทึก" และ "ยังไม่ติ๊กอะไรเลย"
+    // (ด่านที่สำคัญกว่าของเดิม) แต่มาก่อนด่านเฉพาะของตรวจสุขภาพด้านล่างทั้งหมด — คิวซ้ำต้องแก้ก่อนเสมอไม่ว่าจะติดด่านอื่นด้วย
+    msg = queueDupMessage_(queueDupInfo);
   } else if (ctx.checkupOn && !ctx.gender) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
   } else if (ctx.checkupOn && checkupMissing.length) {
@@ -3206,6 +3356,12 @@ function validateForm(ctx) {
     // SPEC CORRECTION 2026-09-24 (รอบ 29): เพศชายส่งตรวจ U/S Breast ไม่ได้เหมือน MMG — ด่านเดียวกัน แยกข้อความ
     // (ถ้าติ๊กทั้ง mmg และ us_breast พร้อมกัน ข้อความของ mmg ขึ้นก่อนเสมอเพราะด่าน mmg เช็คก่อนด่านนี้)
     msg = 'เพศชายส่งตรวจ U/S Breast ไม่ได้';
+  } else if (hasBothBreast(getSpecialRegIds()) &&
+      !(STATE.editingId && EDIT_MODAL.originalRec && hasBothBreast(EDIT_MODAL.originalRec.specialReg || []))) {
+    // รอบ 35 (W1, 2026-09-30): "เลือกได้อย่างเดียว: MMG หรือ U/S Breast" — ยกเว้นกำลังแก้ไขแถวที่ reg เดิม (ก่อนเปิดแก้
+    // ครั้งนี้) มีทั้งคู่อยู่แล้ว (grandfather) · ครอบเคส mergeDraftIntoTodayRecord ที่ union แถวเก่า MMG + ร่าง U/S breast
+    // ด้วย (ตั้งค่าเช็คบ็อกซ์ตรง ๆ ไม่ผ่าน onSpecialRegChange ⇒ ด่านนั้นไม่ทัน ต้องพึ่งด่านนี้ก่อนกดบันทึก)
+    msg = BOTH_BREAST_MSG;
   } else if (getSelectedGender() === 'male' && isFemalePrefix(qs('patientPrefix').value)) {
     // ⚠ ใช้ getSelectedGender() ดิบ ไม่ใช่ ctx.gender — ctx.gender เป็น checkupOn ? getSelectedGender() : ''
     //   ⇒ เลือกเพศชายไว้แต่ยังไม่ได้เลือกโปรแกรม จะได้ '' แล้วด่านนี้หลุด (บทเรียนเดียวกับด่าน MMG ข้างบน)
@@ -3226,8 +3382,8 @@ function validateForm(ctx) {
     warnEl.hidden = true;
     btn.disabled = false;
   }
-  // กันบันทึกซ้ำ: ระหว่างรอ apiCall ตอบ ห้ามปุ่มเด้งกลับมากดได้แม้ฟอร์มจะ valid (เตือน/ข้อความข้างบนคำนวณตามปกติ)
-  if (STATE.saving) btn.disabled = true;
+  // รอบ 34 (2026-09-30): เดิมมี `if (STATE.saving) btn.disabled = true;` ที่นี่ กันปุ่มเด้งกลับมากดได้ระหว่างรอ
+  // apiCall ตอบ — ถอดทิ้งแล้ว (บันทึกไม่รอ network อีกต่อไป ดู onSubmitLog()) ปุ่มจึงพึ่งผลของ msg ข้างบนล้วน ๆ
   syncStickyButtons();
 }
 
@@ -3505,6 +3661,9 @@ function resetLogForm() {
    ========================================================================= */
 function exitEditMode() {
   STATE.editingId = '';
+  // รอบ 35 (2026-09-30): ล้าง originalRec ด้วย กัน validateForm() เผลอเอาแถวที่แก้ไขค้างจากรอบก่อนมา "grandfather"
+  // ให้บันทึกรายใหม่ที่ไม่เกี่ยวข้องกันเลย (เช็คคู่กับ STATE.editingId อยู่แล้วก็จริง แต่ล้างทิ้งไปด้วยชัดเจนกว่า)
+  if (typeof EDIT_MODAL !== 'undefined') EDIT_MODAL.originalRec = null;
   // รอบ 9 (ก้อน B, B6) — บันทึกรายใหม่ (ไม่ได้แก้ไข) ต้องส่ง array ว่างเสมอ ล้างสถานะส่งตรวจพิเศษที่แถวเก่าค้างไว้ทิ้ง
   STATE.editSpecialPrep = [];
   STATE.editSpecialSent = [];
@@ -3523,7 +3682,8 @@ var EDIT_MODAL = {
   formOriginalNext: null,
   draft: null,        // ร่างรายใหม่ที่ค้างก่อนเปิดโมดัล (captureFormDraft_()) — null = ไม่มี (เช่นทาง merge ซ้ำ)
   dirtySnapshot: null, // สถานะฟอร์ม ณ ตอนเปิดโมดัล — ใช้เทียบว่า "แก้แล้วยังไม่บันทึก" ก่อนถาม confirm ตอนปิด
-  viaMerge: false
+  viaMerge: false,
+  originalRec: null   // รอบ 34 (2026-09-30) W2: record ต้นทางที่กำลังแก้ — ตั้งจาก enterEditMode() เท่านั้น
 };
 
 // เก็บ/คืนค่าทุกช่องกรอกของ #logForm แบบตรงตัว (ไม่มีกลไก draft สำเร็จรูปอยู่ก่อนในระบบนี้ — #btnDraftSave/
@@ -3638,9 +3798,11 @@ function finishOpenEditModal_(rec) {
   if (closeBtn && typeof closeBtn.focus === 'function') closeBtn.focus();
 }
 
-// ทางเข้าโมดัลปกติ — ปุ่ม "แก้ไข" จากมุมมองรายการ/รายการวันนี้ (onEditRecordClick)
+// ทางเข้าโมดัลปกติ — ปุ่ม "แก้ไข" จากมุมมองรายการ/รายการวันนี้ (onEditRecordClick) และปุ่ม "แก้แล้วบันทึกใหม่"
+// ของ #saveQueuePanel (onSaveQueueRetry_) — รอบ 34 (2026-09-30): ด่านกัน "รายการนี้กำลังแก้ไขค้างอยู่" ย้ายไปเช็ค
+// เฉพาะที่ onEditRecordClick() แทน (ไม่เช็คซ้ำที่นี่) เพราะ onSaveQueueRetry_() ต้องเรียกฟังก์ชันนี้ได้เสมอสำหรับ
+// รายการของตัวเอง (ลบตัวเองออกจากคิวไปก่อนแล้วถึงเรียก) — STATE.saving เดิมถูกถอดไปแล้วทั้งไฟล์ (ไม่ใช้กั้น network อีกต่อไป)
 function openEditModalForRecord(rec) {
-  if (STATE.saving) { showToast('รอบันทึกรายการก่อนหน้าให้เสร็จก่อน'); return; }
   if (!rec) return;
   EDIT_MODAL.draft = captureFormDraft_(); // เก็บร่างรายใหม่ที่ค้างอยู่ก่อนเปิดโมดัลไว้ก่อนเสมอ
   moveFormIntoModal_();
@@ -3718,6 +3880,10 @@ function scrollAndHighlightRecord_(recordId) {
 
 function enterEditMode(rec) {
   STATE.editingId = rec.recordId;
+  // รอบ 34 (2026-09-30) W2: เก็บ record ต้นทางที่กำลังแก้ไว้ — ใช้ตอนกด "แก้แล้วบันทึกใหม่" ของรายการที่บันทึกไม่สำเร็จ
+  // (onSaveQueueRetry_() เรียก openEditModalForRecord(editCtx.rec) ซ้ำ) ไม่ต้องไปค้น LAST_TODAY_RECORDS/LAST_CU_RECORDS
+  // อีกรอบซึ่งอาจโดนรีเฟรชทับไปแล้วตั้งแต่ตอนกดบันทึกครั้งแรก
+  EDIT_MODAL.originalRec = rec;
 
   // รอบ 9 (ก้อน B, ข้อ 4.6) — ล้างข้อความ "รวมแถวแล้ว" ที่อาจค้างจากการรวมแถวครั้งก่อน ไม่ให้หลุดไปโผล่ตอนแก้ไขแถวธรรมดา
   var mergeNoteElReset = qs('editBannerMergeNote');
@@ -3832,6 +3998,91 @@ function dupMergeConfirmMsg_(label, point, time) {
     'ตกลง = รวมเข้าแถวเดิม แล้วกด "บันทึกการแก้ไข"\nยกเลิก = กลับไปแก้ฟอร์ม';
 }
 
+// ===================== รอบ 37 (W1, 2026-09-30) — ห้ามคิวซ้ำในวันเดียวกัน =====================
+// SPEC_รอบ37_คิวซ้ำ.md ส่วน "แก้สเปก" (เจ้าของสั่งแก้ระหว่างทำ 2026-09-30): คิว "ไม่นัด N" ต้องถูกบล็อกเมื่อซ้ำด้วย
+// มีแค่ "คิวว่าง" เท่านั้นที่ไม่ตรวจ — ต้องตรงกับ normQueueDupKey_ ฝั่งเซิร์ฟเวอร์ (สถิติบริการ.js) เป๊ะทุกกรณี
+function queueDupKey_(v) {
+  var raw = (v == null) ? '' : String(v);
+  var walkIn = /^\s*ไม่นัด\s*(\d{1,3})\s*$/.exec(raw);
+  if (walkIn) return 'ไม่นัด ' + parseInt(walkIn[1], 10);
+  var s = raw.trim();
+  if (!s) return '';
+  return s.replace(/\s+/g, '').toUpperCase();
+}
+
+// หาแถว/รายการที่ใช้คิวเดียวกันแล้ววันนี้ จากทุกแหล่งที่เว็บมองเห็นในเครื่อง (เรียงตามที่ SPEC ระบุ):
+// LAST_TODAY_RECORDS (จุดตัวเอง) + CU_CACHE.records ถ้าเป็นของวันนี้ (ทุกจุด) + รายการ kind:'log' ที่ pending/failed
+// ใน SAVE_QUEUE (ใช้ payload.queue) · ไม่นับแถวยกเลิก · excludeId = แถวที่กำลังแก้ไขอยู่ (STATE.editingId) ไม่นับตัวเอง
+// คืน { queueText, point, time, who, pending } (pending = จริงเฉพาะรายการที่ยังไม่มีเวลาเพราะกำลังบันทึกอยู่เบื้องหลัง)
+// หรือ null ถ้าไม่เจอ
+function queueDupPersonLabel_(name, hn) {
+  var n = String(name || '').trim();
+  if (n) return n;
+  var h = String(hn || '').trim();
+  if (h) return h;
+  return '—';
+}
+// rec.time ที่ได้จากเซิร์ฟเวอร์ (rowToRecord_) เป็น 'yyyy-MM-dd HH:mm:ss' เต็ม (toTimeStr_) ไม่ใช่ 'HH:mm' เฉย ๆ —
+// ตัดเหลือ HH:mm ด้วยวิธีเดียวกับ buildQueueDuplicateError_ ฝั่งเซิร์ฟเวอร์เป๊ะ (slice(11,16) เมื่อยาวพอ)
+function queueDupHhmm_(timeFull) {
+  var s = String(timeFull || '');
+  return s.length >= 16 ? s.slice(11, 16) : '';
+}
+// selfHn/selfName: HN/ชื่อของฟอร์มปัจจุบัน — แก้บั๊กที่ผู้ตรวจพบ 2026-09-30: คนเดิมกลับมาใช้ "คิวเดิมของตัวเอง"
+// (เช่น C5 กลับมาเติมวัคซีน) ไม่ใช่คิวซ้ำ ⇒ ต้องปล่อยให้เส้นทางคนซ้ำเดิมจัดการแทน (onSubmitLog confirm รวมแถว/
+// SAVE_QUEUE person-dup) ให้ตรงกับลำดับความสำคัญฝั่งเซิร์ฟเวอร์ (เช็คคนซ้ำก่อนคิวซ้ำเสมอ — SPEC_รอบ37 "ลำดับ")
+// แถว/รายการที่คิวตรงแต่เป็นคนเดิม (HN ตรงหรือชื่อตรง ตาม normDupHn_/normDupName_) ⇒ ข้ามไป (ไม่ใช่ return null ทันที
+// เพราะยังต้องหาต่อว่ามีคนอื่นใช้คิวเดียวกันซ้ำอยู่จริงไหม)
+function findQueueDupInBrowser_(queueKey, excludeId, selfHn, selfName) {
+  if (!queueKey) return null;
+  var normSelfHn = normDupHn_(selfHn);
+  var normSelfName = normDupName_(selfName);
+  function isSamePerson(name, hn) {
+    var hnMatch = !!normSelfHn && normDupHn_(hn) === normSelfHn;
+    var nameMatch = !!normSelfName && normDupName_(name) === normSelfName;
+    return hnMatch || nameMatch;
+  }
+
+  var records = LAST_TODAY_RECORDS.slice();
+  if (CU_CACHE.records && CU_CACHE.key === todayStr()) {
+    records = records.concat(CU_CACHE.records);
+  }
+  for (var i = 0; i < records.length; i++) {
+    var rec = records[i];
+    if (!rec || rec.status === 'ยกเลิก') continue;
+    if (excludeId && rec.recordId === excludeId) continue;
+    if (queueDupKey_(rec.queue) !== queueKey) continue;
+    if (isSamePerson(rec.patientName, rec.patientHn)) continue;
+    return { queueText: rec.queue, point: rec.point || '', time: queueDupHhmm_(rec.time), who: queueDupPersonLabel_(rec.patientName, rec.patientHn), pending: false };
+  }
+
+  for (var j = 0; j < SAVE_QUEUE.length; j++) {
+    var it = SAVE_QUEUE[j];
+    if (it.kind !== 'log') continue;
+    if (it.status !== 'pending' && it.status !== 'failed') continue;
+    var p = it.payload || {};
+    if (queueDupKey_(p.queue) !== queueKey) continue;
+    if (isSamePerson(p.patientName, p.patientHn)) continue;
+    return { queueText: p.queue, point: '', time: '', who: queueDupPersonLabel_(p.patientName, p.patientHn), pending: true };
+  }
+  return null;
+}
+// ข้อความบล็อกคิวซ้ำ — รายการที่ยังไม่มีเวลา (กำลังบันทึกอยู่ในคิวเบื้องหลัง) ⇒ "กำลังบันทึก" แทนจุด/เวลา (SPEC ข้อ 3)
+function queueDupMessage_(dup) {
+  var whereText = dup.pending ? 'กำลังบันทึก' : (dup.point + ' เวลา ' + dup.time);
+  return 'คิว ' + dup.queueText + ' ใช้ไปแล้ววันนี้ (' + whereText + ' · ' + dup.who + ') — เลือกคิวอื่น';
+}
+// โหมดแก้ไข: ตรวจเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถว (EDIT_MODAL.originalRec.queue) — กันแถวเก่าที่คิวซ้ำอยู่แล้ว
+// ก่อนรอบนี้กลายเป็นแถวที่แก้ไขไม่ได้ (แพตเทิร์นเดียวกับ HN/ชื่อฝั่งเซิร์ฟเวอร์)
+function queueDupInfoFor_(queueValue) {
+  if (!queueValue) return null;
+  var curKey = queueDupKey_(queueValue);
+  if (!curKey) return null;
+  if (STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === curKey) return null;
+  var hnEl = qs('patientHn'), nameEl = qs('patientName');
+  return findQueueDupInBrowser_(curKey, STATE.editingId, hnEl ? hnEl.value : '', nameEl ? nameEl.value : '');
+}
+
 function mergeDraftIntoTodayRecord(rec, draft) {
   var preMergeDraft = captureFormDraft_(); // รอบ 31B: กด ✕ ในโมดัลแล้วร่างที่พิมพ์ไว้ต้องกลับมา
   enterEditMode(rec); // เติมค่าแถวเก่าทับฟอร์ม (ล้างร่างปัจจุบันไปก่อน) — STATE.editingId/editExtraIds/editSpecial* ถูกตั้งจาก rec แล้ว ณ จุดนี้
@@ -3900,11 +4151,222 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   openEditModalShellForMerge_(rec, preMergeDraft);
 }
 
+/* =========================================================================
+   7.2 (รอบ 34, 2026-09-30) W1-W3: คิวบันทึกเบื้องหลัง — บันทึก/แก้ไขไม่รอ apiCall('log'/'edit') ตอบอีกต่อไป
+   เจ้าของวัดแล้ว: คำขอที่แทบไม่ทำอะไรก็กิน 2-4 วิ (พื้นของ Apps Script เอง ลดไม่ได้) ⇒ ฟอร์มว่างทันทีให้กรอกรายถัดไปได้
+   ระหว่างรอเซิร์ฟเวอร์ตอบ · STATE.saving/logForm.inert เดิม (กันบันทึกซ้ำระหว่างรอ) ถูกถอดทิ้งทั้งไฟล์แล้ว —
+   แทนที่ด้วยคิวนี้ + ด่านเช็คซ้ำที่มองเห็นคิวด้วย (ดู W3 ใน onSubmitLog/onEditRecordClick/onCancelRecord ข้างล่าง)
+   ไม่มีการยิงซ้ำอัตโนมัติ (auto-retry) ตามสเปก — ผู้ใช้ต้องกดปุ่มในแผงเอง
+   ========================================================================= */
+var SAVE_QUEUE = [];
+var SAVE_QUEUE_SEQ_ = 0;
+function saveQueueNextId_() { return 'sq' + (++SAVE_QUEUE_SEQ_); }
+function saveQueueFind_(id) {
+  for (var i = 0; i < SAVE_QUEUE.length; i++) { if (SAVE_QUEUE[i].id === id) return SAVE_QUEUE[i]; }
+  return null;
+}
+function saveQueueRemove_(id) {
+  for (var i = 0; i < SAVE_QUEUE.length; i++) { if (SAVE_QUEUE[i].id === id) { SAVE_QUEUE.splice(i, 1); return; } }
+}
+// W3 (ข้อ 1): เช็คซ้ำในเครื่องตอนบันทึกรายใหม่ต้องมองเห็นรายการ kind:'log' ที่ยัง pending/failed ในคิวด้วย
+// (นอกจาก LAST_TODAY_RECORDS) — normalize เดิมเป๊ะ (normDupHn_/normDupName_ ประกาศไว้ข้างบนแล้ว)
+function saveQueueFindLogDup_(normHn, normName) {
+  for (var i = 0; i < SAVE_QUEUE.length; i++) {
+    var it = SAVE_QUEUE[i];
+    if (it.kind !== 'log') continue;
+    if (it.status !== 'pending' && it.status !== 'failed') continue;
+    var p = it.payload || {};
+    var hnMatch = !!normHn && normDupHn_(p.patientHn) === normHn;
+    var nameMatch = !!normName && normDupName_(p.patientName) === normName;
+    if (hnMatch || nameMatch) return it;
+  }
+  return null;
+}
+// W3 (ข้อ 2): recordId มีรายการ kind:'edit' ค้าง (pending/failed) อยู่ไหม — ใช้บล็อกแก้ไข/ยกเลิกซ้อนแถวเดียวกัน
+function saveQueueEditPendingFor_(recordId) {
+  for (var i = 0; i < SAVE_QUEUE.length; i++) {
+    var it = SAVE_QUEUE[i];
+    if (it.kind === 'edit' && (it.status === 'pending' || it.status === 'failed') &&
+      it.editCtx && it.editCtx.editingId === recordId) return it;
+  }
+  return null;
+}
+
+// ฟอร์มหลัก (ไม่ใช่ในโมดัล) "มีร่างค้างอยู่" ไหม — ใช้ก่อนถาม confirm ตอนกด "แก้แล้วบันทึกใหม่"/"รวมเข้าแถวเดิม"
+// ของแผง #saveQueuePanel (W2) เกณฑ์เดียวกับ hasDraft ของ updateDraftStrip() (มีบริการที่ติ๊ก หรือมีชื่อ/คิว)
+function isMainFormDraftEmpty_() {
+  if (isCheckupOn() || isVaccineOn() || isMedOn() || isSpecialOn()) return false;
+  if ((qs('patientName').value || '').trim()) return false;
+  if ((qs('patientHn').value || '').trim()) return false;
+  if ((qs('queueSelect').value || '').trim()) return false;
+  return true;
+}
+
+function saveQueueLabel_(payload, grandTotalText) {
+  var bits = [];
+  if (payload.queue) bits.push(payload.queue);
+  if (payload.patientHn) bits.push(payload.patientHn);
+  if (payload.patientName) bits.push(payload.patientName);
+  bits.push((grandTotalText || '0 บาท'));
+  return bits.join(' · ');
+}
+
+function saveQueueItemHtml_(it) {
+  if (it.status === 'pending') {
+    // แก้ 2026-09-30: บรรทัดเดียว (CSS .pending ตัดด้วย ellipsis) — ข้อความเต็มอยู่ใน title (escHtml() แล้ว ปลอดภัยใน attribute)
+    return '<div class="save-queue-item pending" data-sq-id="' + escHtml(it.id) + '" title="' + escHtml(it.label) + '">' +
+      '⏳ กำลังบันทึก ' + escHtml(it.label) + '</div>';
+  }
+  // failed
+  var actions = '<button type="button" class="btn secondary small" data-sq-retry="' + escHtml(it.id) + '">แก้แล้วบันทึกใหม่</button>';
+  if (it.kind === 'log' && it.dupRecord) {
+    actions += '<button type="button" class="btn secondary small" data-sq-mergeold="' + escHtml(it.id) + '">รวมเข้าแถวเดิม</button>';
+  }
+  actions += '<button type="button" class="btn small sq-danger" data-sq-discard="' + escHtml(it.id) + '">ทิ้ง</button>';
+  return '<div class="save-queue-item failed" data-sq-id="' + escHtml(it.id) + '">' +
+    '❌ บันทึกไม่สำเร็จ: ' + escHtml(it.label) + ' — ' + escHtml(it.message || '') +
+    '<div class="sq-actions">' + actions + '</div></div>';
+}
+
+// แก้ 2026-09-30 (ตรวจรับพบจากภาพหน้าจอ): เดิมยึด "ใต้ topbar" ด้วย top ⇒ เลื่อนจอแล้วลอยไปทับ #queueSelect/
+// medCert5 ของรายถัดไป (ขัดกับเจตนา "กรอกรายถัดไปได้เลย" ของ W1 ตรง ๆ) — เปลี่ยนมายึดขวา "ล่าง" เรียงซ้อนเหนือ
+// #panelTotals เสมอเมื่อกล่องนั้นแสดงอยู่จริง (ล็อกอยู่ที่ขอบจอล่างโดยธรรมชาติ ⇒ ไม่ลอยไปทับฟอร์มด้านบนอีก)
+// ไม่แสดง (เช่นหน้าอื่นที่ไม่ใช่ log ซึ่ง #panelTotals อยู่ใน #svcFormWrap ที่ display:none) ⇒ เกาะขอบจอล่างเฉย ๆ (bottom:8)
+// ⚠ ทดสอบจริงแล้ว: offsetParent ของ element ที่เป็น position:fixed เป็น null เสมอในเบราว์เซอร์ (ไม่ใช่แค่ตอนซ่อน)
+// ⇒ ใช้ getClientRects().length ตรวจ "แสดงอยู่จริงไหม" แทน (คืน 0 ก็ต่อเมื่อตัวเองหรือบรรพบุรุษเป็น display:none จริง ๆ
+// ทำงานถูกทั้ง position:fixed และ position:sticky ต่างจาก offsetParent ที่ใช้ไม่ได้กับ fixed)
+function syncSaveQueuePanelPos_() {
+  if (typeof window === 'undefined') return;
+  var panel = qs('saveQueuePanel');
+  if (!panel) return;
+  var bottom = 8;
+  var pt = qs('panelTotals');
+  if (pt) {
+    var cs = (typeof window.getComputedStyle === 'function') ? window.getComputedStyle(pt) : null;
+    var posOk = !!cs && (cs.position === 'fixed' || cs.position === 'sticky');
+    var visible = posOk && pt.getClientRects().length > 0;
+    if (visible) {
+      var r = pt.getBoundingClientRect();
+      bottom = Math.round(window.innerHeight - r.top) + 8;
+    }
+  }
+  if (bottom < 8) bottom = 8;
+  panel.style.top = 'auto';
+  panel.style.bottom = bottom + 'px';
+}
+var saveQueuePanelResizeTimer_ = null;
+var saveQueuePanelScrollScheduled_ = false;
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('resize', function () {
+    clearTimeout(saveQueuePanelResizeTimer_);
+    saveQueuePanelResizeTimer_ = setTimeout(syncSaveQueuePanelPos_, 120);
+  });
+  // แก้ 2026-09-30: ต้องคำนวณใหม่ตอนเลื่อนจอด้วย (#panelTotals เป็น position:fixed อยู่แล้วจริง ๆ จึงไม่ขยับตามการเลื่อน
+  // แต่กันไว้เผื่อ viewport/keyboard บนมือถือเปลี่ยนความสูงจริงระหว่างเลื่อน) — throttle ด้วย rAF กันยิงถี่เกินจำเป็น
+  window.addEventListener('scroll', function () {
+    if (saveQueuePanelScrollScheduled_) return;
+    saveQueuePanelScrollScheduled_ = true;
+    var run = function () { saveQueuePanelScrollScheduled_ = false; syncSaveQueuePanelPos_(); };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run); else setTimeout(run, 16);
+  }, { passive: true });
+  // W3 (ข้อ 4): คิวไม่ว่าง (ยังมีรายการ pending/failed ค้าง) ⇒ เตือนก่อนปิด/รีเฟรชหน้า — คิวนี้อยู่ในตัวแปรระดับไฟล์
+  // ล้วน ๆ ไม่มี localStorage (ตามสเปก ปิดหน้าแล้วหาย) ป้ายเตือนนี้จึงเป็นทางเดียวที่กันเจ้าหน้าที่ปิดหน้าทิ้งรายการค้าง
+  window.addEventListener('beforeunload', function (e) {
+    if (SAVE_QUEUE.length > 0) { e.preventDefault(); e.returnValue = ''; }
+  });
+}
+
+function renderSaveQueuePanel_() {
+  var panel = qs('saveQueuePanel');
+  if (!panel) return;
+  if (!SAVE_QUEUE.length) { panel.hidden = true; panel.innerHTML = ''; return; }
+  panel.hidden = false;
+  panel.innerHTML = SAVE_QUEUE.map(saveQueueItemHtml_).join('');
+  syncSaveQueuePanelPos_();
+  panel.querySelectorAll('[data-sq-retry]').forEach(function (b) {
+    b.addEventListener('click', function () { onSaveQueueRetry_(b.getAttribute('data-sq-retry')); });
+  });
+  panel.querySelectorAll('[data-sq-mergeold]').forEach(function (b) {
+    b.addEventListener('click', function () { onSaveQueueMergeOld_(b.getAttribute('data-sq-mergeold')); });
+  });
+  panel.querySelectorAll('[data-sq-discard]').forEach(function (b) {
+    b.addEventListener('click', function () { onSaveQueueDiscard_(b.getAttribute('data-sq-discard')); });
+  });
+}
+
+// W2 "แก้แล้วบันทึกใหม่" (ทุกกรณี — log หรือ edit) — คืนร่างที่บันทึกไม่สำเร็จเข้าฟอร์มให้แก้ต่อ
+function onSaveQueueRetry_(id) {
+  var it = saveQueueFind_(id);
+  if (!it) return;
+  if (EDIT_MODAL.open) { showToast('ปิดหน้าต่างแก้ไขก่อน'); return; }
+  if (!isMainFormDraftEmpty_()) {
+    if (!window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการที่บันทึกไม่สำเร็จหรือไม่?')) return;
+  }
+  saveQueueRemove_(id);
+  renderSaveQueuePanel_();
+  if (it.kind === 'log') {
+    resetLogForm();
+    restoreFormDraft_(it.draftSnapshot);
+    showScreen('log');
+  } else {
+    var origRec = (it.editCtx && it.editCtx.rec) || { recordId: (it.editCtx && it.editCtx.editingId) || '' };
+    openEditModalForRecord(origRec); // enterEditMode(origRec) เติมฟอร์มจาก record เดิมไปก่อน — ทับด้วยร่างที่แก้ไว้ข้างล่าง
+    restoreFormDraft_(it.draftSnapshot);
+    STATE.editExtraIds = (it.editCtx && it.editCtx.editExtraIds) || [];
+    STATE.editSpecialPrep = (it.editCtx && it.editCtx.editSpecialPrep) || [];
+    STATE.editSpecialSent = (it.editCtx && it.editCtx.editSpecialSent) || [];
+    STATE.editSpecialBack = (it.editCtx && it.editCtx.editSpecialBack) || [];
+    var legacyExtraEl = qs('legacyExtraInfo');
+    if (legacyExtraEl) {
+      if (STATE.editExtraIds.length > 0) {
+        legacyExtraEl.textContent = 'รายการตรวจเพิ่มเดิม: ' + ((it.editCtx && it.editCtx.extraItems) || '') + ' (คงไว้ตามเดิม)';
+        legacyExtraEl.hidden = false;
+      } else {
+        legacyExtraEl.textContent = ''; legacyExtraEl.hidden = true;
+      }
+    }
+    applyLogLocks();
+    recalcTotals();
+  }
+}
+
+// W2 "รวมเข้าแถวเดิม" — เฉพาะ log ที่ล้มเพราะ code:'duplicate' (มี it.dupRecord แล้ว)
+function onSaveQueueMergeOld_(id) {
+  var it = saveQueueFind_(id);
+  if (!it || it.kind !== 'log' || !it.dupRecord) return;
+  if (EDIT_MODAL.open) { showToast('ปิดหน้าต่างแก้ไขก่อน'); return; }
+  if (!isMainFormDraftEmpty_()) {
+    if (!window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการที่บันทึกไม่สำเร็จหรือไม่?')) return;
+  }
+  saveQueueRemove_(id);
+  renderSaveQueuePanel_();
+  resetLogForm();
+  restoreFormDraft_(it.draftSnapshot);
+  mergeDraftIntoTodayRecord(it.dupRecord, it.structuredDraft);
+}
+
+// W2 "ทิ้ง" — ลบรายการทิ้ง ข้อมูลที่กรอกไว้หายจริง (ไม่มีการเก็บ localStorage ตามสเปก — ปิดหน้าไปคิวก็หายอยู่แล้ว)
+function onSaveQueueDiscard_(id) {
+  if (!window.confirm('ทิ้งรายการนี้? ข้อมูลที่กรอกไว้จะหาย')) return;
+  saveQueueRemove_(id);
+  renderSaveQueuePanel_();
+}
+
+// W1 (ข้อ 4): late success ของ edit ต้องไม่ทับช่องที่เจ้าหน้าที่กำลังพิมพ์ค้างอยู่ในมุมมองรายการ (คนละหลักการเดียวกับ
+// isFocusInCuNote() ที่มีอยู่แล้ว แต่สเปกรอบนี้เจาะจง input/select/textarea ภายใน #checkupTableScreen เท่านั้น)
+function isFocusInCheckupTableInput_() {
+  var el = document.activeElement;
+  if (!el || typeof el.closest !== 'function') return false;
+  if (!el.closest('#checkupTableScreen')) return false;
+  var tag = (el.tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'select' || tag === 'textarea';
+}
+
 function onSubmitLog(e) {
   e.preventDefault();
-  // กันบันทึกซ้ำ (2026-09-16): เช็ค STATE.saving ก่อนแม้แต่ btn.disabled — ต้องมาก่อนกล่องยืนยันรวมแถวข้างล่าง
-  // ไม่งั้นคลิกรัวระหว่างรอ apiCall ตอบจะเปิดกล่อง confirm ซ้อนได้ (validateForm ปลดล็อก btn.disabled คืนระหว่างทาง)
-  if (STATE.saving) return;
+  // รอบ 34 (2026-09-30): เดิมเช็ค STATE.saving ที่นี่เพื่อกันคลิกรัวระหว่างรอ apiCall ตอบ — ตอนนี้ฟอร์มถูกล้าง+ปุ่ม
+  // กลับไปตามสถานะ "ฟอร์มว่าง" ทันทีหลังกดบันทึกแล้ว (ไม่รอ network อีกต่อไป ดู W1 ท้ายฟังก์ชันนี้) ⇒ ไม่มีช่วงเวลาที่
+  // ฟอร์มเดิม "ยัง valid + กดซ้ำได้" ให้ต้องกันแล้ว เหลือแค่ด่าน btn.disabled ปกติตามผลของ validateForm()
   var btn = qs('btnSubmitLog');
   if (btn.disabled) return;
 
@@ -3981,6 +4443,15 @@ function onSubmitLog(e) {
       }
       return; // ทั้งตกลง/ยกเลิก ห้ามยิง API ต่อจากบล็อกนี้
     }
+    // รอบ 34 (2026-09-30) W3 (ข้อ 1): นอกจาก LAST_TODAY_RECORDS ต้องเทียบกับรายการ kind:'log' ที่ยัง pending/failed
+    // อยู่ในคิวบันทึกเบื้องหลังด้วย (บันทึกไม่รอ network แล้ว ⇒ แถวที่เพิ่งกดไปเมื่อครู่อาจยังไม่มาถึง LAST_TODAY_RECORDS)
+    // ต่างจากบล็อกข้างบน: กรณีนี้ยังไม่รู้ว่าจะบันทึกสำเร็จหรือไม่ ⇒ แค่เตือนแล้วให้ผู้ใช้ไปจัดการรายการนั้นก่อน
+    // ไม่ถามรวม/ไม่ยิง API ซ้ำ · ห้ามล้างฟอร์ม (ไม่เรียก resetLogForm() — ค่าที่กรอกไว้ต้องยังอยู่ให้แก้ต่อได้)
+    var queuedDup = saveQueueFindLogDup_(normPatientHn, normPatientName);
+    if (queuedDup) {
+      showToast('HN/ชื่อนี้มีรายการที่กำลังบันทึกหรือบันทึกไม่สำเร็จค้างอยู่ — จัดการรายการนั้นก่อน');
+      return;
+    }
   }
 
   var payload = {
@@ -4012,25 +4483,57 @@ function onSubmitLog(e) {
   };
   if (isEdit) payload.recordId = STATE.editingId;
 
-  // กันบันทึกซ้ำ (2026-09-16): ตั้ง saving + inert ก่อนยิง apiCall — inert ทำให้แก้ฟอร์มระหว่างรอไม่ได้
-  // (กันบั๊กเดิม: ติ๊กเพิ่มระหว่างรอ แล้วโดน resetLogForm() ล้างทิ้งตอนสำเร็จ)
-  STATE.saving = true;
-  qs('logForm').inert = true;
-  btn.disabled = true;
-  setSubmitLabel(isEdit ? 'กำลังบันทึกการแก้ไข...' : 'กำลังบันทึก...');
+  // ==========================================================================================
+  // รอบ 34 (2026-09-30) W1: บันทึกแบบไม่รอ — เก็บร่าง/บริบทแก้ไขไว้ก่อน แล้วขึ้นคิว #saveQueuePanel ทันที
+  // (ห้ามตั้ง logForm.inert และห้ามทำให้ปุ่มบันทึกค้าง disabled ข้ามช่วงรอเซิร์ฟเวอร์ — STATE.saving เดิมถูกถอดไปแล้ว)
+  // ==========================================================================================
+  var draftSnapshot = captureFormDraft_(); // ก้อนดิบทุกช่องของฟอร์ม ณ ตอนกดบันทึก — ใช้คืนร่างถ้าล้มเหลว (W2)
+  var editCtx = isEdit ? {
+    editingId: STATE.editingId,
+    editExtraIds: (STATE.editExtraIds || []).slice(),
+    editSpecialPrep: (STATE.editSpecialPrep || []).slice(),
+    editSpecialSent: (STATE.editSpecialSent || []).slice(),
+    editSpecialBack: (STATE.editSpecialBack || []).slice(),
+    extraItems: (EDIT_MODAL.originalRec && EDIT_MODAL.originalRec.extraItems) || '',
+    rec: EDIT_MODAL.originalRec || null // record ต้นทาง — ใช้เปิดโมดัลซ้ำถ้ากด "แก้แล้วบันทึกใหม่" (onSaveQueueRetry_)
+  } : null;
+
+  var qid = saveQueueNextId_();
+  SAVE_QUEUE.push({
+    id: qid,
+    kind: isEdit ? 'edit' : 'log',
+    payload: payload,
+    draftSnapshot: draftSnapshot,
+    structuredDraft: draft,
+    editCtx: editCtx,
+    label: saveQueueLabel_(payload, qs('totGrand') ? qs('totGrand').textContent : '0 บาท'),
+    status: 'pending',
+    message: '',
+    dupRecord: null
+  });
+  renderSaveQueuePanel_();
+
   qs('formError').hidden = true;
+  showToast('กำลังบันทึก… กรอกรายถัดไปได้เลย');
+  // ทันที (ไม่รอ network): ฟอร์มว่าง + กลับหน้าบันทึก/ปิดโมดัล — ต้องอ่าน wasModalEdit "ก่อน" resetLogForm()/
+  // closeEditModal_() แตะ EDIT_MODAL (เหมือนเดิม แค่ย้ายมาทำทันทีแทนรอ resp ตอบ)
+  var wasModalEdit = isEdit && EDIT_MODAL.open;
+  resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
+  if (wasModalEdit) {
+    // savedRecord: null — ยังไม่รู้ผลจากเซิร์ฟเวอร์ ⇒ closeEditModal_() จะไม่โชว์ "✓ บันทึกให้..."/เลื่อนจอ/ไฮไลต์
+    // ตอนนี้ (ของจริงเกิดทีหลังใน .then() ข้างล่างเมื่อรู้ผลแล้ว — ไม่ใช่ที่นี่)
+    closeEditModal_({ afterSave: true, savedRecord: null });
+  } else {
+    showScreen('log');
+  }
 
   apiCall(isEdit ? 'edit' : 'log', payload).then(function (resp) {
-    // ต้องปลด saving/inert เป็นบรรทัดแรกของทั้ง 2 กิ่ง — resetLogForm()/recalcTotals() ข้างล่างเรียก validateForm()
-    // ซึ่งอ่าน STATE.saving เพื่อคืนสถานะปุ่มให้ถูก ถ้าไม่ปลดก่อนปุ่มจะค้าง disabled ตลอดไป
-    STATE.saving = false;
-    qs('logForm').inert = false;
+    // รายการอาจถูกลบออกจากคิวไปแล้วก่อนเซิร์ฟเวอร์ตอบ (ผู้ใช้กด "ทิ้ง"/"แก้แล้วบันทึกใหม่"/"รวมเข้าแถวเดิม" เอง) — ไม่มี
+    // ที่ให้แสดงผลอีกแล้ว แต่ยังต้อง loadToday()/applySavedRecord() ตามปกติถ้าสำเร็จ (แถวอาจลงชีตจริงแล้ว)
+    var queued = saveQueueFind_(qid);
     if (resp && resp.status === 'ok') {
-      // รอบ 31B ข้อ 5: บันทึกสำเร็จระหว่างแก้ผ่านโมดัล — ปิดโมดัล/คืนร่างเดิม/ไฮไลต์แทนการ showScreen('log') เดิม
-      // (โมดัลไม่เปลี่ยน screen อยู่แล้วตามสเปก) ⚠ ต้องอ่านค่านี้ "ก่อน" resetLogForm()/closeEditModal_() แตะ EDIT_MODAL
-      var wasModalEdit = isEdit && EDIT_MODAL.open;
+      if (queued) { saveQueueRemove_(qid); renderSaveQueuePanel_(); }
       showToast(isEdit ? '✔ บันทึกการแก้ไขสำเร็จ' : '✔ บันทึกสำเร็จ');
-      resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
       // รอบ 15 (2026-09-17) — W1: เซิร์ฟเวอร์คืน record มาด้วย -> แปะเข้าแคชที่มีอยู่ทันที ไม่ต้องยิง apiCall('today') ซ้ำ
       // (เซิร์ฟเวอร์รุ่นเก่าที่ยังไม่ deploy จะไม่มีคีย์นี้ -> เผื่อไว้ด้วย loadToday() แบบเดิมเป๊ะ)
       if (resp.record) {
@@ -4038,53 +4541,43 @@ function onSubmitLog(e) {
       } else {
         loadToday();
       }
-      if (wasModalEdit) {
-        // มุมมองรายการตรวจสุขภาพ (ถ้าโหลดอยู่) ต้องวาดใหม่ด้วย — applySavedRecord() อัปเดตแค่ CU_CACHE เงียบ ๆ
-        // ไม่วาดใหม่ให้ (กันทับช่องที่กำลังพิมพ์ในกรณีบันทึกผ่าน .cu-note ปกติ) แต่ที่นี่ปิดโมดัลแล้วไม่มีช่องใครค้างพิมพ์
-        if (CU_CACHE.records && CU_LOADED_DATE && CU_CACHE.key === CU_LOADED_DATE) {
-          renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
-          renderCheckupPendingReport(CU_CACHE.records, CU_LOADED_DATE);
-          renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
-        }
-        closeEditModal_({ afterSave: true, savedRecord: resp.record || null });
-      } else {
-        showScreen('log');
-      }
-    } else if (!isEdit && resp && resp.code === 'duplicate') {
-      // รอบ 28 (2026-09-23) W1 (ข้อ 1): ซ้ำกับจุดอื่นที่ LAST_TODAY_RECORDS มองไม่เห็น (เซิร์ฟเวอร์เช็คทุกจุดบริการ
-      // ของวันนี้) — ถามรวมแถวด้วยข้อความรูปแบบเดียวกับที่เช็คในเครื่อง แค่มีชื่อจุดบริการต่อท้าย (resp.record.point)
-      // โหมดแก้ไข (isEdit) ไม่เข้าทางนี้ — ตกไปที่ else ข้างล่าง แสดง resp.message เฉย ๆ ตามสเปก
-      setSubmitLabel('บันทึก');
-      var respRec = resp.record || {};
-      var dupLabel2 = (patientHn && normDupHn_(respRec.patientHn) === normDupHn_(patientHn))
-        ? ('HN ' + patientHn) : ('ชื่อ ' + (patientName || respRec.patientName || ''));
-      if (window.confirm(dupMergeConfirmMsg_(dupLabel2, respRec.point, respRec.time))) {
-        mergeDraftIntoTodayRecord(respRec, draft);
-      } else {
-        var errElDup = qs('formError');
-        errElDup.textContent = '❌ ' + (resp.message || 'บันทึกไม่สำเร็จ กรุณาลองใหม่');
-        errElDup.hidden = false;
-        recalcTotals();
+      // รอบ 34 W1 (ข้อ 4): มุมมองรายชื่อตรวจสุขภาพ (ถ้าโหลดไว้แล้ว) ต้องวาดใหม่ด้วยเมื่อแก้ไขสำเร็จ — คำตอบมาช้าได้แล้ว
+      // (ไม่รอ network) เจ้าหน้าที่อาจย้ายไปพิมพ์ช่องอื่นในตารางนี้ระหว่างรอ ⇒ ห้ามทับช่องที่กำลังพิมพ์ค้าง + ห้ามเลื่อน
+      // จอ/ไฮไลต์ (ต่างจากตอนปิดโมดัลทันทีข้างบน ซึ่งตอนนั้นโมดัลบังหน้าอยู่ ไม่มีช่องให้พิมพ์ค้างจริง)
+      if (isEdit && CU_CACHE.records && CU_LOADED_DATE && CU_CACHE.key === CU_LOADED_DATE && !isFocusInCheckupTableInput_()) {
+        renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
+        renderCheckupPendingReport(CU_CACHE.records, CU_LOADED_DATE);
+        renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
     } else {
-      setSubmitLabel(isEdit ? 'บันทึกการแก้ไข' : 'บันทึก');
-      var errEl = qs('formError');
-      errEl.textContent = '❌ ' + ((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่');
-      errEl.hidden = false;
-      recalcTotals(); // คืนสถานะปุ่มตามความถูกต้องของฟอร์ม
+      // ไม่ ok — ขึ้นแดงในคิว ไม่มีการยิงซ้ำอัตโนมัติ (ตามสเปก) · loadToday() เสมอไม่ว่ารายการจะยังอยู่ในคิวหรือไม่
+      // (ผู้ใช้อาจกด "ทิ้ง" ไปก่อนเซิร์ฟเวอร์ตอบแล้ว — แต่ก็ยังเผื่อไว้ว่าจริง ๆ อาจลงชีตไปแล้วเหมือนกัน)
+      if (queued) {
+        var msg = (resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
+        if (resp && resp.networkError) {
+          msg += ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในรายการวันนี้ก่อนบันทึกใหม่';
+        }
+        queued.status = 'failed';
+        queued.message = msg;
+        if (!isEdit && resp && resp.code === 'duplicate') queued.dupRecord = resp.record || null;
+        renderSaveQueuePanel_();
+      }
+      loadToday(); // เผื่อจริง ๆ ลงชีตไปแล้ว (เช่น network ตอบช้าจนดูเหมือนล้มแต่จริง ๆ สำเร็จ)
     }
   }).catch(function () {
-    // apiCall เองไม่เคย reject (ดักไว้แล้วคืน status:'error') แต่กันไว้อีกชั้นไม่ให้ saving ค้าง true ตลอดไป
-    STATE.saving = false;
-    qs('logForm').inert = false;
-    setSubmitLabel(isEdit ? 'บันทึกการแก้ไข' : 'บันทึก');
-    recalcTotals();
+    // apiCall เองไม่เคย reject (ดักไว้แล้วคืน status:'error') แต่กันไว้อีกชั้น
+    var queuedErr = saveQueueFind_(qid);
+    if (queuedErr) {
+      queuedErr.status = 'failed';
+      queuedErr.message = 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
+      renderSaveQueuePanel_();
+    }
   });
 }
 
 /* ปุ่มบันทึกที่มองเห็นจริง (sticky bar / แถบร่างบนเมนู) เรียกผ่านทางนี้ — #btnSubmitLog เป็นตัวเก็บสถานะ disabled จริง */
 function triggerSubmit() {
-  if (STATE.saving) return; // กันบันทึกซ้ำ: กำลังส่งอยู่แล้ว ไม่ต้องเด้งคำเตือนซ้ำ เงียบไปเฉยๆ
+  // รอบ 34 (2026-09-30): เดิมเช็ค STATE.saving ที่นี่ — ถอดไปแล้วทั้งไฟล์ (ดูเหตุผลที่ onSubmitLog())
   var btn = qs('btnSubmitLog');
   if (btn.disabled) {
     qs('formWarning').hidden = false;
@@ -4439,9 +4932,12 @@ function renderTodayList(records) {
 }
 
 function onEditRecordClick(recordId) {
-  // กันบันทึกซ้ำ (2026-09-16): กำลังรอบันทึกอยู่ — ห้ามโหลดแถวอื่นมาทับฟอร์ม เดี๋ยว resp 'ok' ที่ยังค้างจะมา
-  // resetLogForm() ล้างทิ้งสิ่งที่เพิ่งโหลดเข้ามา
-  if (STATE.saving) { showToast('รอบันทึกรายการก่อนหน้าให้เสร็จก่อน'); return; }
+  // รอบ 34 (2026-09-30) W3 (ข้อ 2): รายการนี้กำลังมีการแก้ไข (pending/failed) ค้างอยู่ในคิวบันทึกเบื้องหลังอยู่แล้ว
+  // ⇒ ห้ามเปิดโมดัลแก้ไขซ้อนอีกชุด (จะสร้างคำขอ edit 2 ชุดชนกัน) — แทนที่ด่านเดิม `if (STATE.saving)` ที่กันทุกแถว
+  // แบบเหมาทั้งบอร์ด (ไม่จำเพาะแถว) ด้วยด่านที่เจาะจงแค่ recordId นี้ (ปุ่ม "แก้แล้วบันทึกใหม่" ของรายการเดียวกันเอง
+  // ยังต้องเปิดได้ปกติ — เส้นทางนั้นเรียก openEditModalForRecord() ตรง ๆ ไม่ผ่านฟังก์ชันนี้ จึงไม่ติดด่านนี้)
+  var queuedEdit = saveQueueEditPendingFor_(recordId);
+  if (queuedEdit) { showToast('รายการนี้กำลังบันทึกการแก้ไขอยู่'); return; }
   var rec = null;
   for (var i = 0; i < LAST_TODAY_RECORDS.length; i++) {
     if (LAST_TODAY_RECORDS[i].recordId === recordId) { rec = LAST_TODAY_RECORDS[i]; break; }
@@ -4492,6 +4988,9 @@ function loadToday() {
 }
 
 function onCancelRecord(recordId, btnEl) {
+  // รอบ 34 (2026-09-30) W3 (ข้อ 2): แถวนี้มีการแก้ไข (pending/failed) ค้างอยู่ในคิวบันทึกเบื้องหลัง — ห้ามยกเลิกซ้อน
+  // (ถ้ายิง cancel ไปพร้อมกับ edit ที่ยังไม่รู้ผล เซิร์ฟเวอร์อาจแก้แถวที่ถูกยกเลิกไปแล้วเงียบ ๆ — ของใหม่ ไม่เคยกันมาก่อน)
+  if (saveQueueEditPendingFor_(recordId)) { showToast('รายการนี้กำลังบันทึกการแก้ไขอยู่'); return; }
   if (!window.confirm('ยืนยันยกเลิกบันทึกนี้?')) return;
   if (btnEl) btnEl.disabled = true;
   apiCall('cancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: recordId }).then(function (resp) {
@@ -4598,7 +5097,7 @@ function renderSpBoardCards() {
     var notSentClass = c.notSent > 0 ? 'sp-board-warn' : 'muted';
     html += '<button type="button" class="sp-board-card" data-sp-board-id="' + escHtml(item.id) + '">' +
       '<span class="sp-board-card-icon">' + (SPECIAL_ICONS[item.id] || '') + '</span>' +
-      '<span class="sp-board-card-name">' + escHtml(item.name) + '</span>' +
+      '<span class="sp-board-card-name">' + escHtml(spBoardTabDisplayName_(item.id)) + '</span>' +
       '<span class="sp-board-card-line">ลงชื่อไว้ <b>' + c.reg + '</b></span>' +
       '<span class="sp-board-card-line ' + notSentClass + '">⏳ ยังไม่ส่ง <b>' + c.notSent + '</b></span>' +
       '<span class="sp-board-card-line">🚶 ยังไม่กลับ <b>' + c.notBack + '</b></span>' +
@@ -4634,7 +5133,9 @@ function renderSpBoardSwitchBar() {
     btn.type = 'button';
     var active = item.id === SP_BOARD_ACTIVE_ID;
     btn.className = 'btn small' + (active ? '' : ' secondary');
-    btn.textContent = (SP_BOARD_SHORT_LABEL[item.id] || item.name) + ' ' + ((counts[item.id] || {}).reg || 0);
+    // รอบ 35 (W2, 2026-09-30): ปุ่มสลับของแท็บ mmg ต้องขึ้น "CA breast" ด้วย — SP_BOARD_TAB_NAME มาก่อน
+    // SP_BOARD_SHORT_LABEL เสมอ (แท็บอื่นไม่มีคีย์ใน SP_BOARD_TAB_NAME จึงยังใช้ป้ายย่อเดิม)
+    btn.textContent = (SP_BOARD_TAB_NAME[item.id] || SP_BOARD_SHORT_LABEL[item.id] || item.name) + ' ' + ((counts[item.id] || {}).reg || 0);
     btn.setAttribute('data-sp-board-switch', item.id);
     btn.addEventListener('click', function () { openSpBoardCategory(item.id); });
     bar.appendChild(btn);
@@ -4656,7 +5157,8 @@ function appendSpPeopleCards_(container, rows, tabId) {
     // รอบ 26 (2026-09-22, เจ้าของสั่ง): BMD ที่ส่งตัวแล้ว แสดง "ส่งตัว HH:mm น." ต่อท้ายสถานะ (วันที่ด้วยถ้าไม่ใช่วันเดียวกับแถว)
     var bmdTimeText = (effId === 'bmd' && isSent) ? bmdSentTimeLabel(rec) : '';
     // รอบ 29 (S7) W7 (ข้อ 7): ป้ายเล็กบอกชนิด — เฉพาะแท็บ mmg เท่านั้น (MMG/U/S Breast/MMG + U/S Breast)
-    var typeTagHtml = (tabId === 'mmg') ? ('<span class="sp-board-type-tag">' + escHtml(spBoardMmgTypeLabel_(rec)) + '</span>') : '';
+    // รอบ 35 (W3, 2026-09-30): โหมดแคป (SP_BOARD_CAP_MODE) ⇒ ป้ายมีรหัส DF ต่อท้าย · ออกจากโหมดแคปกลับเป็นป้ายสั้น
+    var typeTagHtml = (tabId === 'mmg') ? ('<span class="sp-board-type-tag">' + escHtml(spBoardMmgTypeLabel_(rec, SP_BOARD_CAP_MODE)) + '</span>') : '';
     // รอบ 9.2 — renderSpPeopleCards() rebuild การ์ดใหม่ทั้งหมดทุกครั้ง ⇒ ตัวบอก "กำลังบันทึก…" ต้องอ่านจาก
     // rec._spSaving (state บนตัวเรคคอร์ดเอง) ไม่ใช่ disabled ของปุ่ม เพราะปุ่มเดิมถูกทิ้งไปแล้วทุกรอบ render
     card.innerHTML =
@@ -4701,17 +5203,22 @@ function appendSpPeopleCards_(container, rows, tabId) {
   });
 }
 
-// รอบ 29 (S7) W7 (ข้อ 8): โหมดแคปของแท็บ mmg — แบ่ง 2 ส่วนต่อกัน แต่ละส่วนมีหัวของตัวเอง (หัวใหญ่ชัดแบบ
-// .sp-board-heading-title) แทนหัวกระดานเดิม (ชื่อรายการ/pill) — วันที่ยังแสดงใน #spBoardHeading ตามเดิม
-// ส่วน A = คนที่ลงชื่อ mmg (รวมคนที่ลง mmg + us_breast) · ส่วน B = คนที่ลง us_breast แต่ไม่ได้ลง mmg
-// ส่วนไหนไม่มีคน ⇒ ไม่แสดงส่วนนั้น · ข้อความหัว 2 ส่วนเป็น textContent (createElement) แบบรอบ 26
+// รอบ 35 (W3, 2026-09-30): โหมดแคปของแท็บ CA breast (id เดิม 'mmg' — ห้ามเปลี่ยน) — แทนที่ 2 ส่วนของรอบ 29 (S7)
+// ด้วย "รายการเดียว": หัว .sp-board-heading-title = ชื่อที่แสดงของแท็บ (CA breast) + วันที่แบบเดิม
+// ไม่มีหัว "MMG / DF XSMC checkup 363" / "U/S breast only: …" อีกแล้ว
+// เรียง: กลุ่ม MMG (มี mmg รวมแถวเก่าที่มีทั้งคู่) ก่อน แล้วตามด้วยกลุ่ม U/S breast (มีแค่ us_breast) — ภายในกลุ่มใช้
+// spBoardSortPeople เดิม · ป้ายชนิดต่อคน = spBoardMmgTypeLabel_(rec, true) (มีรหัส DF ต่อท้าย — ดู appendSpPeopleCards_)
 function renderSpPeopleCardsMmgCapSplit_(dateStr) {
   var headingEl = qs('spBoardHeading');
   if (headingEl) {
     headingEl.textContent = '';
+    var hTitle = document.createElement('div');
+    hTitle.className = 'sp-board-heading-title';
+    hTitle.textContent = spBoardTabDisplayName_('mmg');
     var hDate = document.createElement('div');
     hDate.className = 'sp-board-heading-date';
     hDate.textContent = formatThaiDate(dateStr);
+    headingEl.appendChild(hTitle);
     headingEl.appendChild(hDate);
   }
   var wrap = qs('spBoardPeopleWrap');
@@ -4719,22 +5226,17 @@ function renderSpPeopleCardsMmgCapSplit_(dateStr) {
   wrap.innerHTML = '';
 
   var allRows = spBoardPeopleForActive(SP_BOARD_RECORDS, 'mmg');
-  var sectionA = spBoardSortPeople(allRows.filter(function (rec) { return (rec.specialReg || []).indexOf('mmg') !== -1; }), 'mmg');
-  var sectionB = spBoardSortPeople(allRows.filter(function (rec) {
+  var mmgGroup = allRows.filter(function (rec) { return (rec.specialReg || []).indexOf('mmg') !== -1; });
+  var usOnlyGroup = allRows.filter(function (rec) {
     var reg = rec.specialReg || [];
     return reg.indexOf('us_breast') !== -1 && reg.indexOf('mmg') === -1;
-  }), 'mmg');
-
-  function appendSection(title, rows) {
-    if (!rows.length) return; // ส่วนที่ไม่มีคน ⇒ ไม่แสดงส่วนนั้น
-    var h = document.createElement('div');
-    h.className = 'sp-board-heading-title';
-    h.textContent = title;
-    wrap.appendChild(h);
-    appendSpPeopleCards_(wrap, rows, 'mmg');
+  });
+  var rows = spBoardSortPeople(mmgGroup, 'mmg').concat(spBoardSortPeople(usOnlyGroup, 'mmg'));
+  if (!rows.length) {
+    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้ลงชื่อของประเภทนี้วันนี้</p>';
+    return;
   }
-  appendSection('MMG / DF XSMC checkup 363', sectionA);
-  appendSection('U/S breast only: DF XSMC checkup 315', sectionB);
+  appendSpPeopleCards_(wrap, rows, 'mmg');
 }
 
 function renderSpPeopleCards(id) {
@@ -4760,7 +5262,8 @@ function renderSpPeopleCards(id) {
     headingEl.textContent = '';
     var hTitle = document.createElement('div');
     hTitle.className = 'sp-board-heading-title';
-    hTitle.textContent = item ? item.name : '';
+    // รอบ 35 (W2, 2026-09-30): แท็บ mmg แสดงหัวเป็น "CA breast" (spBoardTabDisplayName_) แทนชื่อจริงใน SPECIAL_SENDS
+    hTitle.textContent = item ? spBoardTabDisplayName_(id) : '';
     var hDate = document.createElement('div');
     hDate.className = 'sp-board-heading-date';
     hDate.textContent = formatThaiDate(dateStr);
@@ -4886,11 +5389,12 @@ function onSpBoardDeleteClick(rec) {
   var tabId = SP_BOARD_ACTIVE_ID;
   // รอบ 29 (S7) W7 (ข้อ 7): id ที่ใช้ลบรายคนของคนนั้น = id เฉพาะคน (spBoardIdForPerson) ไม่ใช่ id ของแท็บตรง ๆ
   var id = spBoardIdForPerson(rec, tabId);
-  var item = SPECIAL_SEND_BY_ID[id];
 
   if (spBoardHasOtherServices(rec, id)) {
     // Path A — ยังมีบริการอื่นของคนนี้อยู่ในระบบ ⇒ ถอดแค่ id ของหมวดนี้ออกจาก 4 ช่องสถานะ ไม่แตะบริการอื่น
-    if (!window.confirm('ลบ ' + rec.patientName + ' ออกจากรายการ ' + (item ? item.name : '') + ' ใช่ไหม? (บริการอื่นของคนนี้ยังอยู่)')) return;
+    // รอบ 35 (W2, 2026-09-30): ข้อความ confirm ใช้ชื่อที่แสดงของ "แท็บนี้" (spBoardTabDisplayName_(tabId)) เสมอ —
+    // ไม่ใช่ชื่อตาม id เฉพาะคน (item.name เดิม) เพื่อให้แท็บ mmg ขึ้น "CA breast" แม้คนนั้นจะลงแค่ us_breast ก็ตาม
+    if (!window.confirm('ลบ ' + rec.patientName + ' ออกจากรายการ ' + spBoardTabDisplayName_(tabId) + ' ใช่ไหม? (บริการอื่นของคนนี้ยังอยู่)')) return;
 
     // ยกเลิกคำขอ onSpBoardStatusClick() ที่อาจค้างอยู่สำหรับแถวนี้ กัน response เก่ามาทับสิ่งที่ลบไปแล้ว
     SP_SAVE_SEQ[rec.recordId] = (SP_SAVE_SEQ[rec.recordId] || 0) + 1;
@@ -5489,7 +5993,8 @@ function checkupExtraSummaryHtml(rows) {
   var consultTotal = checkupConsultTotalCount(rows);
   var doctors = checkupDoctorCounts(rows);
   var html = '<div class="cu-extra no-print">';
-  html += '<div class="cu-extra-line">ยอด U/S (P3+4) <b>' + usCount + '</b> คน · consult <b>' + consultTotal + '</b> ครั้ง (<b>' + consultPeople + '</b> คน)</div>';
+  // รอบ 36 (W3, เจ้าของสั่ง "consult นับเป็นแพทย์"): หน่วย "ครั้ง"->"แพทย์" · "(M คน)"->"(M เคส)" — ตัวเลข/การนับไม่เปลี่ยน
+  html += '<div class="cu-extra-line">ยอด U/S (P3+4) <b>' + usCount + '</b> คน · consult <b>' + consultTotal + '</b> แพทย์ (<b>' + consultPeople + '</b> เคส)</div>';
   if (doctors.length > 0) {
     // ชื่อแพทย์เป็นข้อความที่เจ้าหน้าที่พิมพ์เอง ⇒ ต้องผ่าน escHtml() เสมอ กัน < > โดนอ่านเป็นแท็ก
     var parts = doctors.map(function (d) { return escHtml(d.name) + ' = ' + d.count + ' เคส'; });
@@ -5740,7 +6245,8 @@ function cuNoteHtml(rec) {
   var rawCount = rec && rec.consultCount;
   var consultCount = (typeof rawCount === 'number' && rawCount >= 1 && Math.floor(rawCount) === rawCount) ? rawCount : (consult ? 1 : 0);
   var consultCountVal = consult ? String(consultCount || 1) : '';
-  var consultPrintText = (consult && consultCount >= 2) ? ('× ' + consultCount) : ''; // × N เฉพาะ >= 2 ครั้ง
+  // รอบ 36 (W3): "× N" -> "N แพทย์" (ยังแสดงเฉพาะ >= 2 ครั้งเหมือนเดิม — 2 จุดนี้กับ syncConsultCountPrint() ต้องสูตรเดียวกัน)
+  var consultPrintText = (consult && consultCount >= 2) ? (consultCount + ' แพทย์') : '';
   var recId = escHtml(rec && rec.recordId);
   var disAttr = cancelled ? ' disabled' : '';
   var disNoteAttr = (cancelled || !consult) ? ' disabled' : '';
@@ -5876,7 +6382,7 @@ function cuNoteHtml(rec) {
     '<span class="item-name">มี</span>' +
     '</label>' +
     '<input type="number" class="cu-note-consult-count" data-note-consult-count="' + recId + '" min="1" max="20" step="1" value="' + escHtml(consultCountVal) + '"' + disCountAttr + '>' +
-    '<span class="item-name cu-note-consult-unit">ครั้ง</span>' +
+    '<span class="item-name cu-note-consult-unit">แพทย์</span>' +
     '<input type="text" class="cu-note-consult-note" data-note-consult-note="' + recId + '" placeholder="ระบุ consult ใคร/เรื่องอะไร" value="' + escHtml(consultNote) + '" autocomplete="off"' + disNoteAttr + '>' +
     '<span class="cu-note-consult-count-print" data-note-consult-count-print="' + recId + '">' + escHtml(consultPrintText) + '</span>' +
     '</div>' +
@@ -6350,7 +6856,8 @@ function bindCuNoteEvents(container) {
     function syncConsultCountPrint() {
       if (!consultCountPrint) return;
       var n = parseInt(consultCountInput.value, 10);
-      consultCountPrint.textContent = (consultChk.checked && n >= 2) ? ('× ' + n) : '';
+      // รอบ 36 (W3): สูตรเดียวกับ consultPrintText ใน cuNoteHtml() — "× N" -> "N แพทย์"
+      consultCountPrint.textContent = (consultChk.checked && n >= 2) ? (n + ' แพทย์') : '';
     }
     // รอบ 27: หัวกล่อง "ผลตรวจสุขภาพ" ต้องอัปเดตทันทีเมื่อแก้วันนัดในกล่อง (shortDeliveryLabel ตัวเดียวกับตาราง/การ์ดพิมพ์)
     function syncCheckupSub() {
@@ -6526,11 +7033,14 @@ function renderCheckupList(records, dateStr) {
     var progLabel = rec.program ? ('โปรแกรม ' + escHtml(String(rec.program))) : '';
     // รอบ 31B ข้อ 1: แถบหัวกล่องใช้สีประจำโปรแกรมของรอบ 6 (programColorClass — ว่างสำหรับ pea/1sun/2sun)
     var headClass = 'cu-person-head' + (programColorClass(rec.program) ? (' ' + programColorClass(rec.program)) : '');
+    // รอบ 36 (W2, เจ้าของสั่งตามภาพหน้าจอ): ชื่อในแถบหัว = คำนำหน้า + ชื่อ (เว้นวรรค 1 ช่อง ไม่มีคำนำหน้า ⇒ ชื่อเฉย ๆ)
+    // แพตเทิร์นเดียวกับที่ใช้อยู่แล้วในตาราง/ใบพิมพ์ (renderCheckupTable/printCheckupTable) — ผ่าน escHtml เสมอ
+    var nameWithPrefix = (rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '');
     html += '<div class="cu-person' + (idx % 2 === 1 ? ' cu-person-alt' : '') + '" data-cu-person-id="' + escHtml(rec.recordId) + '">' +
       '<div class="' + headClass + '">' +
         '<span class="cu-person-queue">' + escHtml(rec.queue || '—') + '</span>' +
         '<span class="cu-person-hn">' + escHtml(rec.patientHn || '') + '</span>' +
-        '<span class="cu-person-name">' + escHtml(rec.patientName || '') + '</span>' +
+        '<span class="cu-person-name">' + escHtml(nameWithPrefix) + '</span>' +
         (progLabel ? '<span class="cu-person-prog">' + progLabel + '</span>' : '') +
       '</div>' +
       '<div class="record-item">' + recordItemHtml(rec, false) + cuNoteHtml(rec) + '</div>' +
@@ -7684,6 +8194,10 @@ function showScreen(name) {
   }
 
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+  // แก้ 2026-09-30: เปลี่ยนจอแล้ว #panelTotals อาจแสดง/ซ่อนต่างไปจากเดิม (อยู่ใน outerMap ตัวที่ถูกเปลี่ยน display)
+  // ⇒ ต้องคำนวณตำแหน่งแผงคิวบันทึกใหม่เสมอ ไม่พึ่ง event scroll จาก window.scrollTo() ข้างบนอย่างเดียว (ไม่ยิงถ้า
+  // ตำแหน่งเดิมอยู่ที่ 0 อยู่แล้ว)
+  if (typeof syncSaveQueuePanelPos_ === 'function') syncSaveQueuePanelPos_();
 }
 
 /* =========================================================================
@@ -8181,8 +8695,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // รอบ 17 (2026-09-17): #btnStickySave (แถบล่างเต็มจอ #stickyBar เดิม) ถูกลบออกจากหน้าเว็บแล้ว — เหลือปุ่มเดียว
   qs('btnDraftSave').addEventListener('click', triggerSubmit);
   qs('btnDraftClear').addEventListener('click', function () {
-    // กันบันทึกซ้ำ (2026-09-16): ล้างร่างระหว่างรอบันทึกจะโดน resp ที่ยังค้างมา resetLogForm() ซ้ำทับอีกที
-    if (STATE.saving) { showToast('รอบันทึกรายการก่อนหน้าให้เสร็จก่อน'); return; }
+    // รอบ 34 (2026-09-30): เดิมมีด่าน `if (STATE.saving)` กันล้างร่างระหว่างรอบันทึก เพราะกลัว resp ที่ยังค้างมา
+    // resetLogForm() ซ้ำทับอีกที — ตอนนี้ onSubmitLog() เก็บ draftSnapshot ของรายการที่กำลังรอ "ไปกับตัวมันเอง"
+    // ในคิวแล้วตั้งแต่ตอนกดบันทึก (ไม่ใช่รออ่านจากฟอร์มตอน resp ตอบ) ⇒ ฟอร์มตอนนี้คือร่าง "รายถัดไป" ที่ไม่เกี่ยวกับ
+    // รายการที่ค้างอยู่ในคิวเลย ล้างได้ตามปกติโดยไม่กระทบรายการที่กำลังรอ
     resetLogForm(); showToast('ล้างร่างแล้ว');
   });
 
