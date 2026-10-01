@@ -988,6 +988,11 @@
   #dqScreen .dq-queue-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   #dqScreen #dqQueueInput { flex: 1 1 200px; width: auto; min-width: 0; font-size: 16px; } /* 16px กัน iOS ซูมอัตโนมัติ */
   #dqScreen .dq-send-status { font-size: 14px; color: var(--accent); }
+  /* รอบ 42 — แถวแนะนำคิว (คิววันนี้ที่ยังไม่พบแพทย์) · เลื่อนแนวนอนในแถวเอง ห้ามให้หน้าล้น */
+  #dqScreen .dq-suggest { display: flex; gap: 6px; overflow-x: auto; max-width: 100%; margin-top: 8px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  #dqScreen .dq-suggest[hidden] { display: none; }
+  #dqScreen .dq-sug { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--primary); background: #fff; color: var(--primary-dark); border-radius: 999px; padding: 6px 12px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  #dqScreen .dq-sug.dq-sug-active { background: var(--primary); color: #fff; }
   #dqRoomCards { overflow-x: auto; max-width: 100%; }
   .dq-table { border-collapse: collapse; table-layout: fixed; width: 100%; background: #fff; }
   .dq-table th, .dq-table td { border: 1px solid var(--primary); padding: 4px 8px; font-size: 14px; }
@@ -1576,10 +1581,10 @@
         <div class="card">
           <label class="field-label" for="dqQueueInput" style="margin-top:0;">พิมพ์หรือเลือกเลขคิว แล้วแตะช่อง ＋ ของห้องที่จะเข้า</label>
           <div class="dq-queue-row">
-            <input type="text" id="dqQueueInput" list="dqQueueOptions" autocomplete="off" maxlength="12" placeholder="พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1">
+            <input type="text" id="dqQueueInput" autocomplete="off" maxlength="12" placeholder="พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1">
             <button type="button" class="btn small secondary" id="dqBtnWalkIn">＋ คิวไม่นัด</button>
           </div>
-          <datalist id="dqQueueOptions"></datalist>
+          <div id="dqSuggest" class="dq-suggest" role="listbox" aria-label="คิววันนี้ที่ยังไม่พบแพทย์" hidden></div>
           <div class="muted" style="margin-top:8px;font-size:13px;">ไม่ต้องกดจบทุกคิว — เวลาออกของคิวก่อนจะลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน · กด "จบ (คนสุดท้าย)" เฉพาะคนสุดท้ายของห้อง</div>
         </div>
 
@@ -8538,8 +8543,8 @@ function onPendingBulkSave() {
 var dqDefaultRooms = [
   { room: '1', doctor: '', start: '', end: '' },
   { room: '8', doctor: '', start: '', end: '' },
-  { room: '5', doctor: '', start: '', end: '' },
-  { room: 'ล็อกขาย', doctor: '', start: '', end: '' }
+  { room: 'ล็อกขาย', doctor: '', start: '', end: '' },
+  { room: '5', doctor: '', start: '', end: '' }
 ];
 var dqSendQueue = [];     // งานที่ยังไม่ได้ response — ส่งทีละงานตามลำดับที่กด
 var dqSendActive = false;
@@ -8553,7 +8558,7 @@ var dqState = {
   doctorsFailed: false,
   doctorsDate: ''
 };
-var dqDatalistBuilt = false;
+var dqSugActive = ''; // รอบ 42: คีย์คิว (dqQueueKey) ของตัวเลือกที่ไฮไลต์อยู่ · '' = ไม่มี
 var dqBkkFormatter = null;
 
 // เลขคิวของกระดานคิวพบแพทย์ — กติกาเดียวกับ dqNormQueue_ ฝั่งเซิร์ฟเวอร์: 'ไม่นัด N' (N 1-999) หรือ ตัวอักษรละติน 1-2 ตัว + เลข 1-999 (ไม่มี 0 นำหน้า)
@@ -8639,31 +8644,10 @@ function dqShowView(name) {
 // เรียกจาก showScreen('dq') ทุกครั้งที่เปิดหน้า
 function dqOnShow() {
   dqShowView('board');
-  dqBuildQueueOptions();
   var dt = qs('dqDateText');
   if (dt) dt.textContent = dqThaiDateText();
   dqRerender();
   dqLoadToday();
-}
-
-function dqBuildQueueOptions() {
-  if (dqDatalistBuilt) return;
-  var dl = qs('dqQueueOptions');
-  if (!dl) return;
-  dl.innerHTML = '';
-  ['C', 'M', 'V'].forEach(function (prefix) {
-    for (var i = 1; i <= 40; i++) {
-      var opt = document.createElement('option');
-      opt.value = prefix + i;
-      dl.appendChild(opt);
-    }
-  });
-  for (var w = 1; w <= 10; w++) {
-    var wopt = document.createElement('option');
-    wopt.value = 'ไม่นัด ' + w;
-    dl.appendChild(wopt);
-  }
-  dqDatalistBuilt = true;
 }
 
 function dqLoadToday() {
@@ -8694,6 +8678,10 @@ function dqApplyJobLocal(st, job) {
   if (job.type === 'dqEnter') {
     var open = dqFindOpenLog(logs, job.room);
     if (open) open.timeOut = job.at;
+    if (Array.isArray(st.pendingQueues)) { // รอบ 42: กด ＋ แล้วคิวหายจากแถวแนะนำทันที (optimistic) · ค้างส่งอยู่ก็ไม่แนะนำซ้ำ
+      var jobKey = dqQueueKey(job.queue);
+      st.pendingQueues = st.pendingQueues.filter(function (p) { return dqQueueKey(p && p.queue) !== jobKey; });
+    }
     var doctor = '';
     (st.rooms || []).forEach(function (rm) { if (rm.room === job.room) doctor = rm.doctor || ''; });
     logs.unshift({ id: job.pendingId, queue: job.queue, room: job.room, doctor: doctor, timeIn: job.at,
@@ -8723,6 +8711,7 @@ function dqRerender() {
   dqRenderRoomCards();
   dqRenderTodayList();
   dqUpdateSendStatus();
+  dqRenderSuggest();
 }
 function dqEnqueueJob(job) {
   dqSendQueue.push(job);
@@ -8980,6 +8969,82 @@ function dqOnQueueInput() {
     this.value = v.replace(/[a-z]/g, function (c) { return c.toUpperCase(); });
     try { this.setSelectionRange(pos, pos); } catch (e) { /* ไม่รองรับ — ข้าม */ }
   }
+  dqSugActive = '';
+  dqRenderSuggest(); // พิมพ์/ลบ ⇒ กรองใหม่ + ล้างไฮไลต์
+}
+
+/* ---- รอบ 42: แถวแนะนำคิว (predictive) — คิววันนี้ที่ยังไม่พบแพทย์ + ชื่อผู้รับบริการ · เลื่อนด้วย ← → ขณะโฟกัสอยู่ที่ช่องคิวเท่านั้น ---- */
+function dqSugNorm(v) { return String(v == null ? '' : v).replace(/[ \t\r\n ]+/g, '').toUpperCase(); }
+// รายการที่ตรงกับที่พิมพ์ (ขึ้นต้นด้วย) — ช่องว่าง = ทั้งหมด · ไม่มี pendingQueues (เซิร์ฟเวอร์เก่า) = []
+function dqSugList() {
+  var src = dqState.today && dqState.today.pendingQueues;
+  if (!Array.isArray(src)) return [];
+  var input = qs('dqQueueInput');
+  var typed = dqSugNorm(input && input.value);
+  return src.filter(function (p) {
+    return p && p.queue && (!typed || dqSugNorm(p.queue).indexOf(typed) === 0);
+  });
+}
+function dqSugIndex(list) {
+  if (!dqSugActive) return -1;
+  for (var i = 0; i < list.length; i++) if (dqQueueKey(list[i].queue) === dqSugActive) return i;
+  return -1;
+}
+function dqRenderSuggest() {
+  var box = qs('dqSuggest');
+  if (!box) return;
+  var list = dqSugList();
+  box.innerHTML = '';
+  if (list.length === 0) { box.hidden = true; return; }
+  var idx = dqSugIndex(list);
+  if (idx < 0) dqSugActive = '';
+  list.forEach(function (p, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dq-sug' + (i === idx ? ' dq-sug-active' : '');
+    b.setAttribute('role', 'option');
+    b.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+    b.setAttribute('data-queue', p.queue);
+    b.textContent = p.name ? (p.queue + ' · ' + p.name) : p.queue; // textContent — ชื่อที่มี < > ไม่กลายเป็นแท็ก
+    box.appendChild(b);
+  });
+  box.hidden = false;
+  if (idx >= 0) {
+    var el = box.children[idx];
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+}
+function dqSugPick(queue) {
+  var input = qs('dqQueueInput');
+  if (!input) return;
+  input.value = queue;
+  dqSugActive = '';
+  dqRenderSuggest();
+  input.focus();
+}
+// ผูกกับ #dqQueueInput เท่านั้น — ไม่ใช่ document ⇒ ไม่แย่งคีย์ของหน้าบันทึกอื่น
+function dqOnQueueKeydown(e) {
+  var k = e.key;
+  if (k === 'ArrowRight' || k === 'ArrowLeft') {
+    var list = dqSugList();
+    if (list.length === 0) return; // ไม่มีคำแนะนำ ⇒ ลูกศรทำงานปกติของช่อง
+    e.preventDefault();
+    var idx = dqSugIndex(list);
+    if (idx < 0) idx = 0;
+    else if (k === 'ArrowRight') idx = Math.min(idx + 1, list.length - 1);
+    else idx = Math.max(idx - 1, 0);
+    dqSugActive = dqQueueKey(list[idx].queue);
+    dqRenderSuggest();
+  } else if (k === 'Enter') {
+    var l2 = dqSugList();
+    var i2 = dqSugIndex(l2);
+    if (i2 >= 0) {
+      e.preventDefault();
+      dqSugPick(l2[i2].queue);
+    }
+  } else if (k === 'Escape') {
+    if (dqSugActive) { dqSugActive = ''; dqRenderSuggest(); }
+  }
 }
 function dqOnWalkInClick() {
   var max = 0;
@@ -8992,6 +9057,8 @@ function dqOnWalkInClick() {
   var label = 'ไม่นัด ' + (max + 1);
   var input = qs('dqQueueInput');
   if (input) { input.value = label; input.focus(); }
+  dqSugActive = '';
+  dqRenderSuggest();
   showToast('เติม ' + label + ' แล้ว — แตะช่อง ＋ ของห้อง');
 }
 
@@ -9001,7 +9068,7 @@ function dqOpenSetup() {
   var msg = qs('dqSetupMsg');
   if (msg) msg.innerHTML = '';
   var rooms = (dqState.today && dqState.today.rooms) || [];
-  // ห้องตั้งต้น 1/8/5/ล็อกขาย เฉพาะวันที่ยังไม่มีผัง — มีผังแล้วใช้ของเดิม ห้ามทับ
+  // ห้องตั้งต้น 1/8/ล็อกขาย/5 (เจ้าของสั่งลำดับ 2026-10-02) เฉพาะวันที่ยังไม่มีผัง — มีผังแล้วใช้ของเดิม ห้ามทับ
   var list = rooms.length > 0
     ? rooms.map(function (r) { return { room: r.room, doctor: r.doctor, start: r.start, end: r.end }; })
     : dqDefaultRooms.map(function (r) { return Object.assign({}, r); });
@@ -9108,7 +9175,15 @@ function dqOnSaveRoomsClick() {
 }
 function dqInit() {
   var q = qs('dqQueueInput');
-  if (q) q.addEventListener('input', dqOnQueueInput);
+  if (q) { q.addEventListener('input', dqOnQueueInput); q.addEventListener('keydown', dqOnQueueKeydown); }
+  var sg = qs('dqSuggest');
+  if (sg) {
+    sg.addEventListener('mousedown', function (e) { if (e.target && e.target.closest && e.target.closest('.dq-sug')) e.preventDefault(); }); // ไม่ให้ช่องคิวเสียโฟกัสตอนแตะ
+    sg.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.dq-sug') : null;
+      if (btn) dqSugPick(btn.getAttribute('data-queue'));
+    });
+  }
   var map = { dqBtnWalkIn: dqOnWalkInClick, dqBtnOpenSetup: dqOpenSetup, dqBtnAddRoom: function () { dqAddSetupRow(); }, dqBtnSaveRooms: dqOnSaveRoomsClick,
     dqBtnCloseSetup: function () { dqShowView('board'); dqRerender(); } };
   Object.keys(map).forEach(function (id) {
