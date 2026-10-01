@@ -199,6 +199,33 @@
     background: var(--gray-pale); cursor: pointer; font-family: inherit;
   }
   .save-queue-item .sq-actions button.sq-danger { background: #fff; border-color: var(--danger); color: var(--danger); }
+  /* รอบ 38 (2026-10-01) W3: สถานะ 'checking' (เน็ตหลุด ⇒ กำลังตรวจว่าลงชีตแล้วหรือยัง) — ขอบซ้ายสีเดียวกับ pending แต่ห่อบรรทัดได้
+     (มีปุ่ม "ทิ้ง" และข้อความยาวกว่า pending) */
+  .save-queue-item.checking { border-left: 4px solid var(--primary); }
+  /* รอบ 38 (2026-10-01) W1: จอแคบ (< 700px — breakpoint เดียวกับ #panelTotals รอบ 17) แผงพับเป็นแถบเดียวสูง ≤ 44px
+     (เดิมมีรายการล้ม 2 + รอ 1 สูง ~298px ทับ #patientHn/#patientName/#queueSelect บนมือถือ) · แตะ ⇒ กางเป็นรายการเต็ม +
+     ปุ่ม "ย่อ ▾" · จอกว้างไม่เรนเดอร์ .sq-bar/.sq-collapse-btn เลย (JS ตัดสินจาก matchMedia) ⇒ หน้าตาเดิมทุกประการ */
+  #saveQueuePanel.sq-collapsed { max-height: 44px; overflow: hidden; }
+  #saveQueuePanel .sq-bar {
+    display: block; width: 100%; height: 40px; line-height: 38px; padding: 0 12px; margin: 0;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: inherit;
+    font-family: inherit; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15);
+  }
+  #saveQueuePanel .sq-bar.has-failed { background: #FDECEA; border-color: var(--danger); color: var(--danger); }
+  /* ล้มใหม่ขณะพับอยู่ ⇒ เด้ง 1 ครั้ง (ห้ามกางเอง) */
+  #saveQueuePanel .sq-bar.sq-flash { animation: sqBarFlash .7s ease-out 1; }
+  @keyframes sqBarFlash {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(200,40,40,.55); }
+    30% { transform: scale(1.04) translateY(-3px); box-shadow: 0 0 0 8px rgba(200,40,40,.25); }
+    100% { transform: scale(1); box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+  }
+  #saveQueuePanel .sq-collapse-btn {
+    position: sticky; top: 0; align-self: flex-end; flex: 0 0 auto;
+    padding: 6px 12px; min-height: 32px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; font-family: inherit;
+  }
 
   .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 12px; }
   .tabs button {
@@ -2351,7 +2378,8 @@ function maybeSuggestNextCheckupQueue() {
     combined = combined.concat(CU_CACHE.records);
   }
   (typeof SAVE_QUEUE !== 'undefined' ? SAVE_QUEUE : []).forEach(function (it) {
-    if (it.kind === 'log' && (it.status === 'pending' || it.status === 'failed') && it.payload && it.payload.queue) {
+    // รอบ 38: 'checking' (เน็ตหลุดแล้วกำลังตรวจว่าลงชีตหรือยัง) ถือเป็นรายการค้างเหมือน pending ทุกที่
+    if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue) {
       combined.push({ queue: it.payload.queue, status: '' });
     }
   });
@@ -4059,7 +4087,7 @@ function findQueueDupInBrowser_(queueKey, excludeId, selfHn, selfName) {
   for (var j = 0; j < SAVE_QUEUE.length; j++) {
     var it = SAVE_QUEUE[j];
     if (it.kind !== 'log') continue;
-    if (it.status !== 'pending' && it.status !== 'failed') continue;
+    if (it.status !== 'pending' && it.status !== 'checking' && it.status !== 'failed') continue; // รอบ 38: checking = ค้างเหมือน pending
     var p = it.payload || {};
     if (queueDupKey_(p.queue) !== queueKey) continue;
     if (isSamePerson(p.patientName, p.patientHn)) continue;
@@ -4174,7 +4202,7 @@ function saveQueueFindLogDup_(normHn, normName) {
   for (var i = 0; i < SAVE_QUEUE.length; i++) {
     var it = SAVE_QUEUE[i];
     if (it.kind !== 'log') continue;
-    if (it.status !== 'pending' && it.status !== 'failed') continue;
+    if (it.status !== 'pending' && it.status !== 'checking' && it.status !== 'failed') continue; // รอบ 38: checking = ค้างเหมือน pending
     var p = it.payload || {};
     var hnMatch = !!normHn && normDupHn_(p.patientHn) === normHn;
     var nameMatch = !!normName && normDupName_(p.patientName) === normName;
@@ -4186,7 +4214,7 @@ function saveQueueFindLogDup_(normHn, normName) {
 function saveQueueEditPendingFor_(recordId) {
   for (var i = 0; i < SAVE_QUEUE.length; i++) {
     var it = SAVE_QUEUE[i];
-    if (it.kind === 'edit' && (it.status === 'pending' || it.status === 'failed') &&
+    if (it.kind === 'edit' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') &&
       it.editCtx && it.editCtx.editingId === recordId) return it;
   }
   return null;
@@ -4217,8 +4245,19 @@ function saveQueueItemHtml_(it) {
     return '<div class="save-queue-item pending" data-sq-id="' + escHtml(it.id) + '" title="' + escHtml(it.label) + '">' +
       '⏳ กำลังบันทึก ' + escHtml(it.label) + '</div>';
   }
+  if (it.status === 'checking') {
+    // รอบ 38 W3: เน็ตหลุดตอนส่ง log ⇒ กำลังถามเซิร์ฟเวอร์ (logStatus) ว่าแถวนี้ลงชีตแล้วหรือยัง · กด "ทิ้ง" ได้ระหว่างรอ
+    return '<div class="save-queue-item checking" data-sq-id="' + escHtml(it.id) + '">' +
+      '🔎 เน็ตขัดข้อง — กำลังตรวจว่า ' + escHtml(it.label) + ' ลงชีตแล้วหรือยัง…' +
+      '<div class="sq-actions"><button type="button" class="btn small sq-danger" data-sq-discard="' + escHtml(it.id) + '">ทิ้ง</button></div></div>';
+  }
   // failed
-  var actions = '<button type="button" class="btn secondary small" data-sq-retry="' + escHtml(it.id) + '">แก้แล้วบันทึกใหม่</button>';
+  var actions = '';
+  // รอบ 38 W3: "ส่งอีกครั้ง" เฉพาะรายการที่ล้มเพราะเน็ตหลุด (it.canResend) — ส่ง payload เดิมเป๊ะ (clientReqId เดิม) ไม่แตะฟอร์ม
+  if (it.canResend) {
+    actions += '<button type="button" class="btn secondary small" data-sq-resend="' + escHtml(it.id) + '">ส่งอีกครั้ง</button>';
+  }
+  actions += '<button type="button" class="btn secondary small" data-sq-retry="' + escHtml(it.id) + '">แก้แล้วบันทึกใหม่</button>';
   if (it.kind === 'log' && it.dupRecord) {
     actions += '<button type="button" class="btn secondary small" data-sq-mergeold="' + escHtml(it.id) + '">รวมเข้าแถวเดิม</button>';
   }
@@ -4259,7 +4298,11 @@ var saveQueuePanelScrollScheduled_ = false;
 if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
   window.addEventListener('resize', function () {
     clearTimeout(saveQueuePanelResizeTimer_);
-    saveQueuePanelResizeTimer_ = setTimeout(syncSaveQueuePanelPos_, 120);
+    // รอบ 38 W1: ข้ามเส้น 700px (หมุนจอ/ปรับหน้าต่าง) ⇒ วาดแผงใหม่ให้เข้าโหมดแถบพับ/รายการเต็มตามความกว้างใหม่ด้วย
+    saveQueuePanelResizeTimer_ = setTimeout(function () {
+      if (SAVE_QUEUE.length && saveQueueIsNarrow_() !== SAVE_QUEUE_LAST_NARROW_) renderSaveQueuePanel_();
+      else syncSaveQueuePanelPos_();
+    }, 120);
   });
   // แก้ 2026-09-30: ต้องคำนวณใหม่ตอนเลื่อนจอด้วย (#panelTotals เป็น position:fixed อยู่แล้วจริง ๆ จึงไม่ขยับตามการเลื่อน
   // แต่กันไว้เผื่อ viewport/keyboard บนมือถือเปลี่ยนความสูงจริงระหว่างเลื่อน) — throttle ด้วย rAF กันยิงถี่เกินจำเป็น
@@ -4276,13 +4319,62 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
   });
 }
 
+// รอบ 38 (2026-10-01) W1: จอแคบ (< 700px — breakpoint เดียวกับ #panelTotals รอบ 17) แผงค่าตั้งต้น "พับ" เป็นแถบบรรทัดเดียว
+// (เดิมกางเต็มรายการ สูง ~298px ทับช่อง HN/ชื่อ/คิวบนมือถือ) · แตะแถบ ⇒ กาง (SAVE_QUEUE_EXPANDED_) · กดปุ่มในรายการ
+// (แก้แล้วบันทึกใหม่/รวมเข้าแถวเดิม/ทิ้ง/ส่งอีกครั้ง) หรือ "ย่อ ▾" ⇒ พับกลับ · ล้มใหม่ขณะพับ ⇒ แถบเด้ง 1 ครั้ง
+// (SAVE_QUEUE_FLASH_) แต่ห้ามกางเอง · จอกว้างไม่ใช้ตัวแปรพวกนี้เลย (หน้าตาเดิมทุกประการ)
+var SAVE_QUEUE_EXPANDED_ = false;
+var SAVE_QUEUE_FLASH_ = false;
+var SAVE_QUEUE_LAST_NARROW_ = false;
+function saveQueueIsNarrow_() {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 699px)').matches;
+}
+function saveQueueBarHtml_(flash) {
+  var failed = 0, inflight = 0;
+  SAVE_QUEUE.forEach(function (it) {
+    if (it.status === 'failed') failed++;
+    else inflight++; // pending + checking = ยังไม่รู้ผล
+  });
+  var bits = [];
+  if (failed) bits.push('❌ บันทึกไม่สำเร็จ ' + failed);
+  if (inflight) bits.push('⏳ กำลังบันทึก ' + inflight);
+  return '<button type="button" class="sq-bar' + (failed ? ' has-failed' : '') + (flash ? ' sq-flash' : '') +
+    '" data-sq-expand="1">' + escHtml(bits.join(' · ') + ' — แตะเพื่อดู') + '</button>';
+}
+function saveQueueCollapse_() { SAVE_QUEUE_EXPANDED_ = false; }
+
 function renderSaveQueuePanel_() {
   var panel = qs('saveQueuePanel');
   if (!panel) return;
-  if (!SAVE_QUEUE.length) { panel.hidden = true; panel.innerHTML = ''; return; }
+  var flash = SAVE_QUEUE_FLASH_;
+  SAVE_QUEUE_FLASH_ = false;
+  if (!SAVE_QUEUE.length) {
+    SAVE_QUEUE_EXPANDED_ = false;
+    panel.hidden = true; panel.innerHTML = ''; panel.classList.remove('sq-collapsed');
+    return;
+  }
   panel.hidden = false;
-  panel.innerHTML = SAVE_QUEUE.map(saveQueueItemHtml_).join('');
+  var narrow = saveQueueIsNarrow_();
+  SAVE_QUEUE_LAST_NARROW_ = narrow;
+  var collapsed = narrow && !SAVE_QUEUE_EXPANDED_;
+  panel.classList.toggle('sq-collapsed', collapsed);
+  if (collapsed) {
+    panel.innerHTML = saveQueueBarHtml_(flash);
+  } else {
+    panel.innerHTML = (narrow ? '<button type="button" class="sq-collapse-btn" data-sq-collapse="1">ย่อ ▾</button>' : '') +
+      SAVE_QUEUE.map(saveQueueItemHtml_).join('');
+  }
   syncSaveQueuePanelPos_();
+  panel.querySelectorAll('[data-sq-expand]').forEach(function (b) {
+    b.addEventListener('click', function () { SAVE_QUEUE_EXPANDED_ = true; renderSaveQueuePanel_(); });
+  });
+  panel.querySelectorAll('[data-sq-collapse]').forEach(function (b) {
+    b.addEventListener('click', function () { saveQueueCollapse_(); renderSaveQueuePanel_(); });
+  });
+  panel.querySelectorAll('[data-sq-resend]').forEach(function (b) {
+    b.addEventListener('click', function () { onSaveQueueResend_(b.getAttribute('data-sq-resend')); });
+  });
   panel.querySelectorAll('[data-sq-retry]').forEach(function (b) {
     b.addEventListener('click', function () { onSaveQueueRetry_(b.getAttribute('data-sq-retry')); });
   });
@@ -4303,6 +4395,7 @@ function onSaveQueueRetry_(id) {
     if (!window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการที่บันทึกไม่สำเร็จหรือไม่?')) return;
   }
   saveQueueRemove_(id);
+  saveQueueCollapse_(); // รอบ 38 W1: กดปุ่มในรายการ ⇒ พับกลับเอง (ผู้ใช้จะกลับไปกรอกฟอร์ม)
   renderSaveQueuePanel_();
   if (it.kind === 'log') {
     resetLogForm();
@@ -4339,6 +4432,7 @@ function onSaveQueueMergeOld_(id) {
     if (!window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการที่บันทึกไม่สำเร็จหรือไม่?')) return;
   }
   saveQueueRemove_(id);
+  saveQueueCollapse_(); // รอบ 38 W1: กดปุ่มในรายการ ⇒ พับกลับเอง (ผู้ใช้จะกลับไปกรอกฟอร์ม)
   renderSaveQueuePanel_();
   resetLogForm();
   restoreFormDraft_(it.draftSnapshot);
@@ -4349,6 +4443,7 @@ function onSaveQueueMergeOld_(id) {
 function onSaveQueueDiscard_(id) {
   if (!window.confirm('ทิ้งรายการนี้? ข้อมูลที่กรอกไว้จะหาย')) return;
   saveQueueRemove_(id);
+  saveQueueCollapse_(); // รอบ 38 W1: กดปุ่มในรายการ ⇒ พับกลับเอง (ผู้ใช้จะกลับไปกรอกฟอร์ม)
   renderSaveQueuePanel_();
 }
 
@@ -4482,6 +4577,9 @@ function onSubmitLog(e) {
     specialReg: specialRegIds // รอบ 8 (B4)
   };
   if (isEdit) payload.recordId = STATE.editingId;
+  // รอบ 38 (2026-10-01) W2: log ทุกรายการแนบ clientReqId (สร้างตอนขึ้นคิว ไม่ใช่ตอนยิง ⇒ "ส่งอีกครั้ง" ใช้รหัสเดิม) เซิร์ฟเวอร์ใช้กัน
+  // บันทึกซ้ำเมื่อเน็ตหลุดแต่แถวลงชีตไปแล้ว + ตอบ logStatus · edit ไม่ต้องส่ง (เขียนทับตาม payload อยู่แล้ว ส่งซ้ำไม่เกิดแถวใหม่)
+  if (!isEdit) payload.clientReqId = newClientReqId_();
 
   // ==========================================================================================
   // รอบ 34 (2026-09-30) W1: บันทึกแบบไม่รอ — เก็บร่าง/บริบทแก้ไขไว้ก่อน แล้วขึ้นคิว #saveQueuePanel ทันที
@@ -4527,6 +4625,98 @@ function onSubmitLog(e) {
     showScreen('log');
   }
 
+  sendQueuedSave_(qid);
+}
+
+/* =========================================================================
+   รอบ 38 (2026-10-01) W2/W3: ส่ง log/edit ของรายการในคิว + เน็ตหลุดแล้วตรวจเองว่าลงชีตหรือยัง
+   เหตุผล: เจ้าของพบว่าเน็ตหลุดตอนส่งแล้วเจ้าหน้าที่ไม่รู้ว่าแถวลงชีตหรือยัง (เดิมแค่เตือน "ตรวจในรายการวันนี้ก่อน")
+   ⇒ log ทุกรายการแนบ payload.clientReqId (สร้างตอนขึ้นคิว) เซิร์ฟเวอร์กันซ้ำด้วยรหัสนี้ (replay ไม่เขียนแถวใหม่) และมี
+   action logStatus ให้ถามว่ารหัสนี้ลงชีตแล้วหรือยัง · แยกส่วน "ยิง + จัดการผล" ออกจาก onSubmitLog เป็น sendQueuedSave_()
+   เพื่อใช้ซ้ำตอนกด "ส่งอีกครั้ง" (ส่ง payload เดิมเป๊ะ) — ทางที่ไม่ใช่ networkError ต้องเหมือนเดิมทุกบรรทัด
+   ========================================================================= */
+// หน่วงก่อนยิง logStatus ครั้งที่ 2 และ 3 (ms) — เทสต์ตั้งเป็น [10,10] ได้
+var LOG_STATUS_DELAYS_ = [3000, 8000];
+var CLIENT_REQ_ID_RE_ = /^[A-Za-z0-9_-]{8,64}$/; // ต้องตรงกับ regex ฝั่งเซิร์ฟเวอร์ (handleLog_)
+function newClientReqId_() {
+  var id = '';
+  try {
+    if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') {
+      id = String(crypto.randomUUID()).replace(/-/g, '');
+    }
+  } catch (e) { id = ''; }
+  if (!CLIENT_REQ_ID_RE_.test(id)) {
+    id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    id = id.replace(/[^A-Za-z0-9_-]/g, '');
+    while (id.length < 8) id += Math.floor(Math.random() * 36).toString(36);
+    id = id.slice(0, 64);
+  }
+  return id;
+}
+
+// ตั้งรายการเป็น failed แล้ววาดแผงใหม่ — ล้มใหม่ ⇒ แถบพับเด้ง 1 ครั้ง (ไม่กางเอง)
+function saveQueueMarkFailed_(queued, msg, canResend) {
+  queued.status = 'failed';
+  queued.message = msg;
+  queued.canResend = !!canResend;
+  SAVE_QUEUE_FLASH_ = true;
+  renderSaveQueuePanel_();
+}
+
+// found:true = ลงชีตแล้ว ⇒ ถือว่าสำเร็จ (เหมือนกรณี ok เดิม: เอาออกจากคิวถ้ายังอยู่ · applySavedRecord เสมอแม้ผู้ใช้ "ทิ้ง" ไปแล้ว)
+function saveQueueFinishFound_(qid, resp) {
+  if (saveQueueFind_(qid)) { saveQueueRemove_(qid); renderSaveQueuePanel_(); }
+  showToast('✔ บันทึกสำเร็จ (ตรวจแล้วว่าลงชีตแล้ว)');
+  if (resp.record) applySavedRecord(resp.record); else loadToday();
+}
+
+var LOG_STATUS_UNCHECKABLE_MSG_ = 'เน็ตขัดข้อง ตรวจไม่ได้ว่าลงชีตหรือยัง — กด "ส่งอีกครั้ง" ได้ ระบบกันบันทึกซ้ำให้';
+
+// reqId ส่งมาเป็นพารามิเตอร์ (ไม่อ่านจากรายการในคิว) — ผู้ใช้อาจกด "ทิ้ง" ไปแล้วระหว่างรอ แต่ found:true ยังต้อง applySavedRecord
+function checkLogStatusThenSettle_(qid, reqId, attempt, firstErrorMessage) {
+  apiCall('logStatus', { staffKey: STATE.staffKey, clientReqId: reqId }).then(function (resp) {
+    var queued = saveQueueFind_(qid); // null = ถูกทิ้งไปแล้ว ⇒ ไม่แสดงผลในคิว
+    if (resp && resp.status === 'ok' && resp.found === true) {
+      saveQueueFinishFound_(qid, resp);
+      return;
+    }
+    if (resp && resp.status === 'ok' && resp.found === false) {
+      if (queued) saveQueueMarkFailed_(queued, 'ยังไม่ลงชีต — กด "ส่งอีกครั้ง" ได้เลย (ระบบกันบันทึกซ้ำให้)', true);
+      loadToday();
+      return;
+    }
+    if (resp && resp.networkError && attempt < 3) {
+      // เน็ตยังหลุดอยู่ ⇒ รอแล้วถามใหม่ (เฉพาะเมื่อครั้งก่อนเป็น networkError)
+      var delay = LOG_STATUS_DELAYS_[attempt - 1];
+      setTimeout(function () {
+        checkLogStatusThenSettle_(qid, reqId, attempt + 1, firstErrorMessage);
+      }, typeof delay === 'number' ? delay : 0);
+      return;
+    }
+    // ตรวจไม่ได้ — เน็ตหลุดครบ 3 ครั้ง หรือเซิร์ฟเวอร์ตอบ error
+    if (queued) {
+      var oldServer = !!(resp && !resp.networkError && resp.message && String(resp.message).indexOf('ไม่รู้จัก action') !== -1);
+      if (oldServer) {
+        // เซิร์ฟเวอร์เก่า (ไม่มี logStatus และไม่มีกันซ้ำ) ⇒ ใช้ข้อความเดิมรอบ 34 + ไม่มีปุ่ม "ส่งอีกครั้ง" (ส่งซ้ำอาจเกิดแถวซ้ำ)
+        saveQueueMarkFailed_(queued, (firstErrorMessage || 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่') +
+          ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในรายการวันนี้ก่อนบันทึกใหม่', false);
+      } else {
+        saveQueueMarkFailed_(queued, LOG_STATUS_UNCHECKABLE_MSG_, true);
+      }
+    }
+    loadToday();
+  }).catch(function () {
+    var queuedErr = saveQueueFind_(qid);
+    if (queuedErr) saveQueueMarkFailed_(queuedErr, LOG_STATUS_UNCHECKABLE_MSG_, true);
+  });
+}
+
+// ยิง log/edit ของรายการในคิวแล้วจัดการผล — ใช้ทั้งตอนบันทึกครั้งแรก (onSubmitLog) และ "ส่งอีกครั้ง" (onSaveQueueResend_)
+function sendQueuedSave_(qid) {
+  var item = saveQueueFind_(qid);
+  if (!item) return;
+  var isEdit = item.kind === 'edit';
+  var payload = item.payload;
   apiCall(isEdit ? 'edit' : 'log', payload).then(function (resp) {
     // รายการอาจถูกลบออกจากคิวไปแล้วก่อนเซิร์ฟเวอร์ตอบ (ผู้ใช้กด "ทิ้ง"/"แก้แล้วบันทึกใหม่"/"รวมเข้าแถวเดิม" เอง) — ไม่มี
     // ที่ให้แสดงผลอีกแล้ว แต่ยังต้อง loadToday()/applySavedRecord() ตามปกติถ้าสำเร็จ (แถวอาจลงชีตจริงแล้ว)
@@ -4549,6 +4739,18 @@ function onSubmitLog(e) {
         renderCheckupPendingReport(CU_CACHE.records, CU_LOADED_DATE);
         renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
+    } else if (resp && resp.networkError && queued && !isEdit && payload.clientReqId) {
+      // รอบ 38 W3: log + เน็ตหลุด ⇒ สถานะ 'checking' แล้วถาม logStatus เองสูงสุด 3 ครั้ง (ไม่ loadToday() ตอนนี้ — เน็ตหลุดอยู่
+      // loadToday() ทำตอนรู้ผลใน checkLogStatusThenSettle_)
+      queued.status = 'checking';
+      queued.message = '';
+      queued.canResend = false;
+      renderSaveQueuePanel_();
+      checkLogStatusThenSettle_(qid, payload.clientReqId, 1, resp.message || '');
+    } else if (resp && resp.networkError && queued && isEdit) {
+      // รอบ 38 W3: edit + เน็ตหลุด ⇒ ไม่มี logStatus ของ edit · ส่งซ้ำไม่เกิดแถวใหม่ (เขียนทับค่าตาม payload) ⇒ ปุ่ม "ส่งอีกครั้ง"
+      saveQueueMarkFailed_(queued, 'เน็ตขัดข้อง — กด "ส่งอีกครั้ง" ได้ (การแก้ไขส่งซ้ำไม่เกิดแถวใหม่)', true);
+      loadToday();
     } else {
       // ไม่ ok — ขึ้นแดงในคิว ไม่มีการยิงซ้ำอัตโนมัติ (ตามสเปก) · loadToday() เสมอไม่ว่ารายการจะยังอยู่ในคิวหรือไม่
       // (ผู้ใช้อาจกด "ทิ้ง" ไปก่อนเซิร์ฟเวอร์ตอบแล้ว — แต่ก็ยังเผื่อไว้ว่าจริง ๆ อาจลงชีตไปแล้วเหมือนกัน)
@@ -4559,7 +4761,9 @@ function onSubmitLog(e) {
         }
         queued.status = 'failed';
         queued.message = msg;
+        queued.canResend = false;
         if (!isEdit && resp && resp.code === 'duplicate') queued.dupRecord = resp.record || null;
+        SAVE_QUEUE_FLASH_ = true; // รอบ 38 W1: ล้มใหม่ขณะแผงพับ ⇒ แถบเด้ง 1 ครั้ง
         renderSaveQueuePanel_();
       }
       loadToday(); // เผื่อจริง ๆ ลงชีตไปแล้ว (เช่น network ตอบช้าจนดูเหมือนล้มแต่จริง ๆ สำเร็จ)
@@ -4570,9 +4774,24 @@ function onSubmitLog(e) {
     if (queuedErr) {
       queuedErr.status = 'failed';
       queuedErr.message = 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
+      queuedErr.canResend = false;
+      SAVE_QUEUE_FLASH_ = true;
       renderSaveQueuePanel_();
     }
   });
+}
+
+// รอบ 38 W3 "ส่งอีกครั้ง" — ผู้ใช้กดเอง (ไม่ขัดกติกา "ไม่ยิงซ้ำอัตโนมัติ" ของรอบ 34) ส่ง payload เดิมเป๊ะ (clientReqId เดิม) ·
+// กลับเป็น pending · ไม่แตะฟอร์ม · พับแผงกลับเอง
+function onSaveQueueResend_(id) {
+  var it = saveQueueFind_(id);
+  if (!it || it.status !== 'failed' || !it.canResend) return;
+  it.status = 'pending';
+  it.message = '';
+  it.canResend = false;
+  saveQueueCollapse_();
+  renderSaveQueuePanel_();
+  sendQueuedSave_(id);
 }
 
 /* ปุ่มบันทึกที่มองเห็นจริง (sticky bar / แถบร่างบนเมนู) เรียกผ่านทางนี้ — #btnSubmitLog เป็นตัวเก็บสถานะ disabled จริง */
