@@ -3235,7 +3235,10 @@ function applyPointLayout() {
   var order = hasCheckupTopic ? mainIds.slice() : [];
   if (needSpecial) {
     placed.panelSpecial = true;
-    order.push('panelSpecial');
+    // รอบ 40 (2026-10-01, เจ้าของสั่ง): จุดที่มี 'ตรวจสุขภาพ' (จุดคีย์ order) -> ส่งตรวจพิเศษต่อจากแผงตรวจสุขภาพทันที
+    // (ขึ้นก่อนใบรับรองมี Lab) · จุดอื่น order ว่าง -> ต่อท้ายเหมือนเดิม
+    var checkupPos = order.indexOf('panelCheckup');
+    order.splice(checkupPos === -1 ? order.length : checkupPos + 1, 0, 'panelSpecial');
     // มีทั้งคู่ / เฉพาะตรวจสุขภาพ -> checkup ก่อน · เฉพาะใบรับรองทั่วไปอย่างเดียว -> medcert ก่อน
     reorderSpecialSendsRows_(hasCheckupTopic ? ['checkup', 'medcert'] : ['medcert', 'checkup']);
   }
