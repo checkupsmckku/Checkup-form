@@ -8786,7 +8786,6 @@ function dqRerender() {
   dqRenderTodayList();
   dqUpdateSendStatus();
   dqRenderSuggest();
-  dqUpdateQueuePlaceholder(); // รอบ 50
 }
 function dqEnqueueJob(job) {
   dqSendQueue.push(job);
@@ -8888,15 +8887,6 @@ function dqPredictNextQueue(st) {
   while (n <= 999 && active[dqQueueKey(prefix + n)]) n++;
   if (n > 999) return null;
   return { queue: prefix + n, from: fromQ };
-}
-// รอบ 50: placeholder ช่องคิว — มีคิวที่เดา ⇒ บอกให้แตะ ＋ ได้เลย · ไม่มี ⇒ ข้อความเดิม
-function dqUpdateQueuePlaceholder() {
-  var input = qs('dqQueueInput');
-  if (!input) return;
-  var pred = dqPredictNextQueue(dqState.today);
-  input.placeholder = pred
-    ? ('ถัดไป ' + pred.queue + ' — แตะ ＋ ของห้องได้เลย หรือพิมพ์คิวอื่น')
-    : 'พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1';
 }
 
 function dqRenderRoomCards() {
@@ -9085,9 +9075,12 @@ function dqOnSlotClick(room) {
   if (!dqCanRecord()) return;
   var input = qs('dqQueueInput');
   var rawQ = ((input && input.value) || '').trim();
-  if (!rawQ) { // รอบ 50: ช่องว่าง ⇒ ใช้คิวที่เดา (ผ่านเส้นทางเดิมต่อ: dqNormQueue · บล็อกคิวซ้ำ · enqueue)
-    var pred = dqPredictNextQueue(dqState.today);
-    if (pred) rawQ = pred.queue;
+  // รอบ 50 (เจ้าของสั่ง): เลือกคิวด้วย ← → (ไฮไลต์) แล้วแตะ ＋ ได้เลย ⇒ ใช้คิวที่ไฮไลต์ (พิมพ์ใหม่จะล้างไฮไลต์อยู่แล้ว)
+  // ช่องว่าง + ไม่ได้เลือก ⇒ ไม่เดาให้เอง (กันเจ้าหน้าที่เข้าใจผิด) ต้องเลือก/พิมพ์ก่อนเสมอ
+  if (dqSugActive) {
+    var sl = dqSugList(), si = dqSugIndex(sl);
+    if (si >= 0) rawQ = sl[si].queue;
+    dqSugActive = '';
   }
   if (!rawQ) { showToast('กรุณากรอกเลขคิวก่อน'); return; }
   var q = dqNormQueue(rawQ);
