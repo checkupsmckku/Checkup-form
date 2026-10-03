@@ -8609,12 +8609,9 @@ function dqQueueKey(v) {
   if (!s) return '';
   return s.replace(/\s+/g, '').toUpperCase();
 }
-// รอบ 48: ข้อความสรุป "N คิว · เฉลี่ย X นาที/คน" (+ " (ไม่นับ K เคสที่เกิน 60 นาที)") — ใช้ทั้งระดับห้องและรายแพทย์
-function dqFmtRoomStat(count, avgMinutes, avgExcluded) {
-  var t = count + ' คิว · เฉลี่ย ' + avgMinutes + ' นาที/คน';
-  var k = Number(avgExcluded) || 0;
-  if (k > 0) t += ' (ไม่นับ ' + k + ' เคสที่เกิน 60 นาที)';
-  return t;
+// รอบ 48/49: ข้อความสรุป "N คิว · เฉลี่ย X นาที/คน" ใช้ทั้งระดับห้องและรายแพทย์ — รอบ 49: เฉลี่ยนับตามจริง ไม่มีหมายเหตุตัดเคส
+function dqFmtRoomStat(count, avgMinutes) {
+  return count + ' คิว · เฉลี่ย ' + avgMinutes + ' นาที/คน';
 }
 // รอบ 48: ห้องที่มีแพทย์ ≥ 2 กลุ่ม (byDoctor จากเซิร์ฟเวอร์) — เซิร์ฟเวอร์เก่าไม่มีคีย์ ⇒ null ⇒ แสดงแบบรอบ 47 เดิม
 function dqRoomDoctorGroups(summary) {
@@ -8933,27 +8930,21 @@ function dqRenderRoomCards() {
   var tfoot = document.createElement('tfoot');
   var footRow = document.createElement('tr');
   rooms.forEach(function (rm) {
-    var summary = summaryByRoom[rm.room] || { count: 0, avgMinutes: 0, avgExcluded: 0 };
+    var summary = summaryByRoom[rm.room] || { count: 0, avgMinutes: 0 };
     var td = document.createElement('td');
     var fck = dqRoomColorKey(rm.room);
     td.className = 'dq-foot' + (fck ? ' dq-col-' + fck : '');
     var groups = dqRoomDoctorGroups(summary);
-    var exTitle = 'ค่าเฉลี่ยไม่รวมเคสที่ใช้เวลาเกิน 60 นาที — มักเป็นเคสคร่อมพักเที่ยงหรือแพทย์ไม่อยู่';
     if (groups) {
       // รอบ 48: 1 บรรทัดต่อแพทย์ — textContent ทั้งหมด (ชื่อแพทย์มาจากชีต) · ตัดบรรทัดได้
-      var anyEx = false;
       groups.forEach(function (g) {
         var line = document.createElement('div');
         line.className = 'dq-foot-doc';
-        line.textContent = (g.doctor ? g.doctor : 'ไม่มีชื่อแพทย์') + ' — ' + dqFmtRoomStat(g.count, g.avgMinutes, g.avgExcluded);
-        if (Number(g.avgExcluded) > 0) anyEx = true;
+        line.textContent = (g.doctor ? g.doctor : 'ไม่มีชื่อแพทย์') + ' — ' + dqFmtRoomStat(g.count, g.avgMinutes);
         td.appendChild(line);
       });
-      if (anyEx) td.title = exTitle;
     } else {
-      td.textContent = dqFmtRoomStat(summary.count, summary.avgMinutes, summary.avgExcluded);
-      // รอบ 47: เฉลี่ยไม่นับเคสที่เกิน 60 นาที (คร่อมพักเที่ยง/แพทย์ไม่อยู่) — บอกจำนวนที่ไม่นับ
-      if ((Number(summary.avgExcluded) || 0) > 0) td.title = exTitle;
+      td.textContent = dqFmtRoomStat(summary.count, summary.avgMinutes);
     }
     footRow.appendChild(td);
   });
@@ -9257,7 +9248,7 @@ function dqAddSetupRow(item) {
   row.className = 'dq-setup-row';
   row.innerHTML =
     '<input type="text" class="dq-su-room" placeholder="ห้อง" value="' + escHtml(item.room) + '">' +
-    '<input type="text" class="dq-su-doctor" list="dqDoctorOptions" autocomplete="off" placeholder="นพ./พญ./Int. + ชื่อ เช่น นพ.ธนดล" value="' + escHtml(item.doctor) + '">' +
+    '<input type="text" class="dq-su-doctor" list="dqDoctorOptions" autocomplete="off" value="' + escHtml(item.doctor) + '">' +
     '<input type="text" class="dq-su-start" placeholder="HH:MM" value="' + escHtml(item.start) + '">' +
     '<input type="text" class="dq-su-end" placeholder="HH:MM" value="' + escHtml(item.end) + '">' +
     '<button type="button" class="btn small secondary dq-su-remove">ลบห้องนี้</button>';
