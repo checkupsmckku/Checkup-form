@@ -9325,6 +9325,7 @@ function dqLoadDoctorNames() {
 function dqValidateDoctorName_(raw) {
   var s = String(raw == null ? '' : raw).trim().replace(/\s+/g, ' ');
   if (!s) return { ok: true, name: '' };
+  if (/^int[.]/i.test(s)) s = 'Int.' + s.slice(4); // พิมพ์ int./INT. ได้ — ปรับเป็น Int. ให้ชื่อตรงกันทุกแถว (เจ้าของแจ้ง 2026-10-03)
   var prefix = null;
   if (s.indexOf('นพ.') === 0) prefix = 'นพ.';
   else if (s.indexOf('พญ.') === 0) prefix = 'พญ.';
