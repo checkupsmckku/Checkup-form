@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>กระดานบันทึกสถิติบริการ check up SMC | Checkup SMC KKU</title>
+<title>กระดานบันทึกบริการคลินิกตรวจสุขภาพ SMC | Checkup SMC KKU</title>
 <style>
   :root {
     --primary: #2D3481;
@@ -993,6 +993,10 @@
   #dqScreen .dq-suggest[hidden] { display: none; }
   #dqScreen .dq-sug { flex: 0 0 auto; white-space: nowrap; border: 1px solid var(--primary); background: #fff; color: var(--primary-dark); border-radius: 999px; padding: 6px 12px; font-size: 14px; cursor: pointer; font-family: inherit; }
   #dqScreen .dq-sug.dq-sug-active { background: var(--primary); color: #fff; }
+  #dqScreen .dq-sug.dq-sug-next { background: #FFF8D9; border-color: #C9A400; border-style: dashed; } /* รอบ 50: คิวที่เดา */
+  #dqScreen .dq-sug.dq-sug-next.dq-sug-active { background: var(--primary); border-style: solid; color: #fff; }
+  .dq-slot .dq-break-badge { margin-top: 2px; font-size: 12px; font-weight: normal; color: #6B5600; } /* รอบ 50 */
+  .dq-break-btn { display: block; margin-top: 4px; max-width: 100%; box-sizing: border-box; padding: 3px 8px; font-size: 12px; font-family: inherit; line-height: 1.3; white-space: normal; cursor: pointer; border: 1px solid #C9A400; background: #FFF8D9; color: #6B5600; border-radius: 6px; } /* รอบ 50 */
   #dqRoomCards { overflow-x: auto; max-width: 100%; }
   .dq-table { border-collapse: collapse; table-layout: fixed; width: 100%; background: #fff; }
   .dq-table th, .dq-table td { border: 1px solid var(--primary); padding: 4px 8px; font-size: 14px; }
@@ -1075,7 +1079,7 @@
 <div id="gateScreen">
   <div class="gate-wrap">
     <div class="card">
-      <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
+      <h1>กระดานบันทึกบริการคลินิกตรวจสุขภาพ SMC</h1>
       <div id="gateStepKey">
         <label class="field-label" for="gateStaffKey">รหัสผ่านเจ้าหน้าที่</label>
         <input type="password" id="gateStaffKey" autocomplete="off" placeholder="กรอกรหัสผ่าน">
@@ -1091,7 +1095,7 @@
   <header class="topbar">
     <div class="wrap">
       <div>
-        <h1>กระดานบันทึกสถิติบริการ check up SMC</h1>
+        <h1>กระดานบันทึกบริการคลินิกตรวจสุขภาพ SMC</h1>
         <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px;">
           <span>จุดบริการ: <select id="hdrPointSelect"></select></span>
           <span>ผู้บันทึก: <select id="hdrStaffSelect"></select></span>
@@ -1605,7 +1609,7 @@
             <button type="button" class="btn small secondary" id="dqBtnWalkIn">＋ คิวไม่นัด</button>
           </div>
           <div id="dqSuggest" class="dq-suggest" role="listbox" aria-label="คิววันนี้ที่ยังไม่พบแพทย์" hidden></div>
-          <div class="muted" style="margin-top:8px;font-size:13px;">เวลาออกของคิวก่อนจะลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน</div>
+          <div class="muted" style="margin-top:8px;font-size:13px;">เวลาออกของคิวก่อนจะลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน · แพทย์พักเที่ยง/เลิกตรวจ กด ☕ ที่ห้องนั้น</div>
         </div>
 
         <!-- รอบ 45: สรุปเช้า/บ่าย/ยังไม่พบแพทย์ (เติมโดย dqRenderDaySummary) -->
@@ -8782,6 +8786,7 @@ function dqRerender() {
   dqRenderTodayList();
   dqUpdateSendStatus();
   dqRenderSuggest();
+  dqUpdateQueuePlaceholder(); // รอบ 50
 }
 function dqEnqueueJob(job) {
   dqSendQueue.push(job);
@@ -8833,10 +8838,65 @@ function dqEntryCellHtml(item) {
     return '<div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' +
       dqFmtDot(log.timeIn) + '-' + dqFmtDot(log.timeOut) + pendMark + '</div>';
   }
-  // รอบ 47: ไม่มีปุ่มจบแล้ว — เวลาออกลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน
+  // รอบ 47: เวลาออกลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน · รอบ 50: เพิ่มปุ่ม ☕ พัก (ชื่อใหม่ คนละตัวกับปุ่มจบของรอบ 41) สำหรับแพทย์พักเที่ยง/เลิกตรวจ
   return '<div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' + dqFmtDot(log.timeIn) + '-' + pendMark + '</div>' +
     '<div class="dq-open"><span class="dq-timer" data-room="' + escHtml(log.room) + '">00:00</span> กำลังตรวจ' +
-    '<span class="dq-auto-note">ปิดเวลาเองเมื่อคิวถัดไปเข้า</span></div>';
+    '<span class="dq-auto-note">ปิดเวลาเองเมื่อคิวถัดไปเข้า</span>' +
+    '<button type="button" class="dq-break-btn" data-room="' + escHtml(log.room) + '">☕ พัก / จบคิวนี้</button></div>';
+}
+// รอบ 50: กัปตันกด ☕ ที่ห้อง ⇒ ปิดเวลาคิวที่กำลังตรวจทันที (เวลาพักไม่ถูกนับ) · ใช้ job dqEnd เดิม ไม่มีเส้นทางส่งใหม่
+function dqOnBreakClick(room) {
+  if (!dqCanRecord()) return;
+  var open = dqFindOpenLog((dqState.today && dqState.today.logs) || [], room);
+  if (!open) return; // ไม่มีคิวเปิดอยู่ (ปิดไปแล้ว) ⇒ ไม่ต้องทำอะไร
+  var q = open.queue;
+  dqEnqueueJob({ type: 'dqEnd', room: room, at: new Date().toISOString() });
+  showToast('ปิดเวลา ' + q + ' ห้อง ' + room + ' แล้ว — เวลาพักไม่ถูกนับ');
+}
+// รอบ 50: เวลาที่ห้องนี้เริ่มพัก — มีแถว 'บันทึกแล้ว' แต่ไม่มีแถวเปิด ⇒ timeOut ของแถวล่าสุด (logs ใหม่สุดก่อน) · ไม่ใช่ ⇒ null
+function dqRoomBreakSince(logs, room) {
+  var latest = null;
+  for (var i = 0; i < logs.length; i++) {
+    var l = logs[i];
+    if (!l || l.room !== room || l.status !== 'บันทึกแล้ว') continue;
+    if (!l.timeOut) return null;
+    if (!latest) latest = l;
+  }
+  return latest ? latest.timeOut : null;
+}
+// รอบ 50: เดาคิวถัดไปจากคิวล่าสุด (C11 ⇒ C12) — ฟังก์ชันล้วน ไม่แตะ DOM · logs ใหม่สุดก่อน (ห้าม reverse/sort ทับ)
+// ข้าม 'ไม่นัด N' และแถวยกเลิก · ถ้าคิวที่เดามี active อยู่แล้ว ⇒ +1 ไปเรื่อย ๆ (สูงสุด 999)
+function dqPredictNextQueue(st) {
+  if (!st) return null;
+  var logs = st.logs || [];
+  var prefix = '', num = 0, fromQ = '';
+  for (var i = 0; i < logs.length; i++) {
+    var l = logs[i];
+    if (!l || l.status === 'ยกเลิก') continue;
+    var q = dqNormQueue(l.queue == null ? '' : String(l.queue));
+    var m = /^([A-Z]+)([0-9]{1,3})$/.exec(q);
+    if (!m) continue;
+    prefix = m[1]; num = parseInt(m[2], 10); fromQ = q;
+    break;
+  }
+  if (!fromQ) return null;
+  var active = {};
+  logs.forEach(function (l) {
+    if (l && l.status === 'บันทึกแล้ว') active[dqQueueKey(l.queue)] = true;
+  });
+  var n = num + 1;
+  while (n <= 999 && active[dqQueueKey(prefix + n)]) n++;
+  if (n > 999) return null;
+  return { queue: prefix + n, from: fromQ };
+}
+// รอบ 50: placeholder ช่องคิว — มีคิวที่เดา ⇒ บอกให้แตะ ＋ ได้เลย · ไม่มี ⇒ ข้อความเดิม
+function dqUpdateQueuePlaceholder() {
+  var input = qs('dqQueueInput');
+  if (!input) return;
+  var pred = dqPredictNextQueue(dqState.today);
+  input.placeholder = pred
+    ? ('ถัดไป ' + pred.queue + ' — แตะ ＋ ของห้องได้เลย หรือพิมพ์คิวอื่น')
+    : 'พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1';
 }
 
 function dqRenderRoomCards() {
@@ -8918,6 +8978,14 @@ function dqRenderRoomCards() {
         td.className = 'dq-slot' + colCls;
         td.setAttribute('data-room', rm.room);
         td.textContent = '＋';
+        // รอบ 50: ห้องที่เคยมีคิวแต่ไม่มีคิวกำลังตรวจ = กด ☕ ไว้ (ปิดเองอัตโนมัติจะมีคิวใหม่เปิดค้างเสมอ) ⇒ ป้ายพัก หายเองเมื่อคิวถัดไปเข้า
+        var breakAt = dqRoomBreakSince(allLogs, rm.room);
+        if (breakAt) {
+          var bd = document.createElement('div');
+          bd.className = 'dq-break-badge';
+          bd.textContent = '☕ พักตั้งแต่ ' + dqFmtDot(breakAt);
+          td.appendChild(bd);
+        }
       } else {
         td.className = 'dq-blank' + colCls;
       }
@@ -8954,6 +9022,9 @@ function dqRenderRoomCards() {
 
   container.querySelectorAll('.dq-slot').forEach(function (td) {
     td.addEventListener('click', function () { dqOnSlotClick(td.getAttribute('data-room')); });
+  });
+  container.querySelectorAll('.dq-break-btn').forEach(function (btn) { // รอบ 50
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnBreakClick(btn.getAttribute('data-room')); });
   });
 
   if (!dqIsScreenOpen()) return; // หน้าไม่ได้เปิดอยู่ (งานค้างส่งตอบกลับมาหลังออกจากหน้า) — ไม่ต้องเดินนาฬิกา
@@ -9014,6 +9085,10 @@ function dqOnSlotClick(room) {
   if (!dqCanRecord()) return;
   var input = qs('dqQueueInput');
   var rawQ = ((input && input.value) || '').trim();
+  if (!rawQ) { // รอบ 50: ช่องว่าง ⇒ ใช้คิวที่เดา (ผ่านเส้นทางเดิมต่อ: dqNormQueue · บล็อกคิวซ้ำ · enqueue)
+    var pred = dqPredictNextQueue(dqState.today);
+    if (pred) rawQ = pred.queue;
+  }
   if (!rawQ) { showToast('กรุณากรอกเลขคิวก่อน'); return; }
   var q = dqNormQueue(rawQ);
   if (!q) { showToast('เลขคิวไม่ถูกต้อง — เช่น C1, M5 หรือ ไม่นัด 1'); return; }
@@ -9048,7 +9123,15 @@ function dqSugNorm(v) { return String(v == null ? '' : v).replace(/[ \t\r\n ]+/
 // รายการที่ตรงกับที่พิมพ์ (ขึ้นต้นด้วย) — ช่องว่าง = ทั้งหมด · ไม่มี pendingQueues (เซิร์ฟเวอร์เก่า) = []
 function dqSugList() {
   var src = dqState.today && dqState.today.pendingQueues;
-  if (!Array.isArray(src)) return [];
+  if (!Array.isArray(src)) src = []; // รอบ 50: เซิร์ฟเวอร์เก่าไม่มี pendingQueues ก็ยังแสดงคิวที่เดาได้
+  // รอบ 50: คิวที่เดาเป็นตัวแรก · ตัดตัวซ้ำออกจาก pendingQueues (ชื่อจาก pendingQueues ย้ายมาใส่ chip ที่เดา)
+  var pred = dqPredictNextQueue(dqState.today);
+  if (pred) {
+    var pk = dqQueueKey(pred.queue), pname = '';
+    src.forEach(function (p) { if (p && p.queue && dqQueueKey(p.queue) === pk && p.name) pname = p.name; });
+    src = [{ queue: pred.queue, name: pname, next: true, from: pred.from }].concat(
+      src.filter(function (p) { return !(p && p.queue && dqQueueKey(p.queue) === pk); }));
+  }
   var input = qs('dqQueueInput');
   var typed = dqSugNorm(input && input.value);
   return src.filter(function (p) {
@@ -9164,11 +9247,12 @@ function dqRenderSuggest() {
   list.forEach(function (p, i) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'dq-sug' + (i === idx ? ' dq-sug-active' : '');
+    b.className = 'dq-sug' + (p.next ? ' dq-sug-next' : '') + (i === idx ? ' dq-sug-active' : '');
     b.setAttribute('role', 'option');
     b.setAttribute('aria-selected', i === idx ? 'true' : 'false');
     b.setAttribute('data-queue', p.queue);
-    b.textContent = p.name ? (p.queue + ' · ' + p.name) : p.queue; // textContent — ชื่อที่มี < > ไม่กลายเป็นแท็ก
+    var label = p.next ? ('ถัดไป ' + p.queue) : p.queue; // รอบ 50: chip ที่เดา
+    b.textContent = p.name ? (label + ' · ' + p.name) : label; // textContent — ชื่อที่มี < > ไม่กลายเป็นแท็ก
     box.appendChild(b);
   });
   box.hidden = false;
