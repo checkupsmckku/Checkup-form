@@ -1011,6 +1011,17 @@
   @media (min-width: 700px) { .dq-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .dq-card { display: flex; flex-direction: column; min-width: 0; box-sizing: border-box; height: 320px; border: 1px solid var(--primary); border-radius: 8px; overflow: hidden; background: #fff; }
   @media (min-width: 700px) { .dq-card { height: clamp(240px, calc((100vh - 140px) / 2), 460px); } }
+  /* รอบ 53 — ช่องคิวซ้าย การ์ดขวา (จอ ≥ 1100px): ไม่ต้องเลื่อนลงเพื่อลงห้อง 5 / ล็อกขาย
+     ซ้าย .dq-side (300px) = หัวกระดาน + ช่องคิว + แถวแนะนำ + สรุปเช้า/บ่าย · ขวา .dq-main = การ์ด 2×2 สูง (100vh−16px−12px)/2 พอดีจอ
+     .dq-side หนึบ (sticky) + เลื่อนในตัวเองเมื่อสรุปยาว · จอ < 1100px ไม่มีกฎนี้ ⇒ เรียงบน-ล่างตามรอบ 51 เดิม
+     ⚠ sticky ใช้ได้เพราะ body เป็น overflow-x: clip (ดูคอมเมนต์ต้นไฟล์) — ห้ามเปลี่ยนเป็น hidden */
+  @media (min-width: 1100px) {
+    #dqScreen > .wrap { max-width: 1600px; }
+    .dq-board-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 12px; align-items: start; }
+    .dq-side { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto; overflow-x: hidden; min-width: 0; }
+    .dq-main { min-width: 0; }
+    .dq-card { height: max(220px, calc((100vh - 16px - 12px) / 2)); }
+  }
   .dq-card-head { flex: 0 0 auto; padding: 6px 10px; font-weight: bold; font-size: 15px; text-align: center; color: var(--primary-dark); background: #E4E7FB; overflow-wrap: anywhere; }
   .dq-card.dq-col-yellow .dq-card-head { background: #FFE27A; }
   .dq-card.dq-col-pink .dq-card-head { background: #F8BBD3; }
@@ -1614,6 +1625,9 @@
       <button type="button" class="btn secondary small" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
 
       <div id="dqBoardView">
+        <!-- รอบ 53: ช่องคิวซ้าย การ์ดขวา — จอ ≥ 1100px แบ่ง 2 คอลัมน์ (ซ้าย .dq-side 300px · ขวา .dq-main การ์ด 2×2 สูงพอดีจอ) · จอแคบเรียงบน-ล่างเหมือนเดิม -->
+        <div class="dq-board-grid">
+        <aside class="dq-side">
         <div class="dq-topbar">
           <div>
             <h2 style="margin:0 0 2px;">🩺 กระดานคิวพบแพทย์</h2>
@@ -1635,8 +1649,12 @@
 
         <!-- รอบ 45: สรุปเช้า/บ่าย/ยังไม่พบแพทย์ (เติมโดย dqRenderDaySummary) -->
         <div id="dqDaySummary" class="dq-day-summary"></div>
+        </aside>
 
+        <main class="dq-main">
         <div id="dqRoomCards"></div>
+        </main>
+        </div>
 
         <div class="card" style="margin-top:14px;">
           <h3 style="margin-top:0;">รายการวันนี้</h3>
@@ -8807,6 +8825,19 @@ function dqShowView(name) {
   if (b) b.hidden = (name !== 'board');
   if (s) s.hidden = (name !== 'setup');
   if (name !== 'board') dqStopTimers();
+  if (name === 'board') dqAlignBoard();
+}
+
+// รอบ 53: จอ ≥ 1100px — เปิดหน้าจุดกัปตัน / กลับจากหน้าตั้งห้อง ⇒ เลื่อนหน้าให้ .dq-board-grid ชิดบนจอ (เหลือ 8px) แล้วโฟกัสช่องคิว
+//   เรียกจาก dqShowView('board') เท่านั้น (เปิดหน้า · กลับ · บันทึกผัง) — ห้ามเรียกตอน rerender (กด ＋ / ☕ / ตอบกลับเซิร์ฟเวอร์) ไม่งั้นหน้ากระโดด
+//   จอแคบ: ไม่ทำอะไร (พฤติกรรมเดิม)
+function dqAlignBoard() {
+  if (!window.matchMedia || !window.matchMedia('(min-width: 1100px)').matches) return;
+  var grid = document.querySelector('.dq-board-grid');
+  if (!grid || !grid.offsetParent) return; // หน้ายังซ่อนอยู่ — วัดไม่ได้
+  window.scrollTo(0, Math.max(0, Math.round(grid.getBoundingClientRect().top + window.pageYOffset - 8)));
+  var qi = qs('dqQueueInput');
+  if (qi) { try { qi.focus({ preventScroll: true }); } catch (e) { qi.focus(); } }
 }
 
 // เรียกจาก showScreen('dq') ทุกครั้งที่เปิดหน้า
@@ -8816,7 +8847,10 @@ function dqOnShow() {
   if (dt) dt.textContent = dqThaiDateText();
   if (dqIsStale()) dqState.base = null; // รอบ 45: ไม่วาดของเมื่อวานแวบหนึ่งระหว่างรอโหลด
   dqRerender();
-  dqLoadToday();
+  // รอบ 53: เลื่อนให้เอง "หลังข้อมูลวาดเสร็จ" (หน้ายังว่างตอนเปิด ⇒ เอกสารสั้นเกินจะเลื่อนถึง) · ครั้งเดียวต่อการเปิดหน้า — rerender รอบต่อ ๆ ไปไม่ยุ่งกับตำแหน่งหน้า
+  var loading = dqLoadToday();
+  dqAlignBoard(); // หลัง dqRerender ของ snapshot เดิม (ถ้ามี) เอกสารสูงพอแล้ว · อีกครั้งหลังข้อมูลใหม่มา (ด้านล่าง)
+  Promise.resolve(loading).then(function () { if (dqIsScreenOpen()) { var bv = qs('dqBoardView'); if (bv && !bv.hidden) dqAlignBoard(); } });
 }
 
 // รอบ 45: snapshot ที่ถืออยู่เป็นของวันก่อน (เปิดแท็บค้างข้ามคืน) — เทียบกับวันไทยปัจจุบัน
