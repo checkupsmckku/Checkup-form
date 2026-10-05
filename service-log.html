@@ -1058,12 +1058,12 @@
   .dq-ds-num { font-size: 24px; font-weight: bold; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
   .dq-ds-unit { font-size: 13px; font-weight: normal; color: var(--text-muted); }
   .dq-ds-done { margin-top: 8px; font-size: 14px; color: var(--accent); }
-  .dq-ds-details { margin-top: 8px; }
-  .dq-ds-details summary { cursor: pointer; font-size: 14px; color: var(--primary-dark); }
-  .dq-ds-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  /* รอบ 54: รายการคิวที่ยังไม่พบแพทย์แสดงเลย (เลิก <details>) — ยาวแล้วเลื่อนในกล่อง หน้าไม่ยืด */
+  .dq-ds-pending { margin-top: 8px; }
+  .dq-ds-pending-title { font-size: 14px; font-weight: bold; color: var(--primary-dark); }
+  .dq-ds-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; max-height: 30vh; overflow-y: auto; }
   .dq-ds-item { border: 1px solid var(--primary); border-radius: 999px; padding: 4px 10px; font-size: 14px; background: #fff; overflow-wrap: anywhere; max-width: 100%; }
   /* รอบ 47: 3 ช่อง — จอแคบยังเป็น 3 คอลัมน์ ลด padding/ตัวอักษรให้ไม่ล้น 320px */
-  .dq-ds-afternoon { margin-top: 8px; font-size: 15px; font-weight: bold; color: var(--primary-dark); overflow-wrap: anywhere; }
   @media (max-width: 480px) { .dq-ds-grid { gap: 6px; } .dq-ds-cell { padding: 6px 4px; } .dq-ds-label { font-size: 12px; } .dq-ds-num { font-size: 20px; } }
   .dq-today-item { border-bottom: 1px solid var(--border); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .dq-today-item.dq-cancelled-row { opacity: 0.55; text-decoration: line-through; }
@@ -1669,7 +1669,7 @@
         </div>
         <p id="dqDoctorHint" class="warning-box" hidden></p>
         <div class="card">
-          <div class="dq-setup-row dq-setup-row-head"><div>ห้อง</div><div>ชื่อแพทย์</div><div>เริ่มเวร</div><div>สิ้นสุดเวร</div><div></div></div>
+          <div class="dq-setup-row dq-setup-row-head"><div>ห้อง</div><div>ชื่อแพทย์</div><div>เริ่มตรวจ</div><div>สิ้นสุดตรวจ</div><div></div></div>
           <div id="dqSetupRooms"></div>
           <button type="button" class="btn secondary small" id="dqBtnAddRoom" style="margin-top:8px;">➕ เพิ่มห้อง</button>
         </div>
@@ -8716,13 +8716,14 @@ function onPendingBulkSave() {
      แต่ beforeunload ต้องเตือนถ้ามีงานค้างในตัวใดตัวหนึ่ง (ดู handler ใกล้ SAVE_QUEUE)
    ⚠ ส่งทุก action พร้อม staffName: STATE.staffName · เซิร์ฟเวอร์ลงเวลาเอง (ห้ามเชื่อเวลา client) · เน็ตหลุด = ไม่ส่งซ้ำเอง แล้วโหลด dqToday ใหม่
    ========================================================================= */
+// เจ้าของสั่ง 2026-10-05: เวลาเริ่มตรวจตั้งต้น 09:30 ทุกห้อง (ใช้เฉพาะวันที่ยังไม่มีผัง · แก้ได้ในหน้าตั้งห้อง)
 var dqDefaultRooms = [
-  { room: '1', doctor: '', start: '', end: '' },
-  { room: '8', doctor: '', start: '', end: '' },
-  { room: 'ล็อกขาย', doctor: '', start: '', end: '' },
+  { room: '1', doctor: '', start: '09:30', end: '' },
+  { room: '8', doctor: '', start: '09:30', end: '' },
+  { room: 'ล็อกขาย', doctor: '', start: '09:30', end: '' },
   // รอบ 48: ห้อง 5 เติมชื่อตั้งต้น (ใช้เฉพาะวันที่ยังไม่มีผัง · แก้/ลบได้ในหน้าตั้งห้อง)
   // รอบ 52: ช่องชื่อแพทย์เป็น select แล้ว ⇒ ตั้งต้นด้วย "ชื่อ active ตัวแรกในรายชื่อที่แกนชื่อขึ้นต้นด้วย เฉลิมชัย" (defaultDoctorPrefix) · ไม่มี ⇒ ไม่ระบุแพทย์
-  { room: '5', doctor: '', start: '', end: '', defaultDoctorPrefix: 'เฉลิมชัย' }
+  { room: '5', doctor: '', start: '09:30', end: '', defaultDoctorPrefix: 'เฉลิมชัย' }
 ];
 var dqSendQueue = [];     // งานที่ยังไม่ได้ response — ส่งทีละงานตามลำดับที่กด
 var dqSendActive = false;
@@ -8735,8 +8736,7 @@ var dqState = {
   doctorsLoaded: false,
   doctorsFailed: false,
   doctorsDate: '',
-  rolloverFor: '',   // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
-  summaryOpen: false // รอบ 45: สถานะเปิด/ปิด <details> ของ "ดูคิวที่ยังไม่พบแพทย์" — คงไว้ข้าม render
+  rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
 var dqSugActive = ''; // รอบ 42: คีย์คิว (dqQueueKey) ของตัวเลือกที่ไฮไลต์อยู่ · '' = ไม่มี
@@ -8759,6 +8759,11 @@ function dqQueueKey(v) {
   var s = raw.trim();
   if (!s) return '';
   return s.replace(/\s+/g, '').toUpperCase();
+}
+// รอบ 54: คิวตรวจสุขภาพ = คิวที่ขึ้นต้น C (C + เลข) หรือ 'ไม่นัด N' — M/V/ว่าง/null/'C' เฉย ๆ ไม่ใช่ · ฟังก์ชันล้วน
+function dqIsCheckupQueue(q) {
+  var k = dqQueueKey(q);
+  return /^C\d+$/.test(k) || /^ไม่นัด \d+$/.test(k);
 }
 // รอบ 48/49: ข้อความสรุป "N คิว · เฉลี่ย X นาที/คน" ใช้ทั้งระดับห้องและรายแพทย์ — รอบ 49: เฉลี่ยนับตามจริง ไม่มีหมายเหตุตัดเคส
 function dqFmtRoomStat(count, avgMinutes) {
@@ -9169,7 +9174,7 @@ function dqRenderRoomCards() {
     // รอบ 48/51: ห้องที่มีแพทย์หลายคนในวันนี้ — ระบุว่าชื่อที่หัวคือคนปัจจุบัน (นับจาก logs ในหน้าเว็บ)
     if (rm.doctor && split) head.textContent += ' (ตอนนี้)';
     var shiftText = (rm.start || rm.end) ? ((rm.start || '—') + '–' + (rm.end || '—')) : '';
-    if (shiftText) head.title = 'เวร ' + shiftText;
+    if (shiftText) head.title = 'เวลาตรวจ ' + shiftText;
     card.appendChild(head);
 
     var list = document.createElement('div');
@@ -9385,28 +9390,41 @@ function dqSugIndex(list) {
 }
 // รอบ 47: ตัดเช้า/บ่ายที่ 13:00 เวลาไทย (แพทย์บางวันตรวจถึง 12:30) · ไม่มีช่อง "รวมวันนี้" (ซ้ำกับแถบหัวรอบ 46)
 var dqAfternoonHour = 13;
-// รอบ 45/47: สรุปเช้า/บ่าย/ยังไม่ได้พบแพทย์ — ฟังก์ชันล้วน ไม่แตะ DOM · นับ 'บันทึกแล้ว' (รวมแถว pending) ไม่นับ 'ยกเลิก' · ตัดจาก timeIn
-// nowMs = เวลาปัจจุบัน (ms) ไม่ส่ง ⇒ Date.now() · isAfternoon = ชั่วโมงไทยของ nowMs >= 13 · afternoonTotal = afternoon + pending (pending null ⇒ null)
+// รอบ 54 (เจ้าของ 2026-10-05): กล่องสรุปนับเฉพาะคิวตรวจสุขภาพ (C / ไม่นัด) — M/V ไม่นับ · ยอด = เช้า + บ่าย + ยังไม่ได้พบแพทย์ เสมอ
+// ฟังก์ชันล้วน ไม่แตะ DOM · ตรวจแล้ว = 'บันทึกแล้ว' (รวมแถว pending) ไม่นับ 'ยกเลิก' · นับคิวละครั้ง (คีย์ dqQueueKey) ใช้ timeIn เร็วสุดตัดเช้า/บ่าย
+// pendingQueues ไม่ใช่ array ⇒ pending null · total null (เซิร์ฟเวอร์เก่า) · nowMs ไม่ใช้แล้ว (คงพารามิเตอร์ไว้ให้ผู้เรียกเดิม)
 function dqComputeDaySummary(st, nowMs) {
   if (!st) return null;
-  var morning = 0, afternoon = 0;
+  var earliest = {}; // คีย์คิว → ms ของ timeIn ที่เร็วที่สุด
   (st.logs || []).forEach(function (l) {
     if (!l || l.status !== 'บันทึกแล้ว') return;
+    if (!dqIsCheckupQueue(l.queue)) return;
     if (l.timeIn == null || l.timeIn === '') return; // new Date(null) = 1970 ⇒ ต้องกันก่อน ไม่งั้นนับเป็นเช้า
+    var ms = new Date(l.timeIn).getTime();
     var t = dqBkkHM(l.timeIn);
-    if (!t || isNaN(t.h)) return; // อ่านเวลาไม่ได้ ⇒ ไม่นับเข้าทั้งเช้า/บ่าย
+    if (isNaN(ms) || !t || isNaN(t.h)) return; // อ่านเวลาไม่ได้ ⇒ ไม่นับ
+    var k = dqQueueKey(l.queue);
+    if (!Object.prototype.hasOwnProperty.call(earliest, k) || ms < earliest[k]) earliest[k] = ms;
+  });
+  var morning = 0, afternoon = 0;
+  Object.keys(earliest).forEach(function (k) {
+    var t = dqBkkHM(earliest[k]);
     if (t.h < dqAfternoonHour) morning++; else afternoon++;
   });
-  var hasPending = Array.isArray(st.pendingQueues);
-  var cc = st.checkupCount; // รอบ 46: ตัวเลข finite >= 0 เท่านั้น ไม่งั้น null (เซิร์ฟเวอร์เก่า)
-  var checkupCount = (typeof cc === 'number' && isFinite(cc) && cc >= 0) ? cc : null;
-  var nt = dqBkkHM(nowMs == null ? Date.now() : nowMs);
-  var isAfternoon = !!(nt && !isNaN(nt.h) && nt.h >= dqAfternoonHour);
-  return { checkupCount: checkupCount, morning: morning, afternoon: afternoon,
-    pending: hasPending ? st.pendingQueues.length : null,
-    pendingList: hasPending ? st.pendingQueues : [],
-    isAfternoon: isAfternoon,
-    afternoonTotal: hasPending ? afternoon + st.pendingQueues.length : null };
+  var pending = null, pendingList = [];
+  if (Array.isArray(st.pendingQueues)) {
+    var seen = {};
+    st.pendingQueues.forEach(function (p) {
+      if (!p || !p.queue || !dqIsCheckupQueue(p.queue)) return;
+      var k = dqQueueKey(p.queue);
+      if (Object.prototype.hasOwnProperty.call(earliest, k) || seen[k]) return;
+      seen[k] = true;
+      pendingList.push(p.queue);
+    });
+    pending = pendingList.length;
+  }
+  return { total: pending === null ? null : morning + afternoon + pending,
+    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList };
 }
 function dqRenderDaySummary() {
   var box = qs('dqDaySummary');
@@ -9414,41 +9432,34 @@ function dqRenderDaySummary() {
   var sm = dqComputeDaySummary(dqState.today, Date.now());
   box.innerHTML = '';
   if (!sm) return;
-  // รอบ 46: แถบหัว "วันนี้มียอดตรวจสุขภาพ N เคส" เหนือ grid 3 ช่อง · checkupCount null ⇒ ไม่แสดง
-  if (sm.checkupCount !== null) {
+  // รอบ 54: แถบหัว "วันนี้มียอดตรวจสุขภาพ N คิว" (total = เช้า + บ่าย + ยังไม่ได้พบแพทย์) · total null ⇒ ไม่แสดง
+  if (sm.total !== null) {
     var hl = document.createElement('div');
     hl.className = 'dq-ds-headline';
-    hl.title = 'นับจากกระดานสถิติ ทุกจุดบริการ ไม่รวมที่ยกเลิก';
+    hl.title = 'นับคิว C และไม่นัดของวันนี้ ไม่รวม M/V และที่ยกเลิก';
     hl.appendChild(document.createTextNode('วันนี้มียอดตรวจสุขภาพ '));
-    var hn = document.createElement('b'); hn.className = 'dq-ds-headline-num'; hn.textContent = String(sm.checkupCount);
+    var hn = document.createElement('b'); hn.className = 'dq-ds-headline-num'; hn.textContent = String(sm.total);
     hl.appendChild(hn);
-    hl.appendChild(document.createTextNode(' เคส'));
+    hl.appendChild(document.createTextNode(' คิว'));
     box.appendChild(hl);
   }
   var grid = document.createElement('div');
   grid.className = 'dq-ds-grid';
-  [['เช้า ตรวจแล้ว', sm.morning, 'เข้าห้องก่อน 13:00 · นับจากเวลาเข้าห้อง'],
-   ['บ่าย ตรวจแล้ว', sm.afternoon, 'เข้าห้องตั้งแต่ 13:00 เป็นต้นไป · นับจากเวลาเข้าห้อง'],
-   ['ยังไม่ได้พบแพทย์', sm.pending === null ? '—' : sm.pending, 'คิวที่ลงกระดานสถิติวันนี้แล้ว แต่ยังไม่กด ＋ เข้าห้อง']].forEach(function (c) {
+  [['เช้า ตรวจแล้ว', sm.morning, 'คิว C/ไม่นัด ที่เข้าห้องก่อน 13:00 · นับคิวละครั้ง'],
+   ['บ่าย ตรวจแล้ว', sm.afternoon, 'คิว C/ไม่นัด ที่เข้าห้องตั้งแต่ 13:00 · นับคิวละครั้ง'],
+   ['ยังไม่ได้พบแพทย์', sm.pending === null ? '—' : sm.pending, 'คิว C/ไม่นัด ที่ลงกระดานสถิติวันนี้แล้ว แต่ยังไม่กด ＋ เข้าห้อง']].forEach(function (c) {
     var cell = document.createElement('div');
     cell.className = 'dq-ds-cell';
     cell.title = c[2];
     var lb = document.createElement('div'); lb.className = 'dq-ds-label'; lb.textContent = c[0];
     var nv = document.createElement('div'); nv.className = 'dq-ds-num';
     nv.textContent = c[1];
-    var un = document.createElement('span'); un.className = 'dq-ds-unit'; un.textContent = ' คน';
+    var un = document.createElement('span'); un.className = 'dq-ds-unit'; un.textContent = ' คิว';
     nv.appendChild(un);
     cell.appendChild(lb); cell.appendChild(nv);
     grid.appendChild(cell);
   });
   box.appendChild(grid);
-  // รอบ 47: ตั้งแต่ 13:00 เวลาไทย เคสที่ยังเหลือถือเป็นช่วงบ่ายทั้งหมด · pending null ⇒ ไม่แสดง
-  if (sm.isAfternoon && sm.pending !== null) {
-    var af = document.createElement('div');
-    af.className = 'dq-ds-afternoon';
-    af.textContent = 'ยอดช่วงบ่ายทั้งหมด ' + sm.afternoonTotal + ' เคส (ตรวจแล้ว ' + sm.afternoon + ' · รออยู่ ' + sm.pending + ')';
-    box.appendChild(af);
-  }
   if (sm.pending === null) return;
   if (sm.pending === 0) {
     var done = document.createElement('div');
@@ -9457,24 +9468,23 @@ function dqRenderDaySummary() {
     box.appendChild(done);
     return;
   }
-  var det = document.createElement('details');
-  det.className = 'dq-ds-details';
-  if (dqState.summaryOpen) det.open = true;
-  var sum = document.createElement('summary');
-  sum.textContent = 'ดูคิวที่ยังไม่พบแพทย์ (' + sm.pending + ')';
-  det.appendChild(sum);
+  // รอบ 54: แสดงเลขคิวเลย ไม่ต้องกด · เลขคิวอย่างเดียว ไม่มีชื่อ
+  var pd = document.createElement('div');
+  pd.className = 'dq-ds-pending';
+  var ttl = document.createElement('div');
+  ttl.className = 'dq-ds-pending-title';
+  ttl.textContent = 'ยังไม่ได้พบแพทย์ ' + sm.pending + ' คิว';
+  pd.appendChild(ttl);
   var wrap = document.createElement('div');
   wrap.className = 'dq-ds-list';
-  sm.pendingList.forEach(function (p) {
-    if (!p || !p.queue) return;
+  sm.pendingList.forEach(function (q) {
     var it = document.createElement('span');
     it.className = 'dq-ds-item';
-    it.textContent = p.name ? (p.queue + ' · ' + p.name) : p.queue; // textContent — ชื่อที่มี < > ไม่กลายเป็นแท็ก
+    it.textContent = q;
     wrap.appendChild(it);
   });
-  det.appendChild(wrap);
-  det.addEventListener('toggle', function () { dqState.summaryOpen = det.open; });
-  box.appendChild(det);
+  pd.appendChild(wrap);
+  box.appendChild(pd);
 }
 function dqRenderSuggest() {
   var box = qs('dqSuggest');
@@ -9618,7 +9628,7 @@ function dqRefillAllDoctorSelects_() {
   });
 }
 function dqAddSetupRow(item) {
-  item = item || { room: '', doctor: '', start: '', end: '' };
+  item = item || { room: '', doctor: '', start: '09:30', end: '' }; // ห้องที่กดเพิ่มเองก็เริ่มตรวจ 09:30 (2026-10-05)
   var container = qs('dqSetupRooms');
   if (!container) return;
   var row = document.createElement('div');
@@ -10189,6 +10199,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // หน้าอื่น (รายการวันนี้/รายงาน/กระดาน) ยังไม่ถูกบังคับย้ายเหมือนเดิม
     var cuScreenEl = qs('checkupTableScreen');
     if (currentPointTopics().indexOf('รายชื่อ') === -1 && cuScreenEl && cuScreenEl.style.display === 'block') {
+      showScreen('log');
+    }
+    // รอบ 54 (เจ้าของ 2026-10-05): เปิดหน้าจุดกัปตันค้างอยู่ แล้วเปลี่ยนไปจุดที่ไม่มีหัวข้อ 'คิวพบแพทย์' -> กลับหน้าบันทึกทันที
+    // (จุดที่มี 'รายชื่อ' ถูก maybeAutoOpenListForPoint() เปิดหน้ารายชื่อไปแล้ว ⇒ dqIsScreenOpen() เป็น false จึงไม่ถูกดึงกลับ · showScreen ไม่แตะ dqSendQueue)
+    if (currentPointTopics().indexOf('คิวพบแพทย์') === -1 && dqIsScreenOpen()) {
       showScreen('log');
     }
   });
