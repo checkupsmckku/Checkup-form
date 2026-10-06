@@ -9164,6 +9164,18 @@ function dqRenderRoomCards() {
   dqStopTimers();
   var container = qs('dqRoomCards');
   if (!container) return;
+  // รอบ 56 (เจ้าของ 2026-10-06): จำตำแหน่งเลื่อนของรายการแต่ละห้องก่อนวาดใหม่ — เดิมทุกการ์ดเด้งลงล่างสุดทุกครั้งที่วาด
+  // (กด ＋ ห้อง 8 ⇒ ห้อง 1 ที่เลื่อนขึ้นไปดูคิวเก่าอยู่เด้งลงไปด้วย) · ล่างสุดอยู่แล้ว (เผื่อ 8px) หรือห้องนั้นมีแถวเพิ่ม ⇒ ลงล่างสุด · นอกนั้นคงที่เดิม
+  var prevScroll = {};
+  container.querySelectorAll('.dq-card').forEach(function (card) {
+    var l = card.querySelector('.dq-card-list');
+    if (!l) return;
+    prevScroll[card.getAttribute('data-room')] = {
+      top: l.scrollTop,
+      atBottom: l.scrollHeight - l.scrollTop - l.clientHeight <= 8,
+      rows: l.querySelectorAll('.dq-card-row').length
+    };
+  });
   container.innerHTML = '';
   if (!dqState.base) { container.innerHTML = '<p class="muted">กำลังโหลดข้อมูลคิวพบแพทย์…</p>'; return; }
   var rooms = (dqState.today && dqState.today.rooms) || [];
@@ -9278,8 +9290,14 @@ function dqRenderRoomCards() {
   container.querySelectorAll('.dq-break-btn').forEach(function (btn) { // รอบ 50
     btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnBreakClick(btn.getAttribute('data-room')); });
   });
-  // รอบ 51: เลื่อนรายการในการ์ดไปคิวล่าสุด (ล่างสุด) ทุกครั้งที่วาด
-  container.querySelectorAll('.dq-card-list').forEach(function (l) { l.scrollTop = l.scrollHeight; });
+  // รอบ 51: เลื่อนรายการในการ์ดไปคิวล่าสุด (ล่างสุด) · รอบ 56: เฉพาะห้องที่วาดครั้งแรก/ล่างสุดอยู่แล้ว/มีแถวเพิ่ม — ห้องที่เลื่อนขึ้นไปดูอยู่คงตำแหน่งเดิม
+  container.querySelectorAll('.dq-card').forEach(function (card) {
+    var l = card.querySelector('.dq-card-list');
+    if (!l) return;
+    var p = prevScroll[card.getAttribute('data-room')];
+    if (!p || p.atBottom || l.querySelectorAll('.dq-card-row').length > p.rows) l.scrollTop = l.scrollHeight;
+    else l.scrollTop = p.top;
+  });
 
   if (!dqIsScreenOpen()) return; // หน้าไม่ได้เปิดอยู่ (งานค้างส่งตอบกลับมาหลังออกจากหน้า) — ไม่ต้องเดินนาฬิกา
   container.querySelectorAll('.dq-timer').forEach(function (timerEl) {
