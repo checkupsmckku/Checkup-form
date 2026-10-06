@@ -856,7 +856,14 @@
     .log-panel-body { display: block !important; }
     .log-panel-head { cursor: default; }
     .log-panel-arrow { display: none; }
+    /* รอบ 57 (เจ้าของสั่ง "เช่นจุด order ให้ปิดวัคซีนที่อยู่ด้านล่างได้"): แผงกลุ่ม "บริการอื่น" ของจุดที่มีหัวข้อหลัก
+       (applyPointLayout() ใส่ .log-panel-other) พับได้บนจอกว้างด้วย — specificity สูงกว่ากฎ !important ข้างบนจึงชนะ
+       แผงหัวข้อหลัก/ผู้รับบริการ/จุดที่ไม่มีหัวข้อ ยังกางตลอดเหมือนเดิม */
+    .log-panel.log-panel-other[data-collapsed="1"] .log-panel-body { display: none !important; }
+    .log-panel.log-panel-other .log-panel-head { cursor: pointer; }
+    .log-panel.log-panel-other .log-panel-arrow { display: inline; }
   }
+  .log-panel.log-panel-other[data-collapsed="1"] .log-panel-arrow { display: inline-block; transform: rotate(-90deg); }
 
   /* เจ้าของสั่ง 2026-09-15: ให้กล่องบริการแต่ละใบมีสีประจำประเภท มองปราดเดียวรู้ว่ากำลังกรอกกล่องไหน
      ตรวจสุขภาพ = ส้ม · ส่งตรวจพิเศษ = ชมพู · วัคซีน = เหลือง · ใบรับรองแพทย์ = ฟ้า
@@ -1042,6 +1049,14 @@
   .dq-slot.dq-slot-idle { opacity: 0.55; } /* รอบ 51: ยังไม่มีคิวที่จะลง (ยังคลิกได้ ⇒ toast) */
   .dq-entry { font-weight: bold; color: #C00000; font-size: 20px; } /* รอบ 53.1: เจ้าของขอตัวคิวใหญ่ขึ้น (เดิม 14px จาก .dq-card-row) */
   .dq-open { font-weight: normal; font-size: 15px; color: var(--accent); }
+  /* รอบ 58: ปุ่ม ⇄ ย้ายห้อง (เล็ก ไม่แย่งสายตาจากเลขคิว) + แถบเลือกห้องปลายทางใต้แถว */
+  .dq-entry-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .dq-move-btn { flex: 0 0 auto; padding: 2px 8px; font-size: 12px; font-family: inherit; line-height: 1.3; cursor: pointer; border: 1px solid var(--primary); background: #fff; color: var(--primary-dark); border-radius: 6px; font-weight: normal; }
+  .dq-move-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; padding: 6px; box-sizing: border-box; max-width: 100%; background: #fff; border: 1px solid var(--primary); border-radius: 8px; }
+  .dq-move-label { flex: 1 1 100%; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+  .dq-move-to, .dq-move-close { min-height: 40px; box-sizing: border-box; padding: 4px 12px; font-family: inherit; font-size: 15px; cursor: pointer; border: 1px solid var(--primary); background: #E4E7FB; color: var(--primary-dark); border-radius: 6px; font-weight: bold; }
+  .dq-move-to { min-width: 72px; }
+  .dq-move-close { min-width: 40px; background: #fff; color: var(--text-muted); }
   .dq-cancelled { text-decoration: line-through; opacity: 0.45; color: var(--text-muted); }
   .dq-timer { font-variant-numeric: tabular-nums; }
   .dq-auto-note { display: block; font-size: 12px; color: var(--text-muted); }
@@ -3355,6 +3370,11 @@ function updatePointBanner() {
 function applyPointLayout() {
   capturePanelHomePositions_();
   updatePointBanner();
+  // รอบ 57: ล้างป้าย "บริการอื่น" ก่อน แล้วค่อยใส่ให้แผงใน remaining ข้างล่าง (CSS ใช้ตัดสินว่าพับได้บนจอกว้าง)
+  MOVABLE_PANEL_IDS_.forEach(function (id) {
+    var el = qs(id);
+    if (el && el.classList) el.classList.remove('log-panel-other');
+  });
 
   var topics = currentPointTopics();
   var mainIds = [];
@@ -3438,6 +3458,7 @@ function applyPointLayout() {
       if (!el || !anchor) return;
       anchor.parentNode.insertBefore(el, anchor.nextSibling);
       anchor = el;
+      if (el.classList) el.classList.add('log-panel-other');
       // ⚠ ห้ามพับแผงที่มีข้อมูลในร่างอยู่แล้ว (เปลี่ยนจุดกลางคัน) — บังคับกางแทนที่จะพับ
       el.setAttribute('data-collapsed', panelHasDraftData_(id) ? '0' : '1');
     });
@@ -8763,6 +8784,7 @@ var dqState = {
   doctorsLoaded: false,
   doctorsFailed: false,
   doctorsDate: '',
+  moveOpenId: '',    // รอบ 58: รหัสแถวที่เปิดแถบเลือกห้องย้ายอยู่ (ทีละแถว) · '' = ปิด
   rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
@@ -8956,6 +8978,20 @@ function dqApplyJobLocal(st, job) {
     if (openEnd) openEnd.timeOut = job.at;
   } else if (job.type === 'dqCancel') {
     logs.forEach(function (l) { if (String(l.id) === String(job.id)) l.status = 'ยกเลิก'; });
+  } else if (job.type === 'dqMove') {
+    // รอบ 58: ย้ายห้อง (optimistic) — แก้ห้อง+แพทย์ของแถวเดิม · ถ้าแถวนี้ยังเปิดและห้องใหม่มีแถวเปิดที่เข้าก่อน/พร้อมกัน ⇒ ปิดแถวนั้นที่เวลาเข้าแถวนี้ (จอไม่มี 2 คิวกำลังตรวจในห้องเดียว)
+    var mv = null;
+    logs.forEach(function (l) { if (!mv && String(l.id) === String(job.id)) mv = l; });
+    if (mv && mv.status !== 'ยกเลิก') {
+      if (!mv.timeOut) {
+        var openDest = dqFindOpenLog(logs, job.room);
+        if (openDest && openDest !== mv && new Date(openDest.timeIn).getTime() <= new Date(mv.timeIn).getTime()) openDest.timeOut = mv.timeIn;
+      }
+      var newDoc = '';
+      (st.rooms || []).forEach(function (rm) { if (rm.room === job.room) newDoc = rm.doctor || ''; });
+      mv.room = job.room;
+      mv.doctor = newDoc;
+    }
   }
 }
 function dqRecompute() {
@@ -8990,7 +9026,8 @@ function dqPumpSendQueue() {
   dqSendActive = true;
   var job = dqSendQueue[0];
   var payload = job.type === 'dqEnter' ? { queue: job.queue, room: job.room }
-    : job.type === 'dqEnd' ? { room: job.room } : { id: job.id };
+    : job.type === 'dqEnd' ? { room: job.room }
+    : job.type === 'dqMove' ? { id: job.id, room: job.room } : { id: job.id }; // รอบ 58: dqMove ส่ง { id, room }
   dqApi(job.type, payload).then(function (resp) {
     dqSendQueue.shift();
     var next;
@@ -9026,12 +9063,15 @@ function dqEntryCellHtml(item) {
     return '<div class="dq-entry dq-cancelled">' + escHtml(log.queue) + '&nbsp;&nbsp;' + dqFmtDot(log.timeIn) + '</div>';
   }
   var pendMark = log.pending ? '<span class="dq-pending"> ⏳ กำลังบันทึก</span>' : '';
+  // รอบ 58: ปุ่ม ⇄ ย้าย — เฉพาะแถว 'บันทึกแล้ว' ที่ไม่ pending (ทั้งแถวปิดแล้วและกำลังตรวจ) · วางต่อท้ายบรรทัด .dq-entry (พี่น้องกัน ไม่ซ้อนใน .dq-entry)
+  var moveBtn = (!log.pending && String(log.id).indexOf('dq-pending-') !== 0)
+    ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(log.id) + '">⇄ ย้าย</button>' : '';
   if (log.timeOut) {
-    return '<div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' +
-      dqFmtDot(log.timeIn) + '-' + dqFmtDot(log.timeOut) + pendMark + '</div>';
+    return '<div class="dq-entry-line"><div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' +
+      dqFmtDot(log.timeIn) + '-' + dqFmtDot(log.timeOut) + pendMark + '</div>' + moveBtn + '</div>';
   }
   // รอบ 47: เวลาออกลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน · รอบ 50: เพิ่มปุ่ม ☕ พัก (ชื่อใหม่ คนละตัวกับปุ่มจบของรอบ 41) สำหรับแพทย์พักเที่ยง/เลิกตรวจ
-  return '<div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' + dqFmtDot(log.timeIn) + '-' + pendMark + '</div>' +
+  return '<div class="dq-entry-line"><div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' + dqFmtDot(log.timeIn) + '-' + pendMark + '</div>' + moveBtn + '</div>' +
     '<div class="dq-open"><span class="dq-timer" data-room="' + escHtml(log.room) + '">00:00</span> กำลังตรวจ' +
     '<span class="dq-auto-note">ปิดเวลาเองเมื่อคิวถัดไปเข้า</span>' +
     '<button type="button" class="dq-break-btn" data-room="' + escHtml(log.room) + '">☕ พัก / จบคิวนี้</button></div>';
@@ -9044,6 +9084,30 @@ function dqOnBreakClick(room) {
   var q = open.queue;
   dqEnqueueJob({ type: 'dqEnd', room: room, at: new Date().toISOString() });
   showToast('ปิดเวลา ' + q + ' ห้อง ' + room + ' แล้ว — เวลาพักไม่ถูกนับ');
+}
+// รอบ 58: แถบเลือกห้องปลายทางใต้แถว (ห้องอื่นทุกห้องของวันนี้) · ไม่ใช้ confirm/alert/prompt
+function dqMoveBarHtml(log, rooms) {
+  var btns = (rooms || []).filter(function (rm) { return rm.room !== log.room; }).map(function (rm) {
+    return '<button type="button" class="dq-move-to" data-id="' + escHtml(log.id) + '" data-room="' + escHtml(rm.room) + '">ห้อง ' + escHtml(rm.room) + '</button>';
+  }).join('');
+  return '<div class="dq-move-bar" data-id="' + escHtml(log.id) + '"><span class="dq-move-label">ย้าย ' + escHtml(log.queue) + ' ไปห้อง' + (btns ? '' : ' — ไม่มีห้องอื่นในวันนี้') + '</span>' +
+    btns + '<button type="button" class="dq-move-close" aria-label="ปิด">✕</button></div>';
+}
+function dqOnMoveToggle(id) {
+  dqState.moveOpenId = (dqState.moveOpenId === id) ? '' : id;
+  dqRenderRoomCards(); // วาดเฉพาะการ์ด — ไม่แตะแถวอื่น/ตำแหน่งเลื่อน (การเปิดแถบไม่ใช่แถวเพิ่ม)
+}
+function dqOnMoveClick(id, room) {
+  if (!dqCanRecord()) return;
+  if (String(id).indexOf('dq-pending-') === 0) return; // ยังไม่ยืนยัน — ย้ายไม่ได้
+  var logs = (dqState.today && dqState.today.logs) || [];
+  var log = null;
+  logs.forEach(function (l) { if (!log && String(l.id) === String(id)) log = l; });
+  if (!log || log.status !== 'บันทึกแล้ว' || log.room === room) { dqState.moveOpenId = ''; dqRenderRoomCards(); return; }
+  var q = log.queue;
+  dqState.moveOpenId = '';
+  dqEnqueueJob({ type: 'dqMove', id: id, room: room, at: new Date().toISOString() });
+  showToast('ย้าย ' + q + ' ไปห้อง ' + room + ' แล้ว');
 }
 // รอบ 50: เวลาที่ห้องนี้เริ่มพัก — มีแถว 'บันทึกแล้ว' แต่ไม่มีแถวเปิด ⇒ timeOut ของแถวล่าสุด (logs ใหม่สุดก่อน) · ไม่ใช่ ⇒ null
 function dqRoomBreakSince(logs, room) {
@@ -9184,6 +9248,10 @@ function dqRenderRoomCards() {
     return;
   }
   var allLogs = (dqState.today && dqState.today.logs) || []; // ใหม่สุดขึ้นก่อน (desc) — ห้าม .reverse() ทับ array นี้
+  if (dqState.moveOpenId) { // รอบ 58: คงแถบที่เปิดอยู่ถ้าแถวยังอยู่และยังย้ายได้ · ไม่งั้นปิด
+    var keepMove = allLogs.some(function (l) { return String(l.id) === String(dqState.moveOpenId) && l.status === 'บันทึกแล้ว' && !l.pending; });
+    if (!keepMove) dqState.moveOpenId = '';
+  }
   var openTimeByRoom = {};
   allLogs.forEach(function (log) {
     if (log.status === 'บันทึกแล้ว' && !log.timeOut) openTimeByRoom[log.room] = log.timeIn;
@@ -9227,7 +9295,7 @@ function dqRenderRoomCards() {
       entries.forEach(function (item) {
         var row = document.createElement('div');
         row.className = 'dq-card-row';
-        row.innerHTML = dqEntryCellHtml(item);
+        row.innerHTML = dqEntryCellHtml(item) + ((dqState.moveOpenId && String(item.log.id) === String(dqState.moveOpenId) && item.log.status !== 'ยกเลิก') ? dqMoveBarHtml(item.log, rooms) : '');
         list.appendChild(row);
       });
     }
@@ -9289,6 +9357,15 @@ function dqRenderRoomCards() {
   });
   container.querySelectorAll('.dq-break-btn').forEach(function (btn) { // รอบ 50
     btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnBreakClick(btn.getAttribute('data-room')); });
+  });
+  container.querySelectorAll('.dq-move-btn').forEach(function (btn) { // รอบ 58
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnMoveToggle(btn.getAttribute('data-id')); });
+  });
+  container.querySelectorAll('.dq-move-to').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnMoveClick(btn.getAttribute('data-id'), btn.getAttribute('data-room')); });
+  });
+  container.querySelectorAll('.dq-move-close').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqState.moveOpenId = ''; dqRenderRoomCards(); });
   });
   // รอบ 51: เลื่อนรายการในการ์ดไปคิวล่าสุด (ล่างสุด) · รอบ 56: เฉพาะห้องที่วาดครั้งแรก/ล่างสุดอยู่แล้ว/มีแถวเพิ่ม — ห้องที่เลื่อนขึ้นไปดูอยู่คงตำแหน่งเดิม
   container.querySelectorAll('.dq-card').forEach(function (card) {
