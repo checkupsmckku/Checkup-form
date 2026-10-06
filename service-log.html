@@ -3352,7 +3352,12 @@ function updatePointBanner() {
   if (!banner) return;
   if (!STATE.point) { banner.hidden = true; return; }
   var topics = currentPointTopics();
-  banner.textContent = topics.length ? (STATE.point + ' · ' + topics.join(' · ')) : STATE.point;
+  // รอบ 59 (2026-10-06, เจ้าของสั่ง): จุดที่มี 'ตรวจสุขภาพ' แผงส่งตรวจพิเศษขึ้นต่อจากแผงตรวจสุขภาพ (รอบ 40)
+  // -> แถบหัวแสดง 'ส่งตรวจพิเศษ' ต่อจาก 'ตรวจสุขภาพ' ให้ตรงกับลำดับแผง (แค่ข้อความ — สีแถบยังคิดจาก topics เดิม)
+  var shown = topics.slice();
+  var checkupIdx = shown.indexOf('ตรวจสุขภาพ');
+  if (checkupIdx !== -1) shown.splice(checkupIdx + 1, 0, 'ส่งตรวจพิเศษ');
+  banner.textContent = shown.length ? (STATE.point + ' · ' + shown.join(' · ')) : STATE.point;
   banner.hidden = false;
   // สีตามแผงหัวข้อหลักตัวแรก (คำแรกในชีตที่แม็ปกับแผงได้จริง) — ไม่มี = data-svc="" -> สีกลาง (ไม่ตรงกับ [data-svc="..."] ตัวไหนเลย)
   // ⚠ ตั้งใจใช้ setAttribute('data-svc','') แทน removeAttribute() — DOM mock ขั้นต่ำของบางไฟล์เทสต์ไม่มี removeAttribute
