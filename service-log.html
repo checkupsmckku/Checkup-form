@@ -6008,9 +6008,24 @@ function programLabelForPrint(program) {
   return p;
 }
 
+// รอบ 55 (เจ้าของ 2026-10-06 "รายชื่อของวันก่อนยังค้างอยู่เมื่อเปิดเว็บขึ้นมาใหม่"): ช่องวันที่ที่ระบบตั้งให้ "ตามวันนี้"
+// เดิมตั้งเฉพาะตอนช่องว่าง ⇒ เปิดแท็บค้างข้ามคืน ช่องยังเป็นเมื่อวาน แล้วหน้ารายชื่อโหลดรายชื่อเมื่อวานขึ้นมา
+// กติกา: ช่องว่าง หรือค่ายังเป็นค่าที่ระบบตั้งให้ล่าสุด ⇒ เลื่อนเป็นวันนี้ · ผู้ใช้เลือกวันอื่นเอง ⇒ คงไว้ (ค่าไม่ตรงกับที่ระบบตั้ง)
+// คืน true เมื่อค่าเปลี่ยนจริง (ให้ผู้เรียกตัดสินว่าต้องโหลดใหม่ไหม)
+var AUTO_TODAY_VALUE_ = {}; // id ของช่อง -> ค่าที่ระบบตั้งให้ล่าสุด
+function ensureAutoToday_(id) {
+  var el = qs(id);
+  if (!el) return false;
+  var today = todayStr();
+  var auto = AUTO_TODAY_VALUE_[id];
+  if (el.value && el.value !== auto) return false; // ผู้ใช้เลือกวันเอง
+  AUTO_TODAY_VALUE_[id] = today;
+  if (el.value === today) return false;
+  el.value = today;
+  return true;
+}
 function ensureCuDateDefault() {
-  var el = qs('cuDate');
-  if (el && !el.value) el.value = todayStr();
+  return ensureAutoToday_('cuDate');
 }
 
 /* รอบ 28 (2026-09-23) W5 (ข้อ 8): เรียงรายชื่อตามคิว — C<เลข> ก่อน (ตามตัวเลข C1,C2,C3…C35) แล้ว "ไม่นัด <เลข>"
@@ -8409,9 +8424,21 @@ var PENDING_RECORDS = [];
 var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic'
 var PENDING_SELECTED = {}; // recordId -> true — ตัดออกเองเมื่อแถวไม่อยู่ในชุดที่แสดงแล้ว (ค้นหา/สลับชนิดเปลี่ยน)
 
+// รอบ 55: "วันที่ส่งออก" ถูกเขียนลงชีตตอนกดบันทึก ⇒ ค้างเป็นเมื่อวานเงียบ ๆ = ลงวันที่ผิด · ใช้กติกาเดียวกับ #cuDate
 function ensurePendingDateDefault() {
-  var el = qs('pendingSentDate');
-  if (el && !el.value) el.value = todayStr();
+  return ensureAutoToday_('pendingSentDate');
+}
+// รอบ 55: ข้ามวันขณะเปิดหน้ารายชื่อ/ค้างส่งออกผลค้างไว้ ⇒ เลื่อนวันที่ที่ระบบตั้งให้เป็นวันใหม่ + โหลดรายชื่อวันใหม่
+// เรียกจากตัวเช็คข้ามวันชุดเดียวกับจุดกัปตัน (นาทีละครั้ง · กลับมาที่แท็บ · focus) · กำลังพิมพ์อยู่ในหน้ารายชื่อ ⇒ รอรอบหน้า (ไม่ทับของที่พิมพ์ค้าง)
+function listDatesCheckDayRollover() {
+  var cuScr = qs('checkupTableScreen');
+  if (cuScr && cuScr.style.display === 'block') {
+    var ae = document.activeElement;
+    var typing = ae && cuScr.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.id !== 'cuDate';
+    if (!typing && ensureCuDateDefault()) loadCheckupTable(CU_VIEW);
+  }
+  var pdScr = qs('pendingScreen');
+  if (pdScr && pdScr.style.display === 'block' && ensurePendingDateDefault()) updatePendingBulkButton();
 }
 
 function pendingRowsForKind(kind) {
@@ -9776,6 +9803,11 @@ function dqInit() {
   window.addEventListener('pageshow', dqCheckDayRollover);
   window.addEventListener('focus', dqCheckDayRollover);
   if (!dqRolloverTimer) dqRolloverTimer = setInterval(dqCheckDayRollover, 60000);
+  // รอบ 55: หน้ารายชื่อ/ค้างส่งออกผล ใช้จังหวะเดียวกัน (ตัวจับเวลาแยกของตัวเอง — dqCheckDayRollover ออกทันทีถ้าไม่ได้เปิดจุดกัปตัน)
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') listDatesCheckDayRollover(); });
+  window.addEventListener('pageshow', listDatesCheckDayRollover);
+  window.addEventListener('focus', listDatesCheckDayRollover);
+  setInterval(listDatesCheckDayRollover, 60000);
   var map = { dqBtnWalkIn: dqOnWalkInClick, dqBtnOpenSetup: dqOpenSetup, dqBtnAddRoom: function () { dqAddSetupRow(); }, dqBtnSaveRooms: dqOnSaveRoomsClick,
     dqBtnCloseSetup: function () { dqShowView('board'); dqRerender(); }, dqAddDocBtn: dqOnAddDoctorClick };
   Object.keys(map).forEach(function (id) {
