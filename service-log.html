@@ -377,12 +377,26 @@
   /* เจ้าของสั่ง 2026-09-13: แถบสรุปต้องแยก 5 หมวด พร้อมจำนวนคนและยอดเงินของแต่ละหมวด
      ⚠ .summary-bar เดิมเป็น flex แนวนอน (justify-content: space-between) ⇒ ถ้าปล่อยไว้ ตารางย่อยจะถูกดันไปอยู่ข้าง ๆ
      จึงให้ .sum-breakdown เป็น grid ของตัวเอง และบังคับให้กินเต็มบรรทัดด้วย flex-basis: 100% */
+  /* รอบ 60 ข้อ 5.1/5.2: กริดตัวเลขชุดเดียว (.sum-grid) ใช้ทั้งแถบสรุป (.sum-breakdown) และการ์ดสรุป SUP OPD (.sup-opd-grid)
+     ป้ายชิดซ้ายคอลัมน์เดียวกัน · ตัวเลขชิดขวาคอลัมน์เดียวกัน (tabular-nums) · หน่วยคอลัมน์เดียวกัน — จุด "...." ในข้อความที่เจ้าของพิมพ์
+     มาไม่ใช่ความกว้างที่ต้องเว้นตาม · แถบสรุปมี 5 คอลัมน์ (ป้าย | จำนวน | คน | ยอด | บาท) การ์ด SUP OPD มี 3 (ป้าย | ตัวเลข | หน่วย) */
+  .sum-grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 6px; row-gap: 3px; align-items: baseline;
+    font-variant-numeric: tabular-nums;
+  }
+  .sum-grid .sum-name { text-align: left; overflow-wrap: anywhere; }
+  .sum-grid .sum-n, .sum-grid .sum-b { text-align: right; white-space: nowrap; }
+  .sum-grid .sum-u { text-align: left; white-space: nowrap; }
+  .sum-grid .sum-sep { display: block; grid-column: 1 / -1; height: 0; border-top: 1px solid var(--border); margin: 3px 0; }
+  .sum-grid .sum-strong { font-weight: 800; }
   .sum-breakdown {
     flex: 1 1 100%; margin-top: 6px; padding-top: 6px;
     border-top: 1px solid rgba(255,255,255,0.35);
-    display: grid; grid-template-columns: 1fr auto auto; gap: 3px 16px; font-weight: 700;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto; font-weight: 700;
   }
-  .sum-breakdown .sum-n, .sum-breakdown .sum-b { text-align: right; white-space: nowrap; }
+  .sum-breakdown .sum-b { padding-left: 14px; }
+  .sup-opd-grid { max-width: 420px; }
+  .sup-opd-grid .sum-n { min-width: 3ch; }
   @media print { .sum-breakdown { border-top-color: #999; } }
 
   .summary-bar {
@@ -764,6 +778,14 @@
   #progSetButtons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
   #progSetButtons .opt-btn { justify-content: center; text-align: center; font: inherit; color: inherit; }
   #progSetButtons .opt-btn.is-active { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
+  /* รอบ 60 ข้อ 2: แถวคิว [◀] [ช่อง] [▶] บรรทัดเดียว (ช่องยืดเต็ม ปุ่มสองข้างกว้างเท่าตัวอักษร) */
+  #queueRow .queue-step-row { display: flex; align-items: center; gap: 6px; }
+  #queueRow .queue-step-row input { flex: 1 1 auto; width: auto; min-width: 0; }
+  #queueRow .queue-step-row .btn { flex: 0 0 auto; min-height: 44px; padding: 6px 14px; }
+  /* รอบ 60 ข้อ 3: ปุ่ม MMG/U/S เดี่ยวในแผงใบรับรองแพทย์มี Lab — หน้าตาเดียวกับ #progSetButtons (opt-btn + is-active) */
+  #medLabSoloButtons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  #medLabSoloButtons .opt-btn { justify-content: center; text-align: center; font: inherit; color: inherit; }
+  #medLabSoloButtons .opt-btn.is-active { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
 
   /* รอบ 8 (B7) — ช่องลายเซ็นรับเอกสารบนใบพิมพ์รายชื่อตรวจสุขภาพรายวัน: กว้าง/สูงพอเซ็นจริงด้วยปากกาบนกระดาษ */
   .cu-sig-line { display: inline-block; width: 100%; min-width: 35mm; border-bottom: 1px solid #000; }
@@ -772,8 +794,6 @@
   .cu-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   /* รอบ 29 (S5) W5 (ข้อ 5): มุมมองการ์ดถูกลบทิ้งทั้งหมดแล้ว (renderCheckupCards/.cu-card* เดิม) แทนที่ด้วย
      "รายงานผลค้างส่งออก" (renderCheckupPendingReport) — ใช้คลาส report-table เดิมของรายงานรายเดือน ไม่ต้องมี CSS ใหม่ */
-  .cu-pending-report-title { margin: 14px 0 4px; }
-  .cu-pending-report-total { font-weight: 700; margin: 4px 0 14px; }
 
   /* เจ้าของสั่ง 2026-09-15: กล่องสรุป U/S + consult + แยกตามแพทย์ (no-print — ห้ามติดกระดาษ)
      ของหน้า "รายชื่อตรวจสุขภาพรายวัน" ดูฟังก์ชัน checkupExtraSummaryHtml() ในบล็อกสคริปต์ */
@@ -854,16 +874,24 @@
   @media (min-width: 1100px) {
     /* จอกว้างไม่มีทางพับได้ ไม่ต้องใช้ JS ฟัง resize — override ตรงนี้ชนะ data-collapsed เสมอ */
     .log-panel-body { display: block !important; }
-    .log-panel-head { cursor: default; }
-    .log-panel-arrow { display: none; }
+    /* รอบ 60 ข้อ 1: เดิมจอกว้าง cursor:default + ซ่อนลูกศร (พับไม่ได้) — เจ้าของสั่งให้ทุกแผงที่มีหัวกดได้พับได้ทุกจุด
+       (จุดคีย์ order เคส MMG อย่างเดียวต้องเลื่อนผ่านแผงตรวจสุขภาพที่กางค้าง) ⇒ หัวทุกอันกดได้ + เห็นลูกศร */
+    .log-panel-head { cursor: pointer; }
+    .log-panel-arrow { display: inline; }
     /* รอบ 57 (เจ้าของสั่ง "เช่นจุด order ให้ปิดวัคซีนที่อยู่ด้านล่างได้"): แผงกลุ่ม "บริการอื่น" ของจุดที่มีหัวข้อหลัก
        (applyPointLayout() ใส่ .log-panel-other) พับได้บนจอกว้างด้วย — specificity สูงกว่ากฎ !important ข้างบนจึงชนะ
        แผงหัวข้อหลัก/ผู้รับบริการ/จุดที่ไม่มีหัวข้อ ยังกางตลอดเหมือนเดิม */
     .log-panel.log-panel-other[data-collapsed="1"] .log-panel-body { display: none !important; }
     .log-panel.log-panel-other .log-panel-head { cursor: pointer; }
     .log-panel.log-panel-other .log-panel-arrow { display: inline; }
+    /* รอบ 60 ข้อ 1: data-user-collapsed="1" = ผู้ใช้กดพับเองบนจอกว้าง (แผงที่ไม่ใช่ .log-panel-other) —
+       specificity (0,3,0) ชนะกฎ .log-panel-body{display:block !important} (0,1,0) ข้างบน · ใช้ attribute แยกจาก
+       data-collapsed เพื่อไม่ให้ไปปนกับสถานะพับของจอแคบ/กลุ่มบริการอื่น · applyPointLayout() ล้างทิ้งทุกครั้ง */
+    .log-panel[data-user-collapsed="1"] .log-panel-body { display: none !important; }
+    .log-panel[data-user-collapsed="1"] .log-panel-arrow { display: inline-block; transform: rotate(-90deg); }
   }
-  .log-panel.log-panel-other[data-collapsed="1"] .log-panel-arrow { display: inline-block; transform: rotate(-90deg); }
+  .log-panel.log-panel-other[data-collapsed="1"] .log-panel-arrow,
+  #panelPerson[data-collapsed="1"] .log-panel-arrow { display: inline-block; transform: rotate(-90deg); }
 
   /* เจ้าของสั่ง 2026-09-15: ให้กล่องบริการแต่ละใบมีสีประจำประเภท มองปราดเดียวรู้ว่ากำลังกรอกกล่องไหน
      ตรวจสุขภาพ = ส้ม · ส่งตรวจพิเศษ = ชมพู · วัคซีน = เหลือง · ใบรับรองแพทย์ = ฟ้า
@@ -923,7 +951,7 @@
     table.cu-table td.cu-sig-cell { height: 12mm; vertical-align: bottom; }
     /* รอบ 8 (B7) — ใบพิมพ์รายชื่อตรวจสุขภาพ: บีบให้ลงหน้า A4 ได้มากที่สุดตามที่เจ้าของสั่ง */
     @page { size: A4; margin: 8mm; }
-    #cuTableWrap .scroll-x, #cuPendingReportWrap .scroll-x { overflow: visible !important; }
+    #cuTableWrap .scroll-x { overflow: visible !important; }
     #cuListWrap .rec-actions { display: none; }
     /* เจ้าของสั่ง 2026-09-15: ชื่อแพทย์/consult ต้องเห็นบนใบพิมพ์ (ห้ามใส่ no-print ให้ทั้งบล็อก .cu-note)
        ป้ายสถานะบันทึกไม่มีความหมายบนกระดาษ ⇒ ซ่อนอย่างเดียว · ช่องพิมพ์เป็นเส้นใต้ให้เขียนมือเติมได้เหมือนช่องอื่นในใบนี้ */
@@ -987,8 +1015,6 @@
     /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
-    .cu-pending-report-title { font-size: 12pt; }
-    .cu-pending-report-total { font-size: 10pt; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
        ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (reportDay/reportMonth/cuDate อยู่ใต้ .no-print
        ทั้งหมด) และ .cu-note-sentdate/.cu-note-resend-date มีกฎ print เดิมซ่อน native input + โชว์ span แทนอยู่แล้ว
@@ -1073,6 +1099,8 @@
   .dq-ds-num { font-size: 24px; font-weight: bold; color: var(--primary-dark); font-variant-numeric: tabular-nums; }
   .dq-ds-unit { font-size: 13px; font-weight: normal; color: var(--text-muted); }
   .dq-ds-done { margin-top: 8px; font-size: 14px; color: var(--accent); }
+  /* รอบ 60 ข้อ 9: เตือนคิวที่กัปตันกดแต่ไม่มีในกระดานสถิติ — โทนเดียวกับ .warning-box */
+  .dq-ds-unknown { margin-top: 8px; background: #FFF8E8; border: 1px solid #F0C040; color: #7A5A00; border-radius: 8px; padding: 8px 10px; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
   /* รอบ 54: รายการคิวที่ยังไม่พบแพทย์แสดงเลย (เลิก <details>) — ยาวแล้วเลื่อนในกล่อง หน้าไม่ยืด */
   .dq-ds-pending { margin-top: 8px; }
   .dq-ds-pending-title { font-size: 14px; font-weight: bold; color: var(--primary-dark); }
@@ -1181,9 +1209,13 @@
       <form id="logForm" class="log-grid no-print">
         <!-- คอลัมน์ 1: ผู้รับบริการ + ตรวจสุขภาพ -->
         <div class="log-col" id="logCol1">
-          <!-- แผง "ผู้รับบริการ" — ห้ามพับ (ต้องเห็นตลอด) -->
+          <!-- แผง "ผู้รับบริการ" — รอบ 60 ข้อ 1 (เจ้าของสั่ง 2026-10-07 "ทุกแผงพับได้"): พับได้ทุกขนาดจอ แต่ค่าตั้งต้นกางเสมอ
+               (ห้ามใส่ data-collapsed="1" ที่นี่) · ไม่อยู่ใน MOVABLE_PANEL_IDS_ (ไม่ถูกย้าย) · บันทึกไม่ผ่านเพราะ HN/ชื่อ/คิวว่าง ⇒ กางให้เอง -->
           <section class="log-panel" id="panelPerson">
-            <div class="log-panel-head-static"><span class="log-panel-title">ผู้รับบริการ</span></div>
+            <button type="button" class="log-panel-head" data-panel="panelPerson">
+              <span class="log-panel-title">ผู้รับบริการ</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
             <div class="log-panel-body">
               <!-- แถบร่าง (เดิมอยู่หน้าเมนูที่ถูกลบ) — ยุบบทบาทมาไว้ในแผงนี้ (SPEC 4.3) -->
               <div class="card draft-strip" id="draftStrip" hidden style="margin-bottom:10px;">
@@ -1192,8 +1224,14 @@
               <div id="personCard">
                 <div id="queueRow">
                   <label class="field-label" for="queueSelect" id="queueLabel">คิว</label>
-                  <input type="text" id="queueSelect" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
+                  <!-- รอบ 60 ข้อ 2: ระบบไม่เติมคิวให้เองอีกแล้ว — แนะนำที่ placeholder/hint แล้วให้เจ้าหน้าที่กด ▶ / ปุ่มลูกศรขวา / ปัดขวา เลือกเอง -->
+                  <div class="queue-step-row">
+                    <button type="button" class="btn secondary small" id="queuePrev" aria-label="คิวก่อนหน้า">◀</button>
+                    <input type="text" id="queueSelect" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
+                    <button type="button" class="btn secondary small" id="queueNext" aria-label="คิวถัดไป">▶</button>
+                  </div>
                   <datalist id="queueOptions"></datalist>
+                  <div id="queueSuggestHint" class="field-hint-auto" hidden></div>
                 </div>
 
                 <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
@@ -1399,6 +1437,11 @@
             </button>
             <div class="log-panel-body">
               <section id="svcMedcertLab">
+                <!-- รอบ 60 ข้อ 3: MMG/U/S Breast เดี่ยว (ราคาคงที่ MEDCERT_LAB_SOLO ฝั่งเว็บ — ไม่อยู่ในแท็บราคา) · สถานะปุ่ม (is-active) คำนวณจาก DOM ใน recalcTotals() -->
+                <div id="medLabSoloButtons">
+                  <button type="button" class="opt-btn" data-solo="mmg" aria-pressed="false">MMG เดี่ยว 3,243 บาท</button>
+                  <button type="button" class="opt-btn" data-solo="us_breast" aria-pressed="false">U/S Breast เดี่ยว 1,275 บาท</button>
+                </div>
                 <div class="row">
                   <div>
                     <label class="field-label" for="medCertLabAmount">ใบรับรองแพทย์มี Lab — ยอดเงิน (กรอกเอง)</label>
@@ -1447,8 +1490,9 @@
       <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ 0 คน · ยอดเงินรวม 0 บาท</div>
 
       <div class="card" id="specialTodaySummaryCard">
-        <h2>สรุปส่งตรวจพิเศษวันนี้</h2>
-        <p class="muted">นับเฉพาะจุดบริการที่กำลังเปิดใช้งานอยู่ตอนนี้เท่านั้น (จุดอื่นไม่นับรวมในนี้)</p>
+        <h2>สรุป SUP OPD</h2>
+        <p class="muted" style="margin:0 0 2px;font-weight:700;">Nursing productivity</p>
+        <p class="muted">นับจากรายการของจุดนี้ วันนี้ (ไม่นับที่ยกเลิก)</p>
         <div id="specialTodaySummaryBody"></div>
       </div>
 
@@ -1540,7 +1584,6 @@
         <div class="row" style="margin-top:10px;">
           <button type="button" class="btn" id="btnCuLoad">ดูรายชื่อ</button>
           <button type="button" class="btn secondary" id="btnCuViewTable">📋 แบบตาราง</button>
-          <button type="button" class="btn secondary" id="btnCuViewPending">📮 ค้างส่งออกผล</button>
         </div>
         <div class="row" style="margin-top:6px;">
           <button type="button" class="btn secondary small no-print" id="btnCuPrint">🖨 พิมพ์</button>
@@ -1552,7 +1595,6 @@
            ผูกกับทุกช่อง .cu-note-doctor ผ่าน list="doctorNameOptions" — อัปเดตทุกครั้งที่ renderCheckupList() ทำงาน -->
       <datalist id="doctorNameOptions"></datalist>
       <div id="cuTableWrap"></div>
-      <div id="cuPendingReportWrap" hidden></div>
       <div id="cuListWrap" hidden></div>
     </div>
   </div>
@@ -1568,6 +1610,16 @@
       <div class="row no-print" id="pendingKindSwitch" style="margin-top:10px;">
         <button type="button" class="btn small" id="btnPendingKindCheckup" data-pending-kind="checkup">ผลตรวจสุขภาพ</button>
         <button type="button" class="btn small secondary" id="btnPendingKindPelvic" data-pending-kind="pelvic">ผลตรวจมะเร็งปากมดลูก</button>
+      </div>
+
+      <!-- รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ (ก่อนช่องค้นหา) — ว่าง = ทุกวัน · กรองฝั่งเว็บ (backend pending คืนทุกวันอยู่แล้ว)
+           ⚠ ต่างจาก #pendingSentDate: ห้ามเข้า ensureAutoToday_/ตัวเช็คข้ามวัน (ค่าว่างต้องเป็น "ทุกวัน" ไม่ใช่ถูกเติมเป็นวันนี้เอง) -->
+      <div class="no-print" id="pendingFilterDateRow">
+        <label class="field-label" for="pendingFilterDate">วันที่รับบริการ</label>
+        <div class="row">
+          <input type="date" id="pendingFilterDate">
+          <button type="button" class="btn secondary small" id="pendingFilterAll">ทุกวัน</button>
+        </div>
       </div>
 
       <label class="field-label no-print" for="pendingSearch">ค้นหา HN หรือชื่อ-สกุล</label>
@@ -1659,7 +1711,7 @@
             <button type="button" class="btn small secondary" id="dqBtnWalkIn">＋ คิวไม่นัด</button>
           </div>
           <div id="dqSuggest" class="dq-suggest" role="listbox" aria-label="คิววันนี้ที่ยังไม่พบแพทย์" hidden></div>
-          <div class="muted" style="margin-top:8px;font-size:13px;">เวลาออกของคิวก่อนจะลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน · แพทย์พักเที่ยง/เลิกตรวจ กด ☕ ที่ห้องนั้น</div>
+          <div class="muted" style="margin-top:8px;font-size:13px;">กด ＋ เมื่อคนก่อนหน้าออกจากห้องแล้ว (ส่งไปนั่งรอหน้าห้องยังไม่ต้องกด) · แพทย์พักเที่ยง/เลิกตรวจ กด ☕ ที่ห้องนั้น</div>
         </div>
 
         <!-- รอบ 45: สรุปเช้า/บ่าย/ยังไม่พบแพทย์ (เติมโดย dqRenderDaySummary) -->
@@ -1810,7 +1862,12 @@ var SPECIAL_SENDS = [
   { id: 'ct_lowdose', name: 'CT Low dose', group: 'checkup', prepLabel: null },
   // รอบ 29 (S7) W7 (ข้อ 7): U/S Breast — ต่อท้ายสุดเท่านั้น ห้ามแก้/เรียงใหม่ของเดิม 7 ตัวข้างบน · ต้องตรงกับ S1
   // ของ สถิติบริการ.js เป๊ะ · SPEC CORRECTION 2026-09-24: เพศชายส่งตรวจ U/S Breast ไม่ได้เหมือน MMG (ล็อกเหมือนกัน)
-  { id: 'us_breast', name: 'U/S Breast', group: 'checkup', prepLabel: 'ส่ง line แล้ว' }
+  { id: 'us_breast', name: 'U/S Breast', group: 'checkup', prepLabel: 'ส่ง line แล้ว' },
+  // รอบ 60 ข้อ 5.3: EKG / ตรวจสายตา / ตาบอดสี — "นับยอดอย่างเดียว" เหมือน inbody (prepLabel: null ⇒ ไม่มีรายชื่อบนกระดาน
+  // spBoard ไม่เข้าด่านเพศ) ต่อท้ายสุดเท่านั้น ห้ามแก้/เรียงใหม่ของเดิม 8 ตัว · ต้องตรงกับ สถิติบริการ.js เป๊ะ
+  { id: 'ekg', name: 'EKG (คลื่นไฟฟ้าหัวใจ)', group: 'medcert', prepLabel: null },
+  { id: 'eye_test', name: 'ตรวจสายตา', group: 'medcert', prepLabel: null },
+  { id: 'color_blind', name: 'ตาบอดสี', group: 'medcert', prepLabel: null }
 ];
 
 // รอบ 7 (B7) — สร้างตัวช่วยค้นหาแบบเดียวกับฝั่งเซิร์ฟเวอร์ (SPECIAL_SEND_BY_ID ใน สถิติบริการ.js)
@@ -1837,6 +1894,10 @@ var SPECIAL_ICONS = {
 // รอบ 29 (S7) W7 (ข้อ 7): U/S Breast ไม่มีการ์ด/แท็บของตัวเองในกระดาน spBoard (รวมอยู่ในแท็บ mmg) แต่เผื่อไว้ถ้ามีจุด
 // อื่นในอนาคตต้องใช้ไอคอนตาม id — ใช้ไอคอนของ mmg ซ้ำตามที่เจ้าของสั่ง
 SPECIAL_ICONS.us_breast = SPECIAL_ICONS.mmg;
+// รอบ 60 ข้อ 5.3: ไอคอน SVG คงที่ของ 3 ตัวใหม่ (viewBox 0 0 48 48 · #1A1E40 / #2C7BC4 / #D5E9FB) — ไม่ได้ขึ้นบนกระดาน (นับยอดอย่างเดียว) แต่ให้ครบชุดตาม id
+SPECIAL_ICONS.ekg = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="40" height="32" rx="4" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><path d="M8 26 L16 26 L19 16 L24 34 L28 20 L31 26 L40 26" fill="none" stroke="#2C7BC4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+SPECIAL_ICONS.eye_test = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M4 24 C11 12 37 12 44 24 C37 36 11 36 4 24 Z" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="24" r="7" fill="#2C7BC4" stroke="#1A1E40" stroke-width="2"/><circle cx="24" cy="24" r="2.5" fill="#1A1E40"/></svg>';
+SPECIAL_ICONS.color_blind = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="18" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><circle cx="17" cy="19" r="4" fill="#2C7BC4"/><circle cx="30" cy="18" r="3" fill="#1A1E40"/><circle cx="20" cy="30" r="3.5" fill="#1A1E40"/><circle cx="31" cy="30" r="4.5" fill="#2C7BC4"/></svg>';
 
 // ===================== รอบ 35 (2026-09-30) — CA breast: MMG กับ U/S Breast เลือกได้อย่างเดียว =====================
 // "เลือก mmg ขึ้นแค่ DF XSMC check up 363 จะไม่มีการเลือก mmg + u/s เพราะ mmg มี u/s อยู่แล้ว" (เจ้าของสั่งเอง)
@@ -1942,6 +2003,16 @@ function spBoardSortPeople(rows, activeId) {
     if (ga !== gb) return ga - gb;
     return String(a.time || '').localeCompare(String(b.time || ''));
   });
+}
+
+// รอบ 60 ข้อ 4: แท็บ mmg (CA BREAST) เรียงตาม rec.time จากน้อยไปมากอย่างเดียว — MMG กับ U/S ปนในรายชื่อเดียว
+// ไม่จัดกลุ่ม "ส่งรายชื่อแล้ว" ไว้ท้าย ไม่แยกกลุ่ม MMG/U/S · เวลาเท่ากัน ⇒ คงลำดับเดิม (เรียงเสถียรด้วย index เอง ไม่พึ่งเอนจิน)
+function spBoardSortByTime_(rows) {
+  return (rows || []).map(function (r, i) { return { r: r, i: i }; }).sort(function (a, b) {
+    var ta = String(a.r.time || ''), tb = String(b.r.time || '');
+    if (ta !== tb) return ta < tb ? -1 : 1;
+    return a.i - b.i;
+  }).map(function (x) { return x.r; });
 }
 
 // ป้ายสถานะไล่จากขั้นที่ไปไกลสุด: back > sent > prep(ส่งรายชื่อแล้ว) > ยังไม่ส่งรายชื่อ
@@ -2084,6 +2155,7 @@ function calcGrandTotal(checkupTotal, extraTotal, vaccineTotal, medCertTotal) {
    4. STATE
    ========================================================================= */
 var STATE = {
+  queueSuggestion: '', // รอบ 60 ข้อ 2: คิวที่ "แนะนำ" (ไม่เขียนลงช่อง) — คำนวณใน maybeSuggestNextCheckupQueue()
   staffKey: '',
   point: '',
   points: SERVICE_POINTS_DEFAULT.slice(),
@@ -2422,6 +2494,14 @@ var CHECKUP_QUEUE_SLOTS = (function () {
 // แก้ 2026-09-08: queueSelect เปลี่ยนจากแท็ก select เดิม เป็น <input list="queueOptions"> ตามคำสั่งเจ้าของ (พิมพ์เองได้)
 // ⇒ ตัวเลือกในดรอปดาวน์ (datalist) เป็นแค่ "คำแนะนำ" ไม่ใช่รายการปิด ไม่ต้องมี "— ไม่ระบุ —" อีกแล้ว (ช่องว่าง = ไม่ระบุอยู่แล้ว)
 // และไม่ต้อง prepend ค่าที่อยู่นอกช่วง 1..40 เข้าไปในรายการอีก เพราะ input เก็บค่าที่พิมพ์/ตั้งไว้เองได้โดยไม่ต้องมี option คู่กัน
+// รอบ 60 ข้อ 2: รายการช่องคิวของ prefix (แหล่งเดียวของ datalist + ปุ่ม ◀ ▶) — C = CHECKUP_QUEUE_SLOTS · อื่น = prefix+1..40
+function queueSlotsForPrefix_(prefix) {
+  if (prefix === 'C') return CHECKUP_QUEUE_SLOTS;
+  var slots = [];
+  for (var i = 1; i <= 40; i++) slots.push(prefix + i);
+  return slots;
+}
+
 function buildQueueOptions(prefix, forceValue) {
   var sel = qs('queueSelect');
   var list = qs('queueOptions');
@@ -2430,14 +2510,8 @@ function buildQueueOptions(prefix, forceValue) {
   if (list) {
     list.innerHTML = '';
     // รอบ 29 W2: prefix 'C' ใช้ CHECKUP_QUEUE_SLOTS (C1..C35 แล้ว ไม่นัด 1..5) · prefix อื่นคงเดิม 1..40
-    var slots;
-    if (prefix === 'C') {
-      slots = CHECKUP_QUEUE_SLOTS;
-    } else {
-      slots = [];
-      for (var i = 1; i <= 40; i++) slots.push(prefix + i);
-    }
-    slots.forEach(function (val) {
+    // รอบ 60 ข้อ 2: ย้ายไปที่ queueSlotsForPrefix_() ที่เดียว — ปุ่ม ◀ ▶ (stepQueue_) ใช้รายการเดียวกับ datalist
+    queueSlotsForPrefix_(prefix).forEach(function (val) {
       var opt = document.createElement('option');
       opt.value = val;
       list.appendChild(opt);
@@ -2543,32 +2617,85 @@ function syncQueuePrefix() {
   maybeSuggestNextCheckupQueue();
 }
 
-// รอบ 29 (S2) W2 (ข้อ 2): เรียกจาก syncQueuePrefix() เท่านั้น (ครอบทั้ง 2 จุดที่สเปกระบุ: ตอนเปลี่ยน prefix เป็น C
-// และหลังบันทึกสำเร็จ/ล้างฟอร์มแล้ว prefix เป็น C เพราะ showScreen('log') เรียก syncQueuePrefix() อยู่แล้ว)
-// ผู้ใช้พิมพ์/เลือกคิวเองแล้ว (ช่องไม่ว่าง) ⇒ ห้ามเขียนทับ
+// รอบ 29 (S2) W2 (ข้อ 2): เรียกจาก syncQueuePrefix() (ครอบทั้ง 2 จุดที่สเปกระบุ: ตอนเปลี่ยน prefix เป็น C และหลังบันทึกสำเร็จ/
+// ล้างฟอร์มแล้ว prefix เป็น C เพราะ showScreen('log') เรียก syncQueuePrefix() อยู่แล้ว)
+// รอบ 60 ข้อ 2 (เจ้าของสั่ง): ห้ามเขียน #queueSelect.value เองอีก — เดิมเติมคิว C ให้เคสใบรับรองมี Lab (ไม่ต้องมีคิว) แล้วเจ้าหน้าที่เผลอ
+// บันทึกคิวผิด ⇒ คำนวณ "คำแนะนำ" ด้วยตรรกะเดิมทุกอย่าง (เฉพาะรายใหม่ · prefix C) เก็บใน STATE.queueSuggestion
+// (ไม่เข้าเงื่อนไข ⇒ '') แล้ววาด placeholder/hint ผ่าน renderQueueSuggestion_() — เจ้าหน้าที่กด ▶ / → / ปัดขวา เลือกเอง
+// ⚠ คำนวณทุกครั้งแม้ช่องมีค่าแล้ว (hint ซ่อนเองเมื่อช่องมีค่า) เพื่อให้ล้างช่องแล้วคำแนะนำกลับมาโดยไม่ต้องคำนวณใหม่
 function maybeSuggestNextCheckupQueue() {
-  if (STATE.editingId) return;
-  if (draftQueuePrefix() !== 'C') return;
-  var sel = qs('queueSelect');
-  if (!sel || sel.value) return;
-  // รอบ 34 (2026-09-30) W3 (ข้อ 3): ต้องนับคิวของรายการ kind:'log' ที่ยัง pending/failed อยู่ใน SAVE_QUEUE ด้วย
-  // (บันทึกไม่รอ network แล้ว ⇒ ตอนแนะนำคิวถัดไป แถวที่เพิ่งกดบันทึกไปอาจยังไม่มาถึง LAST_TODAY_RECORDS)
-  // ไม่งั้นจะเสนอเลขคิวซ้ำกับคนที่เพิ่งกดบันทึกไปเมื่อครู่ — suggestNextCheckupQueue() เองยังเป็น pure function เดิม
-  // (ไม่แตะ ไม่งั้น test_round29_web.js ที่เรียกมันตรง ๆ ด้วย records ธรรมดาจะพัง) แค่ประกอบ records ที่ส่งเข้าไปให้ครบ
-  var combined = LAST_TODAY_RECORDS.slice();
-  // รอบ 37 (W5, 2026-09-30): นับคิวจาก CU_CACHE.records ของวันนี้ด้วยถ้ามี (กันแนะนำคิวที่จุดอื่นใช้ไปแล้ว) —
-  // ไม่แตะ suggestNextCheckupQueue() เอง (ยังเป็น pure function เดิม) แค่ประกอบ records ที่ส่งเข้าไปให้ครบขึ้นอีกแหล่ง
-  if (typeof CU_CACHE !== 'undefined' && CU_CACHE.records && CU_CACHE.key === todayStr()) {
-    combined = combined.concat(CU_CACHE.records);
-  }
-  (typeof SAVE_QUEUE !== 'undefined' ? SAVE_QUEUE : []).forEach(function (it) {
-    // รอบ 38: 'checking' (เน็ตหลุดแล้วกำลังตรวจว่าลงชีตหรือยัง) ถือเป็นรายการค้างเหมือน pending ทุกที่
-    if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue) {
-      combined.push({ queue: it.payload.queue, status: '' });
+  STATE.queueSuggestion = '';
+  if (!STATE.editingId && draftQueuePrefix() === 'C') {
+    // รอบ 34 (2026-09-30) W3 (ข้อ 3): ต้องนับคิวของรายการ kind:'log' ที่ยัง pending/failed อยู่ใน SAVE_QUEUE ด้วย
+    // (บันทึกไม่รอ network แล้ว ⇒ ตอนแนะนำคิวถัดไป แถวที่เพิ่งกดบันทึกไปอาจยังไม่มาถึง LAST_TODAY_RECORDS)
+    // ไม่งั้นจะเสนอเลขคิวซ้ำกับคนที่เพิ่งกดบันทึกไปเมื่อครู่ — suggestNextCheckupQueue() เองยังเป็น pure function เดิม
+    // (ไม่แตะ ไม่งั้น test_round29_web.js ที่เรียกมันตรง ๆ ด้วย records ธรรมดาจะพัง) แค่ประกอบ records ที่ส่งเข้าไปให้ครบ
+    var combined = LAST_TODAY_RECORDS.slice();
+    // รอบ 37 (W5, 2026-09-30): นับคิวจาก CU_CACHE.records ของวันนี้ด้วยถ้ามี (กันแนะนำคิวที่จุดอื่นใช้ไปแล้ว) —
+    // ไม่แตะ suggestNextCheckupQueue() เอง (ยังเป็น pure function เดิม) แค่ประกอบ records ที่ส่งเข้าไปให้ครบขึ้นอีกแหล่ง
+    if (typeof CU_CACHE !== 'undefined' && CU_CACHE.records && CU_CACHE.key === todayStr()) {
+      combined = combined.concat(CU_CACHE.records);
     }
-  });
-  var suggestion = suggestNextCheckupQueue(combined);
-  if (suggestion) sel.value = suggestion;
+    (typeof SAVE_QUEUE !== 'undefined' ? SAVE_QUEUE : []).forEach(function (it) {
+      // รอบ 38: 'checking' (เน็ตหลุดแล้วกำลังตรวจว่าลงชีตหรือยัง) ถือเป็นรายการค้างเหมือน pending ทุกที่
+      if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue) {
+        combined.push({ queue: it.payload.queue, status: '' });
+      }
+    });
+    STATE.queueSuggestion = suggestNextCheckupQueue(combined) || '';
+  }
+  renderQueueSuggestion_();
+}
+
+// รอบ 60 ข้อ 2: วาดคำแนะนำคิว — ช่องว่าง + มีคำแนะนำ ⇒ placeholder "แนะนำ C12 — กด ▶ หรือ →" + hint · ช่องมีค่า/ไม่มีคำแนะนำ/โหมดแก้ไข
+// ⇒ ซ่อน hint + placeholder เดิม · ไม่เขียนค่าในช่องเด็ดขาด (เรียกจาก recalcTotals() ด้วย เพราะผู้ใช้พิมพ์/ล้างช่องเอง)
+var QUEUE_PLACEHOLDER_DEFAULT_ = 'เช่น C1 (พิมพ์เองได้)';
+function renderQueueSuggestion_() {
+  var sel = qs('queueSelect');
+  var hint = qs('queueSuggestHint');
+  if (!sel) return;
+  var sug = (!STATE.editingId && STATE.queueSuggestion) ? STATE.queueSuggestion : '';
+  var empty = !String(sel.value || '').trim();
+  if (sug && empty) {
+    sel.placeholder = 'แนะนำ ' + sug + ' — กด ▶ หรือ →';
+    if (hint) {
+      hint.textContent = 'คิวถัดไปที่แนะนำ: ' + sug + ' (กด ▶ / ปุ่มลูกศรขวา / ปัดขวา เพื่อใช้)';
+      hint.hidden = false;
+    }
+  } else {
+    sel.placeholder = QUEUE_PLACEHOLDER_DEFAULT_;
+    if (hint) { hint.hidden = true; hint.textContent = ''; }
+  }
+}
+
+// รอบ 60 ข้อ 2: ตรรกะเลื่อนคิวแบบ pure (เทสต์เรียกตรง) — คืนค่าใหม่ หรือ null = ไม่เปลี่ยน
+// ช่องว่าง: ทั้ง ▶ และ ◀ ⇒ คำแนะนำ (ไม่มี ⇒ ช่องแรกของ prefix) · ค่าตรงช่องในรายการ (เทียบด้วย normCheckupQueueForCompare_):
+// ▶ ช่องถัดไป ◀ ช่องก่อนหน้า สุดขอบ ⇒ null · ค่าที่พิมพ์เองไม่อยู่ในรายการ ⇒ null
+function stepQueueValue_(cur, dir, suggestion, slots) {
+  if (!slots || !slots.length) return null;
+  var c = String(cur || '').trim();
+  if (!c) return suggestion || slots[0];
+  var norm = normCheckupQueueForCompare_(c);
+  var idx = -1;
+  for (var i = 0; i < slots.length; i++) {
+    if (normCheckupQueueForCompare_(slots[i]) === norm) { idx = i; break; }
+  }
+  if (idx < 0) return null;
+  var next = idx + (dir > 0 ? 1 : -1);
+  if (next < 0 || next >= slots.length) return null;
+  return slots[next];
+}
+
+function stepQueue_(dir) {
+  var sel = qs('queueSelect');
+  if (!sel) return;
+  var sug = (!STATE.editingId && STATE.queueSuggestion) ? STATE.queueSuggestion : '';
+  var nv = stepQueueValue_(sel.value, dir, sug, queueSlotsForPrefix_(draftQueuePrefix()));
+  if (nv === null || nv === sel.value) { renderQueueSuggestion_(); return; }
+  sel.value = nv;
+  // dispatch 'input' ให้ recalcTotals() และตัวเช็คคิวซ้ำเดิมทำงานเหมือนผู้ใช้พิมพ์เอง
+  sel.dispatchEvent(new Event('input', { bubbles: true }));
+  renderQueueSuggestion_();
 }
 
 // รอบ 9 (ก้อน B, B7) — ตัวรวม syncQueuePrefix()+recalcTotals() สำหรับ event ของช่อง "กำหนดบริการ" เท่านั้น
@@ -2606,6 +2733,77 @@ function guardBothBreastCheck_(id) {
   }
 }
 function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastCheck_(id); onServiceFieldChange(); }
+
+/* รอบ 60 ข้อ 3 (เจ้าของสั่ง): MMG เดี่ยว 3,243 / U/S Breast เดี่ยว 1,275 ในแผง "ใบรับรองแพทย์มี Lab" — เคสคีย์ order MMG/U/S อย่างเดียว
+   (บันทึกในใบรับรองมี Lab) ราคาเป็นค่าคงที่ฝั่งเว็บ (ไม่อยู่ในแท็บราคา) · backend รับ medCertLabAmount เป็นตัวเลขอิสระอยู่แล้ว
+   ⇒ ปุ่มแค่ "ติ๊ก sp_reg_<id> + ใส่ยอด lab" ผ่านเส้นทางเดิมทั้งหมด (onSpecialRegChange → ด่านเพศชาย/สองอย่าง/สถานะเดิม) */
+var MEDCERT_LAB_SOLO = [
+  { id: 'mmg', label: 'MMG เดี่ยว', price: 3243 },
+  { id: 'us_breast', label: 'U/S Breast เดี่ยว', price: 1275 }
+];
+function medLabSoloItem_(id) {
+  for (var i = 0; i < MEDCERT_LAB_SOLO.length; i++) if (MEDCERT_LAB_SOLO[i].id === id) return MEDCERT_LAB_SOLO[i];
+  return null;
+}
+// active ⇔ ไม่มีโปรแกรมตรวจสุขภาพ และ sp_reg_<id> ติ๊กอยู่ และ medCertLabAmount = ราคาของมัน (คำนวณจาก DOM ล้วน ๆ)
+function isMedLabSoloActive_(item, checkupOn) {
+  if (!item || checkupOn) return false;
+  var cb = qs('sp_reg_' + item.id);
+  var amtEl = qs('medCertLabAmount');
+  if (!cb || !amtEl || !cb.checked) return false;
+  return (parseInt(amtEl.value, 10) || 0) === item.price;
+}
+function updateMedLabSoloButtons_(checkupOn) {
+  MEDCERT_LAB_SOLO.forEach(function (item) {
+    var btn = document.querySelector('#medLabSoloButtons [data-solo="' + item.id + '"]');
+    if (!btn) return;
+    var on = isMedLabSoloActive_(item, checkupOn);
+    btn.classList.toggle('is-active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+function setMedLabAmount_(n) {
+  var amtEl = qs('medCertLabAmount');
+  if (!amtEl) return;
+  amtEl.value = String(n);
+  // dispatch ทั้ง input+change ให้ยอดรวม/สรุปแผง/คิว prefix ทำงานตามเส้นเดิม
+  amtEl.dispatchEvent(new Event('input', { bubbles: true }));
+  amtEl.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function onMedLabSoloClick_(id) {
+  var item = medLabSoloItem_(id);
+  if (!item) return;
+  var cb = qs('sp_reg_' + id);
+  if (!cb) return;
+  // กดปุ่มที่ active ⇒ ปลดติ๊ก (ถ้าด่านเดิมติ๊กกลับ เช่นแถวมีสถานะอยู่ ⇒ ไม่แตะยอด) แล้วตั้งยอดเป็น 0
+  if (isMedLabSoloActive_(item, isCheckupOn())) {
+    cb.checked = false;
+    onSpecialRegChange(id);
+    if (cb.checked) return;
+    setMedLabAmount_(0);
+    return;
+  }
+  // 1) บังคับ HN + ชื่อก่อน เหมือนส่งตรวจพิเศษ (ข้อความเดียวกับตัวล็อกแผง)
+  var hn = (qs('patientHn').value || '').trim();
+  var nm = (qs('patientName').value || '').trim();
+  if (!hn || !nm) { showToast('กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกตรวจสุขภาพ/ส่งตรวจพิเศษได้'); return; }
+  // 2) เคสตรวจสุขภาพ ⇒ MMG/U/S ไปที่แผงส่งตรวจพิเศษ (ไม่ใช่ราคาเดี่ยว)
+  if (isCheckupOn()) { showToast('เคสตรวจสุขภาพ เลือก MMG / U/S ที่แผงส่งตรวจพิเศษ'); return; }
+  // 3) ปลดติ๊กอีกตัวของคู่ (mmg ↔ us_breast) — ด่าน guardSpecialRegUncheck ติ๊กกลับ ⇒ หยุด
+  var otherId = (id === 'mmg') ? 'us_breast' : 'mmg';
+  var otherCb = qs('sp_reg_' + otherId);
+  if (otherCb && otherCb.checked) {
+    otherCb.checked = false;
+    onSpecialRegChange(otherId);
+    if (otherCb.checked) return;
+  }
+  // 4) ติ๊กตัวนี้ผ่านด่านเดิม (เพศชาย/สองอย่าง) — ถ้าถูกติ๊กกลับเป็นไม่ติ๊ก ⇒ หยุด ไม่เติมราคา
+  cb.checked = true;
+  onSpecialRegChange(id);
+  if (!cb.checked) return;
+  // 5) ยอด lab = ราคาของมัน
+  setMedLabAmount_(item.price);
+}
 
 /* เจ้าของสั่ง 2026-09-11: HN ต้องเป็นตัวอักษรอังกฤษ 2 ตัว + ตัวเลข 4 หลัก (เช่น AB1234) ผิดรูปแบบห้ามบันทึก
    ⚠ บังคับฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — แถวเก่าจำนวนมากมี HN คนละรูปแบบ
@@ -3375,6 +3573,13 @@ function updatePointBanner() {
 function applyPointLayout() {
   capturePanelHomePositions_();
   updatePointBanner();
+  // รอบ 60 ข้อ 1: #panelPerson พับได้ทุกจอ (ไม่อยู่ใน MOVABLE_PANEL_IDS_) — ล้างเปลี่ยนจุด/ล้างฟอร์ม ⇒ กางคืนเสมอ
+  expandPersonPanel_();
+  // รอบ 60 ข้อ 1: ล้างสถานะ "ผู้ใช้พับเองบนจอกว้าง" ทุกแผง — ล้างฟอร์ม/เปลี่ยนจุดแล้วรายถัดไปต้องเห็นแผงหลักกางเหมือนเดิม
+  MOVABLE_PANEL_IDS_.forEach(function (id) {
+    var upEl = qs(id);
+    if (upEl && upEl.removeAttribute) upEl.removeAttribute('data-user-collapsed'); // guard: stub DOM ของเทสต์เก่าไม่มี removeAttribute
+  });
   // รอบ 57: ล้างป้าย "บริการอื่น" ก่อน แล้วค่อยใส่ให้แผงใน remaining ข้างล่าง (CSS ใช้ตัดสินว่าพับได้บนจอกว้าง)
   MOVABLE_PANEL_IDS_.forEach(function (id) {
     var el = qs(id);
@@ -3477,15 +3682,31 @@ function applyPointLayout() {
 // A-W5: จุดที่มี 'รายชื่อ' -> เปิดหน้ารายชื่อตรวจสุขภาพ มุมมองรายการ วันนี้ โหลดให้เลย (ทางเดียวกับปุ่มเมนู 🩺)
 // เรียกเฉพาะ "หลังเข้าแอป" / "เปลี่ยนเป็นจุดนี้" เท่านั้น (ไม่เรียกจาก resetLogForm/applyPointLayout เอง —
 // เปลี่ยนจุดไปจุดอื่นที่ไม่มี 'รายชื่อ' ต้องไม่บังคับย้ายหน้า กลับหน้าบันทึกเองได้ตามปกติ)
-function maybeAutoOpenListForPoint() {
-  var topics = currentPointTopics();
-  if (topics.indexOf('รายชื่อ') !== -1) {
-    showScreen('checkupTable');
-  } else if (topics.indexOf('คิวพบแพทย์') !== -1) {
-    // รอบ 41 (W1): จุดกัปตัน — หัวข้อหลัก 'คิวพบแพทย์' เปิดกระดานคิวให้เลยด้วยกลไกเดียวกัน (จุดที่มีทั้ง 2 คำ: รายชื่อก่อน)
-    // จุดอื่นที่ไม่มีคำนี้ไม่ถูกบังคับย้ายหน้า (เปิดจากปุ่มเมนู "🩺 คิวพบแพทย์" ได้เอง)
-    showScreen('dq');
+// รอบ 60 ข้อ 7: คำหัวข้อที่ "ไม่ใช่แผง" แต่สั่งให้เปิดหน้าหลักของจุด — เรียงตามลำดับความสำคัญ (ตัวหน้าชนะ) · ที่เดียวที่ผูกคำ -> หน้า
+// รอบ 60 ข้อ 7: รายชื่อ > คิวพบแพทย์ > ค้างส่งออก > รายการวันนี้
+var POINT_MAIN_SCREEN_TOPICS_ = [
+  { topic: 'รายชื่อ', screen: 'checkupTable' },
+  { topic: 'คิวพบแพทย์', screen: 'dq' },
+  { topic: 'ค้างส่งออก', screen: 'pending' },
+  { topic: 'รายการวันนี้', screen: 'today' }
+];
+// ชื่อหน้าหลักของจุดตามหัวข้อ (ไม่มีคำพิเศษ ⇒ '') — ใช้ทั้ง maybeAutoOpenListForPoint() และตัวฟังเปลี่ยนจุด
+function pointMainScreenFor_(topics) {
+  var list = Array.isArray(topics) ? topics : [];
+  for (var i = 0; i < POINT_MAIN_SCREEN_TOPICS_.length; i++) {
+    if (list.indexOf(POINT_MAIN_SCREEN_TOPICS_[i].topic) !== -1) return POINT_MAIN_SCREEN_TOPICS_[i].screen;
   }
+  return '';
+}
+// รอบ 60 ข้อ 7: จุดนี้มีหน้าหลักพิเศษ (รายชื่อ/คิวพบแพทย์/ค้างส่งออก/รายการวันนี้) ไหม — ตัวฟังเปลี่ยนจุดใช้ตัดสินว่าต้องกลับหน้าบันทึกไหม
+function pointHasMainScreen_(topics) {
+  return pointMainScreenFor_(topics) !== '';
+}
+function maybeAutoOpenListForPoint() {
+  // รอบ 41 (W1): จุดกัปตัน — 'คิวพบแพทย์' เปิดกระดานคิวให้เลยด้วยกลไกเดียวกัน · รอบ 60: เพิ่ม 'ค้างส่งออก' (⇒ #pendingScreen) / 'รายการวันนี้' (⇒ #todayScreen)
+  // จุดอื่นที่ไม่มีคำเหล่านี้ไม่ถูกบังคับย้ายหน้า (เปิดจากปุ่มเมนูได้เอง)
+  var screen = pointMainScreenFor_(currentPointTopics());
+  if (screen) showScreen(screen);
 }
 /* ราคาตรวจสุขภาพ (รอบ 6) — กรอกเองล้วน ไม่คำนวณจากสูตรอีกต่อไป · '' = ยังไม่กรอก (ต้องบล็อกบันทึก) · ค่าติดลบ/ขยะ = ไม่กรอก */
 function getCheckupAmountNum() {
@@ -3788,6 +4009,8 @@ function recalcTotals() {
 
   updateDraftStrip({ checkupOn: checkupOn, vaccineOn: vaccineOn, medOn: medOn, specialOn: specialOn, patientName: patientName, grand: grand });
   updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
+  renderQueueSuggestion_(); // รอบ 60 ข้อ 2: ผู้ใช้พิมพ์/ล้างช่องคิวเอง ⇒ hint/placeholder ต้องตามทัน (ไม่เขียนค่าในช่อง)
+  updateMedLabSoloButtons_(checkupOn); // รอบ 60 ข้อ 3: สถานะปุ่ม MMG/U/S เดี่ยวคำนวณจาก DOM ทุกครั้ง ไม่มี state แยก
   updatePanelSummaries({ checkupOn: checkupOn, program: program, vaccineCodes: vaccineCodes, medNums: medNums }); // รอบ 9 (ก้อน B, B3)
 
   validateForm({
@@ -3885,6 +4108,8 @@ function resetLogForm() {
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — ล้างร่างแล้ว HN/ชื่อว่าง ต้องกลับไปล็อกทั้ง 2 แผง
   applyPointLayout(); // รอบ 31A (A-W3) — ล้างร่างแล้วจัดแผงใหม่ตามจุดที่เลือกอยู่ (ไม่มีร่างค้างแล้ว จึงพับได้ตามปกติ)
   recalcTotals();
+  // รอบ 60 ข้อ 2: ล้างฟอร์ม/บันทึกเสร็จ ⇒ ช่องคิวว่าง + คำแนะนำของรายถัดไปโชว์ (คำนวณใหม่หลัง exitEditMode แล้ว)
+  syncQueuePrefix();
 }
 
 /* =========================================================================
@@ -4940,7 +5165,6 @@ function sendQueuedSave_(qid) {
       // จอ/ไฮไลต์ (ต่างจากตอนปิดโมดัลทันทีข้างบน ซึ่งตอนนั้นโมดัลบังหน้าอยู่ ไม่มีช่องให้พิมพ์ค้างจริง)
       if (isEdit && CU_CACHE.records && CU_LOADED_DATE && CU_CACHE.key === CU_LOADED_DATE && !isFocusInCheckupTableInput_()) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
-        renderCheckupPendingReport(CU_CACHE.records, CU_LOADED_DATE);
         renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
     } else if (resp && resp.networkError && queued && !isEdit && payload.clientReqId) {
@@ -4999,11 +5223,21 @@ function onSaveQueueResend_(id) {
 }
 
 /* ปุ่มบันทึกที่มองเห็นจริง (sticky bar / แถบร่างบนเมนู) เรียกผ่านทางนี้ — #btnSubmitLog เป็นตัวเก็บสถานะ disabled จริง */
+// รอบ 60 ข้อ 1: กาง #panelPerson (ล้างทั้งสถานะพับจอกว้าง data-user-collapsed และจอแคบ data-collapsed)
+function expandPersonPanel_() {
+  var p = qs('panelPerson');
+  if (!p || !p.removeAttribute) return;
+  p.removeAttribute('data-user-collapsed');
+  p.removeAttribute('data-collapsed');
+}
 function triggerSubmit() {
   // รอบ 34 (2026-09-30): เดิมเช็ค STATE.saving ที่นี่ — ถอดไปแล้วทั้งไฟล์ (ดูเหตุผลที่ onSubmitLog())
   var btn = qs('btnSubmitLog');
   if (btn.disabled) {
     qs('formWarning').hidden = false;
+    // รอบ 60 ข้อ 1: บันทึกไม่ผ่านเพราะ HN/ชื่อ/คิวว่าง (หรือ HN ผิดรูปแบบ) ขณะแผง "ผู้รับบริการ" พับอยู่ ⇒ กางให้เห็นช่องที่ต้องกรอก
+    var hnV = (qs('patientHn').value || '').trim(), nmV = (qs('patientName').value || '').trim(), qV = (qs('queueSelect').value || '').trim();
+    if (!hnV || !nmV || (isCheckupOn() && !qV) || (hnV && !isValidHn(hnV))) expandPersonPanel_();
     return;
   }
   onSubmitLog({ preventDefault: function () {} });
@@ -5186,23 +5420,82 @@ function applySavedRecord(record) {
    จึงเป็นเลข "กี่คน" ที่ถูกต้องที่สุด (ของเดิมนับแยกสถานะ นับคนที่ลงชื่อไว้เฉย ๆ ยังไม่ติ๊กอะไรเลยไม่ได้เลย)
    ใช้ SP_BOARD_ITEMS (ไม่ใช่ SPECIAL_SENDS ตรง ๆ) เพราะเป็นตัวกรอง inbody ออกอยู่แล้วที่มีจุดเดียวในไฟล์
    (inbody ไม่ได้ "ถูกส่งไปที่อื่น" แบบรายการอื่น ๆ จึงไม่ควรโผล่ในบล็อกนี้ เหมือนเดิม) */
-function renderSpecialTodaySummary(records) {
+// รอบ 60 ข้อ 5.1: นับ/ยอดเงิน 5 หมวดของแถบสรุป — ตรรกะเดิมจาก renderTodayList ทุกตัวอักษร แค่ย้ายออกมาเป็นฟังก์ชันล้วน (ไม่แตะ DOM)
+// เพื่อให้ (1) วาดแถบสรุปได้แม้ไม่มีรายการเลย (แสดง 0 ทุกหมวด) (2) computeSupOpd_ ใช้ตัวเลข "มีหัตถการ" ชุดเดียวกับแถบ ไม่คำนวณซ้ำคนละสูตร
+function computeTodayStats_(records) {
+  var st = { totalPeople: 0, totalMoney: 0, cntCheckup: 0, cntVaccine: 0, cntVaccineCu: 0, cntMedGen: 0, cntMedLab: 0,
+    sumCheckup: 0, sumVaccine: 0, sumVaccineCu: 0, sumMedGen: 0, sumMedLab: 0, sumOther: 0 };
+  var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
+  (records || []).forEach(function (rec) {
+    if (!rec || rec.status === 'ยกเลิก') return;
+    st.totalPeople++; st.totalMoney += recordGrandTotal(rec);
+    var t = rec.totals || {};
+    var labAmt = numOf(rec.medCertLabAmount);
+    if (rec.program) { st.cntCheckup++; st.sumCheckup += numOf(t.checkup); }
+    if ((rec.vaccineCount || 0) > 0) {
+      if (rec.vaccineWithCheckup) { st.cntVaccineCu++; st.sumVaccineCu += numOf(t.vaccine); }
+      else { st.cntVaccine++; st.sumVaccine += numOf(t.vaccine); }
+    }
+    if (((rec.medCert5 || 0) + (rec.medCertDriver || 0)) > 0) { st.cntMedGen++; st.sumMedGen += (numOf(t.medcert) - labAmt); }
+    if (labAmt > 0) { st.cntMedLab++; st.sumMedLab += labAmt; }
+    // ตรวจเพิ่มของ "แถวยุคเก่า" ไม่เข้าหมวดไหนเลย — เก็บไว้ต่างหากเพื่อให้ยอด 5 หมวดบวกกันแล้วเท่ากับยอดรวมจริงเสมอ
+    st.sumOther += numOf(t.extra);
+  });
+  return st;
+}
+
+// รอบ 60 ข้อ 5.2: สรุป SUP OPD (Nursing productivity) — ฟังก์ชันล้วน เทสต์เรียกตรงได้ · นับเป็น "คน" (1 แถวไม่ยกเลิก = 1 คน) ยกเว้นวัคซีนนับเข็ม
+// ⚠ "นิยาม" ของแต่ละแถวอยู่ที่นี่ (ในโค้ด/คอมเมนต์) เท่านั้น — ห้ามขึ้นจอ (เจ้าของย้ำ) บนจอมีแค่ ป้าย ตัวเลข หน่วย
+// dateStr ใช้ตัดสินแถว "PAP วันอาทิตย์" (แสดง/นับเฉพาะเมื่อ dateStr เป็นวันอาทิตย์) — parse เป็น UTC ล้วน ไม่พึ่ง timezone เครื่อง
+function computeSupOpd_(records, dateStr) {
+  var st = computeTodayStats_(records);
+  var r = { withProc: st.cntCheckup + st.cntMedLab + st.cntVaccine, noProc: st.cntMedGen,
+    vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, isSunday: false, total: 0 };
+  var m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(String(dateStr || ''));
+  if (m) r.isSunday = (new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0);
+  var tstRows = 0;
+  (records || []).forEach(function (rec) {
+    if (!rec || rec.status === 'ยกเลิก') return;
+    var reg = rec.specialReg || [];
+    var codes = rec.vaccineCodes || [];
+    var has = function (id) { return reg.indexOf(id) !== -1; };
+    r.vaccineShots += (Number(rec.vaccineCount) || 0);
+    if (codes.indexOf('tst') !== -1) { tstRows++; r.ppd++; } // TST ไปอยู่แถว PPD ไม่นับเป็นวัคซีน
+    if (has('bmd')) r.bmd++;
+    if (has('mmg') || has('us_breast')) r.mmgUs++;
+    if (has('ent')) r.ent++;
+    if (has('ent_hearing')) r.entAudio++;
+    if (has('vision3d')) r.vision++;
+    var prog = String(rec.program == null ? '' : rec.program);
+    if (prog === '2' || prog === '3' || prog === '4' || has('ekg')) r.ekg++; // คนเดียวนับครั้งเดียว
+    if (has('inbody')) r.inbody++;
+    if (has('eye_test') || has('color_blind')) r.eyeTest++; // คนเดียวนับครั้งเดียว
+    if (rec.pelvic === 'pap' || rec.pelvic === 'thinprep' || rec.pelvic === 'thinprep_hpv') r.pap++;
+  });
+  r.vaccineShots -= tstRows;
+  if (!r.isSunday) r.pap = 0;
+  r.total = r.vaccineShots + r.bmd + r.mmgUs + r.ent + r.entAudio + r.vision + r.ekg + r.inbody + r.eyeTest + r.ppd + r.pap;
+  return r;
+}
+
+// รอบ 60 ข้อ 5.2: การ์ด "สรุป SUP OPD" แทนการ์ด "สรุปส่งตรวจพิเศษวันนี้" — แต่ละแถวบนจอ = ป้าย + ตัวเลข + หน่วย เท่านั้น
+// ตัวเลข/ข้อความคงที่ล้วน ไม่มีข้อมูลผู้ใช้ ⇒ innerHTML ได้
+function renderSupOpdSummary(records) {
   var body = qs('specialTodaySummaryBody');
   if (!body) return;
-  var counts = {};
-  SP_BOARD_ITEMS.forEach(function (item) { counts[item.id] = 0; });
-  (records || []).forEach(function (rec) {
-    if (rec.status === 'ยกเลิก') return;
-    (rec.specialReg || []).forEach(function (id) { if (id in counts) counts[id]++; });
-  });
-  var lines = [];
-  SP_BOARD_ITEMS.forEach(function (item) {
-    var c = counts[item.id];
-    if (c !== 0) {
-      lines.push('<div class="line"><span>' + escHtml(item.name) + '</span><span>' + c + ' คน</span></div>');
-    }
-  });
-  body.innerHTML = lines.length ? lines.join('') : '<p class="muted">ยังไม่มีการส่งตรวจพิเศษวันนี้</p>';
+  var r = computeSupOpd_(records, todayStr());
+  var rows = [
+    ['มีหัตถการ', r.withProc, 'คน', 1], ['ไม่มีหัตถการ', r.noProc, 'คน', 1], ['ยอดรวมหัตถการ', r.total, 'คน', 1], null,
+    ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'คน'], ['MMG + U/S Breast', r.mmgUs, 'คน'], ['ENT', r.ent, 'คน'],
+    ['ENT + Audio', r.entAudio, 'คน'], ['ห้องตรวจตา', r.vision, 'คน'], ['EKG', r.ekg, 'คน'], ['Inbody', r.inbody, 'คน'],
+    ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'คน'], ['PPD test', r.ppd, 'คน']
+  ];
+  if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'คน']);
+  body.innerHTML = '<div class="sum-grid sup-opd-grid">' + rows.map(function (x) {
+    if (!x) return '<span class="sum-sep"></span>';
+    var cls = x[3] ? ' sum-strong' : '';
+    return '<span class="sum-name' + cls + '">' + x[0] + '</span><span class="sum-n' + cls + '">' + x[1] + '</span><span class="sum-u' + cls + '">' + x[2] + '</span>';
+  }).join('') + '</div>';
 }
 
 /* ค้นหา HN ในรายการวันนี้ (เจ้าของสั่ง 2026-09-11) — กรองการ์ดฝั่งเว็บล้วน ไม่ยิง API ใหม่
@@ -5252,12 +5545,41 @@ function recordItemHtml(rec, cancelled) {
   return html;
 }
 
+// รอบ 60 ข้อ 5.1: แถบสรุปรายการวันนี้ — บรรทัดหัวข้อความเดียว + กริด 5 หมวดแบบ .sum-grid (ป้ายซ้าย | จำนวนขวา | คน | ยอดขวา | บาท)
+// ค่า 0 แสดง "0 คน" (เดิมแสดง "—") · แถว "อื่น ๆ (ตรวจเพิ่มของแถวเก่า)" คงกติกาเดิม: โผล่เฉพาะเมื่อมียอด และไม่มีจำนวนคน ("—")
+// ตัวเลขทั้งหมดเป็นจำนวนนับ/ยอดเงินที่คำนวณเอง ไม่มีข้อมูลผู้ใช้มาต่อสตริง จึงยัด innerHTML ได้ · ไม่มีข้อความอธิบายนิยามบนจอ
+function renderTodaySummaryBar_(st) {
+  var sumBar = qs('todaySummaryBar');
+  if (!sumBar) return;
+  var breakdown = [
+    ['ตรวจสุขภาพ', st.cntCheckup, st.sumCheckup],
+    ['วัคซีนเดี่ยว', st.cntVaccine, st.sumVaccine],
+    ['วัคซีนตรวจสุขภาพ', st.cntVaccineCu, st.sumVaccineCu],
+    ['ใบรับรองแพทย์ทั่วไป', st.cntMedGen, st.sumMedGen],
+    ['ใบรับรองแพทย์มี lab', st.cntMedLab, st.sumMedLab]
+  ];
+  if (st.sumOther > 0) breakdown.push(['อื่น ๆ (ตรวจเพิ่มของแถวเก่า)', null, st.sumOther]);
+  // ⚠ ห้ามห่อแต่ละหมวดด้วยแท็ก div — .sum-breakdown เป็น grid (5 คอลัมน์) ถ้าห่อ แต่ละหมวดจะกลายเป็น grid item ตัวเดียวแล้วไหลไปเรียงข้างกัน
+  //   (และห้ามพิมพ์แท็ก div แบบเต็มในคอมเมนต์ด้วย — test_verify_web.js นับแท็กเปิด/ปิดจากตัวไฟล์ดิบ แล้วจะล้ม)
+  var rowsHtml = breakdown.map(function (b) {
+    return '<span class="sum-name">' + b[0] + '</span>' +
+      '<span class="sum-n">' + (b[1] === null ? '—' : b[1]) + '</span><span class="sum-u">' + (b[1] === null ? '' : 'คน') + '</span>' +
+      '<span class="sum-b">' + money(b[2]) + '</span><span class="sum-u">บาท</span>';
+  }).join('');
+  sumBar.innerHTML =
+    '<div>ผู้รับบริการทั้งหมด ' + st.totalPeople + ' คน • ยอดค่าบริการรวม ' + money(st.totalMoney) + ' บาท</div>' +
+    '<div class="sum-grid sum-breakdown">' + rowsHtml + '</div>';
+}
+
 function renderTodayList(records) {
   LAST_TODAY_RECORDS = records || [];
   // รอบ 15 (2026-09-17) — W2: ฟังก์ชันนี้ถูกเรียกด้วยชุดข้อมูลของ STATE.point ในวันนี้เท่านั้นทุกจุดเรียกจริง
   // (loadToday()/applySavedRecord()/ตัวกรอง HN) ⇒ อัปเดตแคชคู่กับ point+date ปัจจุบันไว้ที่นี่ที่เดียว
   TODAY_CACHE = { key: STATE.point + '|' + todayStr(), records: LAST_TODAY_RECORDS, json: JSON.stringify(LAST_TODAY_RECORDS) };
-  renderSpecialTodaySummary(LAST_TODAY_RECORDS);
+  maybeSuggestNextCheckupQueue(); // รอบ 60 ข้อ 2: ข้อมูลวันนี้ใหม่ ⇒ คำแนะนำคิวต้องไม่ค้างเลขเก่า (ไม่เขียนค่าในช่อง)
+  renderSupOpdSummary(LAST_TODAY_RECORDS);
+  // รอบ 60 ข้อ 5.1: วาดแถบสรุปก่อน return (เดิมไม่มีรายการ ⇒ return ก่อนถึงโค้ดแถบ ⇒ แถบค้างค่าเก่า/ข้อความตั้งต้น) — ไม่มีรายการ ⇒ 0 ทุกหมวด
+  renderTodaySummaryBar_(computeTodayStats_(LAST_TODAY_RECORDS));
   var wrap = qs('todayList');
   wrap.innerHTML = '';
   if (!records || records.length === 0) {
@@ -5266,39 +5588,11 @@ function renderTodayList(records) {
     if (hintEmpty) { hintEmpty.hidden = true; hintEmpty.textContent = ''; }
     return;
   }
-  var totalPeople = 0, totalMoney = 0;
-  // เจ้าของสั่ง 2026-09-03: หน้า "รายการวันนี้" ต้องสรุปยอดผู้รับบริการรายบริการด้วย
-  // นับเป็น "จำนวนคน" ไม่ใช่จำนวนใบ/เข็ม · แถวที่ยกเลิกไม่นับทุกช่อง
-  // เจ้าของสั่งเพิ่ม 2026-09-13: แยกให้ครบ 5 หมวด พร้อม "ยอดเงิน" ของแต่ละหมวด
-  //   ตรวจสุขภาพ · วัคซีนเดี่ยว · วัคซีนเรตตรวจสุขภาพ · ใบรับรองแพทย์ทั่วไป · ใบรับรองแพทย์มี lab
-  // ⚠ "วัคซีนเดี่ยว" กับ "วัคซีนเรตตรวจสุขภาพ" แยกด้วยธง rec.vaccineWithCheckup (คอลัมน์ที่ 42 ของชีต)
-  //   ไม่ใช่แยกด้วย "มีโปรแกรมตรวจสุขภาพไหม" — คนที่มาตรวจสุขภาพแต่เจ้าหน้าที่ไม่ได้บันทึกโปรแกรม
-  //   ก็ติ๊กธงนี้เองได้ และต้องถูกนับเป็นเรตตรวจสุขภาพ (ดูเหตุผลที่ applyVaccineCheckupRateLock)
-  // ⚠ ยอดใบรับรองแพทย์: totals.medcert = ค่าใบทั่วไป + medCertLabAmount รวมกันมาแล้ว
-  //   ⇒ ยอด "ทั่วไป" ต้องลบ medCertLabAmount ออก ไม่งั้นยอด lab ถูกนับซ้ำ 2 หมวด
-  var cntCheckup = 0, cntVaccine = 0, cntVaccineCu = 0, cntMedGen = 0, cntMedLab = 0;
-  var sumCheckup = 0, sumVaccine = 0, sumVaccineCu = 0, sumMedGen = 0, sumMedLab = 0, sumOther = 0;
+  // รอบ 60 ข้อ 5.1: นับ 5 หมวด + ยอดเงินย้ายไป computeTodayStats_() (ตรรกะเดิม — ดูคอมเมนต์ของแต่ละหมวดที่นั่น) แถบสรุปวาดที่ต้นฟังก์ชันแล้ว
   var q = todayHnQuery();
   var shown = 0;
   records.forEach(function (rec) {
     var cancelled = rec.status === 'ยกเลิก';
-    if (!cancelled) {
-      totalPeople++; totalMoney += recordGrandTotal(rec);
-      var t = rec.totals || {};
-      var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
-      var labAmt = numOf(rec.medCertLabAmount);
-      if (rec.program) { cntCheckup++; sumCheckup += numOf(t.checkup); }
-      if ((rec.vaccineCount || 0) > 0) {
-        if (rec.vaccineWithCheckup) { cntVaccineCu++; sumVaccineCu += numOf(t.vaccine); }
-        else { cntVaccine++; sumVaccine += numOf(t.vaccine); }
-      }
-      if (((rec.medCert5 || 0) + (rec.medCertDriver || 0)) > 0) { cntMedGen++; sumMedGen += (numOf(t.medcert) - labAmt); }
-      if (labAmt > 0) { cntMedLab++; sumMedLab += labAmt; }
-      // ตรวจเพิ่มของ "แถวยุคเก่า" ไม่เข้าหมวดไหนเลย (กระดานไม่มี UI ให้ติ๊กตรวจเพิ่มแล้ว)
-      // เก็บไว้ต่างหากเพื่อให้ยอด 5 หมวดบวกกันแล้วเท่ากับยอดรวมจริงเสมอ
-      sumOther += numOf(t.extra);
-    }
-
     if (!recordMatchesHn(rec, q)) return;
     shown++;
 
@@ -5327,31 +5621,6 @@ function renderTodayList(records) {
       hint.hidden = false;
       hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shown + ' จาก ' + records.length + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
     }
-  }
-
-  var sumBar = qs('todaySummaryBar');
-  if (sumBar) {
-    // ตัวเลขทั้งหมดเป็นจำนวนนับ/ยอดเงินที่คำนวณเอง ไม่มีข้อมูลผู้ใช้มาต่อสตริง จึงยัด innerHTML ได้
-    var breakdown = [
-      ['ตรวจสุขภาพ', cntCheckup, sumCheckup],
-      ['วัคซีนเดี่ยว', cntVaccine, sumVaccine],
-      ['วัคซีนเรตตรวจสุขภาพ', cntVaccineCu, sumVaccineCu],
-      ['ใบรับรองแพทย์ทั่วไป', cntMedGen, sumMedGen],
-      ['ใบรับรองแพทย์มี lab', cntMedLab, sumMedLab]
-    ];
-    // แถวนี้โผล่เฉพาะเมื่อมีแถวยุคเก่าที่มี "ตรวจเพิ่ม" ติดมา — มีไว้ให้ 5 หมวดบวกกันแล้วเท่ากับยอดรวมพอดี
-    if (sumOther > 0) breakdown.push(['อื่น ๆ (ตรวจเพิ่มของแถวเก่า)', 0, sumOther]);
-    // ⚠ ห้ามห่อแต่ละหมวดด้วยแท็ก div — .sum-breakdown เป็น grid 3 คอลัมน์ ถ้าห่อ แต่ละหมวดจะกลายเป็น
-    //   (และห้ามพิมพ์แท็ก div แบบเต็มในคอมเมนต์ด้วย — test_verify_web.js นับแท็กเปิด/ปิดจากตัวไฟล์ดิบ แล้วจะล้ม)
-    //   grid item ตัวเดียวแล้วไหลไปเรียงข้างกัน 3 หมวดต่อบรรทัด (เคยพลาดมาแล้ว 2026-09-13)
-    var rowsHtml = breakdown.map(function (b) {
-      return '<span class="sum-name">' + b[0] + '</span>' +
-        '<span class="sum-n">' + (b[1] > 0 ? (b[1] + ' คน') : '—') + '</span>' +
-        '<span class="sum-b">' + money(b[2]) + ' บาท</span>';
-    }).join('');
-    sumBar.innerHTML =
-      '<div>วันนี้ให้บริการ ' + totalPeople + ' คน · ยอดเงินรวม ' + money(totalMoney) + ' บาท</div>' +
-      '<div class="sum-breakdown">' + rowsHtml + '</div>';
   }
 }
 
@@ -5650,12 +5919,8 @@ function renderSpPeopleCardsMmgCapSplit_(dateStr) {
   wrap.innerHTML = '';
 
   var allRows = spBoardPeopleForActive(SP_BOARD_RECORDS, 'mmg');
-  var mmgGroup = allRows.filter(function (rec) { return (rec.specialReg || []).indexOf('mmg') !== -1; });
-  var usOnlyGroup = allRows.filter(function (rec) {
-    var reg = rec.specialReg || [];
-    return reg.indexOf('us_breast') !== -1 && reg.indexOf('mmg') === -1;
-  });
-  var rows = spBoardSortPeople(mmgGroup, 'mmg').concat(spBoardSortPeople(usOnlyGroup, 'mmg'));
+  // รอบ 60 ข้อ 4: รายชื่อเดียว เรียงตามเวลาที่บันทึก (เดิมแยกกลุ่ม MMG → U/S only แล้วเรียงด้วย spBoardSortPeople)
+  var rows = spBoardSortByTime_(allRows);
   if (!rows.length) {
     wrap.innerHTML = '<p class="muted">ยังไม่มีผู้ลงชื่อของประเภทนี้วันนี้</p>';
     return;
@@ -5673,7 +5938,10 @@ function renderSpPeopleCards(id) {
   }
 
   var item = SPECIAL_SEND_BY_ID[id];
-  var rows = spBoardSortPeople(spBoardPeopleForActive(SP_BOARD_RECORDS, id), id);
+  // รอบ 60 ข้อ 4: แท็บ mmg ปกติก็เรียงตามเวลาที่บันทึกล้วน ๆ · แท็บอื่นใช้ spBoardSortPeople เดิม
+  var rows = (id === 'mmg')
+    ? spBoardSortByTime_(spBoardPeopleForActive(SP_BOARD_RECORDS, id))
+    : spBoardSortPeople(spBoardPeopleForActive(SP_BOARD_RECORDS, id), id);
   var headingEl = qs('spBoardHeading');
   var dateStr = (qs('spBoardDate') && qs('spBoardDate').value) || todayStr();
   // รอบ 9.2 — เพิ่ม "ไปตรวจแล้ว X / N คน" ต่อท้ายหัวข้อ (นับจาก specialSent ของแถวที่ยังไม่ยกเลิก/อยู่หมวดนี้)
@@ -6123,7 +6391,6 @@ function cuSearchQuery() {
 function rerenderCuViews() {
   var d = qs('cuDate').value || todayStr();
   renderCheckupTable(LAST_CU_RECORDS, d);
-  renderCheckupPendingReport(LAST_CU_RECORDS, d);
   renderCheckupList(LAST_CU_RECORDS, d);
 }
 
@@ -6593,73 +6860,8 @@ function renderCheckupTable(records, dateStr) {
 }
 
 
-/* รอบ 29 (S5) W5 (ข้อ 5): มุมมองการ์ดเดิม (renderCheckupCards) ถูกลบทิ้งทั้งหมดตามคำสั่งเจ้าของ — แทนที่ด้วย
-   "รายงานผลค้างส่งออก" (พิมพ์ได้ A4 แนวตั้ง WYSIWYG เหมือนมุมมองอื่น) แยก 2 ส่วน:
-   ส่วนที่ 1 ผลตรวจสุขภาพ = แถวที่ checkupResultStatus(rec) === 'pendingExport'
-   ส่วนที่ 2 ผลตรวจมะเร็งปากมดลูก = แถวที่ isPelvicExportPending(rec) (นิยามเดียวกับรอบ 28 — ดูฟังก์ชันด้านบน)
-   ใช้ records ของวันที่โหลดอยู่ (แคชเดียวกับอีก 2 มุมมอง ไม่ยิง API เพิ่ม) · เรียง compareByQueue · ไม่มีปุ่มแก้ไข ·
-   ใช้ช่องค้นหา HN ได้เหมือนอีก 2 มุมมอง (กรองเฉพาะที่แสดง — ไม่ใช้ตัวกรอง "แสดงเฉพาะยังไม่รับผล" เพราะทุกแถวที่แสดง
-   ในหน้านี้ "ค้างส่งออก" อยู่แล้วโดยนิยาม และตัวกรองนั้นตัดสินจากสถานะผลตรวจสุขภาพอย่างเดียว จะกรองแถวมะเร็งปากมดลูกผิด) */
-function renderCheckupPendingReport(records, dateStr) {
-  var wrap = qs('cuPendingReportWrap');
-  if (!wrap) return;
-  var liveRows = (records || []).filter(function (rec) { return rec.status !== 'ยกเลิก'; });
-  var checkupRows = liveRows.filter(function (rec) {
-    return !!rec.program && checkupResultStatus(rec) === 'pendingExport';
-  }).sort(compareByQueue);
-  var pelvicRows = liveRows.filter(function (rec) {
-    return isPelvicExportPending(rec);
-  }).sort(compareByQueue);
-
-  // รอบ 31B ข้อ 3: คิว/HN/ชื่อ ผ่าน recordMatchesQuery() เหมือนอีก 2 มุมมอง (เดิมใช้ cuHnQuery()/recordMatchesHn() เฉพาะ HN)
-  var searchQ = cuSearchQuery();
-  var shownCheckupRows = searchQ ? checkupRows.filter(function (r) { return recordMatchesQuery(r, searchQ); }) : checkupRows;
-  var shownPelvicRows = searchQ ? pelvicRows.filter(function (r) { return recordMatchesQuery(r, searchQ); }) : pelvicRows;
-
-  var html = '<h3 class="cu-pending-report-title">รายงานผลค้างส่งออก — ' + escHtml(formatThaiDate(dateStr)) + '</h3>';
-
-  html += '<h4>ผลตรวจสุขภาพ</h4>';
-  if (shownCheckupRows.length === 0) {
-    html += '<p class="muted">ไม่มีรายการค้างส่งออก</p>';
-  } else {
-    html += '<div class="scroll-x"><table class="report-table"><thead><tr>' +
-      '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ช่องทางส่งผล</th></tr></thead><tbody>';
-    shownCheckupRows.forEach(function (rec) {
-      html += '<tr>' +
-        '<td>' + escHtml(rec.queue || '—') + '</td>' +
-        '<td>' + escHtml(rec.patientHn || '') + '</td>' +
-        '<td>' + escHtml(rec.patientName || '') + '</td>' +
-        '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
-        '<td>' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</td>' +
-        '</tr>';
-    });
-    html += '</tbody></table></div>';
-    html += '<p class="cu-pending-report-total">' + escHtml(checkupFootText(shownCheckupRows)) + '</p>';
-  }
-
-  html += '<h4>ผลตรวจมะเร็งปากมดลูก</h4>';
-  if (shownPelvicRows.length === 0) {
-    html += '<p class="muted">ไม่มีรายการค้างส่งออก</p>';
-  } else {
-    html += '<div class="scroll-x"><table class="report-table"><thead><tr>' +
-      '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>ชนิดที่ตรวจ</th><th>ช่องทางส่งผล</th></tr></thead><tbody>';
-    shownPelvicRows.forEach(function (rec) {
-      var methodLabel = rec.pelvicMethod ? shortDeliveryLabel(rec.pelvicMethod) : 'ยังไม่ระบุช่องทาง';
-      html += '<tr>' +
-        '<td>' + escHtml(rec.queue || '—') + '</td>' +
-        '<td>' + escHtml(rec.patientHn || '') + '</td>' +
-        '<td>' + escHtml(rec.patientName || '') + '</td>' +
-        '<td>' + escHtml(pelvicTypeLabel(rec)) + '</td>' +
-        '<td>' + escHtml(methodLabel) + '</td>' +
-        '</tr>';
-    });
-    html += '</tbody></table></div>';
-    html += '<p class="cu-pending-report-total">' + escHtml(checkupFootText(shownPelvicRows)) + '</p>';
-  }
-
-  wrap.innerHTML = html;
-  updateCuHnHint(checkupRows.length + pelvicRows.length, shownCheckupRows.length + shownPelvicRows.length);
-}
+/* รอบ 60 ข้อ 6: มุมมอง "รายงานผลค้างส่งออก" (renderCheckupPendingReport) ถูกถอดออกจากหน้ารายชื่อตรวจสุขภาพรายวันแล้ว — ใช้หน้า #pendingScreen (📮 ค้างส่งออกผล) แทน
+   (ฟังก์ชันที่หน้านั้นใช้ร่วม เช่น checkupResultStatus / isPelvicExportPending / shortDeliveryLabel ยังอยู่ครบ) */
 
 /* มุมมองที่ 3 (เจ้าของสั่ง 2026-09-13): "แบบรายการ (แก้ไขได้)" — การ์ดเดียวกับ .record-item ของหน้า "รายการวันนี้"
    ต่างจากมุมมองอื่นตรงที่แก้ไข/ยกเลิกได้ ⇒ ใช้ recordItemHtml() ร่วมกับหน้านั้น
@@ -7129,7 +7331,6 @@ function performCuNoteUndo_(recordId, oldValues, flags, label) {
       rerenderCuBoxAfterUndo_(recordId);
       if (CU_CACHE.records && CU_LOADED_DATE && CU_CACHE.key === CU_LOADED_DATE) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
-        renderCheckupPendingReport(CU_CACHE.records, CU_LOADED_DATE);
       }
       showCuSaveNotice('↶ ย้อนค่าเดิมของ ' + label + ' แล้ว', {});
     } else {
@@ -7243,7 +7444,6 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
       // ⚠ ห้ามวาด renderCheckupList() ใหม่ตรงนี้ — จะทับช่องที่เจ้าหน้าที่กำลังพิมพ์อยู่ในรายชื่อ
       if (CU_CACHE.records && CU_LOADED_DATE && CU_CACHE.key === CU_LOADED_DATE) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
-        renderCheckupPendingReport(CU_CACHE.records, CU_LOADED_DATE);
       }
       // รอบ 31B ข้อ 4: แถบ "บันทึกให้ใคร + เลิกทำ" — เฉพาะตอนมีอะไรเปลี่ยนจริง (ป้องกันข้อความว่างตอน blur เฉย ๆ
       // ที่ผ่านมาถึงจุดนี้ได้เพราะเงื่อนไข "ไม่เปลี่ยนเลย -> return" ข้างบนเทียบด้วย === ตรง ๆ ซึ่งบางกรณี — เช่น
@@ -7659,17 +7859,15 @@ function renderCheckupList(records, dateStr) {
 var CU_VIEW = 'table';
 var CU_LOADED_DATE = ''; // วันที่ที่โหลดข้อมูลสำเร็จล่าสุด — showCuView() ใช้ตัดสินว่าต้องยิง API ใหม่หรือสลับมุมมองเฉย ๆ
 function setCuView(view) {
-  // รอบ 29 (S5) W5 (ข้อ 5): 'card' -> 'pending' (มุมมองการ์ดถูกลบทิ้งแล้ว แทนที่ด้วยรายงานผลค้างส่งออก)
-  CU_VIEW = (view === 'pending' || view === 'list') ? view : 'table';
-  var tableEl = qs('cuTableWrap'), pendingReportEl = qs('cuPendingReportWrap'), listEl = qs('cuListWrap');
+  // รอบ 60 ข้อ 6: ถอดมุมมอง 'pending' ออก — ทุกเส้นทางที่เคยตั้ง CU_VIEW='pending' (ค่าเก่า/ผู้เรียกเก่า) ตกไปเป็นมุมมองตาราง
+  CU_VIEW = (view === 'list') ? 'list' : 'table';
+  var tableEl = qs('cuTableWrap'), listEl = qs('cuListWrap');
   if (tableEl) tableEl.hidden = (CU_VIEW !== 'table');
-  if (pendingReportEl) pendingReportEl.hidden = (CU_VIEW !== 'pending');
   if (listEl) listEl.hidden = (CU_VIEW !== 'list');
-  ['btnCuViewTable', 'btnCuViewPending'].forEach(function (id) {
+  ['btnCuViewTable'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var view2 = (id === 'btnCuViewTable') ? 'table' : 'pending';
-    var active = (CU_VIEW === view2);
+    var active = (CU_VIEW === 'table');
     b.className = 'btn small' + (active ? '' : ' secondary');
   });
   var loadBtn = qs('btnCuLoad'); // ตัวแทนมุมมอง list — ไม่ใส่คลาส small (ขนาดเดิมของปุ่มนี้ไม่เคยเป็น small)
@@ -7971,14 +8169,13 @@ function onDtbSaveClick() {
    รอบ 29 (S5) W5 (ข้อ 5): 'card' -> 'pending' (renderCheckupCards -> renderCheckupPendingReport)
    ข้อความ "กำลังโหลด...”/error ต้องลงในกล่องของมุมมองที่ "กำลังจะดู" เท่านั้น ไม่ใช่กล่องอื่นที่อาจถูกซ่อนอยู่ */
 function loadCheckupTable(view) {
-  view = (view === 'table' || view === 'pending') ? view : 'list';
+  view = (view === 'list') ? 'list' : (view === 'table' || view === 'pending') ? 'table' : 'list'; // รอบ 60 ข้อ 6: 'pending' (ค่าเก่า/ผู้เรียกเก่า) ⇒ ตกไปเป็นมุมมองตาราง
   var dateStr = qs('cuDate').value || todayStr();
   var headEl = qs('cuTableHeading');
   // เจ้าของสั่งตัดคำว่า "รวมทุกจุดบริการ" ออกจากหัวใบพิมพ์ 2026-09-03 (ยังยิง allPoints:true เหมือนเดิม แค่ไม่พิมพ์ข้อความนี้)
   // รอบ 26 (2026-09-22): หัวใบต้องตรงกับที่เจ้าของกำหนดในภาพมอคอัพเป๊ะ — ตัวคั่นเป็น "-" ไม่ใช่ "·"
   if (headEl) headEl.textContent = 'รายชื่อผู้รับบริการตรวจสุขภาพ - วันที่ ' + formatThaiDate(dateStr);
   var wrap = qs('cuTableWrap');
-  var pendingReportWrap = qs('cuPendingReportWrap');
   var listWrap = qs('cuListWrap');
 
   // รอบ 15 (2026-09-17) — W2: มีแคชของวันเดียวกันอยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ ไม่ขึ้น "กำลังโหลด..."
@@ -7990,14 +8187,12 @@ function loadCheckupTable(view) {
     // ห้าม render ทับตรงนี้ด้วย — ของเดิมบนจอกำลังแสดงแคชชุดนี้อยู่แล้วพอดี ข้ามการวาดซ้ำไปเลย ปลอดภัยกว่า
     if (!isFocusInCuNote()) {
       renderCheckupTable(CU_CACHE.records, dateStr);
-      renderCheckupPendingReport(CU_CACHE.records, dateStr);
       renderCheckupList(CU_CACHE.records, dateStr);
       setCuView(view);
     }
     setRefreshHint('cuRefreshHint', 'loading');
   } else {
     if (view === 'table' && wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-    if (view === 'pending' && pendingReportWrap) pendingReportWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
     if (view === 'list' && listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
     setCuView(view);
   }
@@ -8025,7 +8220,6 @@ function loadCheckupTable(view) {
         setRefreshHint('cuRefreshHint', 'stale', function () {
           CU_LOADED_DATE = dateStr;
           renderCheckupTable(records, dateStr);
-          renderCheckupPendingReport(records, dateStr);
           renderCheckupList(records, dateStr);
           setCuView(CU_VIEW);
           setRefreshHint('cuRefreshHint', 'none');
@@ -8035,7 +8229,6 @@ function loadCheckupTable(view) {
       CU_LOADED_DATE = dateStr; // โหลดสำเร็จแล้ว — จำวันที่ไว้กันปุ่มมุมมองอื่นยิง API ซ้ำถ้าเป็นวันเดียวกัน
       CU_CACHE = { key: dateStr, records: records, json: json };
       renderCheckupTable(records, dateStr);
-      renderCheckupPendingReport(records, dateStr); // วาดครบ 3 แบบไว้เลย สลับดูได้ทันทีไม่ต้องยิงซ้ำ
       renderCheckupList(records, dateStr);
       setCuView(view); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
       setRefreshHint('cuRefreshHint', 'none');
@@ -8044,7 +8237,6 @@ function loadCheckupTable(view) {
     } else {
       var errHtml = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
       if (view === 'table' && wrap) wrap.innerHTML = errHtml;
-      if (view === 'pending' && pendingReportWrap) pendingReportWrap.innerHTML = errHtml;
       if (view === 'list' && listWrap) listWrap.innerHTML = errHtml;
     }
   });
@@ -8467,12 +8659,32 @@ function listDatesCheckDayRollover() {
   if (pdScr && pdScr.style.display === 'block' && ensurePendingDateDefault()) updatePendingBulkButton();
 }
 
+// รอบ 60 ข้อ 6: วันที่รับบริการที่กรองอยู่ ('' = ทุกวัน) — อ่านสดจากช่อง ไม่มี state แยก
+function pendingFilterDate_() {
+  var el = qs('pendingFilterDate');
+  return el ? String(el.value || '').trim() : '';
+}
+// ทุกจุดที่นับ/แสดงรายการค้างส่งออก (ตาราง + ตัวเลขสรุป) ต้องผ่านตัวกรองวันที่นี้ที่เดียว — rec.date === ค่าที่เลือก
+function pendingRowMatchesDate_(rec) {
+  var f = pendingFilterDate_();
+  return !f || (rec && rec.date === f);
+}
+
 function pendingRowsForKind(kind) {
   return PENDING_RECORDS.filter(function (rec) {
     var p = rec && rec.pending;
     if (!p) return false;
+    if (!pendingRowMatchesDate_(rec)) return false;
     return kind === 'pelvic' ? !!p.pelvicExport : !!p.checkupExport;
   });
+}
+
+// รอบ 60 ข้อ 6: เปลี่ยนวันที่ที่กรอง ⇒ ล้างการเลือก + วาดตาราง/ตัวเลขสรุปใหม่ (ไม่ยิง API)
+function onPendingFilterDateChange() {
+  PENDING_SELECTED = {};
+  var summaryEl = qs('pendingSummary');
+  if (summaryEl) summaryEl.innerHTML = pendingSummaryHtml();
+  renderPendingTable();
 }
 
 // เรียง วันที่มาตรวจ เก่า -> ใหม่ แล้ว compareByQueue (W5) — rec.date = 'yyyy-MM-dd' เรียงเป็นสตริงได้ตรงลำดับ
@@ -8505,7 +8717,10 @@ function pendingShownRows() {
 function pendingSummaryHtml() {
   var checkupExportRows = pendingRowsForKind('checkup');
   var pelvicExportRows = pendingRowsForKind('pelvic');
-  var checkupPickupCount = PENDING_RECORDS.filter(function (rec) { return rec && rec.pending && rec.pending.checkupPickup; }).length;
+  var checkupPickupCount = PENDING_RECORDS.filter(function (rec) { return rec && rec.pending && rec.pending.checkupPickup && pendingRowMatchesDate_(rec); }).length;
+  // รอบ 60 ข้อ 6: หัวการ์ดบอกว่านับของวันไหน — ทุกวัน หรือวันที่แบบไทย (ตัวเลขทุกบรรทัดด้านล่างนับตามวันที่ที่กรอง)
+  var filterD = pendingFilterDate_();
+  var filterLine = '<div class="line muted">วันที่รับบริการ : ' + (filterD ? escHtml(formatThaiDateShort(filterD)) : 'ทุกวัน') + '</div>';
 
   // ใต้ 2 บรรทัดแรก: แยกตามวันที่มาตรวจ เก่า -> ใหม่ (วันที่ y-m-d เรียงเป็นสตริงได้ตรงลำดับเวลาอยู่แล้ว)
   function byDateLines(rows) {
@@ -8517,7 +8732,8 @@ function pendingSummaryHtml() {
     }).join('');
   }
 
-  return '<div class="line">ผลตรวจสุขภาพ รอส่งออก <b>' + checkupExportRows.length + '</b> คน</div>' +
+  return filterLine +
+    '<div class="line">ผลตรวจสุขภาพ รอส่งออก <b>' + checkupExportRows.length + '</b> คน</div>' +
     byDateLines(checkupExportRows) +
     '<div class="line" style="margin-top:8px;">ผลตรวจมะเร็งปากมดลูก รอส่งออก <b>' + pelvicExportRows.length + '</b> คน</div>' +
     byDateLines(pelvicExportRows) +
@@ -9523,6 +9739,7 @@ var dqAfternoonHour = 13;
 function dqComputeDaySummary(st, nowMs) {
   if (!st) return null;
   var earliest = {}; // คีย์คิว → ms ของ timeIn ที่เร็วที่สุด
+  var shownQueue = {}; // คีย์คิว → สตริงคิวตามที่แสดงในจุดกัปตัน (ไว้ทำ unknownList)
   (st.logs || []).forEach(function (l) {
     if (!l || l.status !== 'บันทึกแล้ว') return;
     if (!dqIsCheckupQueue(l.queue)) return;
@@ -9532,7 +9749,40 @@ function dqComputeDaySummary(st, nowMs) {
     if (isNaN(ms) || !t || isNaN(t.h)) return; // อ่านเวลาไม่ได้ ⇒ ไม่นับ
     var k = dqQueueKey(l.queue);
     if (!Object.prototype.hasOwnProperty.call(earliest, k) || ms < earliest[k]) earliest[k] = ms;
+    if (!Object.prototype.hasOwnProperty.call(shownQueue, k)) shownQueue[k] = String(l.queue).trim();
   });
+
+  // รอบ 60 ข้อ 9 (เจ้าของตัดสิน 2026-10-07): เซิร์ฟเวอร์ส่ง orderQueues (คิว C/ไม่นัด ไม่ซ้ำของแถวไม่ยกเลิกวันนี้ ทุกจุดบริการ ในกระดานสถิติ)
+  // ⇒ ยอด = จำนวนคิวในชุดนี้ · เช้า/บ่ายนับเฉพาะคิวที่อยู่ในชุด · คิวที่กัปตันกดแต่ไม่มีในชุด ⇒ ไม่นับ + unknownList (เตือนให้ตรวจเลขคิว)
+  // ไม่มี orderQueues (เซิร์ฟเวอร์เก่า/headerGuard ไม่ผ่าน = null) ⇒ พฤติกรรมรอบ 54 เดิมทุกประการ + unknownList: []
+  if (Array.isArray(st.orderQueues)) {
+    var orderKeys = [], orderSet = {}, orderShown = {};
+    st.orderQueues.forEach(function (q) {
+      if (!dqIsCheckupQueue(q)) return;
+      var k0 = dqQueueKey(q);
+      if (Object.prototype.hasOwnProperty.call(orderSet, k0)) return;
+      orderSet[k0] = true; orderKeys.push(k0); orderShown[k0] = q;
+    });
+    var morningO = 0, afternoonO = 0, unknownKeys = [];
+    Object.keys(earliest).forEach(function (k1) {
+      if (!Object.prototype.hasOwnProperty.call(orderSet, k1)) { unknownKeys.push(k1); return; }
+      var t1 = dqBkkHM(earliest[k1]);
+      if (t1.h < dqAfternoonHour) morningO++; else afternoonO++;
+    });
+    var pendingO = [];
+    orderKeys.forEach(function (k2) {
+      if (!Object.prototype.hasOwnProperty.call(earliest, k2)) pendingO.push(orderShown[k2]); // คงลำดับเซิร์ฟเวอร์
+    });
+    // unknownList เรียง C ตามเลขก่อน แล้ว 'ไม่นัด' ตามเลข (อ่านง่ายใน "ตรวจเลขคิวอีกครั้ง")
+    var uKey = function (q) { var m = /([0-9]+)$/.exec(dqQueueKey(q)); return [/^C/.test(dqQueueKey(q)) ? 0 : 1, m ? parseInt(m[1], 10) : 0]; };
+    var unknownList = unknownKeys.map(function (k3) { return shownQueue[k3]; }).sort(function (x, y) {
+      var kx = uKey(x), ky = uKey(y);
+      return kx[0] !== ky[0] ? kx[0] - ky[0] : kx[1] - ky[1];
+    });
+    return { total: orderKeys.length, morning: morningO, afternoon: afternoonO, pending: pendingO.length,
+      pendingList: pendingO, unknownList: unknownList };
+  }
+
   var morning = 0, afternoon = 0;
   Object.keys(earliest).forEach(function (k) {
     var t = dqBkkHM(earliest[k]);
@@ -9551,7 +9801,7 @@ function dqComputeDaySummary(st, nowMs) {
     pending = pendingList.length;
   }
   return { total: pending === null ? null : morning + afternoon + pending,
-    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList };
+    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList, unknownList: [] };
 }
 function dqRenderDaySummary() {
   var box = qs('dqDaySummary');
@@ -9563,7 +9813,7 @@ function dqRenderDaySummary() {
   if (sm.total !== null) {
     var hl = document.createElement('div');
     hl.className = 'dq-ds-headline';
-    hl.title = 'นับคิว C และไม่นัดของวันนี้ ไม่รวม M/V และที่ยกเลิก';
+    hl.title = 'นับคิว C และไม่นัดที่บันทึกในกระดานสถิติวันนี้ ไม่รวมที่ยกเลิก'; // รอบ 60 ข้อ 9
     hl.appendChild(document.createTextNode('วันนี้มียอดตรวจสุขภาพ '));
     var hn = document.createElement('b'); hn.className = 'dq-ds-headline-num'; hn.textContent = String(sm.total);
     hl.appendChild(hn);
@@ -9587,6 +9837,13 @@ function dqRenderDaySummary() {
     grid.appendChild(cell);
   });
   box.appendChild(grid);
+  // รอบ 60 ข้อ 9: คิวที่กัปตันกดแต่ไม่อยู่ในรายการตรวจสุขภาพของวันนี้ (ไม่นับในยอด) — เตือนด้วยโทน warning เดียวกับ .warning-box · textContent ล้วน
+  if (sm.unknownList && sm.unknownList.length > 0) {
+    var unk = document.createElement('div');
+    unk.className = 'dq-ds-unknown';
+    unk.textContent = 'คิวที่ไม่มีในรายการตรวจสุขภาพของวันนี้: ' + sm.unknownList.join(', ') + ' — ตรวจเลขคิวอีกครั้ง';
+    box.appendChild(unk);
+  }
   if (sm.pending === null) return;
   if (sm.pending === 0) {
     var done = document.createElement('div');
@@ -10334,7 +10591,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // อยู่หน้าบันทึกอยู่แล้ว ⇒ ไม่เรียก showScreen ซ้ำ (กันหน้าเด้งขึ้นบนสุด) · showScreen ไม่แตะ dqSendQueue
     var ptTopics = currentPointTopics();
     var logWrapEl = qs('svcFormWrap');
-    if (ptTopics.indexOf('รายชื่อ') === -1 && ptTopics.indexOf('คิวพบแพทย์') === -1 &&
+    if (!pointHasMainScreen_(ptTopics) && // รอบ 60 ข้อ 7: รวม 'ค้างส่งออก'/'รายการวันนี้' ด้วย (ฟังก์ชันเดียวกับ maybeAutoOpenListForPoint)
         !(logWrapEl && logWrapEl.style.display === 'block')) {
       showScreen('log');
     }
@@ -10360,6 +10617,39 @@ document.addEventListener('DOMContentLoaded', function () {
   enableRadioToggleOff('input[name="gender"]');
   // แก้ 2026-09-08: queueSelect เป็น <input list> แล้ว ต้องฟัง 'input' ด้วยไม่ใช่แค่ 'change' (ผู้ใช้พิมพ์เองได้)
   ['change', 'input'].forEach(function (ev) { qs('queueSelect').addEventListener(ev, recalcTotals); });
+  // รอบ 60 ข้อ 2: ปุ่ม ◀ ▶ + ลูกศรซ้าย/ขวาที่ขอบช่อง + ปัดซ้าย/ขวาบนจอสัมผัส ⇒ stepQueue_() ตัวเดียว
+  qs('queuePrev').addEventListener('click', function () { stepQueue_(-1); });
+  qs('queueNext').addEventListener('click', function () { stepQueue_(1); });
+  qs('queueSelect').addEventListener('keydown', function (e) {
+    var el = e.target;
+    var len = String(el.value || '').length;
+    if (e.key === 'ArrowRight' && el.selectionStart === len && el.selectionEnd === len) {
+      e.preventDefault(); stepQueue_(1);
+    } else if (e.key === 'ArrowLeft' && el.selectionStart === 0 && el.selectionEnd === 0) {
+      e.preventDefault(); stepQueue_(-1);
+    }
+  });
+  (function () {
+    var tx = 0, ty = 0, tracking = false;
+    var qEl = qs('queueSelect');
+    qEl.addEventListener('touchstart', function (e) {
+      var t = e.touches && e.touches[0];
+      if (!t) { tracking = false; return; }
+      tx = t.clientX; ty = t.clientY; tracking = true;
+    }, { passive: true });
+    qEl.addEventListener('touchend', function (e) {
+      if (!tracking) return;
+      tracking = false;
+      var t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+      var dx = t.clientX - tx, dy = t.clientY - ty;
+      if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) stepQueue_(dx > 0 ? 1 : -1);
+    }, { passive: true });
+  })();
+  // รอบ 60 ข้อ 3: ปุ่ม MMG/U/S เดี่ยว
+  document.querySelectorAll('#medLabSoloButtons [data-solo]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onMedLabSoloClick_(btn.getAttribute('data-solo')); });
+  });
   // รอบ 9 (ก้อน B, B4): input ของ patientHn/patientName ต้องปลด/ล็อกแผงด้วยทุกครั้ง (ห้ามเรียก syncQueuePrefix ที่นี่)
   qs('patientName').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
   qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); updateHnHint(); });
@@ -10473,6 +10763,14 @@ document.addEventListener('DOMContentLoaded', function () {
     head.addEventListener('click', function () {
       var panel = qs(head.getAttribute('data-panel'));
       if (!panel) return;
+      // รอบ 60 ข้อ 1: จอกว้าง (>=1100px) + แผงที่ไม่ใช่ .log-panel-other (CSS บังคับกางอยู่) ⇒ สลับ data-user-collapsed แทน
+      // data-collapsed (CSS ฝั่งจอกว้างมองเฉพาะ attribute นี้) · นอกนั้นพฤติกรรมเดิมทุกประการ
+      var wide = !!(window.matchMedia && window.matchMedia('(min-width:1100px)').matches);
+      if (wide && !panel.classList.contains('log-panel-other')) {
+        if (panel.getAttribute('data-user-collapsed') === '1') panel.removeAttribute('data-user-collapsed');
+        else panel.setAttribute('data-user-collapsed', '1');
+        return;
+      }
       panel.setAttribute('data-collapsed', panel.getAttribute('data-collapsed') === '1' ? '0' : '1');
     });
   });
@@ -10487,7 +10785,6 @@ document.addEventListener('DOMContentLoaded', function () {
   // (โหลดเองถ้ายังไม่มีข้อมูลของวันนี้ / สลับเฉย ๆ ถ้ามีแล้ว) — ส่วน "ดูรายชื่อ" เป็นปุ่ม "โหลด/รีเฟรช" ยิงใหม่เสมอ ไม่ใช้แคช
   qs('btnCuLoad').addEventListener('click', function () { loadCheckupTable('list'); }); // รอบ 8 (B7)
   qs('btnCuViewTable').addEventListener('click', function () { showCuView('table'); });
-  qs('btnCuViewPending').addEventListener('click', function () { showCuView('pending'); });
   setCuView('table');
   qs('btnCuPrint').addEventListener('click', function () { window.print(); });
   // เจ้าของสั่ง 2026-09-15: ช่องค้นหาของหน้านี้ — re-render จาก LAST_CU_RECORDS ไม่ยิง API ใหม่
@@ -10524,6 +10821,17 @@ document.addEventListener('DOMContentLoaded', function () {
     pendingSearchEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
   }
   qs('pendingSentDate').addEventListener('change', updatePendingBulkButton);
+  // รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ — เปลี่ยนแล้วกรองทันที · ปุ่ม "ทุกวัน" ล้างค่า (ผ่าน .value ที่ thdEnhanceInput ครอบไว้ จึงอัปเดตป้ายไทยตาม)
+  var pendingFilterDateEl = qs('pendingFilterDate');
+  if (pendingFilterDateEl) {
+    pendingFilterDateEl.addEventListener('change', onPendingFilterDateChange);
+  }
+  var pendingFilterAllEl = qs('pendingFilterAll');
+  if (pendingFilterAllEl) pendingFilterAllEl.addEventListener('click', function () {
+    var el = qs('pendingFilterDate');
+    if (el) el.value = '';
+    onPendingFilterDateChange();
+  });
   qs('btnPendingBulkSave').addEventListener('click', onPendingBulkSave);
 
   qs('btnLoadReport').addEventListener('click', loadReport);
