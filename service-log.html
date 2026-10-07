@@ -624,6 +624,10 @@
      specificity (0,2,2) เท่ากับกฎ :first-child ข้างบน จึงต้องวางไว้ "หลัง" กฎนั้น (หลังชนะ) · แถวสรุป .sp-total
      เป็น td ตัวแรกของแถว (colspan) ไม่ใช่ตัวที่ 3 จึงไม่โดน */
   table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { text-align: left; }
+  /* รอบ 67: แถวคิวยกเลิก/ขาดหาย — เลขคิว + "ยกเลิก" เท่านั้น · เทาจาง ไม่ขีดฆ่า · ช่อง "ยกเลิก" (colspan 7) อยู่กลาง
+     (เป็น td ตัวที่ 2 ไม่โดนกฎชิดซ้ายของคอลัมน์ 3 รอบ 65) · ตอนพิมพ์ใช้ #555 ให้ยังอ่านออก (กฎพิมพ์อยู่ท้ายบล็อก @media print) */
+  table.cu-table tr.cu-cancelled-row td { color: #777; }
+  table.cu-table tr.cu-cancelled-row td.cu-cancelled-cell { text-align: center; }
 
   /* ⚠ 2 บรรทัดล่างของกฎนี้ห้ามลบ (เจอจริง 2026-09-15 ตอนย้ายยอด+ปุ่มบันทึกมากึ่งกลางจอ):
      #toast ลอยกึ่งกลางล่างจอด้วย z-index 999 ⇒ ทับปุ่มบันทึกในแถบล่างจอเต็ม ๆ
@@ -1031,6 +1035,7 @@
     table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 16%; }  /* เซ็นรับ ~31 mm */
     /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
+    table.cu-table tr.cu-cancelled-row td { color: #555; } /* รอบ 67: แถวคิวยกเลิกบนกระดาษ — เทาเข้มพอให้อ่านได้ */
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
        ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (reportDay/reportMonth/cuDate อยู่ใต้ .no-print
@@ -6513,6 +6518,63 @@ function checkupTableRows(records) {
   }).sort(compareByQueue);
 }
 
+/* รอบ 67 (เจ้าของ 2026-10-07 "หากพบว่ามีคิวยกเลิก เช่น วันนี้ไม่มีบันทึกคิว 5 ให้ระบุในรายชื่อด้วย เวลาพิมพ์ตารางก็ขึ้นเป็นยกเลิก"):
+   cuCancelledQueueSlots_(records, pendingQueues) — ฟังก์ชันล้วน คืนรายการเลขคิวตรวจสุขภาพ (สตริงรูปแสดง 'C5' / 'ไม่นัด 2') ที่ถือว่า "ยกเลิก":
+   (ก) คิวของแถว status 'ยกเลิก' ที่เป็นคิวตรวจสุขภาพ (isCheckupQueueValue_ — M/V ไม่นับ) และไม่มีแถว "ยังไม่ยกเลิก + มีโปรแกรม" ใช้คิวเดียวกัน
+   (ข) เลข C ที่ขาดหาย: C1..C<สูงสุดที่ใช้วันนั้น> (สูงสุดนับจากทุกแถวคิว C ทั้งยกเลิก/ไม่ยกเลิก) ที่ไม่มีแถวยังไม่ยกเลิกเลย · "ไม่นัด" ไม่ทำช่วงขาดหาย
+   pendingQueues = คิวของรายการ kind:'log' ที่ยังรอส่งใน SAVE_QUEUE (ผู้เรียกประกอบให้เมื่อวันที่ที่ดูเป็นวันนี้) ⇒ นับเป็น "ใช้อยู่" ไม่ขาดหาย
+   เทียบคิวด้วย normCheckupQueueForCompare_ (+ตัดช่องว่างของ C เช่น 'C 5' = 'C5') · ผลเรียงตาม compareByQueue · ไม่ซ้ำ · ไม่แตะ records */
+function cuQueueKey_(v) {
+  var k = normCheckupQueueForCompare_(v);
+  return /^C\s*\d+$/.test(k) ? k.replace(/\s+/g, '') : k;
+}
+function cuCancelledQueueSlots_(records, pendingQueues) {
+  var used = {};      // คิวที่มีแถวยังไม่ยกเลิก (ไม่ว่ามีโปรแกรมหรือไม่) หรือรอส่งอยู่ — ไม่นับเป็นขาดหาย
+  var active = {};    // คิวที่มีแถวยังไม่ยกเลิก + มีโปรแกรม — ตัดสิน (ก)
+  var cancelled = {}; // คิวตรวจสุขภาพของแถวที่ยกเลิก
+  var maxC = 0;
+  function noteC(k) {
+    var m = /^C(\d+)$/.exec(k);
+    if (m) { var n = parseInt(m[1], 10); if (n > maxC) maxC = n; }
+  }
+  (records || []).forEach(function (rec) {
+    if (!rec) return;
+    var raw = rec.queue;
+    if (!isCheckupQueueValue_(raw)) return;
+    var k = cuQueueKey_(raw);
+    noteC(k);
+    if (rec.status === 'ยกเลิก') { cancelled[k] = true; return; }
+    used[k] = true;
+    if (rec.program) active[k] = true;
+  });
+  (pendingQueues || []).forEach(function (q) {
+    if (!isCheckupQueueValue_(q)) return;
+    var k = cuQueueKey_(q);
+    noteC(k);
+    used[k] = true; active[k] = true;
+  });
+  var out = {};
+  Object.keys(cancelled).forEach(function (k) { if (!active[k]) out[k] = true; });
+  for (var i = 1; i <= maxC; i++) { if (!used['C' + i]) out['C' + i] = true; }
+  return Object.keys(out).sort(function (a, b) { return compareByQueue({ queue: a }, { queue: b }); });
+}
+
+// รอบ 67: คิวของรายการ kind:'log' ที่ยังรอส่ง (pending/checking/failed) ใน SAVE_QUEUE — แบบเดียวกับ maybeSuggestNextCheckupQueue (รอบ 34/38)
+function cuPendingSaveQueues_() {
+  var out = [];
+  (typeof SAVE_QUEUE !== 'undefined' ? SAVE_QUEUE : []).forEach(function (it) {
+    if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue) out.push(it.payload.queue);
+  });
+  return out;
+}
+
+// รอบ 67: ข้อความแถวสรุปของ "ตาราง" เท่านั้น — K = 0 ⇒ เหมือน checkupFootText() ทุกตัวอักษร · checkupFootText() เองไม่แตะ (ใช้ที่อื่นด้วย)
+function checkupTableFootText_(rows, cancelledCount) {
+  var t = checkupFootText(rows);
+  if (cancelledCount > 0) t += ' · ยกเลิก ' + cancelledCount + ' คิว';
+  return t;
+}
+
 /* เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN ของหน้า "รายชื่อตรวจสุขภาพรายวัน" — คนละช่องกับ #todayHnSearch
    ⚠ ใช้ normHnQuery()/recordMatchesHn() ร่วมกับหน้า "รายการวันนี้" (ฟังก์ชันกลางที่ไม่ผูกกับหน้าไหนอยู่แล้ว
    ประกาศไว้ก่อนหน้านี้ในไฟล์) แต่ห้ามแตะ #todayHnSearch/renderTodayList เอง — คนละหน้ากัน */
@@ -6988,8 +7050,20 @@ function renderCheckupTable(records, dateStr) {
     '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
     '<th>ช่องทางส่งผลตรวจสุขภาพ</th><th>เซ็นรับ</th></tr></thead><tbody>';
 
+  // รอบ 67: คิวยกเลิก/ขาดหายของทั้งวัน (K ในแถวสรุปนับทั้งวันเสมอ แม้กำลังค้นหา) · SAVE_QUEUE นับเฉพาะเมื่อดูวันนี้ (payload ไม่มีวันที่ — บันทึกลงวันนี้เสมอ)
+  var cancelledSlots = cuCancelledQueueSlots_(records, (dateStr === todayStr()) ? cuPendingSaveQueues_() : []);
+  // แถวยกเลิกแสดงเฉพาะตอนไม่ค้นหา และไม่เปิด "ยังไม่รับผล" (ค้นหาคน/กรองคน ⇒ ไม่มีแถวยกเลิกมาปน)
+  var showCancelled = !cuSearchQuery() && !cuUnreceivedOnly();
+  var tableItems = shownRows.slice();
+  if (showCancelled) cancelledSlots.forEach(function (q) { tableItems.push({ queue: q, _cuCancelled: true }); });
+  tableItems.sort(compareByQueue);
+
   if (shownRows.length === 0) html += '<tr><td colspan="8" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
-  shownRows.forEach(function (rec) {
+  tableItems.forEach(function (rec) {
+    if (rec._cuCancelled) {
+      html += '<tr class="cu-cancelled-row"><td>' + escHtml(rec.queue) + '</td><td colspan="7" class="cu-cancelled-cell">ยกเลิก</td></tr>';
+      return;
+    }
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
     // ⚠ คำสั่งเจ้าของเพิ่มเติม: เฉพาะ "รอรับด้วยตนเอง" + "นัดรับวันที่" (09-22) เว้นช่องว่างให้เซ็นจริง · ไปรษณีย์/E-mail/ไม่ระบุ ใส่ "-" เสมอ
     // (กันเจ้าหน้าที่ไล่ให้คนที่ไม่ได้รอรับเซ็น) — รอบ 26: ขีดสั้น ASCII "-" ไม่ใช่เครื่องหมาย em dash "—"
@@ -7009,7 +7083,7 @@ function renderCheckupTable(records, dateStr) {
   });
 
   // รอบ 28 (W7): แถวท้าย = "รวม N คน" อย่างเดียว ไม่มียอดเงิน (checkupFootText(rows) ไม่ส่ง totalMoney)
-  html += '<tr class="sp-total"><td colspan="8">' + escHtml(checkupFootText(rows)) + '</td></tr>';
+  html += '<tr class="sp-total"><td colspan="8">' + escHtml(checkupTableFootText_(rows, cancelledSlots.length)) + '</td></tr>'; // รอบ 67: + " · ยกเลิก K คิว"
   html += '</tbody></table></div>';
   html += checkupExtraSummaryHtml(rows); // นอกตาราง (no-print) — ห้ามเอากลับไปต่อท้าย checkupFootText() ในแถว <tr> ข้างบน
   wrap.innerHTML = html;
