@@ -756,16 +756,19 @@
   .opt-btn.prog-c3 { background: #D7F5DF; border-color: #2E9E5B; color: #1A1E40; }
   .opt-btn.prog-c4 { background: #FDD9E8; border-color: #D6427F; color: #1A1E40; }
   .opt-btn.prog-pea { background: #D5E9FB; border-color: #2C7BC4; color: #1A1E40; }
+  /* รอบ 63: โปรแกรมคู่รัก — สีเหลือง (เจ้าของสั่งเปลี่ยนจากสเปกที่เป็นชมพู-แดง) เหลืองเข้ม/อิ่มกว่า c1 (#FFF4C9 ครีมอ่อน) ชัดเจน · ตัวอักษร #1A1E40 ยังอ่านชัด */
+  .opt-btn.prog-couple { background: #FFE033; border-color: #A67C00; color: #1A1E40; }
   .opt-btn.prog-c1:has(input:checked), .opt-btn.prog-c2:has(input:checked), .opt-btn.prog-c3:has(input:checked),
   /* 🐞 แก้ 2026-09-03: ต้องย้ำ background ของแต่ละโปรแกรมตอนถูกเลือกด้วย
      ไม่งั้น .opt-btn:has(input:checked) (specificity สูงกว่า .opt-btn.prog-cX) จะทับสีประจำโปรแกรมทิ้ง
      ⇒ ที่สั่งไว้ว่า P4 ชมพู จะกลายเป็นสีม่วงอ่อนทันทีที่กดเลือก */
-  .opt-btn.prog-c4:has(input:checked), .opt-btn.prog-pea:has(input:checked) { border-width: 3px; font-weight: 800; }
+  .opt-btn.prog-c4:has(input:checked), .opt-btn.prog-pea:has(input:checked), .opt-btn.prog-couple:has(input:checked) { border-width: 3px; font-weight: 800; }
   .opt-btn.prog-c1:has(input:checked) { background: #FFF4C9; }
   .opt-btn.prog-c2:has(input:checked) { background: #FFFFFF; }
   .opt-btn.prog-c3:has(input:checked) { background: #D7F5DF; }
   .opt-btn.prog-c4:has(input:checked) { background: #FDD9E8; }
   .opt-btn.prog-pea:has(input:checked) { background: #D5E9FB; }
+  .opt-btn.prog-couple:has(input:checked) { background: #FFE033; } /* รอบ 63: ย้ำสีตอนถูกเลือก (บทเรียนรอบ 8.1 — .opt-btn:has(input:checked) specificity สูงกว่า) */
 
   /* เจ้าของสั่ง 2026-09-03 "ปรับแยกกันให้ดูง่ายกว่านี้" — หน้าตรวจสุขภาพ:
      แยกหัวข้อด้วยเส้นคั่น + จัดปุ่มตัวเลือกเป็นตารางความกว้างเท่ากัน แทน flex ที่ตกบรรทัดไม่เท่ากัน
@@ -1313,6 +1316,7 @@
                     <label class="opt-btn prog-btn prog-c3" data-progset="week"><input type="radio" name="program" value="3"><span class="prog-check"></span> โปรแกรม 3 <span class="opt-price" data-prog="3"></span></label>
                     <label class="opt-btn prog-btn prog-c4" data-progset="week"><input type="radio" name="program" value="4"><span class="prog-check"></span> โปรแกรม 4 <span class="opt-price" data-prog="4"></span></label>
                     <label class="opt-btn prog-btn prog-pea" data-progset="week"><input type="radio" name="program" value="pea"><span class="prog-check"></span> การไฟฟ้าเรียกเก็บ <span class="opt-price" data-prog="pea"></span></label>
+                    <label class="opt-btn prog-btn prog-couple" data-progset="week"><input type="radio" name="program" value="couple"><span class="prog-check"></span> โปรแกรมคู่รัก <span class="opt-price" data-prog="couple"></span></label>
                     <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="1sun"><span class="prog-check"></span> โปรแกรม 1 วันอาทิตย์ <span class="opt-price" data-prog="1sun"></span></label>
                     <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="2sun"><span class="prog-check"></span> โปรแกรม 2 วันอาทิตย์ <span class="opt-price" data-prog="2sun"></span></label>
                   </div>
@@ -1788,6 +1792,8 @@ var PRICE_DEFAULTS = {
   MEDCERT_FIRST: 120, MEDCERT_NEXT: 20,
   // รอบ 22 (2026-09-21, เจ้าของสั่ง): ชุดโปรแกรมวันอาทิตย์ — คนละราคากับจันทร์-ศุกร์
   PROG1SUN_M: 2398, PROG1SUN_F: 2398, PROG2SUN_M: 5414, PROG2SUN_F: 5114,
+  // รอบ 63: โปรแกรมคู่รัก (ชุดจันทร์-ศุกร์) — ตรงกับ FALLBACK_PROGRAMS ฝั่งเซิร์ฟเวอร์
+  PROGCOUPLE_M: 2756, PROGCOUPLE_F: 2986,
   PAP_SUN: 500, PAP_THINPREP_SUN: 1000, PAP_THINPREP_HPV_SUN: 2320
 };
 
@@ -1798,7 +1804,9 @@ var PROGRAMS_DEFAULT = {
   4: { male: 5314, female: 5014 },
   // รอบ 22: ชุดโปรแกรมวันอาทิตย์ — คนละชุดกับโปรแกรม 1/2 วันจันทร์-ศุกร์โดยสิ้นเชิง (เลขซ้ำกันเฉย ๆ)
   '1sun': { male: 2398, female: 2398 },
-  '2sun': { male: 5414, female: 5114 }
+  '2sun': { male: 5414, female: 5114 },
+  // รอบ 63: โปรแกรมคู่รัก (ชุดจันทร์-ศุกร์ ไม่ใช่วันอาทิตย์) — key ตัวเล็ก 'couple' · รหัสราคา PROGCOUPLE_M/F
+  'couple': { male: 2756, female: 2986 }
 };
 
 var VACCINES_DEFAULT = [
@@ -2266,8 +2274,9 @@ function buildProgramsFromPrices(prices) {
     };
   });
   // รอบ 22 (2026-09-21): ชุดโปรแกรมวันอาทิตย์ — รหัสราคาเป็นตัวใหญ่ (PROG1SUN_M) ต่างจาก key ในนี้ที่เป็นตัวเล็ก ('1sun')
-  ['1sun', '2sun'].forEach(function (p) {
-    var priceCodeBase = p.toUpperCase(); // '1sun' -> '1SUN'
+  // รอบ 63: เพิ่ม 'couple' ในลูปเดียวกัน (รหัสราคาตัวใหญ่ PROGCOUPLE_M) — ไม่ใช่ชุดวันอาทิตย์ จึงไม่แตะ SUNDAY_PROGRAMS
+  ['1sun', '2sun', 'couple'].forEach(function (p) {
+    var priceCodeBase = p.toUpperCase(); // '1sun' -> '1SUN' · 'couple' -> 'COUPLE'
     var mKey = 'PROG' + priceCodeBase + '_M', fKey = 'PROG' + priceCodeBase + '_F';
     var fallback = PROGRAMS_DEFAULT[p];
     out[p] = {
@@ -3307,8 +3316,8 @@ function updateProgramLabels() {
   });
   var peaEl = document.querySelector('.opt-price[data-prog="pea"]');
   if (peaEl) peaEl.textContent = '';
-  // รอบ 22 (2026-09-21): ป้ายราคาอ้างอิงของชุดโปรแกรมวันอาทิตย์
-  ['1sun', '2sun'].forEach(function (p) {
+  // รอบ 22 (2026-09-21): ป้ายราคาอ้างอิงของชุดโปรแกรมวันอาทิตย์ · รอบ 63: โปรแกรมคู่รักขึ้นราคาตามเพศเหมือนกัน
+  ['1sun', '2sun', 'couple'].forEach(function (p) {
     var el = document.querySelector('.opt-price[data-prog="' + p + '"]');
     if (!el) return;
     var row = STATE.programs[p];
@@ -4049,7 +4058,7 @@ function recalcTotals() {
    getCheckedVaccineCodes().length (ผ่าน ctx.vaccineCodes) · getMedCertNums() (ผ่าน ctx.medNums) · isCheckupOn()/ctx.program */
 function updatePanelSummaries(ctx) {
   var checkupSumEl = qs('panelCheckupSummary');
-  if (checkupSumEl) checkupSumEl.textContent = ctx.checkupOn ? ('โปรแกรม ' + ctx.program) : '—';
+  if (checkupSumEl) checkupSumEl.textContent = ctx.checkupOn ? programShortLabel_(ctx.program) : '—';
 
   var vaccineSumEl = qs('panelVaccineSummary');
   if (vaccineSumEl) vaccineSumEl.textContent = ctx.vaccineCodes.length ? (ctx.vaccineCodes.length + ' เข็ม') : '—';
@@ -5267,7 +5276,7 @@ function todayStr() {
 function summarizeRecordParts(rec) {
   var parts = [];
   if (rec.queue) parts.push('คิว ' + rec.queue); // รอบ 6: โชว์เลขคิวหน้าชื่อ
-  if (rec.program) parts.push('ตรวจสุขภาพ โปรแกรม ' + rec.program + (rec.gender ? ' (' + rec.gender + ')' : ''));
+  if (rec.program) parts.push('ตรวจสุขภาพ ' + programShortLabel_(rec.program) + (rec.gender ? ' (' + rec.gender + ')' : ''));
   // รอบ 26 (2026-09-22): แสดงแค่ "ชนิด" ผ่าน pelvicTypeLabel() แทน rec.pelvicLabel ดิบ (เดิมมีคำว่า "ตรวจภายใน (...)")
   if (rec.pelvicLabel) parts.push('ตรวจมะเร็งปากมดลูก : ' + pelvicTypeLabel(rec));
   // รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่ต่อจากป้ายตรวจมะเร็งปากมดลูกทันที (มีเฉพาะแถวที่ pelvic ≠ 'no')
@@ -6307,9 +6316,17 @@ function shortDeliveryLabel(method, pickupDate) {
   return method; // ค่าอื่น (เช่นแถวเก่าที่ไม่อยู่ใน whitelist ปัจจุบัน) -> แสดงตามเดิม
 }
 
+// รอบ 63: ป้ายสั้นในแผงสรุป/รายการวันนี้/การ์ดรายชื่อ — เดิมต่อ 'โปรแกรม ' + ค่าดิบ ซึ่งกับ 'couple' จะได้ "โปรแกรม couple"
+// ค่าอื่นคงรูปแบบเดิมทุกตัวอักษร ('โปรแกรม ' + ค่าดิบ) กันพฤติกรรมเดิมเปลี่ยนโดยไม่ตั้งใจ
+function programShortLabel_(program) {
+  var p = String(program == null ? '' : program);
+  return p === 'couple' ? 'โปรแกรมคู่รัก' : ('โปรแกรม ' + p);
+}
+
 function programLabelForPrint(program) {
   var p = String(program == null ? '' : program);
   if (p === 'pea') return 'การไฟฟ้าเรียกเก็บ'; // ป้ายเดียวกับที่ใช้ในรายงานรายเดือน (renderReport)
+  if (p === 'couple') return 'โปรแกรมคู่รัก'; // รอบ 63
   if (p === '1' || p === '2' || p === '3' || p === '4') return 'โปรแกรม ' + p;
   if (p === '1sun') return 'โปรแกรม 1 วันอาทิตย์'; // รอบ 22 (2026-09-21)
   if (p === '2sun') return 'โปรแกรม 2 วันอาทิตย์';
@@ -6535,6 +6552,7 @@ function checkupFootText(rows, totalMoney) {
    ⚠ ต่างจากรอบก่อน (ที่ตัดยอด U/S ออกเพราะมันต่อท้าย checkupFootText() ซึ่งพิมพ์ออกกระดาษด้วย) —
    รอบนี้แยกกล่องออกมาเป็น .cu-extra ต่างหาก (ดู checkupExtraSummaryHtml ด้านล่าง) แล้วบังคับคลาส no-print
    ให้กล่องนั้นเสมอ ⇒ checkupFootText() เดิมข้างบนไม่ต้องแก้อะไรเลย ยังพิมพ์ขึ้นกระดาษแบบเดิมทุกตัวอักษร */
+// รอบ 63: โปรแกรมคู่รัก ไม่มี U/S และไม่มี EKG (เจ้าของยืนยัน) ⇒ ไม่เติม 'couple' ที่นี่ และไม่อยู่ในเงื่อนไข ekg ของ computeSupOpd_
 var CU_US_PROGRAMS = ['3', '4']; // U/S = อัลตราซาวด์ อยู่ในโปรแกรม 3 และ 4 ⚠ ถ้าโปรแกรมที่มี U/S เปลี่ยน แก้ที่ตัวแปรนี้ที่เดียว
 
 // นับแถวที่โปรแกรมอยู่ใน CU_US_PROGRAMS — ⚠ String() ก่อนเทียบเสมอ เพราะชีต/records อาจคืน program เป็นตัวเลข (3)
@@ -7821,7 +7839,7 @@ function renderCheckupList(records, dateStr) {
   // รอบ 29 (S4) W4 (ข้อ 4): ห่อแต่ละคนด้วย .cu-person + แถบหัว (คิว/HN/ชื่อ-สกุล/โปรแกรม) ให้แยกคนได้ชัดเจนขึ้น
   // — หน้าตาอย่างเดียว เนื้อหาข้างใน (recordItemHtml + cuNoteHtml) เหมือนเดิมทุกประการ · เรียงตาม compareByQueue แล้ว (checkupTableRows)
   shownRows.forEach(function (rec, idx) {
-    var progLabel = rec.program ? ('โปรแกรม ' + escHtml(String(rec.program))) : '';
+    var progLabel = rec.program ? escHtml(programShortLabel_(rec.program)) : '';
     // รอบ 31B ข้อ 1: แถบหัวกล่องใช้สีประจำโปรแกรมของรอบ 6 (programColorClass — ว่างสำหรับ pea/1sun/2sun)
     var headClass = 'cu-person-head' + (programColorClass(rec.program) ? (' ' + programColorClass(rec.program)) : '');
     // รอบ 36 (W2, เจ้าของสั่งตามภาพหน้าจอ): ชื่อในแถบหัว = คำนำหน้า + ชื่อ (เว้นวรรค 1 ช่อง ไม่มีคำนำหน้า ⇒ ชื่อเฉย ๆ)
@@ -8488,6 +8506,9 @@ function renderReport(summary, period) {
   });
   var peaRow = programs['pea'] || {};
   html += '<tr><td>การไฟฟ้าเรียกเก็บ</td><td>' + numOr0(peaRow['ชาย']) + '</td><td>' + numOr0(peaRow['หญิง']) + '</td></tr>';
+  // รอบ 63: โปรแกรมคู่รัก (ชุดจันทร์-ศุกร์) — ถ้า backend ยังไม่ deploy จะไม่มีคีย์ 'couple' ⇒ แสดง 0 (ไม่ crash)
+  var coupleRow = programs['couple'] || {};
+  html += '<tr><td>โปรแกรมคู่รัก</td><td>' + numOr0(coupleRow['ชาย']) + '</td><td>' + numOr0(coupleRow['หญิง']) + '</td></tr>';
   html += '</tbody></table></div>';
 
   // รอบ 22 (2026-09-21, เจ้าของสั่ง): ชุดโปรแกรมวันอาทิตย์ — ตารางแยกต่างหาก ห้ามรวมแถวกับโปรแกรม 1/2 วันจันทร์-ศุกร์
