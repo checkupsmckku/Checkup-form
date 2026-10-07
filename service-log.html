@@ -1519,7 +1519,8 @@
   <div id="todayScreen" style="display:none;">
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
-      <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ 0 คน · ยอดเงินรวม 0 บาท</div>
+      <!-- รอบ 72: ข้อความตั้งต้นใช้ขีด ไม่ใช่ 0 — โหลดครั้งแรกไม่สำเร็จ แถบนี้ไม่ถูกเขียนทับ ⇒ "0 คน" จะดูเหมือนยอดจริง -->
+      <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท</div>
 
       <div class="card" id="specialTodaySummaryCard">
         <h2>สรุป SUP OPD</h2>
@@ -1642,6 +1643,8 @@
       <div class="row no-print" id="pendingKindSwitch" style="margin-top:10px;">
         <button type="button" class="btn small" id="btnPendingKindCheckup" data-pending-kind="checkup">ผลตรวจสุขภาพ</button>
         <button type="button" class="btn small secondary" id="btnPendingKindPelvic" data-pending-kind="pelvic">ผลตรวจมะเร็งปากมดลูก</button>
+        <!-- รอบ 73 (เจ้าของสั่ง 2026-10-07): ปุ่มที่ 3 "รอมารับ" — ตารางรอมารับ + ติ๊กหลายคนกด "รับผลแล้ว" ทีเดียว (kind 'pickup' ของ bulkSentDate) -->
+        <button type="button" class="btn small secondary" id="btnPendingKindPickup" data-pending-kind="pickup">รอมารับ</button>
       </div>
 
       <!-- รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ (ก่อนช่องค้นหา) — ว่าง = ทุกวัน · กรองฝั่งเว็บ (backend pending คืนทุกวันอยู่แล้ว)
@@ -1664,7 +1667,7 @@
 
       <div class="row no-print" id="pendingBulkRow" style="margin-top:10px;">
         <div>
-          <label class="field-label" for="pendingSentDate">วันที่ส่งออก</label>
+          <label class="field-label" for="pendingSentDate" id="pendingSentDateLabel">วันที่ส่งออก</label>
           <input type="date" id="pendingSentDate">
         </div>
         <button type="button" class="btn" id="btnPendingBulkSave" disabled>บันทึกวันที่ส่งออก (0 คน)</button>
@@ -2237,15 +2240,95 @@ function genderFromThai(g) { return g === 'ชาย' ? 'male' : (g === 'หญ�
 /* =========================================================================
    5. เรียก API
    ========================================================================= */
-function apiCall(action, payload) {
+// รอบ 72 (เจ้าของสั่ง 2026-10-07): คำขออ่านเกิน 20 วิ ⇒ ตัดทิ้งนับเป็นคำตอบเสีย (เดิมค้างได้ 17–48 วิ เพราะต่อคิวฝั่ง Google)
+// ใช้เฉพาะ action อ่านที่ส่ง opts.timeoutMs มาเอง — action เขียนทุกตัว (log/edit/cancel/dq*…) ห้ามใส่ timeout/signal เด็ดขาด
+var READ_TIMEOUT_MS = 20000;
+// ตัวแปรสำหรับเทสต์เท่านั้น: window.READ_TIMEOUT_MS_OVERRIDE (ms) ลดเวลาตัดทิ้งให้เทสต์ไม่ต้องรอ 20 วิ — โค้ดจริงไม่เคยตั้งค่านี้
+function readTimeoutMs_() {
+  var o = (typeof window !== 'undefined') ? window.READ_TIMEOUT_MS_OVERRIDE : 0;
+  return (typeof o === 'number' && o > 0) ? o : READ_TIMEOUT_MS;
+}
+// รอบ 72: ลองโหลดใหม่เองเมื่อคำตอบเสีย "ครั้งเดียว" ต่อการเรียก — หน่วงสั้น ๆ ให้ฝั่ง Google คลายคิวก่อน (ไม่วนซ้ำ ผู้เรียกตัดสินเองว่าเคย retry แล้วหรือยัง)
+var READ_RETRY_DELAY_MS = 500;
+// รอบ 72: ตัวตรวจกลางว่าคำตอบแบบ "รายการ" ใช้ได้จริง — status ok **และ** ทุกคีย์ใน keys เป็นอาร์เรย์ (ค่าตั้งต้น ['records'])
+// ⚠ {"status":"ok","message":"API is running"} (doGet) หรือหน้า HTML error ของ Google ผ่านเช็ค status === 'ok' เดิมได้
+// แล้ว resp.records || [] กลายเป็น "ไม่มีข้อมูล 0 คน" ทั้งที่ชีตมีแถว — ห้ามเขียนเงื่อนไขนี้ซ้ำเองที่อื่น ให้เรียกตัวนี้เสมอ
+function isListResp_(resp, keys) {
+  if (!resp || resp.status !== 'ok') return false;
+  var ks = keys || ['records'];
+  for (var i = 0; i < ks.length; i++) {
+    if (!Array.isArray(resp[ks[i]])) return false;
+  }
+  return true;
+}
+// ข้อความบอกสาเหตุคำตอบเสีย — status ไม่ ok ใช้ message ของเซิร์ฟเวอร์ · ok แต่รูปร่างผิด (เช่น "API is running") ไม่เอา message มาโชว์
+function badListRespMessage_(resp) {
+  if (resp && resp.status !== 'ok' && resp.message) return String(resp.message);
+  return 'เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ';
+}
+// รอบ 72: วาดกล่อง "โหลดไม่สำเร็จ" + ปุ่ม "ลองใหม่" ลงใน el (ใช้เมื่อยังไม่เคยมีข้อมูลบนจอ — ห้ามแสดง 0/ว่างแทน)
+function renderLoadFailBox_(el, text, message, onRetry) {
+  if (!el) return;
+  el.innerHTML = '';
+  var box = document.createElement('div');
+  box.className = 'error-box';
+  box.appendChild(document.createTextNode(text + (message ? ' (' + message + ')' : '') + ' '));
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn small';
+  btn.setAttribute('data-load-retry', '1');
+  btn.textContent = 'ลองใหม่';
+  btn.addEventListener('click', function () { onRetry(); });
+  box.appendChild(btn);
+  el.appendChild(box);
+}
+
+// รอบ 72: เหมือน renderLoadFailBox_ แต่ใช้กับกล่องข้อความที่มีอยู่แล้วในหน้า (เช่น #spBoardError/#pendingError) — ใส่ข้อความ + ปุ่ม "ลองใหม่" แล้วโชว์
+function showErrWithRetry_(errEl, text, onRetry) {
+  if (!errEl) return;
+  errEl.textContent = text + ' ';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn small';
+  btn.setAttribute('data-load-retry', '1');
+  btn.textContent = 'ลองใหม่';
+  btn.addEventListener('click', function () { onRetry(); });
+  errEl.appendChild(btn);
+  errEl.hidden = false;
+}
+
+function apiCall(action, payload, opts) {
   var body = JSON.stringify(Object.assign({ action: action }, payload || {}));
-  return fetch(APPS_SCRIPT_URL, {
+  var fetchOpts = {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: body
-  }).then(function (res) {
+  };
+  // รอบ 72: timeout เฉพาะเมื่อผู้เรียกส่ง opts.timeoutMs มา — ไม่ส่ง = พฤติกรรมเดิมทุกประการ (ไม่มี signal ใน options ของ fetch)
+  var tms = opts && opts.timeoutMs;
+  var timer = null, timedOut = false, ctrl = null, timeoutP = null;
+  if (tms > 0) {
+    if (typeof AbortController === 'function') { ctrl = new AbortController(); fetchOpts.signal = ctrl.signal; }
+    // แข่งกับตัวจับเวลาด้วย (นอกจาก abort) — เผื่อ fetch ตัวไหนไม่สนใจ signal ก็ยังคืนคำตอบเสียตรงเวลา
+    timeoutP = new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        timedOut = true;
+        if (ctrl) { try { ctrl.abort(); } catch (e) {} }
+        reject(new Error('timeout'));
+      }, tms);
+    });
+  }
+  var work = fetch(APPS_SCRIPT_URL, fetchOpts).then(function (res) {
     return res.json();
+  });
+  return (timeoutP ? Promise.race([work, timeoutP]) : work).then(function (data) {
+    if (timer) clearTimeout(timer);
+    return data;
   }).catch(function (err) {
+    if (timer) clearTimeout(timer);
+    if (timedOut) {
+      return { status: 'error', message: 'เซิร์ฟเวอร์ตอบช้าเกิน 20 วินาที', networkError: true, timeout: true };
+    }
     // รอบ 34 (2026-09-30) W1 (ข้อ 5): ธง networkError — ใช้แยก "เน็ตหลุด/เชื่อมต่อไม่สำเร็จ" ออกจาก error ปกติที่
     // เซิร์ฟเวอร์ตอบกลับมาจริง (onSubmitLog ต่อท้ายข้อความเตือนเพิ่มเฉพาะกรณีนี้) ไม่ใช่คีย์ที่ส่งไปเซิร์ฟเวอร์ — เป็นแค่
     // ผลลัพธ์ในเครื่องของ apiCall() เอง ไม่กระทบ payload/contract ใด ๆ ที่ส่งออกไปจริง
@@ -5535,7 +5618,7 @@ var TODAY_PREFETCH = null;
 // (ดู tryRestoreSession/handleGateKeySubmit กิ่ง else) ⇒ ไม่มีทางที่ผลจาก prefetch หลุดไปแสดงโดยที่รหัสยังไม่ผ่าน
 function startTodayPrefetch(staffKey, point) {
   if (!point) { TODAY_PREFETCH = null; return; }
-  TODAY_PREFETCH = { key: point + '|' + todayStr(), promise: apiCall('today', { staffKey: staffKey, point: point, date: todayStr() }) };
+  TODAY_PREFETCH = { key: point + '|' + todayStr(), promise: apiCall('today', { staffKey: staffKey, point: point, date: todayStr() }, { timeoutMs: readTimeoutMs_() }) }; // รอบ 72 (เจ้าของสั่ง 2026-10-07): action อ่าน ⇒ ตัดทิ้งที่ 20 วิ · คำตอบเสียเข้า loadToday() ที่ใช้ promise นี้ ⇒ ใช้กติกาเดียวกัน
 }
 
 // แทรก/แทนที่ record เดียวในอาร์เรย์ตาม recordId (ไม่เจอ ⇒ ใส่หัวรายการ) — คืนอาร์เรย์ใหม่เสมอ ไม่แก้ของเดิมในที่
@@ -5841,25 +5924,41 @@ function onEditRecordClick(recordId) {
   openEditModalForRecord(rec);
 }
 
-function loadToday() {
+// รอบ 72 (เจ้าของสั่ง 2026-10-07): คำตอบเสีย (ไม่ใช่ status ok + records เป็นอาร์เรย์ — เช่น "API is running" / หน้า HTML error / timeout)
+// ห้ามวาดทับเป็น "ผู้รับบริการทั้งหมด 0 คน"/"ยังไม่มีบันทึกวันนี้" ⇒ มีข้อมูลเดิมของ key เดียวกัน = คงไว้ + ป้าย ⚠ + ลองใหม่เอง 1 ครั้ง ·
+// ไม่มีข้อมูลเดิม = กล่อง "โหลดไม่สำเร็จ" + ปุ่ม "ลองใหม่" (แถบสรุปไม่ถูกแตะ)
+// ตัวนับ TODAY_LOAD_SEQ = การเรียก loadToday() ครั้งล่าสุด — retry ทำเฉพาะเมื่อไม่มีการเรียกใหม่แทรก และ retry ไม่ retry ซ้ำ (จบที่ 1 ครั้ง/การเรียก)
+var TODAY_LOAD_SEQ = 0;
+function loadToday() { loadTodayRun_(false); }
+function loadTodayRun_(isRetry) {
+  // รอบ 72: ยังไม่เลือกจุดบริการ ⇒ ไม่ยิง today (เดิมยิง point ว่างแล้วได้ "ไม่มีบันทึก") · ทิ้ง prefetch ที่ค้าง (ถ้ามี) ด้วย
+  if (!STATE.point) {
+    TODAY_PREFETCH = null;
+    TODAY_LOAD_SEQ++;
+    var wrapNp = qs('todayList');
+    if (wrapNp) wrapNp.innerHTML = '<p class="muted">เลือกจุดบริการก่อน</p>';
+    setRefreshHint('todayRefreshHint', 'none');
+    return;
+  }
+  var seq = ++TODAY_LOAD_SEQ;
   var dateStr = todayStr();
   var key = STATE.point + '|' + dateStr;
   // รอบ 15 (2026-09-17) — W2: มีแคชของจุดบริการ+วันนี้อยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ (ไม่ขึ้น "กำลังโหลด...")
   // แล้วรีเฟรชเบื้องหลัง ป้าย "กำลังอัปเดต…" บอกว่ากำลังยิงซ้ำอยู่
   var cacheHit = !!(TODAY_CACHE.key === key && TODAY_CACHE.records);
   if (cacheHit) {
-    renderTodayList(TODAY_CACHE.records);
+    if (!isRetry) renderTodayList(TODAY_CACHE.records); // retry: ของเดิมบนจอยังอยู่ ไม่วาดซ้ำ
     setRefreshHint('todayRefreshHint', 'loading');
   }
   // รอบ 18: มี today ที่ยิงคู่ขนานไปกับ config ไว้ล่วงหน้าแล้วตรงคีย์นี้พอดี -> ใช้ผลอันนั้นแทนยิงซ้ำ
   // one-shot เสมอ (ล้างทิ้งไม่ว่าจะได้ใช้หรือไม่) — prefetch ของจุด/วันอื่นที่ค้างอยู่ก็ถูกทิ้งไปด้วย ไม่มีความหมายอีกต่อไป
-  var todayPromise = (TODAY_PREFETCH && TODAY_PREFETCH.key === key) ? TODAY_PREFETCH.promise : apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr });
+  var todayPromise = (TODAY_PREFETCH && TODAY_PREFETCH.key === key) ? TODAY_PREFETCH.promise : apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr }, { timeoutMs: readTimeoutMs_() });
   TODAY_PREFETCH = null;
   todayPromise.then(function (resp) {
     // เปลี่ยนจุดบริการ/ข้ามวันระหว่างรอ -> คีย์ที่หน้าจอควรแสดงตอนนี้ไม่ตรงกับคำขอนี้แล้ว ทิ้งคำตอบนี้ไปเลย
     if (STATE.point + '|' + todayStr() !== key) return;
-    if (resp && resp.status === 'ok') {
-      var records = resp.records || [];
+    if (isListResp_(resp)) {
+      var records = resp.records;
       var json = JSON.stringify(records);
       if (cacheHit && json === TODAY_CACHE.json) {
         setRefreshHint('todayRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
@@ -5867,10 +5966,23 @@ function loadToday() {
       }
       renderTodayList(records); // ตั้ง LAST_TODAY_RECORDS + TODAY_CACHE ให้เองข้างในแล้ว
       setRefreshHint('todayRefreshHint', 'none');
-    } else if (cacheHit) {
-      setRefreshHint('todayRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ (ห้ามกลืนเงียบ)
+      return;
+    }
+    // ---- คำตอบเสีย ----
+    var failMsg = badListRespMessage_(resp);
+    // ข้อมูลเดิมของ key เดียวกันที่อยู่บนจอ (อาจมาจากแคชก่อนเรียกนี้ หรือจาก applySavedRecord ระหว่างรอ) — เช็คสดตอนนี้
+    var haveData = !!(TODAY_CACHE.key === key && TODAY_CACHE.records);
+    if (haveData) {
+      setRefreshHint('todayRefreshHint', 'error'); // คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ (ห้ามกลืนเงียบ)
     } else {
-      qs('todayList').innerHTML = '<p class="muted">โหลดรายการวันนี้ไม่สำเร็จ' + (resp && resp.message ? ' (' + escHtml(resp.message) + ')' : '') + '</p>';
+      renderLoadFailBox_(qs('todayList'), 'โหลดรายการวันนี้ไม่สำเร็จ', failMsg, function () { loadToday(); });
+    }
+    // ลองโหลดใหม่เอง 1 ครั้ง: เฉพาะการเรียกที่ยังเป็นครั้งล่าสุด และไม่ใช่ retry อยู่แล้ว
+    if (!isRetry && seq === TODAY_LOAD_SEQ) {
+      setTimeout(function () {
+        if (seq !== TODAY_LOAD_SEQ || STATE.point + '|' + todayStr() !== key) return; // มีการเรียกใหม่/เปลี่ยนจุดระหว่างหน่วง
+        loadTodayRun_(true);
+      }, READ_RETRY_DELAY_MS);
     }
   });
 }
@@ -5913,7 +6025,13 @@ var SP_BOARD_CAP_MODE = false;
 // รอบ 9.2 — ตัวนับ sequence ต่อ recordId กันคำตอบเก่าที่มาถึงทีหลัง (out-of-order response) มาทับสถานะที่ใหม่กว่า
 var SP_SAVE_SEQ = {};
 
-function loadSpBoard() {
+// รอบ 72 (เจ้าของสั่ง 2026-10-07): คำตอบเสีย (ไม่ผ่าน isListResp_) ⇒ ห้ามเขียน SP_BOARD_RECORDS/SP_CACHE ทับเป็น [] (เดิมวาดการ์ด 0 ทุกช่อง) —
+// มีแคช = คงข้อมูลเดิม + ป้าย ⚠ · ไม่มีแคช = กล่อง #spBoardError "โหลดไม่สำเร็จ" + ปุ่มลองใหม่ (ล้างการ์ดทิ้ง ไม่วาดเป็น 0) · ลองเองอีก 1 ครั้ง ไม่วนซ้ำ
+// ⚠ loadSpBoard ถูกผูกเป็น event handler ตรง ๆ (รับ Event) ⇒ ตัวจริงอยู่ที่ loadSpBoardRun_(isRetry)
+var SP_LOAD_SEQ = 0;
+function loadSpBoard() { loadSpBoardRun_(false); }
+function loadSpBoardRun_(isRetry) {
+  var seq = ++SP_LOAD_SEQ;
   var dateEl = qs('spBoardDate');
   if (dateEl && !dateEl.value) dateEl.value = todayStr();
   var dateStr = (dateEl && dateEl.value) || todayStr();
@@ -5923,25 +6041,27 @@ function loadSpBoard() {
   // รอบ 15 (2026-09-17) — W2: มีแคชของวันนี้อยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ แล้วรีเฟรชเบื้องหลัง
   var cacheHit = !!(SP_CACHE.key === dateStr && SP_CACHE.records);
   if (cacheHit) {
-    SP_BOARD_RECORDS = SP_CACHE.records;
-    renderSpBoardCards();
-    var l2pre = qs('spBoardLayer2');
-    if (l2pre && !l2pre.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
+    if (!isRetry) { // retry: ของเดิมบนจอยังอยู่ ไม่วาดซ้ำ
+      SP_BOARD_RECORDS = SP_CACHE.records;
+      renderSpBoardCards();
+      var l2pre = qs('spBoardLayer2');
+      if (l2pre && !l2pre.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
+    }
     setRefreshHint('spRefreshHint', 'loading');
   }
 
-  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
     // เปลี่ยนวันที่ระหว่างรอ -> คีย์ไม่ตรงกับที่หน้าจอควรแสดงอยู่แล้ว ทิ้งคำตอบนี้
     var curDateEl = qs('spBoardDate');
     if (((curDateEl && curDateEl.value) || todayStr()) !== dateStr) return;
 
     // ⚠ ห้ามกลืน error เงียบ — กระดาน 0 ทุกช่องหน้าตาเหมือน "วันนี้ไม่มีใครลงชื่อ" เป๊ะ
     //    apiCall() ไม่เคย reject (จับ error คืนเป็น {status:'error'}) ⇒ ต้องเช็ค status เองที่นี่
-    var loadOk = !!(resp && resp.status === 'ok');
+    var loadOk = isListResp_(resp); // รอบ 72: ต้องมี records เป็นอาร์เรย์ด้วย ไม่ใช่แค่ status ok ("API is running" ผ่านเช็คเดิมแล้วกลายเป็น 0 ทุกช่อง)
     var errEl = qs('spBoardError');
 
     if (loadOk) {
-      var records = resp.records || [];
+      var records = resp.records;
       var json = JSON.stringify(records);
       if (cacheHit && json === SP_CACHE.json) {
         setRefreshHint('spRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
@@ -5959,18 +6079,27 @@ function loadSpBoard() {
       var l2 = qs('spBoardLayer2');
       if (l2 && !l2.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
       setRefreshHint('spRefreshHint', 'none');
-    } else if (cacheHit) {
-      setRefreshHint('spRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ
     } else {
-      if (errEl) {
-        errEl.textContent = '❌ โหลดข้อมูลไม่สำเร็จ — ตัวเลขข้างล่างยังไม่ใช่ของจริง กด 🔄 รีเฟรชอีกครั้ง' +
-          (resp && resp.message ? ' (' + resp.message + ')' : '');
-        errEl.hidden = false;
+      // ---- คำตอบเสีย (รอบ 72) ----
+      var haveSp = !!(SP_CACHE.key === dateStr && SP_CACHE.records);
+      if (haveSp) {
+        setRefreshHint('spRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ
+      } else {
+        showErrWithRetry_(errEl, '❌ โหลดข้อมูลไม่สำเร็จ — ตัวเลขยังไม่ใช่ของจริง (' + badListRespMessage_(resp) + ')', function () { loadSpBoardRun_(false); });
+        // ไม่มีแคชของวันนี้ ⇒ ข้อมูลที่ค้างใน SP_BOARD_RECORDS (ถ้ามี) เป็นของวันอื่น ล้างทิ้งไม่ให้ปนกับคำเตือน (SP_CACHE ไม่ถูกแตะ) ·
+        // แต่ห้ามวาดการ์ดจาก [] (จะเป็น 0 ทุกช่องหน้าตาเหมือน "ไม่มีใครลงชื่อ") — ล้างการ์ดทิ้งแทน
+        SP_BOARD_RECORDS = [];
+        var gridF = qs('spBoardCardsGrid');
+        if (gridF) gridF.innerHTML = '';
       }
-      SP_BOARD_RECORDS = [];
-      renderSpBoardCards();
-      var l2b = qs('spBoardLayer2');
-      if (l2b && !l2b.hidden) { renderSpBoardSwitchBar(); renderSpPeopleCards(SP_BOARD_ACTIVE_ID); }
+      if (!isRetry && seq === SP_LOAD_SEQ) {
+        setTimeout(function () {
+          if (seq !== SP_LOAD_SEQ) return; // มีการเรียกใหม่แทรกระหว่างหน่วง
+          var curDateEl2 = qs('spBoardDate');
+          if (((curDateEl2 && curDateEl2.value) || todayStr()) !== dateStr) return;
+          loadSpBoardRun_(true);
+        }, READ_RETRY_DELAY_MS);
+      }
     }
   });
 }
@@ -8487,7 +8616,12 @@ function onDtbSaveClick() {
    ⇒ ปุ่มทั้ง 3 ต้องโหลดข้อมูลเองได้ ไม่ต้องพึ่งกันอีกต่อไป — view: 'table' | 'pending' | 'list' (ปริยาย 'list')
    รอบ 29 (S5) W5 (ข้อ 5): 'card' -> 'pending' (renderCheckupCards -> renderCheckupPendingReport)
    ข้อความ "กำลังโหลด...”/error ต้องลงในกล่องของมุมมองที่ "กำลังจะดู" เท่านั้น ไม่ใช่กล่องอื่นที่อาจถูกซ่อนอยู่ */
-function loadCheckupTable(view) {
+// รอบ 72 (เจ้าของสั่ง 2026-10-07): คำตอบเสีย ⇒ ห้ามเขียน CU_CACHE/CU_LOADED_DATE/วาดตารางจาก [] — มีแคช = คงเดิม + ป้าย ⚠ ·
+// ไม่มีแคช = กล่อง "โหลดรายชื่อไม่สำเร็จ" + ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง (ไม่วนซ้ำ) · loadCheckupTable(view) คงลายเซ็นเดิม (มีผู้เรียกส่งค่าเก่า/ค่าอื่น)
+var CU_LOAD_SEQ = 0;
+function loadCheckupTable(view) { loadCheckupTableRun_(view, false); }
+function loadCheckupTableRun_(view, isRetry) {
+  var seq = ++CU_LOAD_SEQ;
   view = (view === 'list') ? 'list' : (view === 'table' || view === 'pending') ? 'table' : 'list'; // รอบ 60 ข้อ 6: 'pending' (ค่าเก่า/ผู้เรียกเก่า) ⇒ ตกไปเป็นมุมมองตาราง
   var dateStr = qs('cuDate').value || todayStr();
   var headEl = qs('cuTableHeading');
@@ -8500,7 +8634,9 @@ function loadCheckupTable(view) {
   // รอบ 15 (2026-09-17) — W2: มีแคชของวันเดียวกันอยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ ไม่ขึ้น "กำลังโหลด..."
   // แล้วรีเฟรชเบื้องหลัง (ไม่มีแคช -> พฤติกรรมเดิมทุกอย่าง)
   var cacheHit = !!(CU_CACHE.key === dateStr && CU_CACHE.records);
-  if (cacheHit) {
+  if (cacheHit && isRetry) {
+    setRefreshHint('cuRefreshHint', 'loading'); // retry: ของเดิมบนจอยังอยู่ ไม่วาด/ไม่แตะซ้ำ
+  } else if (cacheHit) {
     CU_LOADED_DATE = dateStr;
     // ⚠ ถ้ากำลังพิมพ์ค้างอยู่ใน .cu-note (เช่น ถูกเรียกซ้ำระหว่างเปิดหน้านี้ค้างไว้ จาก onCancelRecord() ของแถวอื่น)
     // ห้าม render ทับตรงนี้ด้วย — ของเดิมบนจอกำลังแสดงแคชชุดนี้อยู่แล้วพอดี ข้ามการวาดซ้ำไปเลย ปลอดภัยกว่า
@@ -8510,7 +8646,7 @@ function loadCheckupTable(view) {
       setCuView(view);
     }
     setRefreshHint('cuRefreshHint', 'loading');
-  } else {
+  } else if (!isRetry) {
     if (view === 'table' && wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
     if (view === 'list' && listWrap) listWrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
     setCuView(view);
@@ -8518,15 +8654,15 @@ function loadCheckupTable(view) {
 
   // รอบ 31C (2026-09-28): โหลดแท็บแพทย์ของวันเดียวกัน "คู่ขนาน" กับรายชื่อ — apiCall แยกก้อน ไม่ await ก้อนนี้เลย
   // ก่อนวาดรายชื่อ (ห้ามทำให้รายชื่อช้าลงจนต้องรอกัน) — วาดปุ่มเท่าที่มีตอนนี้ก่อน แล้วอัปเดตเองเมื่อโหลดเสร็จ
-  loadDoctorsForDate(dateStr);
+  if (!isRetry) loadDoctorsForDate(dateStr);
 
   // ทุกจุดบริการเสมอ (allPoints:true ตายตัว ไม่มีช่องติ๊กให้เลือก — ตามคำตอบยืนยันของเจ้าของ)
-  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }).then(function (resp) {
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
     // เปลี่ยนวันที่ระหว่างรอ -> คีย์ไม่ตรงกับที่หน้าจอควรแสดงอยู่แล้ว ทิ้งคำตอบนี้
     if ((qs('cuDate').value || todayStr()) !== dateStr) return;
 
-    if (resp && resp.status === 'ok') {
-      var records = resp.records || [];
+    if (isListResp_(resp)) { // รอบ 72: ต้องมี records เป็นอาร์เรย์ด้วย
+      var records = resp.records;
       var json = JSON.stringify(records);
       if (cacheHit && json === CU_CACHE.json) {
         setRefreshHint('cuRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
@@ -8551,12 +8687,24 @@ function loadCheckupTable(view) {
       renderCheckupList(records, dateStr);
       setCuView(view); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
       setRefreshHint('cuRefreshHint', 'none');
-    } else if (cacheHit) {
-      setRefreshHint('cuRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ
     } else {
-      var errHtml = '<div class="error-box">โหลดรายชื่อไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
-      if (view === 'table' && wrap) wrap.innerHTML = errHtml;
-      if (view === 'list' && listWrap) listWrap.innerHTML = errHtml;
+      // ---- คำตอบเสีย (รอบ 72) ----
+      var haveCu = !!(CU_CACHE.key === dateStr && CU_CACHE.records);
+      if (haveCu) {
+        setRefreshHint('cuRefreshHint', 'error'); // มีแคชอยู่แล้ว -> คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ
+      } else {
+        var cuMsg = badListRespMessage_(resp);
+        var cuRetry = function () { loadCheckupTableRun_(view, false); };
+        if (view === 'table' && wrap) renderLoadFailBox_(wrap, 'โหลดรายชื่อไม่สำเร็จ', cuMsg, cuRetry);
+        if (view === 'list' && listWrap) renderLoadFailBox_(listWrap, 'โหลดรายชื่อไม่สำเร็จ', cuMsg, cuRetry);
+      }
+      if (!isRetry && seq === CU_LOAD_SEQ) {
+        setTimeout(function () {
+          if (seq !== CU_LOAD_SEQ) return; // มีการเรียกใหม่แทรกระหว่างหน่วง
+          if ((qs('cuDate').value || todayStr()) !== dateStr) return;
+          loadCheckupTableRun_(view, true);
+        }, READ_RETRY_DELAY_MS);
+      }
     }
   });
 }
@@ -8988,11 +9136,12 @@ function loadReport() {
    9.5 (รอบ 28, 2026-09-23) W8 (ข้อ 4-5) — หน้า "ค้างส่งออกผล"
    ข้อมูลมาจาก action 'pending' (อ่านอย่างเดียว ไม่ต้อง lock ฝั่งเซิร์ฟเวอร์) — record ที่คืนมามีคีย์ pending:
    { checkupExport, checkupPickup, pelvicExport } (ดู SPEC_รอบ28.md A3) — หน้านี้มีแค่ 2 ชนิดให้สลับดู/เลือกส่งออก
-   (checkup/pelvic) ตามที่เจ้าของสั่ง — "รอมารับ" (checkupPickup) มีแค่ตัวเลขสรุป ไม่มีตารางเลือก/bulk (นอกขอบเขต
-   ตาม SPEC: "bulk รับผลแล้ว" ไม่ทำในรอบนี้)
+   (checkup/pelvic) ตามที่เจ้าของสั่ง — "รอมารับ" (checkupPickup) เดิมมีแค่ตัวเลขสรุป ไม่มีตารางเลือก/bulk (นอกขอบเขตรอบ 28)
+   รอบ 73 (เจ้าของสั่ง 2026-10-07): เพิ่มชนิดที่ 3 'pickup' = ตาราง "รอมารับ" + ติ๊กหลายคนกด "บันทึกรับผลแล้ว" ทีเดียว
+   (ยิง bulkSentDate kind:'pickup' → เซิร์ฟเวอร์เขียน RECEIVED_DATE) — ใช้ #pendingSentDate ตัวเดิม ป้ายเปลี่ยนเป็น "วันที่รับผล"
    ========================================================================= */
 var PENDING_RECORDS = [];
-var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic'
+var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic' | 'pickup' (รอบ 73)
 var PENDING_SELECTED = {}; // recordId -> true — ตัดออกเองเมื่อแถวไม่อยู่ในชุดที่แสดงแล้ว (ค้นหา/สลับชนิดเปลี่ยน)
 
 // รอบ 55: "วันที่ส่งออก" ถูกเขียนลงชีตตอนกดบันทึก ⇒ ค้างเป็นเมื่อวานเงียบ ๆ = ลงวันที่ผิด · ใช้กติกาเดียวกับ #cuDate
@@ -9028,6 +9177,7 @@ function pendingRowsForKind(kind) {
     var p = rec && rec.pending;
     if (!p) return false;
     if (!pendingRowMatchesDate_(rec)) return false;
+    if (kind === 'pickup') return !!p.checkupPickup; // รอบ 73: รอมารับ — ตัวกรองวันที่ + ค้นหาใช้ชุดเดียวกับชนิดอื่น
     return kind === 'pelvic' ? !!p.pelvicExport : !!p.checkupExport;
   });
 }
@@ -9070,7 +9220,7 @@ function pendingShownRows() {
 function pendingSummaryHtml() {
   var checkupExportRows = pendingRowsForKind('checkup');
   var pelvicExportRows = pendingRowsForKind('pelvic');
-  var checkupPickupCount = PENDING_RECORDS.filter(function (rec) { return rec && rec.pending && rec.pending.checkupPickup && pendingRowMatchesDate_(rec); }).length;
+  var checkupPickupCount = pendingRowsForKind('pickup').length; // รอบ 73: นับผ่านตัวกรองชนิดเดียวกับตาราง (ตัวเลขสรุปลดตามเมื่อกดรับผลแล้ว)
   // รอบ 60 ข้อ 6: หัวการ์ดบอกว่านับของวันไหน — ทุกวัน หรือวันที่แบบไทย (ตัวเลขทุกบรรทัดด้านล่างนับตามวันที่ที่กรอง)
   var filterD = pendingFilterDate_();
   var filterLine = '<div class="line muted">วันที่รับบริการ : ' + (filterD ? escHtml(formatThaiDateShort(filterD)) : 'ทุกวัน') + '</div>';
@@ -9115,7 +9265,11 @@ function updatePendingBulkButton() {
   var dateEl = qs('pendingSentDate');
   var hasDate = !!(dateEl && dateEl.value);
   btn.disabled = (n === 0 || !hasDate);
-  btn.textContent = 'บันทึกวันที่ส่งออก (' + n + ' คน)';
+  // รอบ 73: ชนิด pickup = ป้ายวันที่/ปุ่มเป็น "รับผล" · ชนิดอื่นข้อความเดิมเป๊ะ (ฟังก์ชันนี้ถูกเรียกทุกครั้งที่วาดตาราง/สลับชนิด จึงซิงก์ป้ายให้เอง)
+  var isPickup = (PENDING_KIND === 'pickup');
+  var lbl = qs('pendingSentDateLabel');
+  if (lbl) lbl.textContent = isPickup ? 'วันที่รับผล' : 'วันที่ส่งออก';
+  btn.textContent = isPickup ? ('บันทึกรับผลแล้ว (' + n + ' คน)') : ('บันทึกวันที่ส่งออก (' + n + ' คน)');
 }
 
 function renderPendingTable() {
@@ -9129,7 +9283,8 @@ function renderPendingTable() {
   Object.keys(PENDING_SELECTED).forEach(function (id) { if (!shownIds[id]) delete PENDING_SELECTED[id]; });
 
   if (rows.length === 0) {
-    wrap.innerHTML = '<p class="muted">ไม่มีรายการค้างส่งออกผล' + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
+    // รอบ 73: ชนิด pickup ใช้ข้อความ "ไม่มีรายการรอมารับ" · ชนิดอื่นข้อความเดิม
+    wrap.innerHTML = '<p class="muted">' + (PENDING_KIND === 'pickup' ? 'ไม่มีรายการรอมารับ' : 'ไม่มีรายการค้างส่งออกผล') + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
     updatePendingSelectedCount();
     updatePendingBulkButton();
     return;
@@ -9182,38 +9337,54 @@ function renderPendingTable() {
   updatePendingBulkButton();
 }
 
-function loadPending() {
+// รอบ 72 (เจ้าของสั่ง 2026-10-07): คำตอบเสีย ⇒ ห้ามเขียน PENDING_RECORDS ทับเป็น [] — เคยโหลดสำเร็จแล้ว = คงรายการเดิมบนจอ + #pendingError ⚠ ·
+// ยังไม่เคยมีข้อมูล = #pendingError "โหลดไม่สำเร็จ" + ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง (ไม่วนซ้ำ) · loadPending() คงลายเซ็นเดิม
+var PENDING_LOADED = false;
+var PENDING_LOAD_SEQ = 0;
+function loadPending() { loadPendingRun_(false); }
+function loadPendingRun_(isRetry) {
+  var seq = ++PENDING_LOAD_SEQ;
   var wrap = qs('pendingTableWrap');
   var summaryEl = qs('pendingSummary');
   var errEl = qs('pendingError');
   if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
-  if (wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  apiCall('pending', { staffKey: STATE.staffKey }).then(function (resp) {
-    if (resp && resp.status === 'ok') {
-      PENDING_RECORDS = resp.records || [];
+  // เคยมีข้อมูลบนจอแล้ว = ไม่ล้างตารางเป็น "กำลังโหลด..." (ถ้าคำตอบเสียต้องคงของเดิมไว้) · ยังไม่เคย = พฤติกรรมเดิม
+  if (wrap && !PENDING_LOADED) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  apiCall('pending', { staffKey: STATE.staffKey }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (isListResp_(resp)) {
+      PENDING_LOADED = true;
+      PENDING_RECORDS = resp.records;
       PENDING_SELECTED = {};
       if (summaryEl) summaryEl.innerHTML = pendingSummaryHtml();
       renderPendingTable();
     } else {
-      // เซิร์ฟเวอร์ตอบ error หรือไม่รู้จัก action (ยังไม่ deploy) -> แสดง error บนจอ ห้าม crash/โชว์เลข 0 ปลอม ๆ
-      PENDING_RECORDS = [];
-      if (summaryEl) summaryEl.innerHTML = '';
-      if (wrap) wrap.innerHTML = '';
-      if (errEl) {
-        errEl.textContent = (resp && resp.message) ? resp.message : 'โหลดรายการค้างส่งออกผลไม่สำเร็จ';
-        errEl.hidden = false;
+      // เซิร์ฟเวอร์ตอบ error / ไม่รู้จัก action (ยังไม่ deploy) / ตอบ ok แต่ไม่มี records (เช่น "API is running") -> แสดง error บนจอ ห้าม crash/โชว์เลข 0 ปลอม ๆ
+      var pmsg = badListRespMessage_(resp);
+      if (PENDING_LOADED) {
+        if (errEl) { errEl.textContent = '⚠ อัปเดตไม่สำเร็จ — แสดงรายการเดิม (' + pmsg + ')'; errEl.hidden = false; }
+      } else {
+        PENDING_RECORDS = [];
+        if (summaryEl) summaryEl.innerHTML = '';
+        if (wrap) wrap.innerHTML = '';
+        showErrWithRetry_(errEl, 'โหลดรายการค้างส่งออกผลไม่สำเร็จ (' + pmsg + ')', function () { loadPendingRun_(false); });
+      }
+      if (!isRetry && seq === PENDING_LOAD_SEQ) {
+        setTimeout(function () {
+          if (seq !== PENDING_LOAD_SEQ) return; // มีการเรียกใหม่แทรกระหว่างหน่วง
+          loadPendingRun_(true);
+        }, READ_RETRY_DELAY_MS);
       }
     }
   });
 }
 
 function setPendingKind(kind) {
-  PENDING_KIND = (kind === 'pelvic') ? 'pelvic' : 'checkup';
+  PENDING_KIND = (kind === 'pelvic' || kind === 'pickup') ? kind : 'checkup'; // รอบ 73: รับ 'pickup' เพิ่ม
   PENDING_SELECTED = {}; // สลับชนิด -> แถวที่แสดงเปลี่ยนชุดทั้งหมด ล้างการเลือกทิ้ง
-  ['btnPendingKindCheckup', 'btnPendingKindPelvic'].forEach(function (id) {
+  ['btnPendingKindCheckup', 'btnPendingKindPelvic', 'btnPendingKindPickup'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var kind2 = (id === 'btnPendingKindCheckup') ? 'checkup' : 'pelvic';
+    var kind2 = (id === 'btnPendingKindCheckup') ? 'checkup' : (id === 'btnPendingKindPelvic' ? 'pelvic' : 'pickup');
     b.className = 'btn small' + (PENDING_KIND === kind2 ? '' : ' secondary');
   });
   renderPendingTable();
@@ -9225,7 +9396,10 @@ function applyPendingUpdateToCaches_(recordId, kind, date) {
   lists.forEach(function (list) {
     (list || []).forEach(function (rec) {
       if (!rec || rec.recordId !== recordId) return;
-      if (kind === 'pelvic') rec.pelvicSentDate = date; else rec.sentDate = date;
+      // รอบ 73: pickup = รับผลแล้ว ⇒ ตั้ง receivedDate (ที่เดียวกับปุ่ม "รับผลตรวจสุขภาพแล้ว" ในหน้ารายชื่อ)
+      if (kind === 'pelvic') rec.pelvicSentDate = date;
+      else if (kind === 'pickup') rec.receivedDate = date;
+      else rec.sentDate = date;
     });
   });
 }
@@ -9248,7 +9422,11 @@ function onPendingBulkSave() {
   var date = dateEl ? dateEl.value : '';
   if (ids.length === 0 || !date) return;
   var label = (PENDING_KIND === 'pelvic') ? 'ผลตรวจมะเร็งปากมดลูก' : 'ผลตรวจสุขภาพ';
-  if (!window.confirm('บันทึกวันที่ส่งออก' + label + ' ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' คน ใช่ไหม?')) return;
+  // รอบ 73: ชนิด pickup ใช้ข้อความยืนยันของ "รับผลแล้ว" · ชนิดอื่นข้อความเดิมเป๊ะ
+  var confirmMsg = (PENDING_KIND === 'pickup')
+    ? ('บันทึกรับผลตรวจสุขภาพแล้ว ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' คน ใช่ไหม?')
+    : ('บันทึกวันที่ส่งออก' + label + ' ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' คน ใช่ไหม?');
+  if (!window.confirm(confirmMsg)) return;
 
   var btn = qs('btnPendingBulkSave');
   if (btn) btn.disabled = true; // ระหว่างรอทุกชุดตอบ ปุ่ม disabled กันกดซ้ำ
@@ -9444,8 +9622,9 @@ function dqCanRecord() {
   return true;
 }
 // ทุก action dq* ส่ง staffKey + staffName: STATE.staffName เสมอ
-function dqApi(action, payload) {
-  return apiCall(action, Object.assign({ staffKey: STATE.staffKey, staffName: STATE.staffName }, payload || {}));
+// รอบ 72: opts (เช่น { timeoutMs }) ส่งต่อให้ apiCall ตรง ๆ — ไม่ส่ง = เหมือนเดิม (action เขียนของกัปตันทุกตัวไม่ส่ง opts ⇒ ไม่มี timeout/signal)
+function dqApi(action, payload, opts) {
+  return apiCall(action, Object.assign({ staffKey: STATE.staffKey, staffName: STATE.staffName }, payload || {}), opts);
 }
 
 function dqStopTimers() {
@@ -9533,10 +9712,13 @@ function dqLoadToday(opts) {
   dqLoadingCount++;
   dqLastLoadAt = Date.now();
   var fin = function () { dqLoadingCount = Math.max(0, dqLoadingCount - 1); };
-  return dqApi('dqToday', {}).then(function (resp) {
+  // รอบ 72 (เจ้าของสั่ง 2026-10-07): dqToday เป็น action อ่าน ⇒ ตัดทิ้งที่ 20 วิ · คำตอบต้องมี rooms+logs เป็นอาร์เรย์ (isListResp_) —
+  // "API is running"/หน้า HTML error เคยผ่านเช็ค status ok แล้ววาดกระดานเป็น "ยังไม่ได้ตั้งห้อง" + ยอด 0 ·
+  // ไม่ผ่าน + auto (รีเฟรชเองทุกนาที) ⇒ เงียบ ไม่แตะ dqState รอรอบหน้า · ไม่ผ่าน + กดเอง ⇒ toast
+  return dqApi('dqToday', {}, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
     fin();
-    if (!resp || resp.status !== 'ok') {
-      if (!auto) showToast((resp && resp.message) ? resp.message : 'โหลดข้อมูลคิวพบแพทย์ไม่สำเร็จ');
+    if (!isListResp_(resp, ['rooms', 'logs'])) {
+      if (!auto) showToast((resp && resp.status !== 'ok' && resp.message) ? resp.message : 'โหลดข้อมูลคิวพบแพทย์ไม่สำเร็จ');
       return;
     }
     if (auto) {
@@ -9590,6 +9772,9 @@ function dqAutoRefreshTick_() {
 }
 // ตั้ง base = ข้อมูลที่เซิร์ฟเวอร์ยืนยันแล้ว แล้ววาดใหม่ โดยใส่งานที่ยังค้างอยู่ทับกลับเข้าไป (แถวค้างไม่หาย)
 function dqApplySnapshot(snap) {
+  // รอบ 72: ด่านสุดท้ายของทุกเส้นทาง (dqLoadToday + snapshot ที่มากับคำตอบ action เขียน resp.today) — snapshot ที่ไม่มี rooms+logs เป็นอาร์เรย์
+  // ห้ามตั้งเป็น base (จะวาด "ยังไม่ได้ตั้งห้อง" ทับกระดานจริง) ⇒ คง base เดิม แต่ยังวาดใหม่เพื่อให้งานที่เพิ่งถอดออกจากคิวส่งสะท้อนบนจอ
+  if (!isListResp_(snap, ['rooms', 'logs'])) { dqRerender(); return; }
   dqSnapSeq++;
   dqLastLoadAt = Date.now(); // รอบ 64: เพิ่งได้ข้อมูลสด (รวม snapshot จากคำตอบ action) ⇒ รีเฟรชเองรอบถัดไปไม่ต้องรีบ
   dqState.base = snap;
@@ -11276,6 +11461,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // รอบ 28 (2026-09-23) W8 — หน้า "ค้างส่งออกผล"
   qs('btnPendingKindCheckup').addEventListener('click', function () { setPendingKind('checkup'); });
   qs('btnPendingKindPelvic').addEventListener('click', function () { setPendingKind('pelvic'); });
+  qs('btnPendingKindPickup').addEventListener('click', function () { setPendingKind('pickup'); }); // รอบ 73
   setPendingKind('checkup'); // ค่าเริ่มต้น — ตั้งคลาสปุ่ม active ให้ตรงกับ PENDING_KIND ตั้งแต่ก่อนโหลดข้อมูลครั้งแรก
   var pendingSearchEl = qs('pendingSearch');
   if (pendingSearchEl) {
