@@ -153,6 +153,14 @@
   header.topbar h1 { color: #fff; font-size: 18px; }
   header.topbar .point-name { font-weight: 700; }
 
+  /* รอบ 62 (เจ้าของ 2026-10-07): "รายชื่อตรวจสุขภาพ เพิ่ม scroll ขึ้นสุด ลงสุด ได้" ⇒ ปุ่มลอยคู่ ▲/▼ ชิดขอบขวา กึ่งกลางจอแนวตั้ง
+     (กึ่งกลาง = ไม่ชน #saveQueuePanel มุมขวาล่าง และ #toast มุมซ้ายล่าง) · โชว์เฉพาะหน้า #checkupTableScreen (showScreen) ·
+     หน้าเลื่อนที่ระดับ window (ไม่มี scroll container ภายใน) · ไม่พิมพ์ */
+  #cuScrollNav { position: fixed; right: 8px; top: 50%; transform: translateY(-50%); z-index: 700; display: flex; flex-direction: column; gap: 8px; }
+  #cuScrollNav[hidden] { display: none; }
+  #cuScrollNav button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--primary); font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+  @media print { #cuScrollNav { display: none !important; } }
+
   /* รอบ 34 (2026-09-30) W2: แผงสถานะการบันทึกเบื้องหลัง #saveQueuePanel — บันทึกไม่รอ network แล้ว (ดู onSubmitLog())
      ⇒ ต้องมีที่แสดงรายการที่ "กำลังบันทึก"/"บันทึกไม่สำเร็จ" ลอยอยู่ทุกจอ (ไม่ผูกกับ screen ใด ๆ — วางไว้นอก
      ['svcFormWrap','todayScreen',...] ที่ showScreen() สลับ display ให้) · no-print · ซ่อนเมื่อคิวว่าง ·
@@ -1193,6 +1201,12 @@
   <!-- รอบ 34 (2026-09-30) W2: แผงคิวบันทึกเบื้องหลัง — อยู่นอก outerMap ของ showScreen() โดยตั้งใจ ให้แสดงทุกจอ
        เนื้อหาวาดจาก renderSaveQueuePanel_() ทั้งหมด (ผ่าน escHtml()/textContent เสมอ — ไม่มี innerHTML ดิบจากผู้ใช้) -->
   <div id="saveQueuePanel" class="no-print" hidden></div>
+
+  <!-- รอบ 62 (เจ้าของ 2026-10-07): ปุ่มเลื่อนขึ้นสุด/ลงสุด ของหน้ารายชื่อตรวจสุขภาพ — showScreen() สลับ hidden · ผูกคลิกที่ initCuScrollNav_ -->
+  <div id="cuScrollNav" class="no-print" hidden>
+    <button type="button" id="cuScrollTop" aria-label="ขึ้นบนสุด" title="ขึ้นบนสุด">&#9650;</button>
+    <button type="button" id="cuScrollBottom" aria-label="ลงล่างสุด" title="ลงล่างสุด">&#9660;</button>
+  </div>
 
   <!-- ---------- หน้าบันทึกบริการ — แผงเดียวเห็นครบ (รอบ 9 ก้อน B, SPEC_รอบ9.md หัวข้อ 4) ---------- -->
   <div id="svcFormWrap" style="display:none;">
@@ -10180,6 +10194,20 @@ function dqInit() {
   });
 }
 
+// รอบ 62 (เจ้าของ 2026-10-07): ผูกปุ่ม ▲/▼ ของหน้ารายชื่อตรวจสุขภาพ — หน้าเลื่อนที่ window (ไม่มี scroll container ภายใน)
+(function initCuScrollNav_() {
+  function bind(id, toBottom) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.addEventListener('click', function () {
+      var top = toBottom ? Math.max(document.documentElement.scrollHeight, document.body.scrollHeight) : 0;
+      window.scrollTo({ top: top, behavior: 'smooth' });
+    });
+  }
+  bind('cuScrollTop', false);
+  bind('cuScrollBottom', true);
+})();
+
 function showScreen(name) {
   // รอบ 28 (2026-09-23) W8: เพิ่มหน้า "ค้างส่งออกผล" (pending -> pendingScreen)
   // รอบ 41 (W1): เพิ่มหน้า "คิวพบแพทย์" (dq -> dqScreen)
@@ -10210,6 +10238,9 @@ function showScreen(name) {
     loadSpBoard();
   }
 
+  // รอบ 62 (เจ้าของ 2026-10-07): ปุ่มเลื่อนขึ้นสุด/ลงสุด โชว์เฉพาะหน้ารายชื่อตรวจสุขภาพ
+  var cuNav = qs('cuScrollNav');
+  if (cuNav) cuNav.hidden = (name !== 'checkupTable');
   if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
   // แก้ 2026-09-30: เปลี่ยนจอแล้ว #panelTotals อาจแสดง/ซ่อนต่างไปจากเดิม (อยู่ใน outerMap ตัวที่ถูกเปลี่ยน display)
   // ⇒ ต้องคำนวณตำแหน่งแผงคิวบันทึกใหม่เสมอ ไม่พึ่ง event scroll จาก window.scrollTo() ข้างบนอย่างเดียว (ไม่ยิงถ้า
