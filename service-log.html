@@ -71,6 +71,8 @@
     cursor: pointer;
   }
   .btn:disabled { background: #A6ACD8; cursor: not-allowed; }
+  /* รอบ 64: ปุ่มบันทึกที่มองเห็นจริง (#btnDraftSave) ไม่ใช้ disabled จริงแล้ว (disabled ไม่ยิง click ⇒ triggerSubmit ไม่เคยกางแผงที่ติดช่อง) — หน้าตาเหมือน :disabled เป๊ะ */
+  .btn.is-disabled { background: #A6ACD8; cursor: not-allowed; }
   .btn.secondary { background: var(--gray-pale); color: var(--text); border: 1px solid var(--border); }
   .btn.danger { background: var(--danger); }
   .btn.accent { background: var(--accent); }
@@ -3547,6 +3549,92 @@ function panelHasDraftData_(id) {
   return false;
 }
 
+/* =========================================================================
+   รอบ 64 (เจ้าของสั่ง 2026-10-07) — จุดคีย์ order: แผงตรวจสุขภาพพับไว้จนกว่าจะมีคิว C / ไม่นัด
+   เหตุผล: กรอก HN+ชื่อแล้วฟอร์มตรวจสุขภาพโผล่ทั้งก้อน แต่หลายเคสเป็นใบรับรองแพทย์ lab / MMG เดี่ยวที่ไม่ใช่ตรวจสุขภาพ
+   ⇒ กางเองเฉพาะตอนคิวเป็น C<เลข> หรือ 'ไม่นัด <เลข>' (คิวตรวจสุขภาพ) · ใช้เฉพาะจุดที่มีหัวข้อ 'ตรวจสุขภาพ' (pointHasCheckupTopic_)
+   จุดอื่นทุกจุดเหมือนเดิมทุกประการ (ไม่แตะแผงเลย)
+   ========================================================================= */
+// ตัวตรวจ "คิวตรวจสุขภาพ" ตัวเดียวกับฝั่งจุดกัปตัน (dqIsCheckupQueue: C+เลข หรือ ไม่นัด N หลัง normalize) — fallback เผื่อบริบทที่ยังไม่มีชุด dq*
+function isCheckupQueueValue_(v) {
+  if (typeof dqIsCheckupQueue === 'function') return dqIsCheckupQueue(v);
+  var s = String(v == null ? '' : v).trim();
+  var m = /^ไม่นัด\s*(\d{1,3})$/.exec(s);
+  if (m) return true;
+  return /^C\d+$/i.test(s.replace(/\s+/g, ''));
+}
+function pointHasCheckupTopic_() {
+  return currentPointTopics().indexOf('ตรวจสุขภาพ') !== -1;
+}
+// panelHasDraftData_('panelCheckup') = isCheckupOn() = เลือกโปรแกรมแล้ว เท่านั้น — ไม่ครอบช่องอื่นของแผงนี้ (ช่องทางรับผล · ราคา ·
+// ตรวจมะเร็งปากมดลูก · วันนัดรับ) ซึ่งกรอก/เลือกได้ทั้งที่ยังไม่เลือกโปรแกรม ⇒ ถ้าพับกลับโดยดูแค่โปรแกรม ค่าเหล่านั้นจะหายจากสายตา
+// จึงเพิ่มตัวตรวจ "มีอะไรกรอกในแผงตรวจสุขภาพไหม" ที่ครอบทุกช่อง (ไม่แก้ panelHasDraftData_ เดิม เพราะ applyPointLayout() ใช้กับจุดอื่นอยู่)
+function checkupPanelHasInput_() {
+  if (panelHasDraftData_('panelCheckup')) return true;
+  var dm = qs('deliveryMethod'), amt = qs('checkupAmount');
+  if (dm && String(dm.value || '') !== '') return true;
+  if (amt && String(amt.value == null ? '' : amt.value).trim() !== '') return true;
+  return getSelectedPelvic() !== '';
+}
+function currentQueueIsCheckup_() {
+  var q = qs('queueSelect');
+  return isCheckupQueueValue_(q ? q.value : '');
+}
+function isWideScreen_() {
+  return !!(window.matchMedia && window.matchMedia('(min-width:1100px)').matches);
+}
+// ตั้งสถานะพับของแผงตรวจสุขภาพ — ตั้งทั้ง 2 attribute ให้สอดคล้องเสมอ:
+// data-collapsed (จอแคบ) + data-user-collapsed (จอกว้าง ≥1100px ที่ CSS บังคับกางด้วย !important ต้องใช้ attribute นี้ถึงจะพับได้)
+function setCheckupPanelCollapsed_(collapsed) {
+  var p = qs('panelCheckup');
+  if (!p || !p.setAttribute) return;
+  p.setAttribute('data-collapsed', collapsed ? '1' : '0');
+  if (collapsed) p.setAttribute('data-user-collapsed', '1');
+  else if (p.removeAttribute) p.removeAttribute('data-user-collapsed');
+}
+function isCheckupPanelCollapsed_() {
+  var p = qs('panelCheckup');
+  if (!p || !p.getAttribute) return false;
+  return isWideScreen_() ? (p.getAttribute('data-user-collapsed') === '1') : (p.getAttribute('data-collapsed') === '1');
+}
+// ตั้งสถานะตั้งต้นตามค่าปัจจุบัน (ไม่ใช่การเปลี่ยนแปลง) — เรียกจาก applyPointLayout() / enterEditMode() / restoreFormDraft_()
+// กาง ⇔ มีค่าในแผง หรือคิวปัจจุบันเป็นคิวตรวจสุขภาพ · STATE.checkupAutoExpanded = กางเพราะคิวอย่างเดียว (พับกลับได้เมื่อคิวหาย)
+function applyCheckupPanelDefault_() {
+  if (!pointHasCheckupTopic_()) return;
+  var qNow = currentQueueIsCheckup_(), dNow = checkupPanelHasInput_();
+  setCheckupPanelCollapsed_(!(qNow || dNow));
+  STATE.checkupAutoExpanded = qNow && !dNow;
+  STATE.checkupPanelSeen = { q: qNow, d: dNow };
+}
+// ตามการเปลี่ยนค่าที่ผู้ใช้ทำ (เรียกท้าย recalcTotals() — ครอบพิมพ์/เลือก datalist/◀ ▶/ลูกศร/ปัด เพราะทุกทางยิง input/change)
+// ทำงานเฉพาะตอน "เปลี่ยนสถานะ" (seen → now) ไม่ใช่ทุกครั้ง ⇒ ผู้ใช้กดหัวแผงพับ/เปิดเองแล้ว recalcTotals รอบถัดไปไม่ดึงกลับ
+function syncCheckupPanelToQueue_() {
+  if (!pointHasCheckupTopic_()) return;
+  var panel = qs('panelCheckup');
+  if (!panel || !panel.getAttribute) return;
+  var qNow = currentQueueIsCheckup_(), dNow = checkupPanelHasInput_();
+  var seen = STATE.checkupPanelSeen || { q: false, d: false };
+  if (qNow && !seen.q) {
+    if (isCheckupPanelCollapsed_()) { setCheckupPanelCollapsed_(false); STATE.checkupAutoExpanded = true; } // กางเองเพราะคิว C (ผู้ใช้เปิดไว้อยู่แล้ว ⇒ ไม่ตั้งธง ไม่พับกลับเอง)
+  } else if (dNow && !seen.d) {
+    if (isCheckupPanelCollapsed_()) { setCheckupPanelCollapsed_(false); STATE.checkupAutoExpanded = false; } // เลือกโปรแกรม/กรอกช่องในแผงด้วยทางอื่น (เช่นโหลดร่าง)
+  } else if (!qNow && seen.q) {
+    // คิวเปลี่ยนเป็นไม่ใช่คิวตรวจสุขภาพ (ว่าง/M/V/อื่น) ⇒ พับกลับเฉพาะที่ระบบกางให้เอง และยังไม่มีค่าในแผง
+    if (STATE.checkupAutoExpanded && !dNow) setCheckupPanelCollapsed_(true);
+    STATE.checkupAutoExpanded = false;
+  }
+  STATE.checkupPanelSeen = { q: qNow, d: dNow };
+}
+// กดบันทึกไม่ผ่านเพราะช่องในแผงตรวจสุขภาพ (ช่องทางรับผล · ราคา · ตรวจมะเร็งปากมดลูก · วันนัดรับ) ขณะแผงพับ ⇒ กางให้เห็นช่องที่ต้องกรอก
+function expandCheckupPanelIfBlocking_() {
+  if (!pointHasCheckupTopic_() || !isCheckupOn() || !isCheckupPanelCollapsed_()) return;
+  var dm = (qs('deliveryMethod').value || '');
+  var blocked = !dm || getCheckupAmountNum() === null ||
+    (getSelectedGender() === 'female' && getSelectedPelvic() === '') ||
+    (dm === DELIVERY_PICKUP_APPOINTMENT && (!(qs('pickupDate').value || '') || !!pickupClosedReason(qs('pickupDate').value)));
+  if (blocked) { setCheckupPanelCollapsed_(false); STATE.checkupAutoExpanded = false; }
+}
+
 // A-W3: รายการในแผงส่งตรวจพิเศษเรียง "กลุ่มของจุดขึ้นก่อน" — ย้าย <label> แถวเดิม (ไม่ clone -> checkbox/listener อยู่ครบ)
 function reorderSpecialSendsRows_(groupPriority) {
   var wrap = qs('specialSendsList');
@@ -3700,6 +3788,8 @@ function applyPointLayout() {
   }
 
   if (logFormEl) logFormEl.classList.add('point-layout-custom');
+  // รอบ 64: จุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ แผงตรวจสุขภาพพับ ยกเว้นมีค่าในแผง/คิวปัจจุบันเป็นคิวตรวจสุขภาพ (ต้องอยู่หลังลูป data-collapsed='0' ข้างบน)
+  applyCheckupPanelDefault_();
 }
 
 // A-W5: จุดที่มี 'รายชื่อ' -> เปิดหน้ารายชื่อตรวจสุขภาพ มุมมองรายการ วันนี้ โหลดให้เลย (ทางเดียวกับปุ่มเมนู 🩺)
@@ -3873,7 +3963,17 @@ function syncStickyButtons() {
   var label = '💾 ' + src.textContent;
   ['btnDraftSave'].forEach(function (id) {
     var b = qs(id);
-    if (b) { b.disabled = disabled; b.textContent = label; }
+    // รอบ 64: ไม่ตั้ง b.disabled — ปุ่ม disabled ไม่ยิง click ในเบราว์เซอร์จริง ⇒ กดตอนติดด่านแล้วไม่เกิดอะไรเลย (ไม่เห็นข้อความ/แผงไม่กาง)
+    // สะท้อนสถานะติดด่านด้วย aria-disabled + class is-disabled แทน · ด่านกันบันทึกจริงคือ triggerSubmit() (เช็ค #btnSubmitLog.disabled) และ onSubmitLog()
+    if (b) {
+      b.disabled = false;
+      // guard: DOM จำลองของเทสต์เก่าหลายไฟล์ (vm) ไม่มี setAttribute/classList บนปุ่มนี้
+      if (b.setAttribute && b.removeAttribute && b.classList) {
+        if (disabled) { b.setAttribute('aria-disabled', 'true'); b.classList.add('is-disabled'); }
+        else { b.removeAttribute('aria-disabled'); b.classList.remove('is-disabled'); }
+      }
+      b.textContent = label;
+    }
   });
 }
 
@@ -4033,6 +4133,7 @@ function recalcTotals() {
   updateDraftStrip({ checkupOn: checkupOn, vaccineOn: vaccineOn, medOn: medOn, specialOn: specialOn, patientName: patientName, grand: grand });
   updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
   renderQueueSuggestion_(); // รอบ 60 ข้อ 2: ผู้ใช้พิมพ์/ล้างช่องคิวเอง ⇒ hint/placeholder ต้องตามทัน (ไม่เขียนค่าในช่อง)
+  syncCheckupPanelToQueue_(); // รอบ 64: คิวเปลี่ยนเป็น C/ไม่นัด ⇒ กางแผงตรวจสุขภาพ · เปลี่ยนเป็นอย่างอื่น ⇒ พับกลับ (เฉพาะที่ระบบกางเอง)
   updateMedLabSoloButtons_(checkupOn); // รอบ 60 ข้อ 3: สถานะปุ่ม MMG/U/S เดี่ยวคำนวณจาก DOM ทุกครั้ง ไม่มี state แยก
   updatePanelSummaries({ checkupOn: checkupOn, program: program, vaccineCodes: vaccineCodes, medNums: medNums }); // รอบ 9 (ก้อน B, B3)
 
@@ -4204,6 +4305,7 @@ function restoreFormDraft_(data) {
   applyVaccineFilter();
   applyLogLocks();
   recalcTotals();
+  applyCheckupPanelDefault_(); // รอบ 64: คืนร่างหลังปิดโมดัลแก้ไข ⇒ สถานะแผงตรวจสุขภาพตามค่าของร่างที่คืน (ร่างเลือกโปรแกรมไว้ ⇒ กาง)
 }
 function isFormDirtyVsSnapshot_() {
   var snap = EDIT_MODAL.dirtySnapshot;
@@ -4452,6 +4554,8 @@ function enterEditMode(rec) {
 
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — แถวเก่ามี HN/ชื่ออยู่แล้วปกติ ⇒ ปลดล็อกทันที
   recalcTotals();
+  // รอบ 64 ข้อ 6: แก้ไขรายการเก่าที่มีโปรแกรม (หรือคิว C) ⇒ แผงตรวจสุขภาพกาง · ไม่มี ⇒ พับตามกติกาเดียวกับรายใหม่
+  applyCheckupPanelDefault_();
 
   setSubmitLabel('บันทึกการแก้ไข');
   qs('editBannerTime').textContent = rec.time || '';
@@ -5261,6 +5365,7 @@ function triggerSubmit() {
     // รอบ 60 ข้อ 1: บันทึกไม่ผ่านเพราะ HN/ชื่อ/คิวว่าง (หรือ HN ผิดรูปแบบ) ขณะแผง "ผู้รับบริการ" พับอยู่ ⇒ กางให้เห็นช่องที่ต้องกรอก
     var hnV = (qs('patientHn').value || '').trim(), nmV = (qs('patientName').value || '').trim(), qV = (qs('queueSelect').value || '').trim();
     if (!hnV || !nmV || (isCheckupOn() && !qV) || (hnV && !isValidHn(hnV))) expandPersonPanel_();
+    expandCheckupPanelIfBlocking_(); // รอบ 64: ติดที่ช่องในแผงตรวจสุขภาพขณะแผงพับ ⇒ กางให้
     return;
   }
   onSubmitLog({ preventDefault: function () {} });
@@ -9045,6 +9150,12 @@ var dqState = {
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
 var dqSugActive = ''; // รอบ 42: คีย์คิว (dqQueueKey) ของตัวเลือกที่ไฮไลต์อยู่ · '' = ไม่มี
+// รอบ 64 (เจ้าของสั่ง 2026-10-07): กระดานคิวพบแพทย์ดึง dqToday เองทุก 1 นาทีขณะเปิดอยู่ — เดิมโหลดเฉพาะตอนเปิดหน้า/หลังกัปตันกด action
+// (กัปตันหลายเครื่องดูกระดานเดียวกัน ยอด orderQueues/pendingQueues/logs ของเครื่องอื่นไม่เข้ามาจนกว่าจะรีเฟรชมือ)
+var dqAutoRefreshMinGapMs = 50000; // ตัวจับเวลาเดิมเดิน 60 วิ — เผื่อ 10 วิกันรอบที่เพิ่งโหลดไปไม่นานทำให้ข้ามไปอีกนาที แต่ยังไม่ยิงถี่กว่านี้
+var dqLastLoadAt = 0;   // เวลา (Date.now) ที่เริ่มโหลด dqToday ล่าสุด หรือได้ snapshot ล่าสุด (รวม snapshot จากคำตอบ action) — กันยิงซ้ำถี่
+var dqLoadingCount = 0; // จำนวน dqLoadToday ที่ยังไม่กลับ (ทุกผู้เรียก) — รีเฟรชเองไม่ยิงซ้อน
+var dqSnapSeq = 0;      // นับครั้งที่ dqApplySnapshot ทำงาน — ผลรีเฟรชเองที่เริ่มก่อน snapshot ใหม่กว่า ต้องทิ้ง ไม่ให้ข้อมูลเก่าทับ
 var dqBkkFormatter = null;
 
 // เลขคิวของกระดานคิวพบแพทย์ — กติกาเดียวกับ dqNormQueue_ ฝั่งเซิร์ฟเวอร์: 'ไม่นัด N' (N 1-999) หรือ ตัวอักษรละติน 1-2 ตัว + เลข 1-999 (ไม่มี 0 นำหน้า)
@@ -9171,39 +9282,101 @@ function dqIsStale() {
 function dqCheckDayRollover() {
   if (!dqIsScreenOpen()) return;
   dqRenderDaySummary(); // รอบ 47: timer เดิม (ทุก 60 วิ) ทำให้บรรทัด "ยอดช่วงบ่าย" โผล่เองเมื่อนาฬิกาถึง 13:00 — ไม่เปลี่ยนพฤติกรรมข้ามวันด้านล่าง
-  if (dqSendQueue.length > 0 || dqSendActive) return;
-  var sv = qs('dqSetupView');
-  if (sv && !sv.hidden) return;
-  // รอบ 45: โหลดหลังข้ามวันล้ม (เน็ตหลุด) ⇒ base ค้าง null ไม่มีใครโหลดให้ใหม่ — ลองซ้ำทุกรอบที่ถูกเรียก (นาทีละครั้ง/ตอนกลับมาที่แท็บ)
-  if (dqState.rolloverLoading) return; // โหลดหลังข้ามวันยังไม่กลับ — ไม่ยิงซ้อน (focus + visibilitychange มาพร้อมกันได้)
-  var load = function () {
-    dqState.rolloverLoading = true;
-    var done = function () { dqState.rolloverLoading = false; };
-    Promise.resolve(dqLoadToday()).then(done, done);
-  };
-  if (!dqState.base && dqState.rolloverFor) { load(); return; }
-  if (!dqIsStale()) return;
-  var today = todayStr();
-  if (dqState.rolloverFor === today) return;
-  dqState.rolloverFor = today;
-  dqState.base = null;
-  var dt = qs('dqDateText');
-  if (dt) dt.textContent = dqThaiDateText();
-  dqRerender();
-  load();
+  // รอบ 64: ตัวจับเวลา 60 วิ/focus/visibilitychange/pageshow ตัวเดิมนี้ยังเป็นตัวเดียว — ต่อรีเฟรชเอง (dqAutoRefreshTick_) ไว้ท้ายด้วย try/finally
+  // เพราะตรรกะข้ามวันด้านล่างมี return ก่อนเวลาหลายจุด · ข้ามวันกำลังโหลดอยู่ ⇒ dqLoadingCount > 0 / rolloverLoading ⇒ รีเฟรชเองข้ามรอบเอง ไม่ยิงซ้อน
+  try {
+    if (dqSendQueue.length > 0 || dqSendActive) return;
+    var sv = qs('dqSetupView');
+    if (sv && !sv.hidden) return;
+    // รอบ 45: โหลดหลังข้ามวันล้ม (เน็ตหลุด) ⇒ base ค้าง null ไม่มีใครโหลดให้ใหม่ — ลองซ้ำทุกรอบที่ถูกเรียก (นาทีละครั้ง/ตอนกลับมาที่แท็บ)
+    if (dqState.rolloverLoading) return; // โหลดหลังข้ามวันยังไม่กลับ — ไม่ยิงซ้อน (focus + visibilitychange มาพร้อมกันได้)
+    var load = function () {
+      dqState.rolloverLoading = true;
+      var done = function () { dqState.rolloverLoading = false; };
+      Promise.resolve(dqLoadToday()).then(done, done);
+    };
+    if (!dqState.base && dqState.rolloverFor) { load(); return; }
+    if (!dqIsStale()) return;
+    var today = todayStr();
+    if (dqState.rolloverFor === today) return;
+    dqState.rolloverFor = today;
+    dqState.base = null;
+    var dt = qs('dqDateText');
+    if (dt) dt.textContent = dqThaiDateText();
+    dqRerender();
+    load();
+  } finally {
+    dqAutoRefreshTick_();
+  }
 }
 
-function dqLoadToday() {
+// รอบ 64: opts.auto = รีเฟรชเองทุกนาที — ล้ม (เน็ตหลุด) ⇒ เงียบ คงของเดิมบนจอ ไม่มี toast ทุกนาที ·
+// ผลที่กลับมาตอนกัปตันเริ่มทำอะไรแล้ว (มีงานรอส่ง / snapshot ใหม่กว่าเข้ามาแล้ว / พิมพ์คิว / ไฮไลต์ชิป / เปิดแถบ ⇄) ⇒ ทิ้ง ไม่วาดทับ
+function dqLoadToday(opts) {
+  var auto = !!(opts && opts.auto);
+  var seqAtStart = dqSnapSeq;
+  dqLoadingCount++;
+  dqLastLoadAt = Date.now();
+  var fin = function () { dqLoadingCount = Math.max(0, dqLoadingCount - 1); };
   return dqApi('dqToday', {}).then(function (resp) {
+    fin();
     if (!resp || resp.status !== 'ok') {
-      showToast((resp && resp.message) ? resp.message : 'โหลดข้อมูลคิวพบแพทย์ไม่สำเร็จ');
+      if (!auto) showToast((resp && resp.message) ? resp.message : 'โหลดข้อมูลคิวพบแพทย์ไม่สำเร็จ');
+      return;
+    }
+    if (auto) {
+      if (!dqIsScreenOpen() || dqSnapSeq !== seqAtStart || !dqAutoRefreshIdle_()) return;
+      dqApplySnapshotQuiet_(resp);
       return;
     }
     dqApplySnapshot(resp);
+  }, function (err) {
+    fin();
+    if (!auto) throw err;
   });
+}
+// รอบ 64: กัปตันกำลังทำอะไรอยู่ไหม — ว่าง = รีเฟรชเองวาดทับได้ · ใช้ทั้งตอนเริ่มรอบและตอนผลกลับมา
+function dqAutoRefreshIdle_() {
+  if (dqSendQueue.length > 0 || dqSendActive) return false;
+  if (dqState.moveOpenId) return false;
+  if (dqSugActive) return false;
+  var qi = qs('dqQueueInput');
+  if (qi && String(qi.value || '').trim() !== '') return false;
+  return true;
+}
+// รอบ 64: วาดจาก snapshot รีเฟรชเอง โดยไม่ทำลายสิ่งที่กัปตันกำลังดูอยู่ — ตำแหน่งเลื่อนการ์ดห้องรักษาโดย dqRenderRoomCards (รอบ 56) อยู่แล้ว
+// เพิ่ม: ตำแหน่งเลื่อนหน้า + แถบชิปคำแนะนำ (dqRenderSuggest ล้าง/สร้างปุ่มใหม่) + โฟกัสช่องคิว · ไม่เรียก dqAlignBoard (ห้ามเลื่อนหน้า)
+function dqApplySnapshotQuiet_(snap) {
+  var box = qs('dqSuggest');
+  var sx = (typeof window.pageXOffset === 'number') ? window.pageXOffset : 0;
+  var sy = (typeof window.pageYOffset === 'number') ? window.pageYOffset : 0;
+  var boxLeft = box ? box.scrollLeft : 0, boxTop = box ? box.scrollTop : 0;
+  var qi = qs('dqQueueInput');
+  var hadFocus = !!(qi && document.activeElement === qi);
+  dqApplySnapshot(snap);
+  if (box) { box.scrollLeft = boxLeft; box.scrollTop = boxTop; }
+  if (hadFocus && document.activeElement !== qi) { try { qi.focus({ preventScroll: true }); } catch (e) { qi.focus(); } }
+  if (window.pageYOffset !== sy || window.pageXOffset !== sx) window.scrollTo(sx, sy);
+}
+// รอบ 64: เรียกจากท้าย dqCheckDayRollover (ตัวจับเวลา 60 วิตัวเดิม + ตอนกลับมาที่แท็บ/โฟกัส) — ตัวจับเวลาเดียว ไม่มี interval เพิ่ม
+// ข้ามรอบเมื่อ: หน้ากระดานปิด / ไม่ใช่มุมมองกระดาน (หน้าตั้งห้อง) / แท็บไม่ visible / มีงานรอส่ง / ช่องคิวมีข้อความ / ไฮไลต์ชิป /
+// แถบ ⇄ เปิด / โหลดก่อนหน้ายังไม่กลับ / เพิ่งโหลดหรือเพิ่งได้ snapshot ไม่ถึง dqAutoRefreshMinGapMs
+function dqAutoRefreshTick_() {
+  if (!dqIsScreenOpen()) return false;
+  var bv = qs('dqBoardView'), sv = qs('dqSetupView');
+  if (!bv || bv.hidden) return false;
+  if (sv && !sv.hidden) return false;
+  if (document.visibilityState && document.visibilityState !== 'visible') return false;
+  if (!dqAutoRefreshIdle_()) return false;
+  if (dqLoadingCount > 0 || dqState.rolloverLoading) return false;
+  if (Date.now() - dqLastLoadAt < dqAutoRefreshMinGapMs) return false;
+  dqLoadToday({ auto: true });
+  return true;
 }
 // ตั้ง base = ข้อมูลที่เซิร์ฟเวอร์ยืนยันแล้ว แล้ววาดใหม่ โดยใส่งานที่ยังค้างอยู่ทับกลับเข้าไป (แถวค้างไม่หาย)
 function dqApplySnapshot(snap) {
+  dqSnapSeq++;
+  dqLastLoadAt = Date.now(); // รอบ 64: เพิ่งได้ข้อมูลสด (รวม snapshot จากคำตอบ action) ⇒ รีเฟรชเองรอบถัดไปไม่ต้องรีบ
   dqState.base = snap;
   dqRerender();
 }
@@ -10194,6 +10367,7 @@ function dqInit() {
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') dqCheckDayRollover(); });
   window.addEventListener('pageshow', dqCheckDayRollover);
   window.addEventListener('focus', dqCheckDayRollover);
+  // รอบ 64: รีเฟรชเองไม่เพิ่ม interval/listener — dqCheckDayRollover เรียก dqAutoRefreshTick_ ท้ายฟังก์ชันเอง (ทั้งจาก interval 60 วิ และตอนกลับมาที่แท็บ/โฟกัส)
   if (!dqRolloverTimer) dqRolloverTimer = setInterval(dqCheckDayRollover, 60000);
   // รอบ 55: หน้ารายชื่อ/ค้างส่งออกผล ใช้จังหวะเดียวกัน (ตัวจับเวลาแยกของตัวเอง — dqCheckDayRollover ออกทันทีถ้าไม่ได้เปิดจุดกัปตัน)
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') listDatesCheckDayRollover(); });
@@ -10817,6 +10991,13 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!panel) return;
       // รอบ 60 ข้อ 1: จอกว้าง (>=1100px) + แผงที่ไม่ใช่ .log-panel-other (CSS บังคับกางอยู่) ⇒ สลับ data-user-collapsed แทน
       // data-collapsed (CSS ฝั่งจอกว้างมองเฉพาะ attribute นี้) · นอกนั้นพฤติกรรมเดิมทุกประการ
+      // รอบ 64: แผงตรวจสุขภาพของจุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ สลับผ่าน helper เดียวที่ตั้งทั้ง data-collapsed + data-user-collapsed ให้สอดคล้อง
+      // (จอกว้าง/แคบ ให้ผลเหมือนกัน) · กดเองเมื่อไหร่ ⇒ ล้างธงกางอัตโนมัติ ไม่พับกลับเองอีก
+      if (panel.id === 'panelCheckup' && pointHasCheckupTopic_()) {
+        setCheckupPanelCollapsed_(!isCheckupPanelCollapsed_());
+        STATE.checkupAutoExpanded = false;
+        return;
+      }
       var wide = !!(window.matchMedia && window.matchMedia('(min-width:1100px)').matches);
       if (wide && !panel.classList.contains('log-panel-other')) {
         if (panel.getAttribute('data-user-collapsed') === '1') panel.removeAttribute('data-user-collapsed');
