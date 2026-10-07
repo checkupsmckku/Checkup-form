@@ -1107,6 +1107,10 @@
   .dq-move-close { min-width: 40px; background: #fff; color: var(--text-muted); }
   .dq-cancelled { text-decoration: line-through; opacity: 0.45; color: var(--text-muted); }
   .dq-timer { font-variant-numeric: tabular-nums; }
+  /* รอบ 69 — คิวอยู่ในห้องแพทย์ ≥ dqLongExamMin นาที: ตัวเลข/ข้อความ/ขอบการ์ดแดง + ป้าย · สีโปรแกรมของห้อง (.dq-col-*) เปลี่ยนแค่พื้นหัว/รายการ ไม่แตะ border จึงไม่ชนกัน */
+  .dq-open.dq-long, .dq-open.dq-long .dq-timer { color: var(--danger); font-weight: bold; }
+  .dq-card.dq-card-long { border-color: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
+  .dq-long-badge { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; background: #FDECEA; border: 1px solid var(--danger); color: var(--danger); font-size: 13px; font-weight: bold; }
   .dq-auto-note { display: block; font-size: 12px; color: var(--text-muted); }
   .dq-pending { opacity: 0.7; color: var(--text-muted); font-size: 12px; font-weight: normal; }
   /* รอบ 45 — สรุปเช้า/บ่าย/ยังไม่พบแพทย์ · 4 ช่อง grid · จอ ≤ 480px เป็น 2×2 · ไม่ล้นแนวนอน */
@@ -1473,6 +1477,9 @@
                     <input type="number" id="medCertLabAmount" min="0" step="1" value="0">
                   </div>
                 </div>
+                <!-- รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายมาแผงนี้ (นับยอดอย่างเดียว) — บังคับแค่ HN · buildSpecialSendsUI() สร้างแถว -->
+                <p class="muted" style="margin-top:12px;">ตรวจเพิ่ม (นับยอด)</p>
+                <div id="medLabSpecialList"></div>
               </section>
             </div>
           </section>
@@ -2599,7 +2606,7 @@ function updatePersonCardLabels() {
   if (queueLabelEl) queueLabelEl.textContent = checkupOn ? 'คิว *' : 'คิว';
   // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN)
   // ⇒ HN บังคับเฉพาะตรวจสุขภาพ/ส่งตรวจพิเศษเหมือนเดิม (เดิมเคยบังคับวัคซีนด้วยตามคำสั่ง 2026-09-18)
-  var needHn = needPerson;
+  var needHn = needPerson || medLabAmountNow_() > 0 || isMedLabSpecialOn(); // รอบ 68: ใบรับรองแพทย์มี lab บังคับ HN ด้วย · รอบ 70: รวมติ๊ก EKG/ตรวจสายตา/ตาบอดสี
   if (hnLabelEl) hnLabelEl.textContent = needHn ? 'HN *' : 'HN';
   if (nameLabelEl) nameLabelEl.textContent = needPerson ? 'ชื่อ-นามสกุลผู้รับบริการ *' : 'ชื่อ-นามสกุลผู้รับบริการ';
   if (hnEl) hnEl.placeholder = needHn ? reqPh : normalPh;
@@ -3151,11 +3158,25 @@ function buildSpecialRow(item) {
 // รอบ 26 (2026-09-22, เจ้าของสั่ง): รายการ "นับยอดอย่างเดียว (ไม่ติดตามสถานะ)" — prepLabel === null (inbody, ct_lowdose)
 // ไม่มีขั้นส่งรายชื่อ/ส่งตัว/กลับมาแล้ว ⇒ ไม่โผล่ใน SP_BOARD_ITEMS (กรองด้วย prepLabel != null อยู่แล้ว) — เดิม inbody
 // เคยแยกเป็น checkbox static ในแผงตรวจสุขภาพ (sp_reg_inbody) ตอนนี้ย้ายมาอยู่ในแผงนี้ท้ายรายการติดตาม 5 ตัว
-var SP_COUNT_ONLY_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel == null; });
+// รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายไปแผง "ใบรับรองแพทย์มี Lab" (#medLabSpecialList) — ข้อมูลยังเป็น specialReg id เดิม
+// ต้องตรงกับ MEDLAB_SPECIAL_IDS_ ใน สถิติบริการ.js · เหลือ inbody/ct_lowdose ในรายการ "นับยอดอย่างเดียว" ของแผงส่งตรวจพิเศษ
+var MEDLAB_SPECIAL_IDS = ['ekg', 'eye_test', 'color_blind'];
+var MEDLAB_SPECIAL_SHORT = { ekg: 'EKG', eye_test: 'ตรวจสายตา', color_blind: 'ตาบอดสี' }; // ป้ายสั้นบนหัวแผง Lab
+var SP_COUNT_ONLY_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel == null && MEDLAB_SPECIAL_IDS.indexOf(s.id) === -1; });
 
 function buildSpecialSendsUI() {
   var wrap = qs('specialSendsList');
   if (wrap) wrap.innerHTML = '';
+  // รอบ 70: 3 แถวนับยอด (EKG/ตรวจสายตา/ตาบอดสี) สร้างด้วย buildSpecialRow() ตัวเดิม (id sp_row_*/sp_reg_* เดิม) แต่ใส่แผง Lab
+  var medLabWrap = qs('medLabSpecialList');
+  if (medLabWrap) {
+    medLabWrap.innerHTML = '';
+    SPECIAL_SENDS.filter(function (s) { return MEDLAB_SPECIAL_IDS.indexOf(s.id) !== -1; }).forEach(function (item) {
+      medLabWrap.appendChild(buildSpecialRow(item));
+      var mCb = qs('sp_reg_' + item.id);
+      if (mCb) mCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
+    });
+  }
   SP_BOARD_ITEMS.forEach(function (item) {
     if (!wrap) return;
     var row = buildSpecialRow(item);
@@ -3513,12 +3534,18 @@ function isMedGenOn() {
   var m = getMedCertNums();
   return m.n5 > 0 || m.nDriver > 0;
 }
+// รอบ 70: แผง Lab มีข้อมูล = ยอด Lab > 0 หรือติ๊ก EKG/ตรวจสายตา/ตาบอดสี (ห้ามพับแผงที่มีข้อมูลในร่าง)
 function isMedLabOn() {
-  return getMedCertNums().labAmount > 0;
+  return getMedCertNums().labAmount > 0 || isMedLabSpecialOn();
 }
 // รอบ 8 (B1): specialReg (ลงชื่อไว้) ⊇ ทุกสถานะเสมอ (กติกาแม่บท) ⇒ ใช้ reg ตัวเดียวพอ ครอบคลุมของเดิมทั้งหมด
+// รอบ 70: isSpecialOn() นับเฉพาะ reg ที่ "ไม่ใช่" MEDLAB_SPECIAL_IDS (ใช้กับ needPerson ชื่อ+HN · ด่านชื่อ+HN · แผง panelSpecial · แถบร่าง)
+// ส่วน 3 ตัวนั้นแยกไปที่ isMedLabSpecialOn() (บังคับแค่ HN) — getSpecialRegIds() ยังคืนทุก id ที่ติ๊ก (payload เดิม)
 function isSpecialOn() {
-  return getSpecialRegIds().length > 0;
+  return getSpecialRegIds().some(function (id) { return MEDLAB_SPECIAL_IDS.indexOf(id) === -1; });
+}
+function isMedLabSpecialOn() {
+  return getSpecialRegIds().some(function (id) { return MEDLAB_SPECIAL_IDS.indexOf(id) !== -1; });
 }
 
 /* =========================================================================
@@ -3668,6 +3695,7 @@ function reorderSpecialSendsRows_(groupPriority) {
     return pa - pb;
   });
   order.forEach(function (item) {
+    if (MEDLAB_SPECIAL_IDS.indexOf(item.id) !== -1) return; // รอบ 70: 3 แถวนี้อยู่แผง Lab — ห้ามย้ายกลับมา #specialSendsList
     var row = qs('sp_row_' + item.id);
     if (row) wrap.appendChild(row);
   });
@@ -3880,7 +3908,7 @@ function validateForm(ctx) {
   setDateFieldError(qs('pickupDate'), pickupReasonForField);
 
   var hasAnything = ctx.checkupOn || ctx.vaccineOn || ctx.nCert > 0 ||
-                    ctx.labAmount > 0 || ctx.specialOn;
+                    ctx.labAmount > 0 || ctx.specialOn || ctx.medLabSpecialOn; // รอบ 70: นับ EKG/ตรวจสายตา/ตาบอดสี ด้วย
 
   // รอบ 37 (W3, 2026-09-30): ห้ามคิวซ้ำในวันเดียวกัน — คำนวณไว้ก่อนเข้าเชนเงื่อนไขด้านล่าง (ต้องรู้ผลก่อนตัดสินใจ
   // ว่าจะขึ้นข้อความนี้หรือไม่) ดู queueDupInfoFor_ ด้านบน (เช็คเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถวในโหมดแก้ไข)
@@ -3930,6 +3958,10 @@ function validateForm(ctx) {
   // ctx.vaccineOn && !ctx.patientHn อยู่ตรงนี้ ตอนนี้ลบทิ้งแล้ว (ด่านรูปแบบ HN ด้านล่างยังทำงานเหมือนเดิมถ้ากรอกมาผิด)
   } else if (ctx.specialOn && (!ctx.patientName || !ctx.patientHn)) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
+  } else if ((ctx.labAmount > 0 || ctx.medLabSpecialOn) && !ctx.patientHn) {
+    // รอบ 68 (2026-10-08, เจ้าของสั่ง): ใบรับรองแพทย์มี lab บังคับ HN (ชื่อไม่บังคับ) · ฝั่งเว็บเท่านั้น เหตุผลเดียวกับด่านตรวจสุขภาพ
+    // รอบ 70 (เจ้าของสั่ง 2026-10-07): ติ๊ก EKG/ตรวจสายตา/ตาบอดสี (ctx.medLabSpecialOn) บังคับแค่ HN เหมือนกัน · ฝั่งเซิร์ฟเวอร์บังคับด้วยข้อความเดียวกัน
+    msg = 'ใบรับรองแพทย์มี lab ต้องกรอก HN';
   } else if (ctx.patientHn && !isValidHn(ctx.patientHn)) {
     msg = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
   } else if (prefixNameLangMismatch_(qs('patientPrefix').value, qs('patientName').value)) {
@@ -4009,6 +4041,8 @@ function draftSummaryParts(ctx) {
   if (ctx.vaccineOn) parts.push('วัคซีน');
   if (ctx.medOn) parts.push('ใบรับรองแพทย์');
   if (ctx.specialOn) parts.push('ส่งตรวจพิเศษ');
+  // รอบ 70: ติ๊ก EKG/ตรวจสายตา/ตาบอดสี อย่างเดียว (ไม่มียอด Lab) ก็ถือว่ามีร่าง — ไม่ซ้ำกับ 'ใบรับรองแพทย์' เมื่อ medOn อยู่แล้ว
+  if (ctx.medLabSpecialOn && !ctx.medOn) parts.push('ใบรับรองแพทย์มี Lab');
   return parts;
 }
 
@@ -4120,6 +4154,7 @@ function recalcTotals() {
   var specialBackIds = STATE.editSpecialBack || [];
   var specialPrepIds = STATE.editSpecialPrep || [];
   var specialOn = isSpecialOn();
+  var medLabSpecialOn = isMedLabSpecialOn(); // รอบ 70
 
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim();
@@ -4153,7 +4188,7 @@ function recalcTotals() {
   // รอบ 17 (2026-09-17): เดิมมีอีกบรรทัดเขียน #stickyTotal (ยอดในแถบล่างเต็มจอ #stickyBar) — องค์ประกอบนั้นถูกลบไปแล้ว
   // #totGrand (เขียนไว้ข้างบนแล้ว) คือยอดที่แสดงจริงในกล่องลอย #panelTotals ตอนนี้
 
-  updateDraftStrip({ checkupOn: checkupOn, vaccineOn: vaccineOn, medOn: medOn, specialOn: specialOn, patientName: patientName, grand: grand });
+  updateDraftStrip({ checkupOn: checkupOn, vaccineOn: vaccineOn, medOn: medOn, specialOn: specialOn, medLabSpecialOn: medLabSpecialOn, patientName: patientName, grand: grand });
   updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
   renderQueueSuggestion_(); // รอบ 60 ข้อ 2: ผู้ใช้พิมพ์/ล้างช่องคิวเอง ⇒ hint/placeholder ต้องตามทัน (ไม่เขียนค่าในช่อง)
   syncCheckupPanelToQueue_(); // รอบ 64: คิวเปลี่ยนเป็น C/ไม่นัด ⇒ กางแผงตรวจสุขภาพ · เปลี่ยนเป็นอย่างอื่น ⇒ พับกลับ (เฉพาะที่ระบบกางเอง)
@@ -4163,7 +4198,7 @@ function recalcTotals() {
     checkupOn: checkupOn, program: program, gender: gender, checkupAmountNum: checkupAmountNum,
     vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert,
     extraIds: extraIds, labAmount: labAmount,
-    specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn,
+    specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn, medLabSpecialOn: medLabSpecialOn,
     patientName: patientName, patientHn: patientHn,
     queue: queue, deliveryMethod: deliveryMethod,
     pelvic: pelvic,
@@ -4194,13 +4229,20 @@ function updatePanelSummaries(ctx) {
   }
   var medLabSumEl = qs('panelMedcertLabSummary');
   if (medLabSumEl) {
-    medLabSumEl.textContent = ctx.medNums.labAmount > 0 ? ('lab ' + money(ctx.medNums.labAmount) + ' บาท') : '—';
+    // รอบ 70: ต่อท้ายด้วยชื่อสั้นของรายการนับยอดที่ติ๊ก (เช่น lab 250 บาท · EKG · ตาบอดสี) — textContent เท่านั้น
+    var medLabBits = [];
+    if (ctx.medNums.labAmount > 0) medLabBits.push('lab ' + money(ctx.medNums.labAmount) + ' บาท');
+    getSpecialRegIds().forEach(function (id) {
+      if (MEDLAB_SPECIAL_IDS.indexOf(id) !== -1) medLabBits.push(MEDLAB_SPECIAL_SHORT[id] || id);
+    });
+    medLabSumEl.textContent = medLabBits.length ? medLabBits.join(' · ') : '—';
   }
 
   var spSumEl = qs('panelSpecialSummary');
   if (spSumEl) {
     // รอบ 26 (2026-09-22, เจ้าของสั่ง): InBody ย้ายเข้าแผงนี้แล้ว (เดิมอยู่แผงตรวจสุขภาพจึงต้องกรองออก) — นับทุกตัวที่ติ๊ก
-    var n = getSpecialRegIds().length;
+    // รอบ 70: ไม่นับ EKG/ตรวจสายตา/ตาบอดสี — ย้ายไปสรุปที่หัวแผง Lab แล้ว
+    var n = getSpecialRegIds().filter(function (id) { return MEDLAB_SPECIAL_IDS.indexOf(id) === -1; }).length;
     spSumEl.textContent = n > 0 ? (n + ' รายการ') : '—';
   }
 }
@@ -4803,7 +4845,7 @@ function saveQueueEditPendingFor_(recordId) {
 // ฟอร์มหลัก (ไม่ใช่ในโมดัล) "มีร่างค้างอยู่" ไหม — ใช้ก่อนถาม confirm ตอนกด "แก้แล้วบันทึกใหม่"/"รวมเข้าแถวเดิม"
 // ของแผง #saveQueuePanel (W2) เกณฑ์เดียวกับ hasDraft ของ updateDraftStrip() (มีบริการที่ติ๊ก หรือมีชื่อ/คิว)
 function isMainFormDraftEmpty_() {
-  if (isCheckupOn() || isVaccineOn() || isMedOn() || isSpecialOn()) return false;
+  if (isCheckupOn() || isVaccineOn() || isMedOn() || isSpecialOn() || isMedLabSpecialOn()) return false; // รอบ 70
   if ((qs('patientName').value || '').trim()) return false;
   if ((qs('patientHn').value || '').trim()) return false;
   if ((qs('queueSelect').value || '').trim()) return false;
@@ -8717,7 +8759,13 @@ function formatThaiMonthYear(monthStr) {
 // รอบ 29 (S6) W6 (ข้อ 6): เรียงใหม่เป็น 5 หัวข้อมีเลขกำกับ (1 สรุปรวม · 2 ตรวจสุขภาพ (รวมตรวจเพิ่มเป็นหัวข้อย่อยท้ายการ์ด) ·
 // 3 วัคซีน · 4 ใบรับรองแพทย์ (3 บรรทัดพอดี ไม่มีจำนวนใบ lab/แยก 5 โรค-ใบขับขี่แล้ว) · 5 ส่งตรวจพิเศษ)
 // การ์ด "การรับผล" ถูกลบออกจากรายงานทั้งหมด (ข้อมูลค้างส่งออกดูที่หน้า #pendingScreen / มุมมอง W5 แทน)
+// รอบ 71 (เจ้าของสั่ง 2026-10-07): เพิ่มการ์ดที่ 6 "การส่งผลตรวจสุขภาพ แยกช่องทาง" ต่อท้ายการ์ด 5 (ตอนนี้เป็น 6 หัวข้อ) —
+// ไม่ใช่การนำการ์ด "การรับผล" เดิมกลับมา (คนละการ์ด คนละข้อมูล: อ่านจาก summary.results.checkup.byMethod ล้วน ๆ)
 // ⚠ ข้อมูลจากเซิร์ฟเวอร์เดิมทั้งหมด (ไม่ต้องแก้ handleReport_) — ไม่มีข้อมูล/เซิร์ฟเวอร์รุ่นเก่า ⇒ ไม่ crash (numOr0 เดิม)
+//   (ยกเว้นการ์ด 6 ที่ต้องใช้เซิร์ฟเวอร์รอบ 71 — รุ่นเก่าไม่มี byMethod ⇒ แสดงข้อความ "ยังไม่มีข้อมูลช่องทาง")
+// รอบ 71: ลำดับช่องทางของการ์ด 6 — ต้องตรงกับ DELIVERY_METHODS ฝั่งเซิร์ฟเวอร์ (ไม่รวมค่าว่าง) และตัวเลือกใน select#deliveryMethod
+// (หน้านี้ไม่มีค่าคงที่ของรายการช่องทางรับผล มีแค่ <option> ใน HTML จึงประกาศแยกไว้ที่นี่ — เพิ่มช่องทางใหม่ต้องแก้ 3 ที่)
+var REPORT_DELIVERY_ORDER = ['รอรับด้วยตนเอง', 'ส่งทางไปรษณีย์', 'ส่งทาง E-mail', 'ส่งทาง Whatsapp', 'นัดรับวันที่'];
 function renderReport(summary, period) {
   var el = qs('reportContent');
   if (!summary) { el.innerHTML = '<p class="muted">ไม่มีข้อมูล</p>'; return; }
@@ -8854,6 +8902,31 @@ function renderReport(summary, period) {
     html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.reg) + '</td></tr>';
   });
   html += '</tbody></table></div></div>';
+
+  // 6 การส่งผลตรวจสุขภาพ แยกช่องทาง — รอบ 71 (เจ้าของสั่ง 2026-10-07 "เพิ่มรายงานสถิติรายเดือนการส่งผลออก แต่ละช่องทาง")
+  // อ่านจาก summary.results.checkup.byMethod { <ช่องทาง>: {total, delivered, pending} } (เซิร์ฟเวอร์รอบ 71) ·
+  // นับเข้าเดือนที่มาตรวจ · เฉพาะผลตรวจสุขภาพ (ไม่รวมตรวจภายใน/ส่งออกอีกครั้ง) · เรียงตาม REPORT_DELIVERY_ORDER แสดงทุกช่องทางแม้เป็น 0
+  // แถว "ไม่ระบุ" แสดงเฉพาะเมื่อ total > 0 · เซิร์ฟเวอร์รุ่นเก่าไม่มี byMethod ⇒ แสดงข้อความแทน ไม่ crash · พิมพ์ได้ (ไม่ใส่ no-print)
+  var byMethod = (summary.results && summary.results.checkup && summary.results.checkup.byMethod) || null;
+  html += '<div class="card"><h2>6 การส่งผลตรวจสุขภาพ แยกช่องทาง</h2>';
+  if (!byMethod || typeof byMethod !== 'object') {
+    html += '<p class="muted">ยังไม่มีข้อมูลช่องทาง (เซิร์ฟเวอร์ยังไม่อัปเดต)</p>';
+  } else {
+    var sumTotal = 0, sumDelivered = 0, sumPending = 0;
+    var methodRowsHtml = '';
+    REPORT_DELIVERY_ORDER.concat(['ไม่ระบุ']).forEach(function (m) {
+      var b = byMethod[m] || {};
+      var bTotal = numOr0(b.total), bDelivered = numOr0(b.delivered), bPending = numOr0(b.pending);
+      if (m === 'ไม่ระบุ' && bTotal <= 0) return;
+      sumTotal += bTotal; sumDelivered += bDelivered; sumPending += bPending;
+      methodRowsHtml += '<tr><td>' + escHtml(m) + '</td><td>' + bTotal + '</td><td>' + bDelivered + '</td><td>' + bPending + '</td></tr>';
+    });
+    html += '<div class="scroll-x"><table class="report-table"><thead><tr>' +
+      '<th>ช่องทาง</th><th>จำนวน (คน)</th><th>ส่งออก/รับแล้ว</th><th>ค้าง</th></tr></thead><tbody>' + methodRowsHtml +
+      '<tr><td><strong>รวม</strong></td><td><strong>' + sumTotal + '</strong></td><td><strong>' + sumDelivered +
+      '</strong></td><td><strong>' + sumPending + '</strong></td></tr></tbody></table></div>';
+  }
+  html += '</div>';
 
   // 🗑 เจ้าของสั่งตัดออก 2026-09-13 (ส่งภาพหน้าจอมาชี้): การ์ด "แยกตามจุดบริการ" + "แยกตามผู้บันทึก"
   //    ฝั่ง Apps Script ยังคำนวณ summary.byPoint / summary.byStaff ส่งมาให้เหมือนเดิม (ไม่ได้แตะ backend)
@@ -9293,6 +9366,8 @@ var dqSugActive = ''; // รอบ 42: คีย์คิว (dqQueueKey) ขอ
 // รอบ 64 (เจ้าของสั่ง 2026-10-07): กระดานคิวพบแพทย์ดึง dqToday เองทุก 1 นาทีขณะเปิดอยู่ — เดิมโหลดเฉพาะตอนเปิดหน้า/หลังกัปตันกด action
 // (กัปตันหลายเครื่องดูกระดานเดียวกัน ยอด orderQueues/pendingQueues/logs ของเครื่องอื่นไม่เข้ามาจนกว่าจะรีเฟรชมือ)
 var dqAutoRefreshMinGapMs = 50000; // ตัวจับเวลาเดิมเดิน 60 วิ — เผื่อ 10 วิกันรอบที่เพิ่งโหลดไปไม่นานทำให้ข้ามไปอีกนาที แต่ยังไม่ยิงถี่กว่านี้
+// รอบ 69 (เจ้าของสั่ง 2026-10-07): คิวอยู่ในห้องแพทย์ครบกี่นาทีถึงขึ้นเตือนสีแดงบนกระดานกัปตัน (เฉพาะแถวกำลังตรวจ — แถวปิดเวลาแล้ว/พัก ☕ ไม่มี timer จึงไม่เตือน)
+var dqLongExamMin = 15; // ที่เดียวของเกณฑ์ — ใช้ทั้งการคำนวณและข้อความบนป้าย
 var dqLastLoadAt = 0;   // เวลา (Date.now) ที่เริ่มโหลด dqToday ล่าสุด หรือได้ snapshot ล่าสุด (รวม snapshot จากคำตอบ action) — กันยิงซ้ำถี่
 var dqLoadingCount = 0; // จำนวน dqLoadToday ที่ยังไม่กลับ (ทุกผู้เรียก) — รีเฟรชเองไม่ยิงซ้อน
 var dqSnapSeq = 0;      // นับครั้งที่ dqApplySnapshot ทำงาน — ผลรีเฟรชเองที่เริ่มก่อน snapshot ใหม่กว่า ต้องทิ้ง ไม่ให้ข้อมูลเก่าทับ
@@ -9953,6 +10028,23 @@ function dqRenderRoomCards() {
     var update = function () {
       var elapsed = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
       timerEl.textContent = dqPad2(Math.floor(elapsed / 60)) + ':' + dqPad2(elapsed % 60);
+      // รอบ 69: ครบ dqLongExamMin นาที ⇒ แถวกำลังตรวจ + การ์ดห้องเป็นสีแดง + ป้ายเตือน (classList.toggle ซ้ำได้ ไม่สะสม)
+      var long = elapsed >= dqLongExamMin * 60;
+      var openEl = timerEl.closest('.dq-open');
+      var cardEl = timerEl.closest('.dq-card');
+      if (openEl) {
+        openEl.classList.toggle('dq-long', long);
+        var badge = openEl.querySelector('.dq-long-badge');
+        if (long && !badge) {
+          badge = document.createElement('span');
+          badge.className = 'dq-long-badge';
+          badge.textContent = '⚠ เกิน ' + dqLongExamMin + ' นาที';
+          timerEl.insertAdjacentElement('afterend', badge);
+        } else if (!long && badge) {
+          badge.remove();
+        }
+      }
+      if (cardEl) cardEl.classList.toggle('dq-card-long', long);
     };
     update();
     dqState.timers.push(setInterval(update, 1000));
