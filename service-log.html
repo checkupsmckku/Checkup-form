@@ -620,6 +620,10 @@
   table.cu-table th, table.cu-table td,
   table.cu-table th:first-child, table.cu-table td:first-child { text-align: center; }
   table.cu-table tr.sp-total td { text-align: left; }
+  /* รอบ 65 (เจ้าของ 2026-10-07): "ชื่อ-สกุล" (คอลัมน์ที่ 3) ชิดซ้าย ที่เหลือกลางเหมือนเดิม — ใช้ได้ทั้งจอและตอนพิมพ์
+     specificity (0,2,2) เท่ากับกฎ :first-child ข้างบน จึงต้องวางไว้ "หลัง" กฎนั้น (หลังชนะ) · แถวสรุป .sp-total
+     เป็น td ตัวแรกของแถว (colspan) ไม่ใช่ตัวที่ 3 จึงไม่โดน */
+  table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { text-align: left; }
 
   /* ⚠ 2 บรรทัดล่างของกฎนี้ห้ามลบ (เจอจริง 2026-09-15 ตอนย้ายยอด+ปุ่มบันทึกมากึ่งกลางจอ):
      #toast ลอยกึ่งกลางล่างจอด้วย z-index 999 ⇒ ทับปุ่มบันทึกในแถบล่างจอเต็ม ๆ
@@ -1017,14 +1021,17 @@
        (เจอจริง: สลับคอลัมน์แล้วลืมแก้ ⇒ HN กว้างเกิน ชื่อ/โปรแกรมถูกตัดกลางคำ "โปรแ/กรม")
        ⚠ ตรวจด้วยการพิมพ์จริงลง PDF (Page.printToPDF, A4 แนวตั้ง) ทุกครั้งที่แก้ % ชุดนี้ — ดูบันทึกการตรวจใน
        final report ของรอบ 28 ว่าตรวจกับชื่อยาว/ค่าบริการหลักหมื่นแล้วไม่มีตรงไหนตัดกลางคำ/ล้นขอบกระดาษ */
+    /* รอบ 65 (เจ้าของ 2026-10-07 "ชื่อ-สกุลตกไปบรรทัดถัดไป"): ชื่อ-สกุล (คำนำหน้า+ชื่อ+สกุล) ต้องอยู่บรรทัดเดียว ⇒ ขยาย 20% -> 30%
+       (พื้นที่พิมพ์ A4 กว้าง 210-16 = 194 mm ⇒ ชื่อ ≈ 58 mm) โดยหักจาก HN/ช่องทาง/ค่าบริการ/ตรวจมะเร็ง/เซ็นรับ
+       รวมต้องได้ 100% พอดี · ⚠ เซ็นรับห้ามต่ำกว่า ~30 mm (16% ≈ 31 mm) ไม่งั้นเซ็นไม่ได้ */
     table.cu-table th:nth-child(1), table.cu-table td:nth-child(1) { width: 5%; }   /* คิว */
-    table.cu-table th:nth-child(2), table.cu-table td:nth-child(2) { width: 10%; }  /* HN */
-    table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { width: 20%; }  /* ชื่อ-สกุล */
+    table.cu-table th:nth-child(2), table.cu-table td:nth-child(2) { width: 9%; }   /* HN */
+    table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { width: 30%; white-space: nowrap; word-break: normal; } /* ชื่อ-สกุล · บรรทัดเดียว (รอบ 65) — ชื่อยาวผิดปกติ JS ลดฟอนต์เฉพาะช่องนั้น (cuFitNamesForPrint) */
     table.cu-table th:nth-child(4), table.cu-table td:nth-child(4) { width: 10%; }  /* โปรแกรม */
-    table.cu-table th:nth-child(5), table.cu-table td:nth-child(5) { width: 8%; }   /* ค่าบริการ */
-    table.cu-table th:nth-child(6), table.cu-table td:nth-child(6) { width: 12%; }  /* ตรวจมะเร็งปากมดลูก */
-    table.cu-table th:nth-child(7), table.cu-table td:nth-child(7) { width: 14%; }  /* ช่องทางส่งผลตรวจสุขภาพ */
-    table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 21%; }  /* เซ็นรับ ~40 mm */
+    table.cu-table th:nth-child(5), table.cu-table td:nth-child(5) { width: 7%; }   /* ค่าบริการ */
+    table.cu-table th:nth-child(6), table.cu-table td:nth-child(6) { width: 11%; }  /* ตรวจมะเร็งปากมดลูก */
+    table.cu-table th:nth-child(7), table.cu-table td:nth-child(7) { width: 12%; }  /* ช่องทางส่งผลตรวจสุขภาพ */
+    table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 16%; }  /* เซ็นรับ ~31 mm */
     /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
@@ -6996,6 +7003,52 @@ function renderCheckupTable(records, dateStr) {
   updateCuHnHint(rows.length, shownRows.length);
 }
 
+/* รอบ 65 (เจ้าของ 2026-10-07): ใบพิมพ์ "ชื่อ-สกุล" ต้องอยู่บรรทัดเดียว (CSS: white-space:nowrap + กว้าง 30%)
+   ถ้าชื่อยาวผิดปกติจนเกินช่อง → ลดฟอนต์เฉพาะช่องชื่อนั้นทีละ 0.25pt ลงไปไม่ต่ำกว่า 6.5pt · ห้ามตัด/ซ่อนตัวอักษร
+   ⚠ ตอน beforeprint เบราว์เซอร์ยังจัดหน้าแบบจอ (scrollWidth ของ td ใช้ไม่ได้) ⇒ วัดความกว้างข้อความจริงด้วย span ลอยที่ฟอนต์ 8.5pt
+   แล้วเทียบกับความกว้างช่องบนกระดาษที่คำนวณเอง (A4 กว้าง 210mm − ขอบ 8mm×2 = 194mm × 30% − padding 3px×2)
+   ⚠ 0.30 ตรงกับ width ของ td:nth-child(3) ในบล็อก @media print — แก้ % ตรงนั้นต้องแก้ตรงนี้ด้วย
+   ถ้า media print ทำงานจริงอยู่แล้ว (matchMedia) ใช้ความกว้างจริงของ td แทน */
+var CU_NAME_COL_FRAC = 0.30, CU_PRINT_BASE_PT = 8.5, CU_PRINT_MIN_PT = 6.5, CU_PRINT_PAGE_PX = 194 * 96 / 25.4;
+function cuNameCells_() {
+  return document.querySelectorAll('table.cu-table tbody tr:not(.sp-total) td:nth-child(3)');
+}
+function cuFitNamesForPrint() {
+  var cells = cuNameCells_(), i, td, sp, natural, avail, pt, inPrint = false;
+  if (!cells.length) return;
+  try { inPrint = !!(window.matchMedia && window.matchMedia('print').matches); } catch (e) { inPrint = false; }
+  for (i = 0; i < cells.length; i++) {
+    td = cells[i];
+    td.style.fontSize = '';
+    if (!td.textContent) continue;
+    sp = document.createElement('span');
+    sp.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:' + CU_PRINT_BASE_PT + 'pt';
+    sp.style.fontFamily = window.getComputedStyle(td).fontFamily;
+    sp.textContent = td.textContent;
+    document.body.appendChild(sp);
+    natural = sp.getBoundingClientRect().width;
+    document.body.removeChild(sp);
+    avail = inPrint ? (td.clientWidth - 6) : (CU_PRINT_PAGE_PX * CU_NAME_COL_FRAC - 6);
+    if (natural <= avail) continue;
+    pt = CU_PRINT_BASE_PT;
+    while (pt > CU_PRINT_MIN_PT && natural * (pt / CU_PRINT_BASE_PT) > avail) pt -= 0.25;
+    if (pt < CU_PRINT_MIN_PT) pt = CU_PRINT_MIN_PT;
+    td.style.fontSize = pt + 'pt';
+  }
+}
+function cuRestoreNamesAfterPrint() {
+  var cells = cuNameCells_(), i;
+  for (i = 0; i < cells.length; i++) cells[i].style.fontSize = '';
+}
+try {
+  window.addEventListener('beforeprint', cuFitNamesForPrint);
+  window.addEventListener('afterprint', cuRestoreNamesAfterPrint);
+  var cuPrintMql_ = window.matchMedia('print');
+  var cuPrintMqlFn_ = function (ev) { if (ev.matches) cuFitNamesForPrint(); else cuRestoreNamesAfterPrint(); };
+  if (cuPrintMql_.addEventListener) cuPrintMql_.addEventListener('change', cuPrintMqlFn_);
+  else if (cuPrintMql_.addListener) cuPrintMql_.addListener(cuPrintMqlFn_);
+} catch (e) { /* ไม่มี addEventListener/matchMedia (เช่น DOM จำลองในเทสต์) — ปุ่มพิมพ์ยังเรียก cuFitNamesForPrint เอง */ }
+
 
 /* รอบ 60 ข้อ 6: มุมมอง "รายงานผลค้างส่งออก" (renderCheckupPendingReport) ถูกถอดออกจากหน้ารายชื่อตรวจสุขภาพรายวันแล้ว — ใช้หน้า #pendingScreen (📮 ค้างส่งออกผล) แทน
    (ฟังก์ชันที่หน้านั้นใช้ร่วม เช่น checkupResultStatus / isPelvicExportPending / shortDeliveryLabel ยังอยู่ครบ) */
@@ -11019,7 +11072,7 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnCuLoad').addEventListener('click', function () { loadCheckupTable('list'); }); // รอบ 8 (B7)
   qs('btnCuViewTable').addEventListener('click', function () { showCuView('table'); });
   setCuView('table');
-  qs('btnCuPrint').addEventListener('click', function () { window.print(); });
+  qs('btnCuPrint').addEventListener('click', function () { cuFitNamesForPrint(); window.print(); }); // รอบ 65: ลดฟอนต์ชื่อยาวก่อนพิมพ์ (afterprint คืนค่า)
   // เจ้าของสั่ง 2026-09-15: ช่องค้นหาของหน้านี้ — re-render จาก LAST_CU_RECORDS ไม่ยิง API ใหม่
   // ⚠ วาดครบ 3 มุมมองเสมอ (เหมือน loadCheckupTable) เพื่อให้สลับมุมมองระหว่างมีคำค้นค้างอยู่ยังกรองอยู่
   // รอบ 31B: ดึงมาเป็น rerenderCuViews() เดียว ใช้ร่วมกับลิงก์ "ล้างการค้นหา" ของ hint ผลเดียว (ข้อ 3) ด้วย
