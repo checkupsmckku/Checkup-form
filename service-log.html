@@ -799,10 +799,7 @@
   #queueRow .queue-step-row { display: flex; align-items: center; gap: 6px; }
   #queueRow .queue-step-row input { flex: 1 1 auto; width: auto; min-width: 0; }
   #queueRow .queue-step-row .btn { flex: 0 0 auto; min-height: 44px; padding: 6px 14px; }
-  /* รอบ 60 ข้อ 3: ปุ่ม MMG/U/S เดี่ยวในแผงใบรับรองแพทย์มี Lab — หน้าตาเดียวกับ #progSetButtons (opt-btn + is-active) */
-  #medLabSoloButtons { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  #medLabSoloButtons .opt-btn { justify-content: center; text-align: center; font: inherit; color: inherit; }
-  #medLabSoloButtons .opt-btn.is-active { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
+  /* รอบ 66: ลบ CSS ปุ่ม #medLabSoloButtons (รอบ 60 ข้อ 3) — เจ้าของสั่งให้ติ๊ก MMG/U/S ที่แผงส่งตรวจพิเศษที่เดียว ระบบใส่ราคาเดี่ยวตามคิวเอง */
 
   /* รอบ 8 (B7) — ช่องลายเซ็นรับเอกสารบนใบพิมพ์รายชื่อตรวจสุขภาพรายวัน: กว้าง/สูงพอเซ็นจริงด้วยปากกาบนกระดาษ */
   .cu-sig-line { display: inline-block; width: 100%; min-width: 35mm; border-bottom: 1px solid #000; }
@@ -1464,11 +1461,7 @@
             </button>
             <div class="log-panel-body">
               <section id="svcMedcertLab">
-                <!-- รอบ 60 ข้อ 3: MMG/U/S Breast เดี่ยว (ราคาคงที่ MEDCERT_LAB_SOLO ฝั่งเว็บ — ไม่อยู่ในแท็บราคา) · สถานะปุ่ม (is-active) คำนวณจาก DOM ใน recalcTotals() -->
-                <div id="medLabSoloButtons">
-                  <button type="button" class="opt-btn" data-solo="mmg" aria-pressed="false">MMG เดี่ยว 3,243 บาท</button>
-                  <button type="button" class="opt-btn" data-solo="us_breast" aria-pressed="false">U/S Breast เดี่ยว 1,275 บาท</button>
-                </div>
+                <!-- รอบ 66: เอาปุ่ม MMG/U/S เดี่ยว (#medLabSoloButtons) ออก — ติ๊กที่แผงส่งตรวจพิเศษ ระบบใส่ยอด Lab ให้ตามคิว (syncMedLabSoloPrice_) -->
                 <div class="row">
                   <div>
                     <label class="field-label" for="medCertLabAmount">ใบรับรองแพทย์มี Lab — ยอดเงิน (กรอกเอง)</label>
@@ -2764,11 +2757,13 @@ function guardBothBreastCheck_(id) {
     showToast(BOTH_BREAST_MSG + ' — เอาติ๊ก ' + otherName + ' ออกก่อน');
   }
 }
-function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastCheck_(id); onServiceFieldChange(); }
+// รอบ 66: ติ๊ก MMG/U/S ผ่านด่านเดิมทั้งหมดแล้ว (guard*) ค่อยให้ syncMedLabSoloPrice_ ตัดสินใส่ราคาเดี่ยว (เฉพาะตอนติ๊กจริงทางนี้)
+function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastCheck_(id); syncMedLabSoloPrice_({ ticked: id }); onServiceFieldChange(); }
 
-/* รอบ 60 ข้อ 3 (เจ้าของสั่ง): MMG เดี่ยว 3,243 / U/S Breast เดี่ยว 1,275 ในแผง "ใบรับรองแพทย์มี Lab" — เคสคีย์ order MMG/U/S อย่างเดียว
-   (บันทึกในใบรับรองมี Lab) ราคาเป็นค่าคงที่ฝั่งเว็บ (ไม่อยู่ในแท็บราคา) · backend รับ medCertLabAmount เป็นตัวเลขอิสระอยู่แล้ว
-   ⇒ ปุ่มแค่ "ติ๊ก sp_reg_<id> + ใส่ยอด lab" ผ่านเส้นทางเดิมทั้งหมด (onSpecialRegChange → ด่านเพศชาย/สองอย่าง/สถานะเดิม) */
+/* รอบ 66 (เจ้าของสั่ง 2026-10-07, SPEC_รอบ66_MMGราคาตามคิว.md): ติ๊ก MMG / U/S Breast ที่แผงส่งตรวจพิเศษ ⇒ ระบบใส่ราคาเดี่ยวในยอด
+   "ใบรับรองแพทย์มี Lab" ตาม "คิว" — เดิม (รอบ 60 ข้อ 3) มีปุ่ม MMG เดี่ยว/U/S Breast เดี่ยวแยกในแผงใบรับรองแพทย์มี Lab ถูกถอดออกแล้ว
+   เหตุผล: ติ๊กสองที่ซ้ำซ้อน · เคสตรวจสุขภาพ (คิว C / ไม่นัด) ไม่ใช่ราคาเดี่ยว ระบบดูคิวตัดสินให้เอง
+   ราคาเป็นค่าคงที่ฝั่งเว็บ (ไม่อยู่ในแท็บราคา) · backend รับ medCertLabAmount เป็นตัวเลขอิสระอยู่แล้ว (ไม่แตะ backend) */
 var MEDCERT_LAB_SOLO = [
   { id: 'mmg', label: 'MMG เดี่ยว', price: 3243 },
   { id: 'us_breast', label: 'U/S Breast เดี่ยว', price: 1275 }
@@ -2776,23 +2771,6 @@ var MEDCERT_LAB_SOLO = [
 function medLabSoloItem_(id) {
   for (var i = 0; i < MEDCERT_LAB_SOLO.length; i++) if (MEDCERT_LAB_SOLO[i].id === id) return MEDCERT_LAB_SOLO[i];
   return null;
-}
-// active ⇔ ไม่มีโปรแกรมตรวจสุขภาพ และ sp_reg_<id> ติ๊กอยู่ และ medCertLabAmount = ราคาของมัน (คำนวณจาก DOM ล้วน ๆ)
-function isMedLabSoloActive_(item, checkupOn) {
-  if (!item || checkupOn) return false;
-  var cb = qs('sp_reg_' + item.id);
-  var amtEl = qs('medCertLabAmount');
-  if (!cb || !amtEl || !cb.checked) return false;
-  return (parseInt(amtEl.value, 10) || 0) === item.price;
-}
-function updateMedLabSoloButtons_(checkupOn) {
-  MEDCERT_LAB_SOLO.forEach(function (item) {
-    var btn = document.querySelector('#medLabSoloButtons [data-solo="' + item.id + '"]');
-    if (!btn) return;
-    var on = isMedLabSoloActive_(item, checkupOn);
-    btn.classList.toggle('is-active', on);
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-  });
 }
 function setMedLabAmount_(n) {
   var amtEl = qs('medCertLabAmount');
@@ -2802,39 +2780,69 @@ function setMedLabAmount_(n) {
   amtEl.dispatchEvent(new Event('input', { bubbles: true }));
   amtEl.dispatchEvent(new Event('change', { bubbles: true }));
 }
-function onMedLabSoloClick_(id) {
-  var item = medLabSoloItem_(id);
-  if (!item) return;
-  var cb = qs('sp_reg_' + id);
-  if (!cb) return;
-  // กดปุ่มที่ active ⇒ ปลดติ๊ก (ถ้าด่านเดิมติ๊กกลับ เช่นแถวมีสถานะอยู่ ⇒ ไม่แตะยอด) แล้วตั้งยอดเป็น 0
-  if (isMedLabSoloActive_(item, isCheckupOn())) {
-    cb.checked = false;
-    onSpecialRegChange(id);
-    if (cb.checked) return;
-    setMedLabAmount_(0);
-    return;
+// id ของ solo ที่ติ๊กอยู่ตอนนี้ ('' = ไม่มี) — อ่านจาก DOM ตรง ๆ (ด่านสองอย่างบังคับให้ติ๊กได้ทีละตัวอยู่แล้ว)
+function medLabSoloCheckedId_() {
+  for (var i = 0; i < MEDCERT_LAB_SOLO.length; i++) {
+    var cb = qs('sp_reg_' + MEDCERT_LAB_SOLO[i].id);
+    if (cb && cb.checked) return MEDCERT_LAB_SOLO[i].id;
   }
-  // 1) บังคับ HN + ชื่อก่อน เหมือนส่งตรวจพิเศษ (ข้อความเดียวกับตัวล็อกแผง)
-  var hn = (qs('patientHn').value || '').trim();
-  var nm = (qs('patientName').value || '').trim();
-  if (!hn || !nm) { showToast('กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกตรวจสุขภาพ/ส่งตรวจพิเศษได้'); return; }
-  // 2) เคสตรวจสุขภาพ ⇒ MMG/U/S ไปที่แผงส่งตรวจพิเศษ (ไม่ใช่ราคาเดี่ยว)
-  if (isCheckupOn()) { showToast('เคสตรวจสุขภาพ เลือก MMG / U/S ที่แผงส่งตรวจพิเศษ'); return; }
-  // 3) ปลดติ๊กอีกตัวของคู่ (mmg ↔ us_breast) — ด่าน guardSpecialRegUncheck ติ๊กกลับ ⇒ หยุด
-  var otherId = (id === 'mmg') ? 'us_breast' : 'mmg';
-  var otherCb = qs('sp_reg_' + otherId);
-  if (otherCb && otherCb.checked) {
-    otherCb.checked = false;
-    onSpecialRegChange(otherId);
-    if (otherCb.checked) return;
+  return '';
+}
+function medLabAmountNow_() {
+  var amtEl = qs('medCertLabAmount');
+  return Math.max(0, parseInt(amtEl ? amtEl.value : '', 10) || 0);
+}
+// ล้างสถานะทั้งหมด (ล้างร่าง/บันทึกเสร็จ) · STATE.medLabAutoAmount = ราคาที่ "ระบบใส่" (0 = ไม่มีธง) · STATE.medLabSeen = สถานะ solo/คิว ล่าสุดที่ sync เห็น
+function resetMedLabSoloState_() {
+  STATE.medLabAutoAmount = 0;
+  STATE.medLabSeen = { solo: '', q: false };
+}
+// โหมดแก้ไข/คืนร่าง (ข้อ 8): ไม่ใส่ราคาเอง — ตั้งสถานะตามค่าที่โหลดมา แล้วถือว่า "ระบบใส่" เมื่อ solo ติ๊ก + คิวไม่ใช่คิวตรวจสุขภาพ + ยอด Lab = ราคา solo
+function initMedLabSoloState_() {
+  var soloId = medLabSoloCheckedId_(), item = medLabSoloItem_(soloId), qNow = currentQueueIsCheckup_();
+  STATE.medLabAutoAmount = (item && !qNow && medLabAmountNow_() === item.price) ? item.price : 0;
+  STATE.medLabSeen = { solo: soloId, q: qNow };
+}
+// ตัวตัดสินใส่/ล้างราคา solo — เรียกจาก 2 ที่: onSpecialRegChange (opts.ticked = id ที่เพิ่งติ๊กผ่านด่านเดิม) และต้น recalcTotals() (ไม่มี opts)
+// ทำงานเฉพาะตอน "สถานะเปลี่ยน" (seen → now) ⇒ ไม่วิ่งซ้ำทุก keystroke · ไม่ใส่ราคาเองเมื่อ solo ถูกติ๊กโดยไม่ผ่าน onSpecialRegChange (แก้ไข/คืนร่าง)
+function syncMedLabSoloPrice_(opts) {
+  if (STATE.medLabSyncing) return;
+  var amtEl = qs('medCertLabAmount');
+  if (!amtEl) return;
+  var soloId = medLabSoloCheckedId_(), item = medLabSoloItem_(soloId), qNow = currentQueueIsCheckup_();
+  var seen = STATE.medLabSeen || { solo: '', q: false };
+  var amt = medLabAmountNow_(), auto = STATE.medLabAutoAmount || 0;
+  STATE.medLabSeen = { solo: soloId, q: qNow }; // อัปเดตก่อนตั้งยอด — recalcTotals ที่ถูก dispatch ซ้อนจะเห็นว่าไม่มีอะไรเปลี่ยน
+  // ข้อ 6: ยอดไม่เท่าค่าที่ระบบใส่แล้ว = คนพิมพ์แก้เอง ⇒ ยอดเป็นของคน ทิ้งธง (ข้อ 3/5 จะไม่แตะ)
+  if (auto && amt !== auto) { auto = 0; STATE.medLabAutoAmount = 0; }
+  var target = null, toast = '';
+  if (!soloId) {
+    // ข้อ 5: ปลดติ๊ก (ไม่มีอีกตัวติ๊กอยู่) ⇒ ยอดเท่าค่าที่ระบบใส่ ⇒ 0 · ไม่เท่า ⇒ ไม่แตะ · ธงล้างเสมอ (ไม่มี solo ติ๊กแล้ว)
+    if (seen.solo && auto && amt === auto) target = 0;
+    if (seen.solo) STATE.medLabAutoAmount = 0;
+  } else if (qNow) {
+    // ข้อ 2: ติ๊กตอนคิวเป็นคิวตรวจสุขภาพ ⇒ ไม่ใส่ · ข้อ 3: ติ๊กอยู่แล้ว + คิวเพิ่งเปลี่ยนเป็นคิว C ⇒ ล้างเฉพาะที่ระบบใส่ (ติ๊กส่งตรวจพิเศษคงไว้)
+    if (!seen.q && auto && amt === auto) {
+      target = 0;
+      STATE.medLabAutoAmount = 0;
+      toast = 'คิว C = เคสตรวจสุขภาพ — ล้างราคา MMG/U/S เดี่ยวออกจากใบรับรองแพทย์มี Lab แล้ว';
+    }
+  } else {
+    var justTicked = !!(opts && opts.ticked === soloId && seen.solo !== soloId);
+    if (justTicked) {
+      // ข้อ 1: ติ๊กตอนคิวไม่ใช่คิวตรวจสุขภาพ — ยอด 0 ⇒ ใส่ราคา · มีค่า (คนพิมพ์) ⇒ ไม่แตะ + เตือน
+      if (amt === 0) target = item.price;
+      else if (amt !== auto) toast = 'ยอดใบรับรองแพทย์มี Lab มีค่าอยู่แล้ว (' + amt + ' บาท) — ตรวจว่ารวมค่า MMG/U/S Breast แล้วหรือยัง';
+    } else if (seen.q && amt === 0) {
+      // ข้อ 4: ติ๊กอยู่ + คิวเปลี่ยนจากคิวตรวจสุขภาพเป็นอย่างอื่น ⇒ ยอด 0 ใส่ให้ · มีค่าไม่แตะ ไม่ toast ซ้ำ
+      target = item.price;
+    }
   }
-  // 4) ติ๊กตัวนี้ผ่านด่านเดิม (เพศชาย/สองอย่าง) — ถ้าถูกติ๊กกลับเป็นไม่ติ๊ก ⇒ หยุด ไม่เติมราคา
-  cb.checked = true;
-  onSpecialRegChange(id);
-  if (!cb.checked) return;
-  // 5) ยอด lab = ราคาของมัน
-  setMedLabAmount_(item.price);
+  if (toast) showToast(toast);
+  if (target === null) return;
+  if (target > 0) STATE.medLabAutoAmount = target;
+  STATE.medLabSyncing = true;
+  try { setMedLabAmount_(target); } finally { STATE.medLabSyncing = false; }
 }
 
 /* เจ้าของสั่ง 2026-09-11: HN ต้องเป็นตัวอักษรอังกฤษ 2 ตัว + ตัวเลข 4 หลัก (เช่น AB1234) ผิดรูปแบบห้ามบันทึก
@@ -4071,6 +4079,9 @@ function recalcTotals() {
   //   แผงส่งตรวจพิเศษไม่ได้ผูกกับ "มาตรวจสุขภาพหรือเปล่า" อยู่แล้ว จึงต้องใช้เพศดิบ (t: A3/A4/A6 ของ test_card_mmg_center.js)
   // เจ้าของสั่ง 2026-09-17: ไม่ใช่แค่วิทยุเพศแล้ว — isMaleForMmg() เดาจากคำนำหน้าด้วยเมื่อยังไม่เลือกวิทยุเพศ
   applyMmgGenderLock(isMaleForMmg() ? 'male' : '');
+  // รอบ 66: ต้องรันก่อนอ่านยอด Lab (getMedCertNums) ด้านล่าง — ถ้าตั้งยอดทีหลัง ยอดรวม/validate ของรอบนี้จะค้างค่าเก่า
+  // (ต่อจาก applyMmgGenderLock เพราะล็อกเพศชายอาจปลดติ๊ก MMG ⇒ ต้องเห็นเป็น "ปลดติ๊ก" ใน sync นี้) · ทำงานจริงเฉพาะตอนสถานะ solo/คิวเปลี่ยน
+  syncMedLabSoloPrice_();
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
 
   // รอบ 29 (S3) W3 (ข้อ 3): เติมราคามาตรฐานเฉพาะตอน "คีย์ราคา" (โปรแกรม/เพศ/ตรวจมะเร็งปากมดลูก) เปลี่ยนจริง ๆ —
@@ -4141,7 +4152,6 @@ function recalcTotals() {
   updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
   renderQueueSuggestion_(); // รอบ 60 ข้อ 2: ผู้ใช้พิมพ์/ล้างช่องคิวเอง ⇒ hint/placeholder ต้องตามทัน (ไม่เขียนค่าในช่อง)
   syncCheckupPanelToQueue_(); // รอบ 64: คิวเปลี่ยนเป็น C/ไม่นัด ⇒ กางแผงตรวจสุขภาพ · เปลี่ยนเป็นอย่างอื่น ⇒ พับกลับ (เฉพาะที่ระบบกางเอง)
-  updateMedLabSoloButtons_(checkupOn); // รอบ 60 ข้อ 3: สถานะปุ่ม MMG/U/S เดี่ยวคำนวณจาก DOM ทุกครั้ง ไม่มี state แยก
   updatePanelSummaries({ checkupOn: checkupOn, program: program, vaccineCodes: vaccineCodes, medNums: medNums }); // รอบ 9 (ก้อน B, B3)
 
   validateForm({
@@ -4223,6 +4233,7 @@ function resetLogForm() {
   // ว่าตรงกับค่าที่เคยเติมไว้ก่อนล้างร่าง แล้วโดนเขียนทับโดยไม่ตั้งใจ)
   STATE.lastAutoCheckupAmount = null;
   STATE.lastPricingKey = null;
+  resetMedLabSoloState_(); // รอบ 66: ล้างร่าง/บันทึกเสร็จ ⇒ ล้างธง "ระบบใส่ราคา MMG/U/S เดี่ยว"
   var checkupStdHintResetEl = qs('checkupStandardPriceHint');
   if (checkupStdHintResetEl) { checkupStdHintResetEl.hidden = true; checkupStdHintResetEl.textContent = ''; }
   qs('deliveryMethod').value = '';
@@ -4311,6 +4322,7 @@ function restoreFormDraft_(data) {
   updateHnHint();
   applyVaccineFilter();
   applyLogLocks();
+  initMedLabSoloState_(); // รอบ 66: ตั้งธง/สถานะจากค่าที่คืน "ก่อน" recalcTotals — ไม่ให้ sync เข้าใจว่าเป็นการเปลี่ยนคิว/ติ๊กใหม่แล้วใส่ราคาเอง
   recalcTotals();
   applyCheckupPanelDefault_(); // รอบ 64: คืนร่างหลังปิดโมดัลแก้ไข ⇒ สถานะแผงตรวจสุขภาพตามค่าของร่างที่คืน (ร่างเลือกโปรแกรมไว้ ⇒ กาง)
 }
@@ -4560,6 +4572,7 @@ function enterEditMode(rec) {
   buildQueueOptions(draftQueuePrefix(), rec.queue || '');
 
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — แถวเก่ามี HN/ชื่ออยู่แล้วปกติ ⇒ ปลดล็อกทันที
+  initMedLabSoloState_(); // รอบ 66 ข้อ 8: โหมดแก้ไข ⇒ ไม่ใส่ราคาเอง · solo ติ๊ก + คิวไม่ใช่ C + ยอด Lab = ราคา solo ⇒ ถือว่าระบบใส่ (ปลดติ๊กแล้วล้างได้)
   recalcTotals();
   // รอบ 64 ข้อ 6: แก้ไขรายการเก่าที่มีโปรแกรม (หรือคิว C) ⇒ แผงตรวจสุขภาพกาง · ไม่มี ⇒ พับตามกติกาเดียวกับรายใหม่
   applyCheckupPanelDefault_();
@@ -10925,10 +10938,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) stepQueue_(dx > 0 ? 1 : -1);
     }, { passive: true });
   })();
-  // รอบ 60 ข้อ 3: ปุ่ม MMG/U/S เดี่ยว
-  document.querySelectorAll('#medLabSoloButtons [data-solo]').forEach(function (btn) {
-    btn.addEventListener('click', function () { onMedLabSoloClick_(btn.getAttribute('data-solo')); });
-  });
+  // รอบ 66: ลบตัวฟังคลิกปุ่ม MMG/U/S เดี่ยว (ปุ่มถูกถอดแล้ว)
   // รอบ 9 (ก้อน B, B4): input ของ patientHn/patientName ต้องปลด/ล็อกแผงด้วยทุกครั้ง (ห้ามเรียก syncQueuePrefix ที่นี่)
   qs('patientName').addEventListener('input', function () { applyLogLocks(); recalcTotals(); });
   qs('patientHn').addEventListener('input', function () { applyLogLocks(); recalcTotals(); updateHnHint(); });
