@@ -613,6 +613,33 @@
   table.report-table th { background: var(--gray-pale); text-align: center; }
   table.report-table td:first-child, table.report-table th:first-child { text-align: left; white-space: normal; }
 
+  /* รอบ 75 (เจ้าของสั่ง 2026-10-08): หน้า "ติดตามผล" (#pendingScreen) — แท็บมีตัวเลข · แถบกรองแถวเดียว (ห่อบรรทัดบนจอแคบ) ·
+     chip ช่องทาง · ชื่อ-สกุลชิดซ้าย (เฉพาะตารางนี้ ผ่าน #pendingTableWrap — ห้ามแก้กฎ table.report-table รวมข้างบน) · แถบบันทึกติดล่างจอ */
+  .pending-tabs { margin-top: 10px; }
+  .pending-tabs .btn { flex: 1 1 auto; }
+  .pending-tab-n { font-weight: 700; }
+  .pending-filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+  .pending-filter-date, .pending-filter-search { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .pending-filter-search { flex: 1 1 200px; }
+  .pending-filter-bar label.field-label { display: inline-block; font-weight: 600; white-space: nowrap; margin: 0; } /* ชนะ label.field-label รวม (block + margin) เฉพาะในแถบกรองนี้ */
+  .pending-filter-date .thd-btn { width: auto; min-width: 120px; flex: 0 0 auto; padding: 6px 10px; font-size: 14px; }
+  .pending-filter-search input[type=search] { flex: 1 1 120px; width: auto; min-width: 0; padding: 6px 10px; }
+  .pending-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pending-chip { border: 1px solid var(--border); background: #fff; color: var(--text); border-radius: 16px; padding: 4px 12px; min-height: 32px; font-size: 14px; cursor: pointer; }
+  .pending-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .pending-chip.is-zero { opacity: .5; }
+  #pendingTableWrap table.report-table th.pending-name, #pendingTableWrap table.report-table td.pending-name { text-align: left; }
+  .pending-name-link { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: var(--primary); text-decoration: underline; text-align: left; cursor: pointer; }
+  .pending-bulk-bar {
+    position: sticky; bottom: 0; z-index: 600; background: var(--surface); border-top: 2px solid var(--border);
+    box-shadow: 0 -4px 12px rgba(26,30,64,.14); margin: 10px -12px 0; padding: 8px 12px; align-items: center; gap: 4px 8px;
+  }
+  .pending-bulk-bar > * { flex: 0 0 auto; }
+  .pending-bulk-bar .btn { flex: 1 1 auto; min-height: 40px; padding: 8px 14px; font-size: 15px; }
+  .pending-bulk-bar .thd-btn { width: auto; min-width: 120px; padding: 6px 10px; font-size: 14px; }
+  .pending-bulk-count { font-weight: 700; }
+  .pending-bulk-label { font-weight: 600; white-space: nowrap; margin: 0; }
+
   /* ใบรายชื่อผู้รับบริการตรวจสุขภาพ (.cu-table) — เจ้าของสั่ง 2026-09-11 "ให้ตัวอักษรอยู่ตรงกลาง"
      report-table ปกติชิดขวาเพราะเป็นตารางตัวเลขของรายงานรายเดือน แต่ใบนี้เป็นรายชื่อคน ไม่ใช่ตารางตัวเลข
      ⚠ ต้องเขียน :first-child ซ้ำด้วย ไม่งั้นกฎบรรทัดบน (specificity เท่ากันแต่มาก่อน) จะยังดันคอลัมน์ "คิว" ชิดซ้าย
@@ -1169,6 +1196,8 @@
       <div>
         <div id="editModalTitle"></div>
         <div id="editModalTime"></div>
+        <!-- รอบ 74: แถวของวันอื่น (ไม่ใช่วันนี้) ⇒ ป้ายเตือนเด่น (textContent เท่านั้น) — ซ่อนเสมอเมื่อเป็นแถวของวันนี้ -->
+        <div id="editModalDateWarn" class="warning-box" hidden role="alert" style="margin-top:6px;font-weight:700;"></div>
       </div>
       <button type="button" class="btn small secondary no-print" id="editModalClose" aria-label="ปิด">✕</button>
     </div>
@@ -1206,9 +1235,9 @@
     <!-- รอบ 9 (ก้อน B) — แถบลิงก์บนสุด แทนที่เมนูการ์ดที่ถูกยกเลิก (SPEC_รอบ9.md หัวข้อ 4.1/4.2) -->
     <div class="wrap no-print" style="padding-top:0;">
       <div class="row" style="gap:6px;flex-wrap:wrap;">
-        <button type="button" class="btn secondary small nav-link" data-target="today">📋 รายการวันนี้</button>
+        <button type="button" class="btn secondary small nav-link" data-target="today">📋 รายการรายวัน</button>
         <button type="button" class="btn secondary small nav-link" data-target="checkupTable">🩺 รายชื่อตรวจสุขภาพรายวัน</button>
-        <button type="button" class="btn secondary small nav-link" data-target="pending">📮 ค้างส่งออกผล</button>
+        <button type="button" class="btn secondary small nav-link" data-target="pending">📮 ติดตามผล</button>
         <button type="button" class="btn secondary small nav-link" data-target="report">📊 รายงานรายวัน/รายเดือน</button>
         <button type="button" class="btn secondary small nav-link" data-target="spBoard">📣 รวมรายชื่อส่งตรวจพิเศษ</button>
         <button type="button" class="btn secondary small nav-link" data-target="dq" id="dqNavBtn">🩺 คิวพบแพทย์</button>
@@ -1519,19 +1548,28 @@
   <div id="todayScreen" style="display:none;">
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
+      <!-- รอบ 74 (เจ้าของสั่ง 2026-10-08): เลือกวันที่ดูรายการได้ (ปฏิทินไทยชุด thd* — input[type=date] เป็นตัวเก็บค่า ห้าม display:none)
+           ค่าตั้งต้น = วันนี้ · max = วันนี้ (ห้ามเลือกอนาคต) · เห็นเฉพาะจุดบริการที่เลือกอยู่ -->
+      <div class="no-print" id="todayViewDateRow" style="margin-bottom:10px;">
+        <label class="field-label" for="todayViewDate">วันที่</label>
+        <div class="row">
+          <input type="date" id="todayViewDate">
+          <button type="button" class="btn secondary small" id="todayViewTodayBtn">วันนี้</button>
+        </div>
+      </div>
       <!-- รอบ 72: ข้อความตั้งต้นใช้ขีด ไม่ใช่ 0 — โหลดครั้งแรกไม่สำเร็จ แถบนี้ไม่ถูกเขียนทับ ⇒ "0 คน" จะดูเหมือนยอดจริง -->
       <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท</div>
 
       <div class="card" id="specialTodaySummaryCard">
         <h2>สรุป SUP OPD</h2>
         <p class="muted" style="margin:0 0 2px;font-weight:700;">Nursing productivity</p>
-        <p class="muted">นับจากรายการของจุดนี้ วันนี้ (ไม่นับที่ยกเลิก)</p>
+        <p class="muted" id="todaySupNote">นับจากรายการของจุดนี้ วันนี้ (ไม่นับที่ยกเลิก)</p>
         <div id="specialTodaySummaryBody"></div>
       </div>
 
-      <h2 style="margin-top:18px;">รายการวันนี้<span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
+      <h2 style="margin-top:18px;"><span id="todayListTitle">รายการวันนี้</span><span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
       <div class="today-search no-print">
-        <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา HN ในรายการวันนี้">
+        <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา HN">
         <button type="button" class="btn secondary small" id="todayHnClear">ล้าง</button>
       </div>
       <div class="today-search-hint" id="todayHnHint" hidden></div>
@@ -1636,46 +1674,51 @@
   <div id="pendingScreen" style="display:none;">
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
-      <h2 style="margin-top:0;">ค้างส่งออกผล</h2>
+      <!-- รอบ 75 (เจ้าของสั่ง 2026-10-08): หน้านี้ชื่อบนจอ "ติดตามผล" (คำหัวข้อ 'ค้างส่งออก' ในชีต/POINT_TOPICS ไม่เปลี่ยน) ·
+           ตัดกล่องสรุป #pendingSummary ออก ⇒ ตัวเลขอยู่บนแท็บ (updatePendingTabCounts_) · แถบกรองแถวเดียว · chip ช่องทาง · แถบบันทึกติดล่างจอ -->
+      <h2 style="margin-top:0;">📮 ติดตามผล</h2>
       <p id="pendingError" class="error-box" hidden></p>
-      <div class="card" id="pendingSummary"></div>
 
-      <div class="row no-print" id="pendingKindSwitch" style="margin-top:10px;">
+      <div class="row no-print pending-tabs" id="pendingKindSwitch">
         <button type="button" class="btn small" id="btnPendingKindCheckup" data-pending-kind="checkup">ผลตรวจสุขภาพ</button>
-        <button type="button" class="btn small secondary" id="btnPendingKindPelvic" data-pending-kind="pelvic">ผลตรวจมะเร็งปากมดลูก</button>
-        <!-- รอบ 73 (เจ้าของสั่ง 2026-10-07): ปุ่มที่ 3 "รอมารับ" — ตารางรอมารับ + ติ๊กหลายคนกด "รับผลแล้ว" ทีเดียว (kind 'pickup' ของ bulkSentDate) -->
-        <button type="button" class="btn small secondary" id="btnPendingKindPickup" data-pending-kind="pickup">รอมารับ</button>
+        <button type="button" class="btn small secondary" id="btnPendingKindPelvic" data-pending-kind="pelvic">มะเร็งปากมดลูก</button>
+        <!-- รอบ 73 (เจ้าของสั่ง 2026-10-07): ปุ่มที่ 3 — ตารางรอรับ + ติ๊กหลายคนกด "รับผลแล้ว" ทีเดียว (kind 'pickup' ของ bulkSentDate) · รอบ 75: ชื่อ "รอรับ / นัดรับ" -->
+        <button type="button" class="btn small secondary" id="btnPendingKindPickup" data-pending-kind="pickup">รอรับ / นัดรับ</button>
       </div>
 
-      <!-- รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ (ก่อนช่องค้นหา) — ว่าง = ทุกวัน · กรองฝั่งเว็บ (backend pending คืนทุกวันอยู่แล้ว)
-           ⚠ ต่างจาก #pendingSentDate: ห้ามเข้า ensureAutoToday_/ตัวเช็คข้ามวัน (ค่าว่างต้องเป็น "ทุกวัน" ไม่ใช่ถูกเติมเป็นวันนี้เอง) -->
-      <div class="no-print" id="pendingFilterDateRow">
-        <label class="field-label" for="pendingFilterDate">วันที่รับบริการ</label>
-        <div class="row">
+      <!-- รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ — ว่าง = ทุกวัน · กรองฝั่งเว็บ (backend pending คืนทุกวันอยู่แล้ว)
+           ⚠ ต่างจาก #pendingSentDate: ห้ามเข้า ensureAutoToday_/ตัวเช็คข้ามวัน (ค่าว่างต้องเป็น "ทุกวัน" ไม่ใช่ถูกเติมเป็นวันนี้เอง)
+           รอบ 75: แถวเดียวกับช่องค้นหา (flex-wrap ห่อบรรทัดบนจอแคบ) -->
+      <div class="no-print pending-filter-bar" id="pendingFilterDateRow">
+        <div class="pending-filter-date">
+          <label class="field-label" for="pendingFilterDate">วันที่รับบริการ</label>
           <input type="date" id="pendingFilterDate">
           <button type="button" class="btn secondary small" id="pendingFilterAll">ทุกวัน</button>
         </div>
+        <div class="pending-filter-search">
+          <label class="field-label" for="pendingSearch" aria-label="ค้นหา HN หรือชื่อ-สกุล">🔍</label>
+          <input type="search" id="pendingSearch" autocomplete="off" placeholder="ค้นหา HN หรือชื่อ-สกุล">
+        </div>
       </div>
 
-      <label class="field-label no-print" for="pendingSearch">ค้นหา HN หรือชื่อ-สกุล</label>
-      <input type="search" id="pendingSearch" class="no-print" autocomplete="off" placeholder="ค้นหา HN หรือชื่อ-สกุล">
+      <!-- รอบ 75: chip กรองช่องทาง (วาดโดย renderPendingMethodChips_ ตาม PENDING_KIND) -->
+      <div class="no-print pending-chips" id="pendingMethodChips"></div>
 
       <div id="pendingTableWrap" style="margin-top:10px;"></div>
-      <div class="row no-print" style="margin-top:6px;">
-        <span id="pendingSelectedCount" class="muted">เลือกไว้ 0 คน</span>
-      </div>
-
-      <div class="row no-print" id="pendingBulkRow" style="margin-top:10px;">
-        <div>
-          <label class="field-label" for="pendingSentDate" id="pendingSentDateLabel">วันที่ส่งออก</label>
-          <input type="date" id="pendingSentDate">
-        </div>
-        <button type="button" class="btn" id="btnPendingBulkSave" disabled>บันทึกวันที่ส่งออก (0 คน)</button>
-      </div>
       <!-- แก้สเปก 2026-09-23 (ระหว่างทำรอบ 28): เซิร์ฟเวอร์รับ recordIds ได้สูงสุด 100/ครั้ง ⇒ ยิงเป็นชุดละ ≤50
            ทีละชุดตามลำดับ — แถบนี้บอกความคืบหน้าระหว่างยิงหลายชุด (ซ่อนถ้าจบใน 1 ชุด/ยังไม่เริ่ม) -->
       <p id="pendingBulkProgress" class="muted no-print" hidden></p>
       <p id="pendingSkippedBox" class="warning-box no-print" hidden></p>
+
+      <!-- รอบ 75: แถบบันทึกติดล่างจอ (sticky bottom) — เลือก N คน · ป้ายวันที่ [วันที่] [ปุ่มบันทึก] · ป้าย/ปุ่มตามแท็บ (updatePendingBulkButton)
+           ⚠ id เดิมคงไว้ทั้งหมด (#pendingBulkRow/#pendingSelectedCount/#pendingSentDate/#pendingSentDateLabel/#btnPendingBulkSave) -->
+      <div class="row no-print pending-bulk-bar" id="pendingBulkRow">
+        <span id="pendingSelectedCount" class="pending-bulk-count">เลือก 0 คน</span>
+        <span class="pending-bulk-dot" aria-hidden="true">·</span>
+        <label class="pending-bulk-label" for="pendingSentDate" id="pendingSentDateLabel">วันที่ส่งออก</label>
+        <input type="date" id="pendingSentDate">
+        <button type="button" class="btn" id="btnPendingBulkSave" disabled>บันทึกวันที่ส่งออก (0 คน)</button>
+      </div>
     </div>
   </div>
 
@@ -2860,7 +2903,7 @@ function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastChe
    เหตุผล: ติ๊กสองที่ซ้ำซ้อน · เคสตรวจสุขภาพ (คิว C / ไม่นัด) ไม่ใช่ราคาเดี่ยว ระบบดูคิวตัดสินให้เอง
    ราคาเป็นค่าคงที่ฝั่งเว็บ (ไม่อยู่ในแท็บราคา) · backend รับ medCertLabAmount เป็นตัวเลขอิสระอยู่แล้ว (ไม่แตะ backend) */
 var MEDCERT_LAB_SOLO = [
-  { id: 'mmg', label: 'MMG เดี่ยว', price: 3243 },
+  { id: 'mmg', label: 'MMG เดี่ยว', price: 3543 }, // 2026-10-08 เจ้าของสั่ง: 3243 → 3543 (U/S Breast คงเดิม)
   { id: 'us_breast', label: 'U/S Breast เดี่ยว', price: 1275 }
 ];
 function medLabSoloItem_(id) {
@@ -3787,6 +3830,9 @@ function reorderSpecialSendsRows_(groupPriority) {
 }
 
 // A-W4: แถบหัวจุด #pointBanner — <ชื่อจุด> · <หัวข้อ...> · ไม่ได้เลือกจุด = ซ่อน · ไม่มีหัวข้อ = แค่ชื่อจุด สีกลาง
+// รอบ 74.1: ป้ายบนจอของหัวข้อจุดบริการ — ใช้แสดงในแถบหัวจุดเท่านั้น (ค่าในชีต/POINT_TOPICS/topics ที่คิดสีและแผงห้ามเปลี่ยน)
+// รอบ 75 (เจ้าของสั่ง 2026-10-08): 'ค้างส่งออก' ⇒ แสดง "ติดตามผล" (ค่าในชีต/POINT_TOPICS/topics ไม่เปลี่ยน — หน้า #pendingScreen เปลี่ยนชื่อบนจอเป็น "ติดตามผล")
+var POINT_TOPIC_DISPLAY_ = { 'รายการวันนี้': 'รายการรายวัน', 'ค้างส่งออก': 'ติดตามผล' };
 function updatePointBanner() {
   var banner = qs('pointBanner');
   if (!banner) return;
@@ -3797,7 +3843,8 @@ function updatePointBanner() {
   var shown = topics.slice();
   var checkupIdx = shown.indexOf('ตรวจสุขภาพ');
   if (checkupIdx !== -1) shown.splice(checkupIdx + 1, 0, 'ส่งตรวจพิเศษ');
-  banner.textContent = shown.length ? (STATE.point + ' · ' + shown.join(' · ')) : STATE.point;
+  var shownLabels = shown.map(function (t) { return POINT_TOPIC_DISPLAY_.hasOwnProperty(t) ? POINT_TOPIC_DISPLAY_[t] : t; });
+  banner.textContent = shownLabels.length ? (STATE.point + ' · ' + shownLabels.join(' · ')) : STATE.point;
   banner.hidden = false;
   // สีตามแผงหัวข้อหลักตัวแรก (คำแรกในชีตที่แม็ปกับแผงได้จริง) — ไม่มี = data-svc="" -> สีกลาง (ไม่ตรงกับ [data-svc="..."] ตัวไหนเลย)
   // ⚠ ตั้งใจใช้ setAttribute('data-svc','') แทน removeAttribute() — DOM mock ขั้นต่ำของบางไฟล์เทสต์ไม่มี removeAttribute
@@ -4517,6 +4564,17 @@ function finishOpenEditModal_(rec) {
   var editBannerEl = qs('editBanner');
   if (titleEl) titleEl.textContent = '✏️ แก้ไข: ' + editModalHeaderLabel_(rec);
   if (timeEl) timeEl.textContent = rec.time ? ('บันทึกไว้เมื่อ ' + rec.time) : '';
+  // รอบ 74: แถวของวันอื่น (ไม่ใช่วันนี้) ⇒ ป้ายเตือนเด่น · แถวของวันนี้ ⇒ ซ่อนและล้างข้อความทุกครั้ง (โมดัลใช้ซ้ำหลายแถว) · textContent เท่านั้น
+  var dateWarnEl = qs('editModalDateWarn');
+  if (dateWarnEl) {
+    if (rec.date && rec.date !== todayStr()) {
+      dateWarnEl.textContent = '⚠ แก้ไขรายการของวันที่ ' + formatThaiDate(rec.date);
+      dateWarnEl.hidden = false;
+    } else {
+      dateWarnEl.textContent = '';
+      dateWarnEl.hidden = true;
+    }
+  }
   // #editBanner เดิมของหน้าบันทึก ไม่ต้องแสดงเมื่อแก้ผ่านโมดัล (โมดัลมีหัวของตัวเองแล้ว)
   if (editBannerEl) editBannerEl.hidden = true;
   setSubmitLabel('บันทึกการแก้ไขของ ' + (rec.queue || '—') + ' · ' + (rec.patientName || ''));
@@ -4812,6 +4870,9 @@ function queueDupInfoFor_(queueValue) {
   var curKey = queueDupKey_(queueValue);
   if (!curKey) return null;
   if (STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === curKey) return null;
+  // รอบ 74: แก้ไขแถวของ "วันอื่น" ⇒ ข้ามเช็คคิวซ้ำในเครื่อง — ตัวเช็คเทียบกับ LAST_TODAY_RECORDS/CU_CACHE ของวันนี้ ซึ่งไม่ใช่วันเดียวกับแถวนี้
+  // (เตือนผิดว่าคิวซ้ำกับของวันนี้) · ความซ้ำของวันนั้นจริง ๆ เซิร์ฟเวอร์ตัดสินเอง
+  if (STATE.editingId && EDIT_MODAL.originalRec && EDIT_MODAL.originalRec.date && EDIT_MODAL.originalRec.date !== todayStr()) return null;
   var hnEl = qs('patientHn'), nameEl = qs('patientName');
   return findQueueDupInBrowser_(curKey, STATE.editingId, hnEl ? hnEl.value : '', nameEl ? nameEl.value : '');
 }
@@ -4984,16 +5045,18 @@ function syncSaveQueuePanelPos_() {
   var panel = qs('saveQueuePanel');
   if (!panel) return;
   var bottom = 8;
-  var pt = qs('panelTotals');
-  if (pt) {
+  // รอบ 75: นอกจาก #panelTotals ต้องเหนือแถบบันทึกติดล่างจอของหน้า "ติดตามผล" (#pendingBulkRow, sticky) ด้วย ⇒ แผงคิวไม่ทับปุ่มบันทึก
+  ['panelTotals', 'pendingBulkRow'].forEach(function (barId) {
+    var pt = qs(barId);
+    if (!pt) return;
     var cs = (typeof window.getComputedStyle === 'function') ? window.getComputedStyle(pt) : null;
     var posOk = !!cs && (cs.position === 'fixed' || cs.position === 'sticky');
     var visible = posOk && pt.getClientRects().length > 0;
     if (visible) {
       var r = pt.getBoundingClientRect();
-      bottom = Math.round(window.innerHeight - r.top) + 8;
+      bottom = Math.max(bottom, Math.round(window.innerHeight - r.top) + 8);
     }
-  }
+  });
   if (bottom < 8) bottom = 8;
   panel.style.top = 'auto';
   panel.style.bottom = bottom + 'px';
@@ -5405,7 +5468,7 @@ function checkLogStatusThenSettle_(qid, reqId, attempt, firstErrorMessage) {
       if (oldServer) {
         // เซิร์ฟเวอร์เก่า (ไม่มี logStatus และไม่มีกันซ้ำ) ⇒ ใช้ข้อความเดิมรอบ 34 + ไม่มีปุ่ม "ส่งอีกครั้ง" (ส่งซ้ำอาจเกิดแถวซ้ำ)
         saveQueueMarkFailed_(queued, (firstErrorMessage || 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่') +
-          ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในรายการวันนี้ก่อนบันทึกใหม่', false);
+          ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ารายการรายวันก่อนบันทึกใหม่', false);
       } else {
         saveQueueMarkFailed_(queued, LOG_STATUS_UNCHECKABLE_MSG_, true);
       }
@@ -5444,6 +5507,7 @@ function sendQueuedSave_(qid) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
         renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
+      if (isEdit) refreshPendingAfterEdit_(); // รอบ 75: แก้ไขสำเร็จ (เช่น เปลี่ยนช่องทางรับผล) ⇒ ถ้าอยู่หน้า "ติดตามผล" โหลด pending ใหม่
     } else if (resp && resp.networkError && queued && !isEdit && payload.clientReqId) {
       // รอบ 38 W3: log + เน็ตหลุด ⇒ สถานะ 'checking' แล้วถาม logStatus เองสูงสุด 3 ครั้ง (ไม่ loadToday() ตอนนี้ — เน็ตหลุดอยู่
       // loadToday() ทำตอนรู้ผลใน checkLogStatusThenSettle_)
@@ -5462,7 +5526,7 @@ function sendQueuedSave_(qid) {
       if (queued) {
         var msg = (resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
         if (resp && resp.networkError) {
-          msg += ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในรายการวันนี้ก่อนบันทึกใหม่';
+          msg += ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ารายการรายวันก่อนบันทึกใหม่';
         }
         queued.status = 'failed';
         queued.message = msg;
@@ -5584,6 +5648,26 @@ var LAST_TODAY_RECORDS = []; // เก็บผลลัพธ์ today ล่�
    แต่ละแคชเก็บ {key, records, json} — json คือ JSON.stringify(records) ของ "คำตอบจริงจากเซิร์ฟเวอร์ล่าสุด"
    ใช้เทียบว่าคำตอบรอบใหม่ "เหมือนเดิมทุกตัวอักษรไหม" (ถ้าเหมือน ไม่ต้อง render ซ้ำ) ========================== */
 var TODAY_CACHE = { key: '', records: null, json: '' };
+
+/* รอบ 74 (เจ้าของสั่ง 2026-10-08): หน้า "รายการวันนี้" เลือกวันได้ — วันก่อนหน้าแก้ไข/ยกเลิกได้เหมือนวันนี้ · เห็นเฉพาะจุดบริการที่เลือกอยู่
+   ⚠ LAST_TODAY_RECORDS / TODAY_CACHE = "รายการของวันนี้จริง" เสมอ (คำแนะนำคิวถัดไป · เช็คชื่อ/HN ซ้ำ + รวมแถว · ค้นแถวตอนกดแก้ไข ·
+   cache ข้ามหน้า) ห้ามให้รายการของวันอื่นเข้าไปอยู่ในตัวแปรพวกนี้เด็ดขาด — รายการของวันที่เลือกดู (ไม่ใช่วันนี้) เก็บแยกใน
+   TODAY_VIEW_RECORDS / TODAY_VIEW_CACHE ซึ่งวาดอย่างเดียว ไม่มีใครอื่นอ่านเป็น "วันนี้"
+   - TODAY_VIEW_DATE: yyyy-MM-dd ที่หน้านี้แสดงอยู่ (ตั้งต้น = วันนี้) · isViewingToday_() = TODAY_VIEW_DATE === todayStr()
+   - TODAY_VIEW_AUTO_: true = ผู้ใช้อยู่ที่ "วันนี้" (ตามค่าตั้งต้น/กดปุ่มวันนี้/เลือกวันที่ตรงกับวันนี้) ⇒ ข้ามเที่ยงคืนแล้วเลื่อนตามเป็นวันใหม่
+     false = ผู้ใช้เลือกวันอื่นเอง ⇒ ตัวเช็คข้ามวันไม่แตะ */
+var TODAY_VIEW_DATE = todayStr();
+var TODAY_VIEW_AUTO_ = true;
+var TODAY_VIEW_RECORDS = [];
+var TODAY_VIEW_CACHE = { key: '', records: null, json: '' }; // key = จุดบริการ + '|' + วันที่ดู (ใช้เฉพาะตอนดูวันอื่น)
+var TODAY_VIEW_SEQ = 0;
+var TODAY_VIEW_INFLIGHT_KEY_ = ''; // คำขอ today ของวันอื่นที่กำลังรอคำตอบ (กันยิงซ้ำคีย์เดียวกันซ้อนกัน)
+// TODAY_VIEW_AUTO_ (ผู้ใช้อยู่ที่ "วันนี้") นับเป็นดูวันนี้ด้วย — ปิดช่องว่างช่วงข้ามเที่ยงคืนก่อนตัวเช็คเลื่อนวัน (ไม่งั้นจอวันนี้ถูกบล็อกวาดสูงสุด 60 วิ)
+function isViewingToday_() { return TODAY_VIEW_AUTO_ || TODAY_VIEW_DATE === todayStr(); }
+function isTodayScreenVisible_() {
+  var el = qs('todayScreen');
+  return !!(el && el.style.display === 'block');
+}
 var CU_CACHE = { key: '', records: null, json: '' };
 var SP_CACHE = { key: '', records: null, json: '' };
 
@@ -5677,6 +5761,15 @@ function applySavedRecord(record) {
     renderTodayList(removeRecordFromList(LAST_TODAY_RECORDS, record.recordId));
   }
 
+  // รอบ 74: กำลังดูวันอื่นอยู่ และ record เป็นของวันที่ดูอยู่ ⇒ upsert/ลบในรายการของวันนั้น (TODAY_VIEW_*) แล้ววาดใหม่ ·
+  // record ของวันอื่นอีกวัน ⇒ ไม่แตะ · ส่วนของ "วันนี้จริง" ข้างบนไม่เคยเอาแถววันอื่นเข้า LAST_TODAY_RECORDS (เช็ค record.date === today)
+  if (!isViewingToday_() && record.date === TODAY_VIEW_DATE) {
+    var viewKey = STATE.point + '|' + TODAY_VIEW_DATE;
+    var viewBase = (TODAY_VIEW_CACHE.key === viewKey && TODAY_VIEW_CACHE.records) ? TODAY_VIEW_CACHE.records : TODAY_VIEW_RECORDS;
+    var viewList = (record.point === STATE.point) ? upsertRecordInList(viewBase, record) : removeRecordFromList(viewBase, record.recordId);
+    renderTodayViewList_(viewList);
+  }
+
   // หน้า "รายชื่อตรวจสุขภาพรายวัน" (allPoints ไม่กรองจุด) — อัปเดตเฉพาะแคชของวันเดียวกับ record เท่านั้น
   if (CU_CACHE.key === record.date && CU_CACHE.records) {
     var cuRecords = upsertRecordInList(CU_CACHE.records, record);
@@ -5758,10 +5851,10 @@ function computeSupOpd_(records, dateStr) {
 
 // รอบ 60 ข้อ 5.2: การ์ด "สรุป SUP OPD" แทนการ์ด "สรุปส่งตรวจพิเศษวันนี้" — แต่ละแถวบนจอ = ป้าย + ตัวเลข + หน่วย เท่านั้น
 // ตัวเลข/ข้อความคงที่ล้วน ไม่มีข้อมูลผู้ใช้ ⇒ innerHTML ได้
-function renderSupOpdSummary(records) {
+function renderSupOpdSummary(records, dateStr) {
   var body = qs('specialTodaySummaryBody');
   if (!body) return;
-  var r = computeSupOpd_(records, todayStr());
+  var r = computeSupOpd_(records, dateStr || todayStr()); // รอบ 74: แถว PAP วันอาทิตย์ตัดสินตามวันที่ดูอยู่
   var rows = [
     ['มีหัตถการ', r.withProc, 'คน', 1], ['ไม่มีหัตถการ', r.noProc, 'คน', 1], ['ยอดรวมหัตถการ', r.total, 'คน', 1], null,
     ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'คน'], ['MMG + U/S Breast', r.mmgUs, 'คน'], ['ENT', r.ent, 'คน'],
@@ -5855,13 +5948,26 @@ function renderTodayList(records) {
   // (loadToday()/applySavedRecord()/ตัวกรอง HN) ⇒ อัปเดตแคชคู่กับ point+date ปัจจุบันไว้ที่นี่ที่เดียว
   TODAY_CACHE = { key: STATE.point + '|' + todayStr(), records: LAST_TODAY_RECORDS, json: JSON.stringify(LAST_TODAY_RECORDS) };
   maybeSuggestNextCheckupQueue(); // รอบ 60 ข้อ 2: ข้อมูลวันนี้ใหม่ ⇒ คำแนะนำคิวต้องไม่ค้างเลขเก่า (ไม่เขียนค่าในช่อง)
-  renderSupOpdSummary(LAST_TODAY_RECORDS);
+  // รอบ 74: ตั้ง state ของ "วันนี้จริง" เสมอ แต่วาดลงจอเฉพาะตอนกำลังดูวันนี้ — ดูวันอื่นอยู่ ⇒ จอเป็นของ TODAY_VIEW_RECORDS ห้ามทับ
+  if (!isViewingToday_()) return;
+  drawTodayList_(LAST_TODAY_RECORDS, todayStr());
+}
+
+// รอบ 74: "วาด" ล้วน (ไม่ตั้ง LAST_TODAY_RECORDS/TODAY_CACHE) — ใช้ทั้งวันนี้ (renderTodayList) และวันอื่น (renderTodayViewList_)
+// dateStr = วันที่ของ records ชุดนี้ · ถ้าไม่ใช่วันนี้ ข้อความ "วันนี้" ที่เป็นตัวบอกวันเปลี่ยนเป็น "วันที่ …" (แถบสรุปไม่เปลี่ยนคำ)
+function drawTodayList_(records, dateStr) {
+  var dayWord = (dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr));
+  var titleEl = qs('todayListTitle');
+  if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'รายการวันนี้' : ('รายการวันที่ ' + formatThaiDateShort(dateStr));
+  var noteEl = qs('todaySupNote');
+  if (noteEl) noteEl.textContent = 'นับจากรายการของจุดนี้ ' + dayWord + ' (ไม่นับที่ยกเลิก)';
+  renderSupOpdSummary(records, dateStr);
   // รอบ 60 ข้อ 5.1: วาดแถบสรุปก่อน return (เดิมไม่มีรายการ ⇒ return ก่อนถึงโค้ดแถบ ⇒ แถบค้างค่าเก่า/ข้อความตั้งต้น) — ไม่มีรายการ ⇒ 0 ทุกหมวด
-  renderTodaySummaryBar_(computeTodayStats_(LAST_TODAY_RECORDS));
+  renderTodaySummaryBar_(computeTodayStats_(records));
   var wrap = qs('todayList');
   wrap.innerHTML = '';
   if (!records || records.length === 0) {
-    wrap.innerHTML = '<p class="muted">ยังไม่มีบันทึกวันนี้</p>';
+    wrap.innerHTML = '<p class="muted">ยังไม่มีบันทึก' + escHtml(dayWord) + '</p>';
     var hintEmpty = qs('todayHnHint');
     if (hintEmpty) { hintEmpty.hidden = true; hintEmpty.textContent = ''; }
     return;
@@ -5894,7 +6000,7 @@ function renderTodayList(records) {
       hint.hidden = true; hint.textContent = '';
     } else if (shown === 0) {
       hint.hidden = false;
-      hint.textContent = 'ไม่พบ HN "' + rawQ + '" ในรายการวันนี้ (ทั้งวันมี ' + records.length + ' รายการ)';
+      hint.textContent = 'ไม่พบ HN "' + rawQ + '" ในรายการ (ทั้งวันมี ' + records.length + ' รายการ)';
     } else {
       hint.hidden = false;
       hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shown + ' จาก ' + records.length + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
@@ -5902,7 +6008,7 @@ function renderTodayList(records) {
   }
 }
 
-function onEditRecordClick(recordId) {
+function onEditRecordClick(recordId, src) {
   // รอบ 34 (2026-09-30) W3 (ข้อ 2): รายการนี้กำลังมีการแก้ไข (pending/failed) ค้างอยู่ในคิวบันทึกเบื้องหลังอยู่แล้ว
   // ⇒ ห้ามเปิดโมดัลแก้ไขซ้อนอีกชุด (จะสร้างคำขอ edit 2 ชุดชนกัน) — แทนที่ด่านเดิม `if (STATE.saving)` ที่กันทุกแถว
   // แบบเหมาทั้งบอร์ด (ไม่จำเพาะแถว) ด้วยด่านที่เจาะจงแค่ recordId นี้ (ปุ่ม "แก้แล้วบันทึกใหม่" ของรายการเดียวกันเอง
@@ -5910,7 +6016,14 @@ function onEditRecordClick(recordId) {
   var queuedEdit = saveQueueEditPendingFor_(recordId);
   if (queuedEdit) { showToast('รายการนี้กำลังบันทึกการแก้ไขอยู่'); return; }
   var rec = null;
-  for (var i = 0; i < LAST_TODAY_RECORDS.length; i++) {
+  // รอบ 75: กดชื่อจากหน้า "ติดตามผล" (src === 'pending') ⇒ ใช้ record ตัวที่ผู้ใช้เห็นในตารางก่อน (PENDING_RECORDS) · โมดัลแก้ไขเขียนทับทุกคอลัมน์
+  // จาก payload ⇒ ต้องเริ่มจากข้อมูลชุดเดียวกับที่ตารางโชว์ ไม่ใช่สำเนาอื่นที่อาจเก่า/ใหม่กว่า
+  if (src === 'pending') {
+    for (var pi = 0; pi < PENDING_RECORDS.length; pi++) {
+      if (PENDING_RECORDS[pi].recordId === recordId) { rec = PENDING_RECORDS[pi]; break; }
+    }
+  }
+  for (var i = 0; !rec && i < LAST_TODAY_RECORDS.length; i++) {
     if (LAST_TODAY_RECORDS[i].recordId === recordId) { rec = LAST_TODAY_RECORDS[i]; break; }
   }
   if (!rec) {
@@ -5918,7 +6031,19 @@ function onEditRecordClick(recordId) {
       if (LAST_CU_RECORDS[j].recordId === recordId) { rec = LAST_CU_RECORDS[j]; break; }
     }
   }
-  if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชรายการวันนี้'); return; }
+  if (!rec) {
+    // รอบ 74: แถวของวันอื่นที่เลือกดูอยู่ในหน้า "รายการวันนี้" (อยู่ใน TODAY_VIEW_RECORDS — ไม่เคยอยู่ใน LAST_TODAY_RECORDS)
+    for (var k = 0; k < TODAY_VIEW_RECORDS.length; k++) {
+      if (TODAY_VIEW_RECORDS[k].recordId === recordId) { rec = TODAY_VIEW_RECORDS[k]; break; }
+    }
+  }
+  if (!rec) {
+    // รอบ 75: แถวจากหน้า "ติดตามผล" (PENDING_RECORDS) — ไม่เคยอยู่ใน LAST_TODAY_RECORDS/LAST_CU_RECORDS ถ้าเป็นของวันก่อน ๆ
+    for (var q = 0; q < PENDING_RECORDS.length; q++) {
+      if (PENDING_RECORDS[q].recordId === recordId) { rec = PENDING_RECORDS[q]; break; }
+    }
+  }
+  if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชหน้ารายการรายวัน'); return; }
   // รอบ 31B ข้อ 5: ปุ่ม "แก้ไข" ของทั้งหน้ารายการวันนี้และมุมมองรายการ ⇒ เปิดหน้าต่างลอย ไม่เปลี่ยน screen อีกต่อไป
   // (เดิมเรียก enterEditMode(rec) แล้วเปลี่ยนไปหน้าบันทึกต่อจากตรงนี้ — ทั้ง 2 อย่างย้ายเข้า openEditModalForRecord() แทน)
   openEditModalForRecord(rec);
@@ -5929,15 +6054,142 @@ function onEditRecordClick(recordId) {
 // ไม่มีข้อมูลเดิม = กล่อง "โหลดไม่สำเร็จ" + ปุ่ม "ลองใหม่" (แถบสรุปไม่ถูกแตะ)
 // ตัวนับ TODAY_LOAD_SEQ = การเรียก loadToday() ครั้งล่าสุด — retry ทำเฉพาะเมื่อไม่มีการเรียกใหม่แทรก และ retry ไม่ retry ซ้ำ (จบที่ 1 ครั้ง/การเรียก)
 var TODAY_LOAD_SEQ = 0;
-function loadToday() { loadTodayRun_(false); }
+// รอบ 74: loadToday() ยังเป็นตัวโหลด "วันนี้จริง" (LAST_TODAY_RECORDS/TODAY_CACHE) เสมอ ทุกที่ที่เรียกอยู่เดิม (หลังบันทึก/เปลี่ยนจุด/ยกเลิก/ลองใหม่)
+// ต้องรีเฟรชของจริงเพราะเช็คซ้ำ/คำแนะนำคิวอ่านจากตัวแปรนี้ — เพิ่ม: ถ้ากำลังดูวันอื่นอยู่และหน้านี้เปิดอยู่ ⇒ โหลดวันที่ดูอยู่คู่กันด้วย (เช่น ยกเลิกแล้วแถวต้องขึ้นสถานะยกเลิก)
+function loadToday() {
+  loadTodayRun_(false);
+  if (!isViewingToday_() && isTodayScreenVisible_()) loadTodayViewRun_(false);
+}
+// รอบ 74: ทางเข้าของหน้า "รายการวันนี้" (เปิดหน้า/เปลี่ยนวัน/กดปุ่มวันนี้) — ดูวันนี้ ⇒ loadToday() เดิมทุกประการ · ดูวันอื่น ⇒ โหลดเฉพาะวันที่ดู
+function loadTodayScreen_() {
+  if (isViewingToday_()) loadToday(); else loadTodayViewRun_(false);
+}
+// สถานะว่างระหว่างรอโหลดวันใหม่ (ยังไม่มีแคชของวันนั้น) — ห้ามปล่อยแถบสรุป/รายการของวันก่อนหน้าค้างอยู่ใต้ป้ายวันใหม่
+function resetTodayDisplayLoading_(dateStr) {
+  var titleEl = qs('todayListTitle');
+  if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'รายการวันนี้' : ('รายการวันที่ ' + formatThaiDateShort(dateStr));
+  var noteEl = qs('todaySupNote');
+  if (noteEl) noteEl.textContent = 'นับจากรายการของจุดนี้ ' + ((dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr))) + ' (ไม่นับที่ยกเลิก)';
+  var sumBar = qs('todaySummaryBar');
+  if (sumBar) sumBar.textContent = 'วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท';
+  var supBody = qs('specialTodaySummaryBody');
+  if (supBody) supBody.innerHTML = '';
+  var wrap = qs('todayList');
+  if (wrap) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  var hint = qs('todayHnHint');
+  if (hint) { hint.hidden = true; hint.textContent = ''; }
+  setRefreshHint('todayRefreshHint', 'none');
+}
+// รอบ 74: วาดใหม่จากชุด records ที่กำลังโชว์ตอนนี้ (วันนี้ = LAST_TODAY_RECORDS · วันอื่น = TODAY_VIEW_RECORDS) — ตัวกรอง HN ใช้ตัวนี้ ไม่ยิง API
+function redrawTodayCurrent_() {
+  if (isViewingToday_()) drawTodayList_(LAST_TODAY_RECORDS, todayStr());
+  else drawTodayList_(TODAY_VIEW_RECORDS, TODAY_VIEW_DATE);
+}
+// รอบ 74: ตั้ง state ของรายการวันอื่น + แคช แล้ววาด (ไม่แตะ LAST_TODAY_RECORDS/TODAY_CACHE/คำแนะนำคิว)
+function renderTodayViewList_(records) {
+  TODAY_VIEW_RECORDS = records || [];
+  TODAY_VIEW_CACHE = { key: STATE.point + '|' + TODAY_VIEW_DATE, records: TODAY_VIEW_RECORDS, json: JSON.stringify(TODAY_VIEW_RECORDS) };
+  if (isViewingToday_()) return; // เลื่อนกลับมาวันนี้ระหว่างนั้น ⇒ จอเป็นของวันนี้
+  drawTodayList_(TODAY_VIEW_RECORDS, TODAY_VIEW_DATE);
+}
+// รอบ 74: โหลด today ของ "วันที่ดูอยู่" (ไม่ใช่วันนี้) — กติกาคำตอบเสียเดียวกับ loadTodayRun_ ของรอบ 72 (isListResp_ · คงของเดิม+ป้าย ⚠ ·
+// ไม่มีของเดิม = กล่อง "โหลดไม่สำเร็จ"+ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง) แต่แยกตัวแปรผลลัพธ์ทั้งหมด
+function loadTodayViewRun_(isRetry) {
+  if (isViewingToday_()) return;
+  if (!STATE.point) {
+    TODAY_VIEW_SEQ++;
+    var wrapNp = qs('todayList');
+    if (wrapNp) wrapNp.innerHTML = '<p class="muted">เลือกจุดบริการก่อน</p>';
+    setRefreshHint('todayRefreshHint', 'none');
+    return;
+  }
+  var dateStr = TODAY_VIEW_DATE;
+  var key = STATE.point + '|' + dateStr;
+  // คำขอคีย์เดียวกันกำลังรอคำตอบอยู่ (เช่น เปลี่ยนจุด + เปิดหน้าพร้อมกัน) ⇒ ไม่ยิงซ้อน — คำตอบของตัวเดิมจะมาวาดเอง
+  if (!isRetry && TODAY_VIEW_INFLIGHT_KEY_ === key) return;
+  var seq = ++TODAY_VIEW_SEQ;
+  var cacheHit = !!(TODAY_VIEW_CACHE.key === key && TODAY_VIEW_CACHE.records);
+  if (cacheHit) {
+    if (!isRetry) {
+      TODAY_VIEW_RECORDS = TODAY_VIEW_CACHE.records;
+      drawTodayList_(TODAY_VIEW_RECORDS, dateStr);
+    }
+    setRefreshHint('todayRefreshHint', 'loading');
+  } else if (!isRetry) {
+    TODAY_VIEW_RECORDS = [];
+    resetTodayDisplayLoading_(dateStr);
+  }
+  TODAY_VIEW_INFLIGHT_KEY_ = key;
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (TODAY_VIEW_INFLIGHT_KEY_ === key) TODAY_VIEW_INFLIGHT_KEY_ = '';
+    // เปลี่ยนวัน/จุด/กลับมาวันนี้ระหว่างรอ ⇒ คำตอบนี้ไม่ใช่ของที่จอควรแสดงแล้ว ทิ้ง
+    if (isViewingToday_() || STATE.point + '|' + TODAY_VIEW_DATE !== key) return;
+    if (isListResp_(resp)) {
+      var records = resp.records;
+      var json = JSON.stringify(records);
+      if (cacheHit && json === TODAY_VIEW_CACHE.json && TODAY_VIEW_CACHE.key === key) {
+        setRefreshHint('todayRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
+        return;
+      }
+      renderTodayViewList_(records);
+      setRefreshHint('todayRefreshHint', 'none');
+      return;
+    }
+    // ---- คำตอบเสีย (กติการอบ 72) ----
+    var failMsg = badListRespMessage_(resp);
+    var haveData = !!(TODAY_VIEW_CACHE.key === key && TODAY_VIEW_CACHE.records);
+    if (haveData) {
+      setRefreshHint('todayRefreshHint', 'error');
+    } else {
+      renderLoadFailBox_(qs('todayList'), 'โหลดหน้ารายการรายวัน (วันที่ ' + formatThaiDateShort(dateStr) + ') ไม่สำเร็จ', failMsg, function () { loadTodayViewRun_(false); });
+    }
+    if (!isRetry && seq === TODAY_VIEW_SEQ) {
+      setTimeout(function () {
+        if (seq !== TODAY_VIEW_SEQ || isViewingToday_() || STATE.point + '|' + TODAY_VIEW_DATE !== key) return;
+        loadTodayViewRun_(true);
+      }, READ_RETRY_DELAY_MS);
+    }
+  });
+}
+// รอบ 74: ตั้งวันที่ดู — ใช้ทั้งจากช่องวันที่/ปุ่ม "วันนี้" · อนาคต ⇒ ถอยเป็นวันนี้ · ว่าง ⇒ วันนี้ · เปลี่ยนจริงถึงโหลดใหม่
+function setTodayViewDate_(dateStr) {
+  var today = todayStr();
+  var d = /^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || '')) ? String(dateStr) : today;
+  if (d > today) d = today; // ห้ามเลือกวันในอนาคต
+  var el = qs('todayViewDate');
+  if (el) { el.setAttribute('max', today); if (el.value !== d) el.value = d; }
+  TODAY_VIEW_AUTO_ = (d === today);
+  if (d === TODAY_VIEW_DATE) return;
+  TODAY_VIEW_DATE = d;
+  TODAY_VIEW_SEQ++; // ทิ้งคำตอบของวันก่อนหน้าที่ยังค้าง
+  var cached = (d === today) ? !!(TODAY_CACHE.key === STATE.point + '|' + d && TODAY_CACHE.records)
+    : !!(TODAY_VIEW_CACHE.key === STATE.point + '|' + d && TODAY_VIEW_CACHE.records);
+  if (!cached) resetTodayDisplayLoading_(d); // มีแคช ⇒ loader วาดของเดิมให้เองทันที
+  loadTodayScreen_();
+}
+// รอบ 74: ตัวเช็คข้ามวัน (เรียกจาก listDatesCheckDayRollover — ตัวเดียวกับหน้ารายชื่อ/ค้างส่งออก) — ดู "วันนี้" อยู่ตอนเที่ยงคืน ⇒ เลื่อนตามเป็นวันใหม่
+// ดูวันอื่นที่ผู้ใช้เลือกเองอยู่ ⇒ ไม่แตะ (แค่ขยับ max ของช่องให้เป็นวันนี้ใหม่)
+function todayViewCheckDayRollover_() {
+  var today = todayStr();
+  var el = qs('todayViewDate');
+  if (el && el.getAttribute('max') !== today) el.setAttribute('max', today);
+  if (TODAY_VIEW_AUTO_ && TODAY_VIEW_DATE !== today) {
+    TODAY_VIEW_DATE = today;
+    TODAY_VIEW_SEQ++;
+    if (el && el.value !== today) el.value = today;
+    if (isTodayScreenVisible_()) { resetTodayDisplayLoading_(today); loadToday(); }
+  }
+}
 function loadTodayRun_(isRetry) {
   // รอบ 72: ยังไม่เลือกจุดบริการ ⇒ ไม่ยิง today (เดิมยิง point ว่างแล้วได้ "ไม่มีบันทึก") · ทิ้ง prefetch ที่ค้าง (ถ้ามี) ด้วย
   if (!STATE.point) {
     TODAY_PREFETCH = null;
     TODAY_LOAD_SEQ++;
-    var wrapNp = qs('todayList');
-    if (wrapNp) wrapNp.innerHTML = '<p class="muted">เลือกจุดบริการก่อน</p>';
-    setRefreshHint('todayRefreshHint', 'none');
+    if (isViewingToday_()) { // รอบ 74: ดูวันอื่นอยู่ ⇒ จอเป็นของ loadTodayViewRun_
+      var wrapNp = qs('todayList');
+      if (wrapNp) wrapNp.innerHTML = '<p class="muted">เลือกจุดบริการก่อน</p>';
+      setRefreshHint('todayRefreshHint', 'none');
+    }
     return;
   }
   var seq = ++TODAY_LOAD_SEQ;
@@ -5948,7 +6200,7 @@ function loadTodayRun_(isRetry) {
   var cacheHit = !!(TODAY_CACHE.key === key && TODAY_CACHE.records);
   if (cacheHit) {
     if (!isRetry) renderTodayList(TODAY_CACHE.records); // retry: ของเดิมบนจอยังอยู่ ไม่วาดซ้ำ
-    setRefreshHint('todayRefreshHint', 'loading');
+    if (isViewingToday_()) setRefreshHint('todayRefreshHint', 'loading'); // รอบ 74: ป้ายเป็นของวันที่ดูอยู่
   }
   // รอบ 18: มี today ที่ยิงคู่ขนานไปกับ config ไว้ล่วงหน้าแล้วตรงคีย์นี้พอดี -> ใช้ผลอันนั้นแทนยิงซ้ำ
   // one-shot เสมอ (ล้างทิ้งไม่ว่าจะได้ใช้หรือไม่) — prefetch ของจุด/วันอื่นที่ค้างอยู่ก็ถูกทิ้งไปด้วย ไม่มีความหมายอีกต่อไป
@@ -5961,21 +6213,23 @@ function loadTodayRun_(isRetry) {
       var records = resp.records;
       var json = JSON.stringify(records);
       if (cacheHit && json === TODAY_CACHE.json) {
-        setRefreshHint('todayRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
+        if (isViewingToday_()) setRefreshHint('todayRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
         return;
       }
-      renderTodayList(records); // ตั้ง LAST_TODAY_RECORDS + TODAY_CACHE ให้เองข้างในแล้ว
-      setRefreshHint('todayRefreshHint', 'none');
+      renderTodayList(records); // ตั้ง LAST_TODAY_RECORDS + TODAY_CACHE ให้เองข้างในแล้ว (วาดเฉพาะตอนดูวันนี้)
+      if (isViewingToday_()) setRefreshHint('todayRefreshHint', 'none');
       return;
     }
     // ---- คำตอบเสีย ----
     var failMsg = badListRespMessage_(resp);
     // ข้อมูลเดิมของ key เดียวกันที่อยู่บนจอ (อาจมาจากแคชก่อนเรียกนี้ หรือจาก applySavedRecord ระหว่างรอ) — เช็คสดตอนนี้
     var haveData = !!(TODAY_CACHE.key === key && TODAY_CACHE.records);
-    if (haveData) {
+    if (!isViewingToday_()) {
+      // รอบ 74: ดูวันอื่นอยู่ ⇒ ไม่วาดอะไรลงจอ (state ของวันนี้จริงคงเดิม) · ลองใหม่ข้างล่างยังทำงาน
+    } else if (haveData) {
       setRefreshHint('todayRefreshHint', 'error'); // คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ (ห้ามกลืนเงียบ)
     } else {
-      renderLoadFailBox_(qs('todayList'), 'โหลดรายการวันนี้ไม่สำเร็จ', failMsg, function () { loadToday(); });
+      renderLoadFailBox_(qs('todayList'), 'โหลดหน้ารายการรายวันไม่สำเร็จ', failMsg, function () { loadToday(); });
     }
     // ลองโหลดใหม่เอง 1 ครั้ง: เฉพาะการเรียกที่ยังเป็นครั้งล่าสุด และไม่ใช่ retry อยู่แล้ว
     if (!isRetry && seq === TODAY_LOAD_SEQ) {
@@ -9143,6 +9397,11 @@ function loadReport() {
 var PENDING_RECORDS = [];
 var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic' | 'pickup' (รอบ 73)
 var PENDING_SELECTED = {}; // recordId -> true — ตัดออกเองเมื่อแถวไม่อยู่ในชุดที่แสดงแล้ว (ค้นหา/สลับชนิดเปลี่ยน)
+// รอบ 75 (เจ้าของสั่ง 2026-10-08): หน้านี้ชื่อบนจอ "📮 ติดตามผล" · ตัวเลขอยู่บนแท็บ (แทนกล่องสรุป #pendingSummary ที่ถอดออกจากจอ) ·
+// chip กรองช่องทางใต้แถบกรอง (PENDING_METHOD: '' = ทั้งหมด · รีเซ็ตเมื่อสลับแท็บ) · แท็บ pickup ชื่อ-สกุลกดเปิดหน้าต่างแก้ไข ·
+// แก้ไขสำเร็จ ⇒ โหลด pending ใหม่ · แถบบันทึกติดล่างจอ
+var PENDING_METHOD = '';
+var PENDING_METHOD_NONE_ = '__none'; // chip "ยังไม่ระบุ" ของแท็บตรวจภายใน (pelvicMethod ว่าง) — '' สงวนไว้เป็น "ทั้งหมด"
 
 // รอบ 55: "วันที่ส่งออก" ถูกเขียนลงชีตตอนกดบันทึก ⇒ ค้างเป็นเมื่อวานเงียบ ๆ = ลงวันที่ผิด · ใช้กติกาเดียวกับ #cuDate
 function ensurePendingDateDefault() {
@@ -9151,6 +9410,7 @@ function ensurePendingDateDefault() {
 // รอบ 55: ข้ามวันขณะเปิดหน้ารายชื่อ/ค้างส่งออกผลค้างไว้ ⇒ เลื่อนวันที่ที่ระบบตั้งให้เป็นวันใหม่ + โหลดรายชื่อวันใหม่
 // เรียกจากตัวเช็คข้ามวันชุดเดียวกับจุดกัปตัน (นาทีละครั้ง · กลับมาที่แท็บ · focus) · กำลังพิมพ์อยู่ในหน้ารายชื่อ ⇒ รอรอบหน้า (ไม่ทับของที่พิมพ์ค้าง)
 function listDatesCheckDayRollover() {
+  todayViewCheckDayRollover_(); // รอบ 74: หน้า "รายการวันนี้" — ดูวันนี้อยู่ ⇒ เลื่อนตามเป็นวันใหม่ · ดูวันอื่นอยู่ ⇒ ไม่แตะ
   var cuScr = qs('checkupTableScreen');
   if (cuScr && cuScr.style.display === 'block') {
     var ae = document.activeElement;
@@ -9185,9 +9445,7 @@ function pendingRowsForKind(kind) {
 // รอบ 60 ข้อ 6: เปลี่ยนวันที่ที่กรอง ⇒ ล้างการเลือก + วาดตาราง/ตัวเลขสรุปใหม่ (ไม่ยิง API)
 function onPendingFilterDateChange() {
   PENDING_SELECTED = {};
-  var summaryEl = qs('pendingSummary');
-  if (summaryEl) summaryEl.innerHTML = pendingSummaryHtml();
-  renderPendingTable();
+  renderPendingTable(); // รอบ 75: วาดตาราง + ตัวเลขบนแท็บ + chip ใหม่ในทีเดียว (กล่องสรุปถอดออกจากจอแล้ว)
 }
 
 // เรียง วันที่มาตรวจ เก่า -> ใหม่ แล้ว compareByQueue (W5) — rec.date = 'yyyy-MM-dd' เรียงเป็นสตริงได้ตรงลำดับ
@@ -9210,13 +9468,89 @@ function pendingRowMatchesSearch_(rec, q) {
   return hn.indexOf(q) !== -1 || name.indexOf(q) !== -1;
 }
 
-function pendingShownRows() {
+// รอบ 75: ชุดแถวหลังตัวกรองวันที่ + ค้นหา ของชนิดนั้น (ยังไม่กรองช่องทาง) — ตัวเลขบน chip นับจากชุดนี้
+function pendingRowsForChips_(kind) {
   var q = pendingSearchQuery_();
-  return pendingRowsForKind(PENDING_KIND)
-    .filter(function (rec) { return pendingRowMatchesSearch_(rec, q); })
+  return pendingRowsForKind(kind).filter(function (rec) { return pendingRowMatchesSearch_(rec, q); });
+}
+
+// รอบ 75: ช่องทางของแถวตามชนิดแท็บ — checkup/pickup = deliveryMethod · pelvic = pelvicMethod (ว่าง ⇒ '__none')
+function pendingMethodKey_(rec, kind) {
+  if (kind === 'pelvic') return (rec && rec.pelvicMethod) ? rec.pelvicMethod : PENDING_METHOD_NONE_;
+  return (rec && rec.deliveryMethod) || '';
+}
+
+function pendingShownRows() {
+  var m = PENDING_METHOD;
+  return pendingRowsForChips_(PENDING_KIND)
+    .filter(function (rec) { return !m || pendingMethodKey_(rec, PENDING_KIND) === m; })
     .slice().sort(comparePendingRow_);
 }
 
+// รอบ 75: ป้ายบน chip — ใช้ shortDeliveryLabel เดิม (ส่งไปรษณีย์, E-mail, Whatsapp) ยกเว้น 2 ช่องทางรับเองที่ใช้ชื่อเต็มตามสเปก
+// (shortDeliveryLabel ของ "นัดรับวันที่" ต้องมีวันที่ต่อท้าย ใช้เป็นป้าย chip ไม่ได้)
+function pendingMethodLabel_(m) {
+  if (m === PENDING_METHOD_NONE_) return 'ยังไม่ระบุ';
+  if (m === 'รอรับด้วยตนเอง' || m === DELIVERY_PICKUP_APPOINTMENT) return m;
+  return shortDeliveryLabel(m);
+}
+
+// รอบ 75: รายการ chip ของแต่ละแท็บ (ไม่รวม "ทั้งหมด") — checkup = SEND_OUT 3 ตัว · pickup = PICKUP 2 ตัว (คงที่) ·
+// pelvic = ช่องทางที่มีอยู่ในข้อมูลจริง (เรียง ส่งออก → รับเอง → อื่น ๆ → ยังไม่ระบุ) + ช่องทางที่เลือกค้างอยู่ (กัน chip หายใต้ผู้ใช้หลังบันทึกจนเหลือ 0)
+function pendingMethodChipKeys_(kind) {
+  if (kind === 'checkup') return SEND_OUT_METHODS.slice();
+  if (kind === 'pickup') return PICKUP_METHODS.slice();
+  var seen = {};
+  pendingRowsForKind('pelvic').forEach(function (rec) { seen[pendingMethodKey_(rec, 'pelvic')] = true; });
+  if (PENDING_METHOD) seen[PENDING_METHOD] = true;
+  var known = SEND_OUT_METHODS.concat(PICKUP_METHODS);
+  var keys = known.filter(function (k) { return seen[k]; });
+  Object.keys(seen).sort().forEach(function (k) {
+    if (k !== PENDING_METHOD_NONE_ && known.indexOf(k) === -1) keys.push(k);
+  });
+  if (seen[PENDING_METHOD_NONE_]) keys.push(PENDING_METHOD_NONE_);
+  return keys;
+}
+
+function renderPendingMethodChips_() {
+  var box = qs('pendingMethodChips');
+  if (!box) return;
+  var base = pendingRowsForChips_(PENDING_KIND);
+  var counts = {};
+  base.forEach(function (rec) { var k = pendingMethodKey_(rec, PENDING_KIND); counts[k] = (counts[k] || 0) + 1; });
+  function chip(key, label, n) {
+    var cls = 'pending-chip' + (PENDING_METHOD === key ? ' active' : '') + (n === 0 ? ' is-zero' : '');
+    return '<button type="button" class="' + cls + '" data-pending-method="' + escHtml(key) + '" aria-pressed="' + (PENDING_METHOD === key ? 'true' : 'false') + '">' +
+      escHtml(label) + ' <span class="pending-chip-n">' + n + '</span></button>';
+  }
+  var html = chip('', 'ทั้งหมด', base.length);
+  pendingMethodChipKeys_(PENDING_KIND).forEach(function (k) { html += chip(k, pendingMethodLabel_(k), counts[k] || 0); });
+  box.innerHTML = html;
+}
+
+function setPendingMethod_(key) {
+  PENDING_METHOD = String(key || '');
+  renderPendingTable(); // ตาราง/เลือกทั้งหมด/จำนวนที่เลือก/ปุ่ม bulk ทำงานกับแถวหลังกรองช่องทาง · ตัดการเลือกของแถวที่หายไปให้เอง
+}
+
+// รอบ 75: ตัวเลขบนแท็บ = pendingRowsForKind(kind).length (ตัวกรองวันที่ — ไม่ผ่านค้นหา/chip) · hideNumbers = ยังไม่เคยโหลดสำเร็จ ⇒ ป้ายล้วนไม่มีเลข (ห้ามโชว์ 0 ปลอม ๆ)
+function updatePendingTabCounts_(hideNumbers) {
+  [['btnPendingKindCheckup', 'checkup', 'ผลตรวจสุขภาพ'], ['btnPendingKindPelvic', 'pelvic', 'มะเร็งปากมดลูก'], ['btnPendingKindPickup', 'pickup', 'รอรับ / นัดรับ']]
+    .forEach(function (d) {
+      var b = qs(d[0]);
+      if (!b) return;
+      b.innerHTML = hideNumbers ? d[2] : (d[2] + ' <span class="pending-tab-n">' + pendingRowsForKind(d[1]).length + '</span>');
+    });
+}
+
+// รอบ 75: แก้ไขสำเร็จจากหน้าต่างแก้ไข (เช่น เปลี่ยนช่องทางรับผลของคนที่รอรับ ⇒ ย้ายไปแท็บผลตรวจสุขภาพ) ⇒ โหลด pending ใหม่ถ้ากำลังอยู่หน้านี้
+// (ไม่ได้อยู่หน้านี้ ⇒ ไม่ต้องทำ: showScreen('pending') โหลดใหม่ทุกครั้งที่เปิดอยู่แล้ว)
+function refreshPendingAfterEdit_() {
+  var scr = qs('pendingScreen');
+  if (scr && scr.style.display === 'block') loadPending();
+}
+
+// รอบ 75: ไม่แสดงบนจอแล้ว (กล่อง #pendingSummary ถูกถอด — ตัวเลขอยู่บนแท็บ) · คงฟังก์ชันไว้เพราะเทสต์เก่า (test_round60_web) เรียกอ่านนิยามตัวเลข
 function pendingSummaryHtml() {
   var checkupExportRows = pendingRowsForKind('checkup');
   var pelvicExportRows = pendingRowsForKind('pelvic');
@@ -9255,7 +9589,7 @@ function syncPendingSelectAll() {
 function updatePendingSelectedCount() {
   var el = qs('pendingSelectedCount');
   if (!el) return;
-  el.textContent = 'เลือกไว้ ' + Object.keys(PENDING_SELECTED).length + ' คน';
+  el.textContent = 'เลือก ' + Object.keys(PENDING_SELECTED).length + ' คน'; // รอบ 75: อยู่ในแถบล่าง "เลือก N คน · ป้ายวันที่ [วันที่] [ปุ่ม]"
 }
 
 function updatePendingBulkButton() {
@@ -9275,16 +9609,18 @@ function updatePendingBulkButton() {
 function renderPendingTable() {
   var wrap = qs('pendingTableWrap');
   if (!wrap) return;
+  updatePendingTabCounts_(false); // รอบ 75: ตัวเลขบนแท็บ + chip อัปเดตทุกครั้งที่วาดตาราง (ข้อมูลโหลด/ตัวกรองวันที่/ค้นหา/บันทึกสำเร็จ ผ่านที่นี่หมด)
+  renderPendingMethodChips_();
   var rows = pendingShownRows();
 
-  // เปลี่ยนคำค้น/สลับชนิด -> ล้างการเลือกของแถวที่ไม่แสดงแล้ว
+  // เปลี่ยนคำค้น/สลับชนิด/เปลี่ยน chip -> ล้างการเลือกของแถวที่ไม่แสดงแล้ว
   var shownIds = {};
   rows.forEach(function (rec) { shownIds[rec.recordId] = true; });
   Object.keys(PENDING_SELECTED).forEach(function (id) { if (!shownIds[id]) delete PENDING_SELECTED[id]; });
 
   if (rows.length === 0) {
-    // รอบ 73: ชนิด pickup ใช้ข้อความ "ไม่มีรายการรอมารับ" · ชนิดอื่นข้อความเดิม
-    wrap.innerHTML = '<p class="muted">' + (PENDING_KIND === 'pickup' ? 'ไม่มีรายการรอมารับ' : 'ไม่มีรายการค้างส่งออกผล') + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
+    // รอบ 73: ชนิด pickup ใช้ข้อความของตัวเอง (รอบ 75: "ไม่มีรายการรอรับ / นัดรับ") · ชนิดอื่นข้อความเดิม
+    wrap.innerHTML = '<p class="muted">' + (PENDING_KIND === 'pickup' ? 'ไม่มีรายการรอรับ / นัดรับ' : 'ไม่มีรายการค้างส่งออกผล') + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
     updatePendingSelectedCount();
     updatePendingBulkButton();
     return;
@@ -9292,19 +9628,24 @@ function renderPendingTable() {
 
   var html = '<div class="scroll-x"><table class="report-table"><thead><tr>' +
     '<th><input type="checkbox" id="pendingSelectAll" class="no-print"></th>' +
-    '<th>วันที่มาตรวจ</th><th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ช่องทาง</th>' +
+    '<th>วันที่มาตรวจ</th><th>คิว</th><th>HN</th><th class="pending-name">ชื่อ-สกุล</th><th>โปรแกรม</th><th>ช่องทาง</th>' +
     '</tr></thead><tbody>';
   rows.forEach(function (rec) {
     var channel = (PENDING_KIND === 'pelvic')
       ? (escHtml(pelvicTypeLabel(rec)) + ' · ' + (rec.pelvicMethod ? escHtml(shortDeliveryLabel(rec.pelvicMethod)) : 'ยังไม่ระบุช่องทาง'))
       : escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate));
     var checked = PENDING_SELECTED[rec.recordId] ? ' checked' : '';
+    var fullName = (rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '');
+    // รอบ 75: แท็บ pickup ชื่อ-สกุลเป็นปุ่มลิงก์ ⇒ เปิดหน้าต่างแก้ไขเดิม (onEditRecordClick) · ไม่ใช่ checkbox ไม่ไปติ๊กแถว · แท็บอื่นเป็นข้อความธรรมดา
+    var nameCell = (PENDING_KIND === 'pickup')
+      ? ('<button type="button" class="pending-name-link" data-pending-edit-id="' + escHtml(rec.recordId) + '">' + escHtml(fullName.trim() || rec.patientHn || '—') + '</button>')
+      : escHtml(fullName);
     html += '<tr>' +
       '<td><input type="checkbox" class="pending-row-chk no-print" data-pending-id="' + escHtml(rec.recordId) + '"' + checked + '></td>' +
       '<td>' + escHtml(formatThaiDateShort(rec.date)) + '</td>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
-      '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
+      '<td class="pending-name">' + nameCell + '</td>' +
       '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
       '<td>' + channel + '</td>' +
       '</tr>';
@@ -9320,6 +9661,9 @@ function renderPendingTable() {
       updatePendingSelectedCount();
       updatePendingBulkButton();
     });
+  });
+  wrap.querySelectorAll('.pending-name-link').forEach(function (b) {
+    b.addEventListener('click', function () { onEditRecordClick(b.getAttribute('data-pending-edit-id'), 'pending'); });
   });
   var selectAllChk = qs('pendingSelectAll');
   if (selectAllChk) {
@@ -9345,7 +9689,6 @@ function loadPending() { loadPendingRun_(false); }
 function loadPendingRun_(isRetry) {
   var seq = ++PENDING_LOAD_SEQ;
   var wrap = qs('pendingTableWrap');
-  var summaryEl = qs('pendingSummary');
   var errEl = qs('pendingError');
   if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
   // เคยมีข้อมูลบนจอแล้ว = ไม่ล้างตารางเป็น "กำลังโหลด..." (ถ้าคำตอบเสียต้องคงของเดิมไว้) · ยังไม่เคย = พฤติกรรมเดิม
@@ -9355,8 +9698,7 @@ function loadPendingRun_(isRetry) {
       PENDING_LOADED = true;
       PENDING_RECORDS = resp.records;
       PENDING_SELECTED = {};
-      if (summaryEl) summaryEl.innerHTML = pendingSummaryHtml();
-      renderPendingTable();
+      renderPendingTable(); // รอบ 75: วาดตัวเลขบนแท็บ + chip + ตาราง (กล่องสรุปถอดออกจากจอแล้ว)
     } else {
       // เซิร์ฟเวอร์ตอบ error / ไม่รู้จัก action (ยังไม่ deploy) / ตอบ ok แต่ไม่มี records (เช่น "API is running") -> แสดง error บนจอ ห้าม crash/โชว์เลข 0 ปลอม ๆ
       var pmsg = badListRespMessage_(resp);
@@ -9364,7 +9706,9 @@ function loadPendingRun_(isRetry) {
         if (errEl) { errEl.textContent = '⚠ อัปเดตไม่สำเร็จ — แสดงรายการเดิม (' + pmsg + ')'; errEl.hidden = false; }
       } else {
         PENDING_RECORDS = [];
-        if (summaryEl) summaryEl.innerHTML = '';
+        updatePendingTabCounts_(true); // รอบ 75: ยังไม่เคยมีข้อมูล ⇒ แท็บไม่มีตัวเลข (ห้ามโชว์ 0 ปลอม) · ไม่มี chip
+        var chipBox = qs('pendingMethodChips');
+        if (chipBox) chipBox.innerHTML = '';
         if (wrap) wrap.innerHTML = '';
         showErrWithRetry_(errEl, 'โหลดรายการค้างส่งออกผลไม่สำเร็จ (' + pmsg + ')', function () { loadPendingRun_(false); });
       }
@@ -9381,6 +9725,7 @@ function loadPendingRun_(isRetry) {
 function setPendingKind(kind) {
   PENDING_KIND = (kind === 'pelvic' || kind === 'pickup') ? kind : 'checkup'; // รอบ 73: รับ 'pickup' เพิ่ม
   PENDING_SELECTED = {}; // สลับชนิด -> แถวที่แสดงเปลี่ยนชุดทั้งหมด ล้างการเลือกทิ้ง
+  PENDING_METHOD = '';   // รอบ 75: สลับแท็บ ⇒ chip ช่องทางกลับเป็น "ทั้งหมด"
   ['btnPendingKindCheckup', 'btnPendingKindPelvic', 'btnPendingKindPickup'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
@@ -9456,9 +9801,7 @@ function onPendingBulkSave() {
       applyPendingUpdateToCaches_(id, kind, date);
     });
     PENDING_RECORDS = PENDING_RECORDS.filter(function (rec) { return !updatedSet[rec.recordId]; });
-    var summaryEl = qs('pendingSummary');
-    if (summaryEl) summaryEl.innerHTML = pendingSummaryHtml();
-    renderPendingTable();
+    renderPendingTable(); // รอบ 75: ตัวเลขบนแท็บ + chip ลดตามที่บันทึกสำเร็จ
   }
   function showSkippedBox() {
     var skippedLabels = allSkipped.map(function (s) {
@@ -10839,7 +11182,7 @@ function showScreen(name) {
     recalcTotals(); // เรียก updatePersonCardLabels()/updatePanelSummaries() ผ่านในตัวอยู่แล้ว
   }
 
-  if (name === 'today') loadToday();
+  if (name === 'today') { todayViewCheckDayRollover_(); loadTodayScreen_(); } // รอบ 74: คงวันที่ที่เลือกไว้เดิมเมื่อออกแล้วกลับมา (TODAY_VIEW_DATE ไม่ถูกรีเซ็ต)
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable('list'); } // รอบ 8 (B7)
   if (name === 'pending') { ensurePendingDateDefault(); loadPending(); } // รอบ 28 (W8)
   if (name === 'spBoard') { // รอบ 9 (ก้อน A)
@@ -11220,6 +11563,12 @@ document.addEventListener('DOMContentLoaded', function () {
       safeRemoveItem('svcLogPoint');
     }
     loadToday();
+    // รอบ 74: ดูวันอื่นอยู่ ⇒ โหลดวันที่ดูอยู่ของจุดใหม่ด้วย (ไม่รีเซ็ตเป็นวันนี้) — ล้างรายการของจุดเก่าออกก่อน กันของจุดเก่าค้างใต้ป้ายจุดใหม่
+    if (!isViewingToday_()) {
+      TODAY_VIEW_RECORDS = [];
+      if (isTodayScreenVisible_()) resetTodayDisplayLoading_(TODAY_VIEW_DATE);
+      loadTodayViewRun_(false);
+    }
     recalcTotals();
     // รอบ 31A (A-W3/A-W5): เปลี่ยนเป็นจุดนี้ -> จัดแผงตามหัวข้อหลักใหม่ + ถ้าจุดนี้มี 'รายชื่อ' เปิดหน้ารายชื่อให้เลย
     // (เปลี่ยนไปจุดที่ไม่มี 'รายชื่อ' จะไม่ถูกบังคับย้ายหน้า — maybeAutoOpenListForPoint() เช็คเองแล้ว)
@@ -11356,7 +11705,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // ⚠ ตัวกรองถูกอ่านสด ๆ จากช่องภายใน renderTodayList() ⇒ loadToday() รีเฟรชเมื่อไร ตัวกรองก็ยังติดอยู่เอง
   var todayHnEl = qs('todayHnSearch');
   if (todayHnEl) {
-    todayHnEl.addEventListener('input', function () { renderTodayList(LAST_TODAY_RECORDS); });
+    todayHnEl.addEventListener('input', function () { redrawTodayCurrent_(); }); // รอบ 74: ใช้กับวันที่ที่ดูอยู่
     todayHnEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
   }
   var todayHnClearEl = qs('todayHnClear');
@@ -11364,8 +11713,20 @@ document.addEventListener('DOMContentLoaded', function () {
     todayHnClearEl.addEventListener('click', function () {
       var el = qs('todayHnSearch');
       if (el) { el.value = ''; el.focus(); }
-      renderTodayList(LAST_TODAY_RECORDS);
+      redrawTodayCurrent_();
     });
+  }
+  // รอบ 74 (เจ้าของสั่ง 2026-10-08): ช่องวันที่ + ปุ่ม "วันนี้" ของหน้ารายการวันนี้ — ปฏิทินไทย thd* ผูกให้เองจาก thdEnhanceAll(document) ท้ายไฟล์
+  // (input[type=date] ยังเป็นตัวเก็บค่า) · max = วันนี้ · เลือกอนาคตได้ด้วยมือ/โค้ด ⇒ setTodayViewDate_ ถอยเป็นวันนี้
+  var todayViewDateEl = qs('todayViewDate');
+  if (todayViewDateEl) {
+    todayViewDateEl.setAttribute('max', todayStr());
+    todayViewDateEl.value = TODAY_VIEW_DATE;
+    todayViewDateEl.addEventListener('change', function () { setTodayViewDate_(todayViewDateEl.value); });
+  }
+  var todayViewTodayBtn = qs('todayViewTodayBtn');
+  if (todayViewTodayBtn) {
+    todayViewTodayBtn.addEventListener('click', function () { setTodayViewDate_(todayStr()); });
   }
   qs('medCert5').addEventListener('input', onServiceFieldChange);
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
@@ -11462,6 +11823,11 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnPendingKindCheckup').addEventListener('click', function () { setPendingKind('checkup'); });
   qs('btnPendingKindPelvic').addEventListener('click', function () { setPendingKind('pelvic'); });
   qs('btnPendingKindPickup').addEventListener('click', function () { setPendingKind('pickup'); }); // รอบ 73
+  var pendingChipsEl = qs('pendingMethodChips');
+  if (pendingChipsEl) pendingChipsEl.addEventListener('click', function (e) { // รอบ 75: chip ช่องทาง (วาดใหม่ทุกครั้ง ⇒ ผูก delegate ที่กล่อง)
+    var cb = e.target && e.target.closest ? e.target.closest('[data-pending-method]') : null;
+    if (cb) setPendingMethod_(cb.getAttribute('data-pending-method'));
+  });
   setPendingKind('checkup'); // ค่าเริ่มต้น — ตั้งคลาสปุ่ม active ให้ตรงกับ PENDING_KIND ตั้งแต่ก่อนโหลดข้อมูลครั้งแรก
   var pendingSearchEl = qs('pendingSearch');
   if (pendingSearchEl) {
