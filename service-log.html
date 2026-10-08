@@ -388,6 +388,20 @@
   .doc-add-msg { margin: 6px 0 0; overflow-wrap: anywhere; }
   .dtb-newdoc { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
   .dtb-chip-legacy { color: #7A5A00; }
+  /* รอบ 78: ช่องชื่อแพทย์แบบพิมพ์ค้นหา (combobox) — รายการลอยตัวเดียวใช้ร่วมทุกช่อง (append ที่ body, position fixed ⇒ ไม่ถูก overflow ของกล่องตัดทิ้ง)
+     z-index ต่ำกว่า modal (2000) · สูงสุดประมาณ 6 แถว เลื่อนในกรอบ */
+  .doc-cb-list {
+    position: fixed; z-index: 1900; box-sizing: border-box; max-height: 224px; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.22);
+  }
+  .doc-cb-list[hidden] { display: none; }
+  .doc-cb-opt { box-sizing: border-box; min-height: 36px; padding: 8px 10px; cursor: pointer; line-height: 1.3; font-size: 15px; overflow-wrap: anywhere; }
+  .doc-cb-opt.is-hl, .doc-cb-opt:hover { background: var(--teal-pale, #EEEFFE); }
+  .doc-cb-empty { padding: 8px 10px; font-size: 14px; color: var(--text-muted); }
+  input.doc-cb-bad { border: 2px solid #D93025; background: #FFF4F3; }
+  #dtbAddMsg { min-height: 1.5em; } /* จองที่ไว้ — ข้อความโผล่ตอน blur แล้วปุ่ม "บันทึก" ข้างล่างต้องไม่เลื่อนหนีเมาส์ */
+  @media (max-width: 480px) { #dtbAddMsg { min-height: 2.9em; } }
+  @media print { .doc-cb-list { display: none; } }
 
   /* เจ้าของสั่ง 2026-09-13: แถบสรุปต้องแยก 5 หมวด พร้อมจำนวนคนและยอดเงินของแต่ละหมวด
      ⚠ .summary-bar เดิมเป็น flex แนวนอน (justify-content: space-between) ⇒ ถ้าปล่อยไว้ ตารางย่อยจะถูกดันไปอยู่ข้าง ๆ
@@ -1171,8 +1185,14 @@
   .dq-setup-row { display: grid; grid-template-columns: 1fr 1fr 90px 90px auto; gap: 8px; margin-bottom: 8px; align-items: center; }
   .dq-setup-row-head { font-weight: bold; color: var(--text-muted); }
   .dq-setup-row input, .dq-setup-row select { min-width: 0; }
-  .dq-setup-row select { width: 100%; } /* รอบ 52: ช่องชื่อแพทย์เป็น select */
+  .dq-setup-row select { width: 100%; }
   .dq-setup-row input.dq-su-bad, .dq-setup-row select.dq-su-bad { border: 2px solid #D93025; background: #FFF4F3; } /* รอบ 43: ชื่อแพทย์ผิดรูปแบบ (รอบ 52: ไม่อยู่ในรายชื่อ) */
+  /* รอบ 78: ช่องชื่อแพทย์เป็นช่องพิมพ์ค้นหา (combobox) + ข้อความใต้ช่อง · แถวไม่จัดกึ่งกลางแนวตั้ง กันเซลล์อื่นเลื่อนเมื่อข้อความโผล่ */
+  .dq-su-doc-wrap { min-width: 0; }
+  .dq-su-doc-wrap input { width: 100%; }
+  .dq-su-doc-msg { color: #D93025; font-size: 13px; margin-top: 3px; overflow-wrap: anywhere; }
+  .dq-su-doc-msg:empty { display: none; }
+  .dq-setup-row:not(.dq-setup-row-head) > * { align-self: start; }
   /* รอบ 52 (W1): ฟอร์มเพิ่มแพทย์ในหน้า ⚙ ตั้งห้อง (#dqAddDoctorForm) — ฟอร์มชุดเดียวกันในแถบแพทย์ประจำวันใช้ .doc-add-form (CSS ใกล้ .dtb-add-form) */
   .dq-adddoc-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .dq-adddoc-row input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
@@ -7275,6 +7295,277 @@ function doctorFindByCore_(names, raw) {
   return '';
 }
 
+/* รอบ 78 (2026-10-08) — ช่องชื่อแพทย์ = ช่องพิมพ์ค้นหา (custom combobox) แต่ยังต้องได้ชื่อจากรายชื่อเท่านั้น (กติการอบ 52 คงเดิม)
+   ใช้ร่วม 2 จุด: หน้า ⚙ ตั้งห้อง (.dq-su-doctor) และแถบแพทย์ประจำวัน (#dtbAddSelect)
+   ⚠ ช่วงนี้ถูก test_round31c_server.js ตัดไปรันใน vm ที่ไม่มี DOM — ประกาศฟังก์ชัน/ตัวแปรเฉย ๆ ห้ามมีโค้ดระดับบนสุดที่แตะ document/window */
+var DOCTOR_NOT_IN_LIST_SHORT_ = 'ไม่อยู่ในรายชื่อ — เลือกจากรายการ หรือกด "เพิ่มแพทย์"';
+var DOCTOR_LEGACY_SHORT_ = 'ชื่อเดิม — กรุณาเลือกใหม่';
+var DOCTOR_COMBO_ACTIVE_ = null; // { input, hl, list } ของช่องที่เปิดรายการอยู่ (มีได้ช่องเดียว)
+var DOCTOR_POINTER_DOWN_ = false; // ปุ่มเมาส์/นิ้วกดอยู่ไหม (ตั้งโดยตัวดักใน 11. Bootstrap)
+var DOCTOR_DEFER_ = [];           // ช่องที่ออกจากช่องตอนกดค้าง รอขึ้นสถานะ "ไม่ตรง" หลังปล่อยปุ่ม
+var DOCTOR_COMBO_POP_ = null;    // กล่องรายการลอยตัวเดียว (สร้างตอนเปิดครั้งแรก)
+
+// กรองรายชื่อ: แกนชื่อ (ไม่นับคำนำหน้า/ช่องว่าง) ของแต่ละชื่อมีแกนที่พิมพ์เป็นส่วนหนึ่ง · แกนที่พิมพ์ว่าง ⇒ ทุกชื่อ · คงลำดับเดิม
+function doctorFilterNames_(names, typed) {
+  var q = doctorNameStrip_(typed).core.toLowerCase();
+  var src = names || [];
+  if (!q) return src.slice();
+  return src.filter(function (n) { return doctorNameStrip_(n).core.toLowerCase().indexOf(q) !== -1; });
+}
+
+// ข้อความที่พิมพ์ → ชื่อเต็มในรายชื่อ: แกนตรงเป๊ะ หรือกรองแล้วเหลือชื่อเดียว · ว่าง/ไม่ตรง/ตรงหลายชื่อ = ''
+function doctorResolveTyped_(names, typed) {
+  var s = String(typed == null ? '' : typed).trim();
+  if (!s || !doctorNameStrip_(s).core) return '';
+  var hit = doctorFindByCore_(names, s);
+  if (hit) return hit;
+  var f = doctorFilterNames_(names, s);
+  return f.length === 1 ? f[0] : '';
+}
+
+function doctorComboPop_() {
+  if (!DOCTOR_COMBO_POP_) {
+    var p = document.createElement('div');
+    p.id = 'docCbList';
+    p.className = 'doc-cb-list';
+    p.setAttribute('role', 'listbox');
+    p.hidden = true;
+    p.addEventListener('mousedown', function (ev) { ev.preventDefault(); }); // ช่องพิมพ์ไม่เสียโฟกัสตอนกด/แตะรายการ
+    p.addEventListener('click', function (ev) {
+      var o = ev.target && ev.target.closest ? ev.target.closest('.doc-cb-opt') : null;
+      var a = DOCTOR_COMBO_ACTIVE_;
+      if (!o || !a) return;
+      var nm = a.list[Number(o.getAttribute('data-idx'))];
+      if (nm) doctorComboPick_(a.input, nm);
+    });
+    document.body.appendChild(p);
+    DOCTOR_COMBO_POP_ = p;
+  }
+  return DOCTOR_COMBO_POP_;
+}
+
+// วางกล่องรายการใต้ช่อง (ไม่พอที่ข้างล่างและข้างบนกว้างกว่า ⇒ วางบนช่อง) · ไม่ให้ล้นขอบขวา/ซ้ายของจอ
+function doctorComboPlace_() {
+  var a = DOCTOR_COMBO_ACTIVE_;
+  var pop = DOCTOR_COMBO_POP_;
+  if (!a || !pop) return;
+  if (!a.input.isConnected || !a.input.getClientRects().length) { doctorComboClose_(); return; }
+  var r = a.input.getBoundingClientRect();
+  var vw = document.documentElement.clientWidth;
+  var vh = document.documentElement.clientHeight;
+  if (r.bottom < 0 || r.top > vh) { doctorComboClose_(); return; }
+  var w = Math.min(Math.max(r.width, 220), vw - 8);
+  var left = Math.max(4, Math.min(r.left, vw - w - 4));
+  pop.style.width = w + 'px';
+  pop.style.left = left + 'px';
+  var need = Math.min(pop.scrollHeight, 224);
+  var below = vh - r.bottom;
+  if (below < need + 8 && r.top > below) {
+    pop.style.top = 'auto';
+    pop.style.bottom = (vh - r.top + 2) + 'px';
+  } else {
+    pop.style.bottom = 'auto';
+    pop.style.top = (r.bottom + 2) + 'px';
+  }
+}
+
+function doctorComboReposition_(ev) {
+  var pop = DOCTOR_COMBO_POP_;
+  if (ev && ev.target && pop && ev.target !== document && pop.contains && pop.contains(ev.target)) return; // เลื่อนในกรอบรายการเอง ไม่ต้องวางใหม่
+  doctorComboPlace_();
+}
+
+// วาดรายการตามข้อความในช่อง (ชื่อจากชีตใส่ผ่าน textContent เท่านั้น)
+function doctorComboRender_() {
+  var a = DOCTOR_COMBO_ACTIVE_;
+  if (!a) return;
+  var cfg = a.input._dcb || {};
+  var pop = doctorComboPop_();
+  a.list = doctorFilterNames_(cfg.getNames ? cfg.getNames() : [], a.input.value);
+  if (a.hl >= a.list.length) a.hl = a.list.length - 1;
+  if (a.hl < 0 && a.list.length) a.hl = 0;
+  pop.innerHTML = '';
+  if (!a.list.length) {
+    var e = document.createElement('div');
+    e.className = 'doc-cb-empty';
+    e.setAttribute('role', 'presentation');
+    e.textContent = 'ไม่พบชื่อที่ตรงในรายชื่อ';
+    pop.appendChild(e);
+  } else {
+    a.list.forEach(function (n, i) {
+      var o = document.createElement('div');
+      o.className = 'doc-cb-opt' + (i === a.hl ? ' is-hl' : '');
+      o.id = 'docCbOpt' + i;
+      o.setAttribute('role', 'option');
+      o.setAttribute('aria-selected', i === a.hl ? 'true' : 'false');
+      o.setAttribute('data-idx', String(i));
+      o.textContent = n;
+      pop.appendChild(o);
+    });
+  }
+  pop.hidden = false;
+  a.input.setAttribute('aria-expanded', 'true');
+  if (a.list.length) a.input.setAttribute('aria-activedescendant', 'docCbOpt' + a.hl); else a.input.removeAttribute('aria-activedescendant');
+  doctorComboPlace_();
+  var hlEl = a.list.length ? pop.children[a.hl] : null;
+  if (hlEl && hlEl.scrollIntoView) {
+    var top = hlEl.offsetTop, bot = top + hlEl.offsetHeight;
+    if (top < pop.scrollTop) pop.scrollTop = top; else if (bot > pop.scrollTop + pop.clientHeight) pop.scrollTop = bot - pop.clientHeight;
+  }
+}
+
+function doctorComboOpen_(input) {
+  if (DOCTOR_COMBO_ACTIVE_ && DOCTOR_COMBO_ACTIVE_.input !== input) doctorComboClose_();
+  if (!DOCTOR_COMBO_ACTIVE_) {
+    DOCTOR_COMBO_ACTIVE_ = { input: input, hl: 0, list: [], moved: false };
+    window.addEventListener('resize', doctorComboReposition_);
+    window.addEventListener('scroll', doctorComboReposition_, true);
+  }
+  doctorComboRender_();
+}
+
+function doctorComboClose_() {
+  var a = DOCTOR_COMBO_ACTIVE_;
+  if (!a) return;
+  DOCTOR_COMBO_ACTIVE_ = null;
+  window.removeEventListener('resize', doctorComboReposition_);
+  window.removeEventListener('scroll', doctorComboReposition_, true);
+  if (DOCTOR_COMBO_POP_) DOCTOR_COMBO_POP_.hidden = true;
+  a.input.setAttribute('aria-expanded', 'false');
+  a.input.removeAttribute('aria-activedescendant');
+}
+
+// สถานะใต้ช่อง: kind = '' (ปกติ) | 'notinlist' | 'legacy' — ขอบแดง (cfg.badClass) + ข้อความ (cfg.getMsgEl()) + aria-invalid
+function doctorComboShowStatus_(input, kind) {
+  if (!input) return;
+  var cfg = input._dcb || {};
+  var bad = cfg.badClass || 'doc-cb-bad';
+  var msgEl = cfg.getMsgEl ? cfg.getMsgEl() : null;
+  if (!kind) {
+    input.classList.remove(bad);
+    input.removeAttribute('aria-invalid');
+    if (msgEl) msgEl.textContent = '';
+    return;
+  }
+  input.classList.add(bad);
+  input.setAttribute('aria-invalid', 'true');
+  if (msgEl) msgEl.textContent = kind === 'legacy' ? DOCTOR_LEGACY_SHORT_ : DOCTOR_NOT_IN_LIST_SHORT_;
+}
+
+// เลือกชื่อจากรายการ (คลิก/Enter) — ใส่ชื่อเต็ม · ล้างสถานะแดง · ปิดรายการ · โฟกัสคงอยู่ที่ช่อง
+function doctorComboPick_(input, name) {
+  var cfg = input._dcb || {};
+  input.value = name;
+  doctorComboShowStatus_(input, '');
+  doctorComboClose_();
+  if (cfg.onChange) cfg.onChange();
+  if (cfg.onPick) cfg.onPick(name);
+}
+
+// ออกจากช่อง: ว่าง ⇒ ล้างสถานะ · resolve ได้ชื่อเดียว ⇒ แทนด้วยชื่อเต็ม · ไม่ได้ ⇒ คงข้อความ + แดง + ข้อความใต้ช่อง (ไม่ลบข้อความ)
+function doctorComboBlur_(input) {
+  var cfg = input._dcb || {};
+  if (DOCTOR_COMBO_ACTIVE_ && DOCTOR_COMBO_ACTIVE_.input === input) doctorComboClose_();
+  var text = String(input.value || '').trim();
+  if (!text) {
+    if (input.value !== '') input.value = '';
+    doctorComboShowStatus_(input, '');
+    return;
+  }
+  doctorComboJudge_(input, true);
+}
+
+// ตัดสินข้อความปัจจุบันของช่อง (หลังออกจากช่อง): resolve ได้ ⇒ แทนด้วยชื่อเต็ม · ไม่ได้ ⇒ แดง + ข้อความ
+// allowDefer: ออกจากช่องตอนปุ่มเมาส์/นิ้วยังกดอยู่ ⇒ ข้อความใต้ช่องทำให้ผังเลื่อน ปุ่มที่กำลังกดจะหนีเมาส์แล้วคลิกหาย
+// จึงเลื่อนการขึ้นสถานะ "ไม่ตรง" ไปหลังปล่อยปุ่ม (ผู้ใช้เห็นขอบแดง/ข้อความเหมือนเดิม แต่คลิกไม่หาย) · กรณี resolve ได้ทำทันที (ความสูงไม่เปลี่ยน)
+function doctorComboJudge_(input, allowDefer) {
+  var cfg = input._dcb || {};
+  var text = String(input.value || '').trim();
+  if (!text) { if (input.value !== '') input.value = ''; doctorComboShowStatus_(input, ''); return; }
+  if (cfg.canValidate && !cfg.canValidate()) return;
+  var hit = doctorResolveTyped_(cfg.getResolveNames ? cfg.getResolveNames() : (cfg.getNames ? cfg.getNames() : []), text);
+  if (hit) {
+    if (input.value !== hit) { input.value = hit; if (cfg.onChange) cfg.onChange(); }
+    doctorComboShowStatus_(input, '');
+    return;
+  }
+  if (allowDefer && DOCTOR_POINTER_DOWN_) {
+    if (DOCTOR_DEFER_.indexOf(input) === -1) DOCTOR_DEFER_.push(input);
+    setTimeout(function () { doctorComboFlush_(input); }, 600); // สำรอง เผื่อ pointerup ไม่มา
+    return;
+  }
+  doctorComboShowStatus_(input, input.getAttribute('data-legacy') === text ? 'legacy' : 'notinlist');
+}
+
+// ถึงเวลาขึ้นสถานะที่เลื่อนไว้: ช่องถูกลบแล้ว/กลับมาโฟกัสแล้ว ⇒ ข้าม (blur ครั้งถัดไปตัดสินเอง) · นอกนั้นตัดสินใหม่จากค่าปัจจุบัน ไม่ใช้ผลเก่า
+function doctorComboFlush_(input) {
+  var i = DOCTOR_DEFER_.indexOf(input);
+  if (i === -1) return;
+  DOCTOR_DEFER_.splice(i, 1);
+  if (!input.isConnected || document.activeElement === input) return;
+  doctorComboJudge_(input, false);
+}
+
+// เรียกจากตัวดักระดับ document ในหมวด 11. Bootstrap: down = true ตอนกดเมาส์/แตะ · false ตอนปล่อย (แล้ว flush หลัง click ยิงก่อน)
+function doctorComboPointer_(down) {
+  DOCTOR_POINTER_DOWN_ = down;
+  if (down || !DOCTOR_DEFER_.length) return;
+  var items = DOCTOR_DEFER_.slice();
+  setTimeout(function () { items.forEach(doctorComboFlush_); }, 0);
+}
+
+// ผูกพฤติกรรม combobox กับ <input type="text"> 1 ช่อง · cfg: getNames() รายชื่อที่แนะนำ · getResolveNames() (ไม่ใส่ = getNames) ·
+// getMsgEl() ที่วางข้อความ · badClass · canValidate() · onChange() (ผู้ใช้พิมพ์/เลือก) · onPick(name) · onEnter(chosen) (หลังเลือกด้วย Enter)
+function doctorComboAttach_(input, cfg) {
+  input._dcb = cfg;
+  input.setAttribute('autocomplete', 'off');
+  input.setAttribute('role', 'combobox');
+  input.setAttribute('aria-autocomplete', 'list');
+  input.setAttribute('aria-expanded', 'false');
+  input.setAttribute('aria-controls', 'docCbList');
+  input.addEventListener('focus', function () { doctorComboOpen_(input); });
+  input.addEventListener('click', function () {
+    if (!DOCTOR_COMBO_ACTIVE_ || DOCTOR_COMBO_ACTIVE_.input !== input) doctorComboOpen_(input);
+  });
+  input.addEventListener('input', function () {
+    doctorComboShowStatus_(input, '');
+    if (cfg.onChange) cfg.onChange();
+    doctorComboOpen_(input);
+    if (DOCTOR_COMBO_ACTIVE_) { DOCTOR_COMBO_ACTIVE_.hl = 0; DOCTOR_COMBO_ACTIVE_.moved = false; doctorComboRender_(); }
+  });
+  input.addEventListener('keydown', function (ev) {
+    var k = ev.key;
+    var active = DOCTOR_COMBO_ACTIVE_ && DOCTOR_COMBO_ACTIVE_.input === input;
+    if (k === 'ArrowDown' || k === 'ArrowUp') {
+      ev.preventDefault();
+      if (!active) { doctorComboOpen_(input); return; }
+      var n = DOCTOR_COMBO_ACTIVE_.list.length;
+      if (!n) return;
+      DOCTOR_COMBO_ACTIVE_.moved = true;
+      DOCTOR_COMBO_ACTIVE_.hl = k === 'ArrowDown' ? Math.min(n - 1, DOCTOR_COMBO_ACTIVE_.hl + 1) : Math.max(0, DOCTOR_COMBO_ACTIVE_.hl - 1);
+      doctorComboRender_();
+    } else if (k === 'Enter') {
+      ev.preventDefault();
+      var list, hl;
+      if (active) { list = DOCTOR_COMBO_ACTIVE_.list; hl = DOCTOR_COMBO_ACTIVE_.hl; }
+      else { list = doctorFilterNames_(cfg.getNames ? cfg.getNames() : [], input.value); hl = 0; }
+      // ช่องว่าง (หรือพิมพ์แค่คำนำหน้า) แล้ว Enter โดยไม่ได้กด ↑/↓ ⇒ ไม่เลือกอะไรเอง (กันเผลอเลือกชื่อแรกของทั้งรายการ)
+      var emptyQ = !doctorNameStrip_(input.value).core && !(active && DOCTOR_COMBO_ACTIVE_.moved);
+      var chosen = (list.length && !emptyQ) ? list[Math.max(0, Math.min(hl, list.length - 1))] : '';
+      if (chosen) doctorComboPick_(input, chosen);
+      if (cfg.onEnter) cfg.onEnter(chosen);
+    } else if (k === 'Escape') {
+      if (active) { ev.preventDefault(); doctorComboClose_(); }
+    }
+  });
+  input.addEventListener('blur', function () { doctorComboBlur_(input); });
+}
+
+// รายชื่อเปลี่ยนขณะรายการเปิดอยู่ (โหลดเสร็จ/เพิ่มแพทย์ใหม่) ⇒ วาดรายการใหม่
+function doctorComboRefresh_() {
+  if (DOCTOR_COMBO_ACTIVE_) doctorComboRender_();
+}
+
 // รายชื่อ active จากคำตอบของ action 'doctors' — ใช้ suggestNames ก่อน · ไม่มี ⇒ กรอง doctors ที่ active · ตัดซ้ำด้วย core · เรียงตัวอักษรไทย
 function doctorNamesFromResp_(resp) {
   var src = [];
@@ -8785,10 +9076,9 @@ function renderDoctorsTodayBar() {
     if (!draftNames.length) html += '<p class="muted">ยังไม่มีแพทย์ของวันนี้ — เลือกจากรายชื่อแล้วกด "เพิ่ม"</p>';
 
     // รอบ 52 (W2): เพิ่มแพทย์ = เลือกจากรายชื่อ (active ที่ยังไม่อยู่ใน draft) แล้วกด "เพิ่ม" · เลิกพิมพ์ชื่อเอง
-    var pickable = CU_DOCTOR_NAMES.filter(function (n) { return !doctorFindByCore_(draftNames, n); });
+    // รอบ 78: ช่องเลือกเป็นช่องพิมพ์ค้นหา (combobox) — รายการแนะนำ = dtbPickableNames_() (active ที่ยังไม่อยู่ใน draft) ยังต้องได้ชื่อจากรายชื่อเท่านั้น
     html += '<div class="dtb-add-form">' +
-      '<select id="dtbAddSelect" aria-label="เลือกแพทย์"><option value="">— เลือกแพทย์ —</option>' +
-      pickable.map(function (n) { return '<option value="' + escHtml(n) + '">' + escHtml(n) + '</option>'; }).join('') + '</select>' +
+      '<input type="text" id="dtbAddSelect" placeholder="พิมพ์ค้นหาชื่อแพทย์" autocomplete="off" aria-label="พิมพ์ค้นหาและเลือกแพทย์">' +
       '<button type="button" class="btn small" id="dtbAddConfirmBtn">เพิ่ม</button>' +
       '</div>' +
       '<p class="muted small" id="dtbAddMsg"></p>';
@@ -8802,11 +9092,22 @@ function renderDoctorsTodayBar() {
       '</div>';
     html += '<p class="muted small" id="dtbMsg"></p>';
   }
+  if (DOCTOR_COMBO_ACTIVE_ && bar.contains(DOCTOR_COMBO_ACTIVE_.input)) doctorComboClose_(); // ช่องเดิมกำลังจะถูกวาดทับ
   bar.innerHTML = html;
 
   if (expanded) {
     var addSel = qs('dtbAddSelect');
-    if (addSel && pendingSel) addSel.value = pendingSel; // ไม่มี option นี้แล้ว (เช่นเพิ่งถูกเพิ่มเข้า draft) ⇒ value ว่าง
+    if (addSel) {
+      // รอบ 78: คืนข้อความที่พิมพ์ค้าง · ถ้าเป็นชื่อที่เพิ่งเข้า draft ไปแล้ว ⇒ ช่องว่าง
+      if (pendingSel && !doctorFindByCore_(draftNames, pendingSel)) addSel.value = pendingSel;
+      doctorComboAttach_(addSel, {
+        getNames: dtbPickableNames_,
+        getResolveNames: function () { return CU_DOCTOR_NAMES; },
+        getMsgEl: function () { return qs('dtbAddMsg'); },
+        badClass: 'doc-cb-bad',
+        onEnter: function (chosen) { if (chosen || String(addSel.value || '').trim()) onDtbAddConfirmClick(); }
+      });
+    }
     var newPrefix = qs('dtbNewDocPrefix');
     if (newPrefix) { newPrefix.value = pendingNewPrefix; doctorSyncPrefixButtons_('dtbNewDoc'); }
     var newBtn = qs('dtbNewDocBtn');
@@ -8845,11 +9146,21 @@ function renderDoctorsTodayBar() {
 // พยายามเพิ่มชื่อที่เลือกใน #dtbAddSelect เข้า draft (ปุ่ม "เพิ่ม" และปุ่ม "บันทึก" ที่ยังเลือกค้างไว้เรียกร่วมกัน) —
 // ยังไม่ได้เลือก = ไม่มีอะไรต้องทำ (true) · ผ่านแล้ว push เข้า draft (true) ·
 // ซ้ำ/ครบ 20 = ไม่แก้ draft ใส่เหตุผลใน #dtbAddMsg (false) — ไม่ re-render เอง ผู้เรียกตัดสินใจเอง
+function dtbPickableNames_() {
+  var draft = dtbCurrentDraft_();
+  return CU_DOCTOR_NAMES.filter(function (n) { return !doctorFindByCore_(draft, n); });
+}
+
 function dtbTryAddFromInput_() {
   var sel = qs('dtbAddSelect');
   var msgEl = qs('dtbAddMsg');
-  var picked = sel ? String(sel.value || '').trim() : '';
-  if (!picked) return true;
+  var typed = sel ? String(sel.value || '').trim() : '';
+  if (!typed) return true;
+  // รอบ 78: ข้อความที่พิมพ์ต้อง resolve เป็นชื่อในรายชื่อ (แกนตรง หรือกรองเหลือชื่อเดียว) — ไม่ได้ ⇒ ขอบแดง + ข้อความ + ไม่ผ่าน (ปุ่ม "บันทึก" ไม่ยิง)
+  var picked = doctorResolveTyped_(CU_DOCTOR_NAMES, typed);
+  if (!picked) { doctorComboShowStatus_(sel, 'notinlist'); return false; }
+  if (sel.value !== picked) sel.value = picked;
+  doctorComboShowStatus_(sel, '');
 
   var draft = dtbCurrentDraft_();
   if (draft.length >= 20) { if (msgEl) msgEl.textContent = 'เพิ่มแพทย์ได้ไม่เกิน 20 คนต่อวัน'; return false; }
@@ -10982,32 +11293,37 @@ function dqOpenSetup() {
   list.forEach(function (item) { dqAddSetupRow(item); });
   dqLoadDoctorNames();
 }
-// รอบ 52 (W1): เติมตัวเลือกของช่องเลือกแพทย์ (select.dq-su-doctor) — ตัวเลือกแรก "— ไม่ระบุแพทย์ —" (value ว่าง) ตามด้วยชื่อ active ในแท็บ แพทย์ (dqState.doctorNames)
-// wanted = ค่าที่อยากให้เลือกไว้: แกนชื่อตรงกับรายชื่อ ⇒ เลือก option ของชื่อในรายชื่อ · ไม่ตรง (ชื่อเดิมที่ไม่อยู่ในรายชื่อ) ⇒ เพิ่ม option
-// "<ค่าเดิม> (ชื่อเดิม — กรุณาเลือกใหม่)" ที่ value = ค่าเดิม แล้วเลือกไว้ · ชื่อจากชีตใส่ผ่าน textContent/value เท่านั้น
-function dqFillDoctorSelect_(sel, wanted) {
+// รอบ 78 (แทน dqFillDoctorSelect_ ของรอบ 52): ตั้งค่าช่องพิมพ์ชื่อแพทย์ (input.dq-su-doctor) ของ 1 แถว
+// wanted = ค่าที่อยากให้อยู่ในช่อง: แกนชื่อตรงกับรายชื่อ ⇒ ใส่ชื่อตามรายชื่อ · ไม่ตรง (ชื่อเดิมนอกรายชื่อ) ⇒ ใส่ค่าเดิมไว้ + จดเป็น "ชื่อเดิม" (data-legacy)
+// แล้วให้ dqSettleDoctorField_ ขึ้นขอบแดง + "ชื่อเดิม — กรุณาเลือกใหม่" (เมื่อรายชื่อโหลดแล้ว) · ว่าง ⇒ ว่าง · ชื่อจากชีตใส่ผ่าน value เท่านั้น
+function dqSetDoctorField_(inp, wanted) {
   var want = String(wanted == null ? '' : wanted).trim();
-  sel.innerHTML = '';
-  var first = document.createElement('option');
-  first.value = '';
-  first.textContent = '— ไม่ระบุแพทย์ —';
-  sel.appendChild(first);
+  var chosen = want ? doctorFindByCore_(dqState.doctorNames || [], want) : '';
+  inp.value = chosen || want;
+  if (want && !chosen) inp.setAttribute('data-legacy', want); else inp.removeAttribute('data-legacy');
+  dqSettleDoctorField_(inp);
+}
+// ข้อความในช่อง → ชื่อเต็มในรายชื่อ (ค่า "ชื่อเดิม" ที่ยังไม่ได้แก้ใช้แกนตรงเป๊ะเท่านั้น) · ไม่ได้ = ''
+function dqResolveDoctorText_(inp) {
+  var text = String(inp.value || '').trim();
+  if (!text) return '';
   var names = dqState.doctorNames || [];
-  names.forEach(function (n) {
-    var opt = document.createElement('option');
-    opt.value = n;
-    opt.textContent = n;
-    sel.appendChild(opt);
-  });
-  var chosen = want ? doctorFindByCore_(names, want) : '';
-  if (want && !chosen) {
-    var legacy = document.createElement('option');
-    legacy.value = want;
-    legacy.textContent = want + ' (ชื่อเดิม — กรุณาเลือกใหม่)';
-    sel.appendChild(legacy);
-    chosen = want;
+  return text === inp.getAttribute('data-legacy') ? doctorFindByCore_(names, text) : doctorResolveTyped_(names, text);
+}
+// หลังรายชื่อเปลี่ยน/ตั้งค่าช่อง: ข้อความ resolve ได้ ⇒ เติมชื่อเต็ม + ล้างสถานะ · resolve ไม่ได้ ⇒ คงข้อความ (ห้ามทับที่ผู้ใช้พิมพ์ค้าง)
+// และอัปเดตสถานะแดงเฉพาะช่องที่เป็น "ชื่อเดิม" หรือเคยถูกขึ้นแดงไว้ (รายชื่อยังไม่โหลด/โหลดไม่สำเร็จ ⇒ ไม่ตัดสิน)
+function dqSettleDoctorField_(inp) {
+  var text = String(inp.value || '').trim();
+  if (!text) { doctorComboShowStatus_(inp, ''); return; }
+  var hit = dqResolveDoctorText_(inp);
+  if (hit) {
+    if (inp.value !== hit) inp.value = hit;
+    doctorComboShowStatus_(inp, '');
+    return;
   }
-  sel.value = chosen;
+  if (!dqState.doctorsLoaded || dqState.doctorsFailed) return;
+  if (text === inp.getAttribute('data-legacy')) doctorComboShowStatus_(inp, 'legacy');
+  else if (inp.getAttribute('aria-invalid') === 'true') doctorComboShowStatus_(inp, 'notinlist');
 }
 // ห้องตั้งต้น (defaultDoctorPrefix) ที่ผู้ใช้ยังไม่ได้แตะ และยังไม่ได้เลือกแพทย์ ⇒ เลือกชื่อ active ตัวแรกที่แกนชื่อขึ้นต้นด้วยคำนั้น · ไม่มี ⇒ ปล่อยว่าง
 function dqApplyDefaultDoctor_(row) {
@@ -11019,16 +11335,17 @@ function dqApplyDefaultDoctor_(row) {
     if (doctorNameStrip_(names[i]).core.indexOf(pre) === 0) { sel.value = names[i]; return; }
   }
 }
-// เติม select ของทุกแถวใหม่ (หลังรายชื่อโหลดเสร็จ/เพิ่มแพทย์ใหม่) โดยคงค่าที่เลือกไว้
+// ตรวจช่องชื่อแพทย์ของทุกแถวใหม่ (หลังรายชื่อโหลดเสร็จ/เพิ่มแพทย์ใหม่) โดยไม่ทับข้อความที่ผู้ใช้พิมพ์ค้างไว้ที่ resolve ไม่ได้
 function dqRefillAllDoctorSelects_() {
   var container = qs('dqSetupRooms');
   if (!container) return;
   container.querySelectorAll('.dq-setup-row').forEach(function (row) {
     var sel = row.querySelector('.dq-su-doctor');
     if (!sel) return;
-    dqFillDoctorSelect_(sel, sel.value);
+    dqSettleDoctorField_(sel);
     dqApplyDefaultDoctor_(row);
   });
+  doctorComboRefresh_();
 }
 function dqAddSetupRow(item) {
   item = item || { room: '', doctor: '', start: '09:30', end: '' }; // ห้องที่กดเพิ่มเองก็เริ่มตรวจ 09:30 (2026-10-05)
@@ -11038,18 +11355,26 @@ function dqAddSetupRow(item) {
   row.className = 'dq-setup-row';
   row.innerHTML =
     '<input type="text" class="dq-su-room" placeholder="ห้อง" value="' + escHtml(item.room) + '">' +
-    '<select class="dq-su-doctor" aria-label="ชื่อแพทย์"></select>' +
+    '<div class="dq-su-doc-wrap"><input type="text" class="dq-su-doctor" placeholder="พิมพ์ค้นหาชื่อแพทย์" autocomplete="off" aria-label="ชื่อแพทย์">' +
+    '<div class="dq-su-doc-msg" aria-live="polite"></div></div>' +
     '<input type="text" class="dq-su-start" placeholder="HH:MM" value="' + escHtml(item.start) + '">' +
     '<input type="text" class="dq-su-end" placeholder="HH:MM" value="' + escHtml(item.end) + '">' +
     '<button type="button" class="btn small secondary dq-su-remove">ลบห้องนี้</button>';
   row.querySelector('.dq-su-remove').addEventListener('click', function () { row.remove(); });
   var sel = row.querySelector('.dq-su-doctor');
-  dqFillDoctorSelect_(sel, item.doctor);
+  // รอบ 78: "แตะแล้ว" (data-touched) ตั้งเมื่อผู้ใช้พิมพ์/เลือกชื่อ — ห้องตั้งต้นจึงไม่ถูกเติมชื่อทับอีก
+  doctorComboAttach_(sel, {
+    getNames: function () { return dqState.doctorNames || []; },
+    getMsgEl: function () { return row.querySelector('.dq-su-doc-msg'); },
+    badClass: 'dq-su-bad',
+    canValidate: function () { return dqState.doctorsLoaded && !dqState.doctorsFailed; },
+    onChange: function () { row.setAttribute('data-touched', '1'); }
+  });
+  dqSetDoctorField_(sel, item.doctor);
   if (item.defaultDoctorPrefix) {
     row.setAttribute('data-default-prefix', item.defaultDoctorPrefix);
     dqApplyDefaultDoctor_(row);
   }
-  sel.addEventListener('change', function () { this.classList.remove('dq-su-bad'); row.setAttribute('data-touched', '1'); });
   container.appendChild(row);
 }
 function dqCollectSetupRows() {
@@ -11125,6 +11450,13 @@ function dqApplyDoctorsToday_(dt) {
 }
 function dqOnSaveRoomsClick() {
   if (!dqCanRecord()) return;
+  // รอบ 78: กดบันทึกโดยไม่ได้ออกจากช่อง (blur) — resolve ข้อความที่พิมพ์ค้างเป็นชื่อเต็มก่อนอ่านค่า (ถ้ารายชื่อโหลดแล้ว)
+  if (dqState.doctorsLoaded && !dqState.doctorsFailed) {
+    qs('dqSetupRooms').querySelectorAll('.dq-su-doctor').forEach(function (inp) {
+      var hit = dqResolveDoctorText_(inp);
+      if (hit && inp.value !== hit) inp.value = hit;
+    });
+  }
   var rows = dqCollectSetupRows();
   var trimmed = rows.map(function (r) { return (r.room || '').trim(); });
   if (trimmed.some(function (r) { return r === ''; })) { dqShowSetupMsg('กรุณากรอกชื่อห้องให้ครบทุกแถว', true); return; }
@@ -11135,17 +11467,23 @@ function dqOnSaveRoomsClick() {
   }
   // รอบ 43 (W1): ตรวจรูปแบบชื่อแพทย์ในเครื่องก่อนยิง — ผิด = ขอบแดงที่ช่องนั้น + "ห้อง X: ..." ไม่ยิง request
   var suRows = qs('dqSetupRooms').querySelectorAll('.dq-setup-row');
-  suRows.forEach(function (rowEl) { rowEl.querySelector('.dq-su-doctor').classList.remove('dq-su-bad'); });
+  // รอบ 78: ทุกช่องที่ไม่ผ่านขึ้นแดง + ข้อความใต้ช่อง · ข้อความรวมด้านบนรายงานช่องแรกที่ผิด
+  var firstBad = -1, firstBadMsg = '';
   for (var di = 0; di < rows.length; di++) {
     var dv = dqValidateDoctorName_(rows[di].doctor);
+    var dInp = suRows[di].querySelector('.dq-su-doctor');
     if (!dv.ok) {
-      var badInput = suRows[di].querySelector('.dq-su-doctor');
-      badInput.classList.add('dq-su-bad');
-      dqShowSetupMsg('ห้อง ' + trimmed[di] + ': ' + dv.message, true);
-      badInput.focus();
-      return;
+      doctorComboShowStatus_(dInp, dInp.getAttribute('data-legacy') === String(dInp.value || '').trim() ? 'legacy' : 'notinlist');
+      if (firstBad < 0) { firstBad = di; firstBadMsg = dv.message; }
+    } else {
+      doctorComboShowStatus_(dInp, '');
+      rows[di].doctor = dv.name;
     }
-    rows[di].doctor = dv.name;
+  }
+  if (firstBad >= 0) {
+    dqShowSetupMsg('ห้อง ' + trimmed[firstBad] + ': ' + firstBadMsg, true);
+    suRows[firstBad].querySelector('.dq-su-doctor').focus();
+    return;
   }
   dqShowSetupMsg('');
   var btn = qs('dqBtnSaveRooms');
@@ -11595,6 +11933,9 @@ document.addEventListener('click', function (ev) {
   var v = btn.getAttribute('data-doc-prefix');
   doctorSetPrefix_(idBase, String(hid.value || '').trim() === v ? '' : v);
 });
+// รอบ 78: ติดตามว่าปุ่มเมาส์/นิ้วกดอยู่ไหม (capture) — ช่องชื่อแพทย์ที่เสียโฟกัสตอนกดปุ่มอื่นจะเลื่อนการขึ้นข้อความใต้ช่องไปหลังปล่อยปุ่ม (ดู doctorComboJudge_)
+['pointerdown', 'mousedown'].forEach(function (t) { document.addEventListener(t, function () { doctorComboPointer_(true); }, true); });
+['pointerup', 'pointercancel', 'mouseup', 'dragend'].forEach(function (t) { document.addEventListener(t, function () { doctorComboPointer_(false); }, true); });
 document.addEventListener('DOMContentLoaded', function () {
   qs('btnGateKey').addEventListener('click', handleGateKeySubmit);
   qs('gateStaffKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateKeySubmit(e); });
