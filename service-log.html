@@ -7199,7 +7199,22 @@ function checkupConsultTotalCount(rows) {
 
 /* รอบ 28 (2026-09-23) W4 (ข้อ 7 + ข้อความเพิ่มของเจ้าของ): รวมชื่อแพทย์ที่เป็นคนเดียวกัน — แสดงผลอย่างเดียว
    ข้อมูลดิบในชีต/rec.doctorName ไม่ถูกแก้ ใช้เฉพาะตอนนับ (checkupDoctorCounts) + datalist ของช่องชื่อแพทย์ */
-var DOCTOR_TITLE_TOKENS = ['อาจารย์', 'อ.', 'นพ.', 'พญ.', 'หมอ', 'ดร.', 'Dr.'];
+// รอบ 76: เพิ่ม 'น.พ.' / 'พ.ญ.' (พิมพ์มีจุดคั่น) — ไม่งั้นชื่อ 'นพ.น.พ. X Y' ไม่ตรง core กับ 'นพ.X Y' แล้วแยกเป็นคนละคน
+var DOCTOR_TITLE_TOKENS = ['อาจารย์', 'อ.', 'นพ.', 'พญ.', 'น.พ.', 'พ.ญ.', 'หมอ', 'ดร.', 'Dr.'];
+
+// รอบ 76: ตัดคำนำหน้าแพทย์ที่เจ้าหน้าที่พิมพ์ซ้ำในช่องชื่อ (เช่น 'น.พ. ชัทชณินฐ์') ออกจากหัวชื่อ — ซ้ำได้ · ใช้เหมือนกันทั้ง 2 ฝั่ง
+function doctorStripTypedTitle_(s) {
+  var out = String(s == null ? '' : s).trim();
+  var re = /^(นพ\.|พญ\.|น\.\s*พ\.|พ\.\s*ญ\.|นายแพทย์|แพทย์หญิง)\s*/;
+  while (re.test(out)) out = out.replace(re, '');
+  return out.trim();
+}
+// รอบ 76: คำนำหน้าที่พิมพ์ในช่องชื่อ "ตัวนอกสุด" (ตัวแรก) แปลงเป็น 'นพ.' / 'พญ.' · ไม่มี = '' (คำนำหน้าที่พิมพ์ชนะ dropdown)
+function doctorTypedTitleOf_(s) {
+  var m = /^(นพ\.|พญ\.|น\.\s*พ\.|พ\.\s*ญ\.|นายแพทย์|แพทย์หญิง)/.exec(String(s == null ? '' : s).trim());
+  if (!m) return '';
+  return /^(นพ\.|น\.\s*พ\.|นายแพทย์)$/.test(m[1]) ? 'นพ.' : 'พญ.';
+}
 
 // ตัดคำนำหน้าหัวชื่อที่ตรง DOCTOR_TITLE_TOKENS ออกทีละตัว (ซ้ำได้ เช่น "อ.นพ." = ตัด 2 ตัว) จากสตริงที่ตัดช่องว่าง
 // ทั้งหมดออกก่อนแล้ว — คืนทั้งแกนที่เหลือ + รายการคำนำหน้าที่ตัดออกไปตามลำดับ (ใช้หา "คำนำหน้าที่พบบ่อยสุด" ทีหลัง)
@@ -7282,6 +7297,9 @@ function doctorValidateNewParts_(prefix, first, last, names) {
   prefix = String(prefix == null ? '' : prefix).trim();
   first = String(first == null ? '' : first).trim().replace(/\s+/g, ' ');
   last = String(last == null ? '' : last).trim().replace(/\s+/g, ' ');
+  var typedTitle = doctorTypedTitleOf_(first); // รอบ 76: คำนำหน้าที่พิมพ์ในช่องชื่อชนะ dropdown — เหมือน handleAddDoctor_
+  if (typedTitle) prefix = typedTitle;
+  first = doctorStripTypedTitle_(first); // รอบ 76: ตัดคำนำหน้าที่พิมพ์ซ้ำในช่องชื่อ ('น.พ. X' → 'X')
   if (!prefix || !first || !last) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
   if (prefix !== 'นพ.' && prefix !== 'พญ.') return { ok: false, message: 'คำนำหน้าต้องเป็น นพ. หรือ พญ.' };
   if (first.length < 2 || last.length < 2) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
@@ -7348,6 +7366,8 @@ function groupDoctorNames(names) {
     if (!infoByCore[core]) { infoByCore[core] = { names: [], titleCounts: {}, prettyCounts: {} }; order.push(core); }
     if (map[n] === undefined) infoByCore[core].names.push(n);
     stripped.titles.forEach(function (t) {
+      // รอบ 76: นับ 'น.พ.' เป็น 'นพ.' และ 'พ.ญ.' เป็น 'พญ.' ก่อนนับ
+      if (t === 'น.พ.') t = 'นพ.'; else if (t === 'พ.ญ.') t = 'พญ.';
       if (t === 'นพ.' || t === 'พญ.') infoByCore[core].titleCounts[t] = (infoByCore[core].titleCounts[t] || 0) + 1;
     });
     var pretty = doctorNamePretty_(n) || core;
@@ -10371,8 +10391,11 @@ function dqRoomDoctorSplit(roomLogs) {
   chron.forEach(function (l) {
     var d = String(l.doctor == null ? '' : l.doctor).trim();
     var t = l.timeIn ? new Date(l.timeIn).getTime() : NaN;
-    if (!(d in idx)) { idx[d] = groups.length; groups.push({ doctor: d, logs: [], first: isNaN(t) ? Infinity : t, order: groups.length }); }
-    var g = groups[idx[d]];
+    // รอบ 76: จัดกลุ่มตาม core ของชื่อ (ว่าง = '') · แสดงชื่อของ log ล่าสุดในกลุ่ม (chron เก่า→ใหม่ ⇒ ตัวที่ push ทีหลังชนะ)
+    var k = d ? doctorNameStrip_(d).core : '';
+    if (!(k in idx)) { idx[k] = groups.length; groups.push({ doctor: d, logs: [], first: isNaN(t) ? Infinity : t, order: groups.length }); }
+    var g = groups[idx[k]];
+    g.doctor = d;
     g.logs.push(l);
     if (!isNaN(t) && t < g.first) g.first = t;
   });
