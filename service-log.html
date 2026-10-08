@@ -379,7 +379,11 @@
   .dtb-add-form select, .dtb-add-form input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
   /* รอบ 52 (W2): ฟอร์มเพิ่มแพทย์ใหม่ (ชื่อ + นามสกุล) ในแถบแพทย์ประจำวัน + ชิปชื่อเดิมที่ไม่อยู่ในรายชื่อ */
   .doc-add-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .doc-add-form select, .doc-add-form input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
+  .doc-add-form input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
+  /* รอบ 77: คำนำหน้าแพทย์ = ปุ่ม [นพ.] [พญ.] (ค่าเก็บใน input hidden id เดิม) · ไม่เลือกอะไร = ค่าว่าง */
+  .doc-prefix-group { display: inline-flex; gap: 6px; flex: 0 0 auto; }
+  .doc-prefix-group .opt-btn { justify-content: center; text-align: center; font: inherit; color: inherit; padding: 8px 12px; }
+  .doc-prefix-group .opt-btn.is-active { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
   .doc-add-form .btn { flex: 0 0 auto; }
   .doc-add-msg { margin: 6px 0 0; overflow-wrap: anywhere; }
   .dtb-newdoc { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
@@ -621,7 +625,7 @@
   .pending-tab-n { font-weight: 700; }
   .pending-filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
   .pending-filter-date, .pending-filter-search { display: flex; align-items: center; gap: 6px; min-width: 0; }
-  .pending-filter-search { flex: 1 1 200px; }
+  .pending-filter-search { flex: 1 1 100%; } /* เจ้าของสั่ง 2026-10-08: ช่องค้นหา HN แยกบรรทัดของตัวเอง เต็มความกว้าง (ใต้วันที่รับบริการ) */
   .pending-filter-bar label.field-label { display: inline-block; font-weight: 600; white-space: nowrap; margin: 0; } /* ชนะ label.field-label รวม (block + margin) เฉพาะในแถบกรองนี้ */
   .pending-filter-date .thd-btn { width: auto; min-width: 120px; flex: 0 0 auto; padding: 6px 10px; font-size: 14px; }
   .pending-filter-search input[type=search] { flex: 1 1 120px; width: auto; min-width: 0; padding: 6px 10px; }
@@ -1171,7 +1175,7 @@
   .dq-setup-row input.dq-su-bad, .dq-setup-row select.dq-su-bad { border: 2px solid #D93025; background: #FFF4F3; } /* รอบ 43: ชื่อแพทย์ผิดรูปแบบ (รอบ 52: ไม่อยู่ในรายชื่อ) */
   /* รอบ 52 (W1): ฟอร์มเพิ่มแพทย์ในหน้า ⚙ ตั้งห้อง (#dqAddDoctorForm) — ฟอร์มชุดเดียวกันในแถบแพทย์ประจำวันใช้ .doc-add-form (CSS ใกล้ .dtb-add-form) */
   .dq-adddoc-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .dq-adddoc-row select, .dq-adddoc-row input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
+  .dq-adddoc-row input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
   .dq-adddoc-row .btn { flex: 0 0 auto; }
   .dq-adddoc-msg { margin: 6px 0 0; overflow-wrap: anywhere; }
   @media (max-width: 600px) {
@@ -1823,7 +1827,7 @@
         <div class="card" id="dqAddDoctorForm">
           <h3 style="margin-top:0;">เพิ่มแพทย์ใหม่ลงรายชื่อ</h3>
           <div class="dq-adddoc-row">
-            <select id="dqAddDocPrefix" aria-label="คำนำหน้า"><option value="นพ.">นพ.</option><option value="พญ.">พญ.</option></select>
+            <span class="doc-prefix-group" id="dqAddDocPrefixGroup" role="group" aria-label="คำนำหน้า"><input type="hidden" id="dqAddDocPrefix" value=""><button type="button" class="opt-btn" data-doc-prefix="นพ." aria-pressed="false">นพ.</button><button type="button" class="opt-btn" data-doc-prefix="พญ." aria-pressed="false">พญ.</button></span>
             <input type="text" id="dqAddDocFirst" placeholder="ชื่อ" autocomplete="off">
             <input type="text" id="dqAddDocLast" placeholder="นามสกุล" autocomplete="off">
             <button type="button" class="btn small" id="dqAddDocBtn">เพิ่มแพทย์</button>
@@ -7300,7 +7304,8 @@ function doctorValidateNewParts_(prefix, first, last, names) {
   var typedTitle = doctorTypedTitleOf_(first); // รอบ 76: คำนำหน้าที่พิมพ์ในช่องชื่อชนะ dropdown — เหมือน handleAddDoctor_
   if (typedTitle) prefix = typedTitle;
   first = doctorStripTypedTitle_(first); // รอบ 76: ตัดคำนำหน้าที่พิมพ์ซ้ำในช่องชื่อ ('น.พ. X' → 'X')
-  if (!prefix || !first || !last) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
+  if (!prefix) return { ok: false, message: 'กรุณาเลือกคำนำหน้า' }; // รอบ 77: ปุ่มคำนำหน้าเริ่มต้น "ไม่เลือก" — ต้องเลือกเองหรือพิมพ์ 'น.พ.' นำหน้าชื่อ
+  if (!first || !last) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
   if (prefix !== 'นพ.' && prefix !== 'พญ.') return { ok: false, message: 'คำนำหน้าต้องเป็น นพ. หรือ พญ.' };
   if (first.length < 2 || last.length < 2) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
   var full = prefix + first + ' ' + last;
@@ -7312,10 +7317,31 @@ function doctorValidateNewParts_(prefix, first, last, names) {
 }
 
 // HTML ของฟอร์มเพิ่มแพทย์ (ใช้กับแถบแพทย์ประจำวัน — หน้า ⚙ ตั้งห้องมี markup ตายตัวในหน้า) · idBase + Prefix/First/Last/Btn/Msg
+// รอบ 77: คำนำหน้า = ปุ่ม 2 ปุ่ม + input hidden #<idBase>Prefix เป็นที่เก็บค่าเดียว ('' | 'นพ.' | 'พญ.') · คลิกปุ่มที่เลือกอยู่ซ้ำ = ยกเลิก
+function doctorSetPrefix_(idBase, value) {
+  var el = qs(idBase + 'Prefix');
+  if (!el) return;
+  el.value = value == null ? '' : value;
+  doctorSyncPrefixButtons_(idBase);
+}
+function doctorSyncPrefixButtons_(idBase) {
+  var el = qs(idBase + 'Prefix'), group = qs(idBase + 'PrefixGroup');
+  if (!el || !group) return;
+  var val = String(el.value || '').trim();
+  Array.prototype.forEach.call(group.querySelectorAll('button[data-doc-prefix]'), function (b) {
+    var on = !!val && b.getAttribute('data-doc-prefix') === val;
+    b.classList.toggle('is-active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+// ตัวดักคลิกปุ่มคำนำหน้า (delegated) อยู่หมวด 11. Bootstrap — ห้ามวางโค้ดระดับบนสุดที่แตะ document ในช่วงนี้
+// (test_round31c_server ตัดช่วง DOCTOR_TITLE_TOKENS … checkupDoctorCounts ไปรันใน vm ที่ไม่มี document)
 function doctorAddFormHtml_(idBase, pending) {
   pending = pending || {};
+  var pv = String(pending.prefix || '');
+  function pbtn(v) { return '<button type="button" class="opt-btn' + (pv === v ? ' is-active' : '') + '" data-doc-prefix="' + v + '" aria-pressed="' + (pv === v ? 'true' : 'false') + '">' + v + '</button>'; }
   return '<div class="doc-add-form">' +
-    '<select id="' + idBase + 'Prefix" aria-label="คำนำหน้า"><option value="นพ.">นพ.</option><option value="พญ.">พญ.</option></select>' +
+    '<span class="doc-prefix-group" id="' + idBase + 'PrefixGroup" role="group" aria-label="คำนำหน้า"><input type="hidden" id="' + idBase + 'Prefix" value="' + escHtml(pv) + '">' + pbtn('นพ.') + pbtn('พญ.') + '</span>' +
     '<input type="text" id="' + idBase + 'First" placeholder="ชื่อ" autocomplete="off" value="' + escHtml(pending.first || '') + '">' +
     '<input type="text" id="' + idBase + 'Last" placeholder="นามสกุล" autocomplete="off" value="' + escHtml(pending.last || '') + '">' +
     '<button type="button" class="btn small" id="' + idBase + 'Btn">เพิ่มแพทย์</button>' +
@@ -7341,6 +7367,7 @@ function doctorSubmitAddForm_(idBase, names, onDone, okText) {
       var f2 = qs(idBase + 'First'), l2 = qs(idBase + 'Last');
       if (f2) f2.value = '';
       if (l2) l2.value = '';
+      doctorSetPrefix_(idBase, ''); // รอบ 77: สำเร็จ ⇒ ล้างคำนำหน้าด้วย (ก่อน onDone เพราะ onDone อาจวาดฟอร์มใหม่)
       onDone(nm, resp);
       var msg3 = qs(idBase + 'Msg');
       if (msg3) msg3.textContent = okText ? okText(nm) : ('เพิ่ม ' + nm + ' แล้ว — เลือกในช่องชื่อแพทย์ได้เลย');
@@ -8722,7 +8749,7 @@ function renderDoctorsTodayBar() {
   // รอบ 32 (SPEC ข้อ 3): เก็บค่าที่พิมพ์ค้างในช่องเพิ่มชื่อ + prefix ที่เลือกไว้ ก่อนวาดทับ DOM แล้วเขียนคืนหลังวาด
   // (กันของที่พิมพ์ค้างหายตอน re-render จากเหตุอื่น เช่น doctors โหลดเสร็จ/ลบชิประหว่างพิมพ์)
   // รอบ 52: ค่าที่ค้างอยู่ = ตัวเลือกใน select เพิ่มจากรายชื่อ + ฟอร์มเพิ่มแพทย์ใหม่ (คำนำหน้า/ชื่อ/นามสกุล)
-  var pendingSel = '', pendingNewPrefix = 'นพ.', pendingNewFirst = '', pendingNewLast = '';
+  var pendingSel = '', pendingNewPrefix = '', pendingNewFirst = '', pendingNewLast = '';
   var prevSelEl = qs('dtbAddSelect');
   if (prevSelEl) pendingSel = prevSelEl.value;
   if (qs('dtbNewDocPrefix')) pendingNewPrefix = qs('dtbNewDocPrefix').value;
@@ -8767,7 +8794,7 @@ function renderDoctorsTodayBar() {
       '<p class="muted small" id="dtbAddMsg"></p>';
     // ไม่มีชื่อที่ต้องการในรายชื่อ ⇒ เพิ่มแพทย์ใหม่ลงแท็บ "แพทย์" (ชื่อ + นามสกุลบังคับ) แล้วใส่ draft ทันที
     html += '<div class="dtb-newdoc"><div class="dtb-label">ไม่มีชื่อในรายการ? เพิ่มแพทย์ใหม่</div>' +
-      doctorAddFormHtml_('dtbNewDoc', { first: pendingNewFirst, last: pendingNewLast }) + '</div>';
+      doctorAddFormHtml_('dtbNewDoc', { prefix: pendingNewPrefix, first: pendingNewFirst, last: pendingNewLast }) + '</div>';
 
     html += '<div class="row" style="margin-top:8px;">' +
       '<button type="button" class="btn small" id="dtbSaveBtn">บันทึก</button>' +
@@ -8781,7 +8808,7 @@ function renderDoctorsTodayBar() {
     var addSel = qs('dtbAddSelect');
     if (addSel && pendingSel) addSel.value = pendingSel; // ไม่มี option นี้แล้ว (เช่นเพิ่งถูกเพิ่มเข้า draft) ⇒ value ว่าง
     var newPrefix = qs('dtbNewDocPrefix');
-    if (newPrefix) newPrefix.value = pendingNewPrefix;
+    if (newPrefix) { newPrefix.value = pendingNewPrefix; doctorSyncPrefixButtons_('dtbNewDoc'); }
     var newBtn = qs('dtbNewDocBtn');
     if (newBtn) newBtn.addEventListener('click', onDtbNewDocClick);
     ['dtbNewDocFirst', 'dtbNewDocLast'].forEach(function (id) {
@@ -11557,6 +11584,17 @@ function enableRadioToggleOff(selector) {
 /* =========================================================================
    11. Bootstrap
    ========================================================================= */
+// รอบ 77: ปุ่มคำนำหน้าแพทย์ [นพ.] [พญ.] ทุกฟอร์ม (.doc-prefix-group) — delegated จึงใช้ได้กับฟอร์มที่วาดใหม่ทีหลัง · คลิกปุ่มที่เลือกอยู่ซ้ำ = ยกเลิก
+document.addEventListener('click', function (ev) {
+  var t = ev.target;
+  var btn = t && t.closest ? t.closest('.doc-prefix-group button[data-doc-prefix]') : null;
+  if (!btn) return;
+  var group = btn.parentNode, idBase = String(group.id || '').replace(/PrefixGroup$/, '');
+  var hid = qs(idBase + 'Prefix');
+  if (!hid) return;
+  var v = btn.getAttribute('data-doc-prefix');
+  doctorSetPrefix_(idBase, String(hid.value || '').trim() === v ? '' : v);
+});
 document.addEventListener('DOMContentLoaded', function () {
   qs('btnGateKey').addEventListener('click', handleGateKeySubmit);
   qs('gateStaffKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateKeySubmit(e); });
