@@ -2903,8 +2903,8 @@ function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastChe
    เหตุผล: ติ๊กสองที่ซ้ำซ้อน · เคสตรวจสุขภาพ (คิว C / ไม่นัด) ไม่ใช่ราคาเดี่ยว ระบบดูคิวตัดสินให้เอง
    ราคาเป็นค่าคงที่ฝั่งเว็บ (ไม่อยู่ในแท็บราคา) · backend รับ medCertLabAmount เป็นตัวเลขอิสระอยู่แล้ว (ไม่แตะ backend) */
 var MEDCERT_LAB_SOLO = [
-  { id: 'mmg', label: 'MMG เดี่ยว', price: 3543 }, // 2026-10-08 เจ้าของสั่ง: 3243 → 3543 (U/S Breast คงเดิม)
-  { id: 'us_breast', label: 'U/S Breast เดี่ยว', price: 1275 }
+  { id: 'mmg', label: 'MMG เดี่ยว', price: 3543 }, // 2026-10-08 เจ้าของสั่ง: 3243 → 3543 (U/S Breast แยกบรรทัดล่าง)
+  { id: 'us_breast', label: 'U/S Breast เดี่ยว', price: 1575 } // 2026-10-08 เจ้าของสั่ง: 1275 → 1575
 ];
 function medLabSoloItem_(id) {
   for (var i = 0; i < MEDCERT_LAB_SOLO.length; i++) if (MEDCERT_LAB_SOLO[i].id === id) return MEDCERT_LAB_SOLO[i];
@@ -9710,7 +9710,7 @@ function loadPendingRun_(isRetry) {
         var chipBox = qs('pendingMethodChips');
         if (chipBox) chipBox.innerHTML = '';
         if (wrap) wrap.innerHTML = '';
-        showErrWithRetry_(errEl, 'โหลดรายการค้างส่งออกผลไม่สำเร็จ (' + pmsg + ')', function () { loadPendingRun_(false); });
+        showErrWithRetry_(errEl, 'โหลดหน้าติดตามผลไม่สำเร็จ (' + pmsg + ')', function () { loadPendingRun_(false); });
       }
       if (!isRetry && seq === PENDING_LOAD_SEQ) {
         setTimeout(function () {
