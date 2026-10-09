@@ -1151,6 +1151,15 @@
   .dq-move-to, .dq-move-close { min-height: 40px; box-sizing: border-box; padding: 4px 12px; font-family: inherit; font-size: 15px; cursor: pointer; border: 1px solid var(--primary); background: #E4E7FB; color: var(--primary-dark); border-radius: 6px; font-weight: bold; }
   .dq-move-to { min-width: 72px; }
   .dq-move-close { min-width: 40px; background: #fff; color: var(--text-muted); }
+  /* รอบ 79: ปุ่ม ✎ แก้คิว (หน้าตาเดียวกับ .dq-move-btn) + แถบแก้เลขคิวใต้แถว */
+  .dq-editq-btn { flex: 0 0 auto; padding: 2px 8px; font-size: 12px; font-family: inherit; line-height: 1.3; cursor: pointer; border: 1px solid var(--primary); background: #fff; color: var(--primary-dark); border-radius: 6px; font-weight: normal; }
+  .dq-editq-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; padding: 6px; box-sizing: border-box; max-width: 100%; background: #fff; border: 1px solid var(--primary); border-radius: 8px; }
+  .dq-editq-label { flex: 1 1 100%; font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+  .dq-editq-input { flex: 1 1 100px; min-width: 0; min-height: 40px; box-sizing: border-box; padding: 4px 10px; font-family: inherit; font-size: 16px; font-weight: bold; border: 1px solid var(--primary); border-radius: 6px; background: #fff; color: #C00000; }
+  .dq-editq-save, .dq-editq-close { min-height: 40px; box-sizing: border-box; padding: 4px 12px; font-family: inherit; font-size: 15px; cursor: pointer; border: 1px solid var(--primary); background: #E4E7FB; color: var(--primary-dark); border-radius: 6px; font-weight: bold; }
+  .dq-editq-save { min-width: 72px; }
+  .dq-editq-close { min-width: 40px; background: #fff; color: var(--text-muted); }
+  .dq-editq-err { flex: 1 1 100%; font-size: 13px; color: var(--danger); overflow-wrap: anywhere; }
   .dq-cancelled { text-decoration: line-through; opacity: 0.45; color: var(--text-muted); }
   .dq-timer { font-variant-numeric: tabular-nums; }
   /* รอบ 69 — คิวอยู่ในห้องแพทย์ ≥ dqLongExamMin นาที: ตัวเลข/ข้อความ/ขอบการ์ดแดง + ป้าย · สีโปรแกรมของห้อง (.dq-col-*) เปลี่ยนแค่พื้นหัว/รายการ ไม่แตะ border จึงไม่ชนกัน */
@@ -10239,6 +10248,10 @@ var dqState = {
   doctorsFailed: false,
   doctorsDate: '',
   moveOpenId: '',    // รอบ 58: รหัสแถวที่เปิดแถบเลือกห้องย้ายอยู่ (ทีละแถว) · '' = ปิด
+  editQueueOpenId: '',   // รอบ 79: รหัสแถวที่เปิดแถบแก้เลขคิวอยู่ (ทีละแถว · เปิดแถบนี้ปิดแถบย้าย และกลับกัน) · '' = ปิด
+  editQueueDraft: '',    // รอบ 79: ข้อความที่พิมพ์ค้างในแถบแก้คิว (คงไว้ตอนวาดการ์ดใหม่)
+  editQueueError: '',    // รอบ 79: ข้อความแดงใต้ช่อง (ไม่ถูกต้อง/ซ้ำ) · ล้างเมื่อพิมพ์/ปิดแถบ
+  editQueueFocusReq: false, // รอบ 79: เพิ่งเปิดแถบ ⇒ วาดเสร็จให้ focus + select ทั้งช่อง
   rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
@@ -10438,6 +10451,7 @@ function dqLoadToday(opts) {
 function dqAutoRefreshIdle_() {
   if (dqSendQueue.length > 0 || dqSendActive) return false;
   if (dqState.moveOpenId) return false;
+  if (dqState.editQueueOpenId) return false; // รอบ 79: กำลังแก้เลขคิวอยู่ ⇒ ไม่วาดทับ
   if (dqSugActive) return false;
   var qi = qs('dqQueueInput');
   if (qi && String(qi.value || '').trim() !== '') return false;
@@ -10509,6 +10523,13 @@ function dqApplyJobLocal(st, job) {
     if (openEnd) openEnd.timeOut = job.at;
   } else if (job.type === 'dqCancel') {
     logs.forEach(function (l) { if (String(l.id) === String(job.id)) l.status = 'ยกเลิก'; });
+  } else if (job.type === 'dqEditQueue') {
+    // รอบ 79: แก้เลขคิว (optimistic) — แก้เฉพาะเลขคิวของแถวเดิม (เวลา/ห้อง/แพทย์คงเดิม) · คิวใหม่หายจากแถวแนะนำทันที เหมือน dqEnter
+    logs.forEach(function (l) { if (String(l.id) === String(job.id) && l.status !== 'ยกเลิก') l.queue = job.queue; });
+    if (Array.isArray(st.pendingQueues)) {
+      var editKey = dqQueueKey(job.queue);
+      st.pendingQueues = st.pendingQueues.filter(function (p) { return dqQueueKey(p && p.queue) !== editKey; });
+    }
   } else if (job.type === 'dqMove') {
     // รอบ 58: ย้ายห้อง (optimistic) — แก้ห้อง+แพทย์ของแถวเดิม · ถ้าแถวนี้ยังเปิดและห้องใหม่มีแถวเปิดที่เข้าก่อน/พร้อมกัน ⇒ ปิดแถวนั้นที่เวลาเข้าแถวนี้ (จอไม่มี 2 คิวกำลังตรวจในห้องเดียว)
     var mv = null;
@@ -10558,7 +10579,8 @@ function dqPumpSendQueue() {
   var job = dqSendQueue[0];
   var payload = job.type === 'dqEnter' ? { queue: job.queue, room: job.room }
     : job.type === 'dqEnd' ? { room: job.room }
-    : job.type === 'dqMove' ? { id: job.id, room: job.room } : { id: job.id }; // รอบ 58: dqMove ส่ง { id, room }
+    : job.type === 'dqMove' ? { id: job.id, room: job.room }
+    : job.type === 'dqEditQueue' ? { id: job.id, queue: job.queue } : { id: job.id }; // รอบ 58: dqMove ส่ง { id, room } · รอบ 79: dqEditQueue ส่ง { id, queue }
   dqApi(job.type, payload).then(function (resp) {
     dqSendQueue.shift();
     var next;
@@ -10597,6 +10619,8 @@ function dqEntryCellHtml(item) {
   // รอบ 58: ปุ่ม ⇄ ย้าย — เฉพาะแถว 'บันทึกแล้ว' ที่ไม่ pending (ทั้งแถวปิดแล้วและกำลังตรวจ) · วางต่อท้ายบรรทัด .dq-entry (พี่น้องกัน ไม่ซ้อนใน .dq-entry)
   var moveBtn = (!log.pending && String(log.id).indexOf('dq-pending-') !== 0)
     ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(log.id) + '">⇄ ย้าย</button>' : '';
+  // รอบ 79: ปุ่ม ✎ แก้คิว — เงื่อนไขแสดงเดียวกับปุ่มย้ายเป๊ะ · วางต่อจากปุ่มย้าย
+  if (moveBtn) moveBtn += '<button type="button" class="dq-editq-btn" data-id="' + escHtml(log.id) + '">✎ แก้คิว</button>';
   if (log.timeOut) {
     return '<div class="dq-entry-line"><div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' +
       dqFmtDot(log.timeIn) + '-' + dqFmtDot(log.timeOut) + pendMark + '</div>' + moveBtn + '</div>';
@@ -10626,6 +10650,7 @@ function dqMoveBarHtml(log, rooms) {
 }
 function dqOnMoveToggle(id) {
   dqState.moveOpenId = (dqState.moveOpenId === id) ? '' : id;
+  if (dqState.moveOpenId) dqCloseEditQueue_(); // รอบ 79: เปิดแถบย้ายปิดแถบแก้คิว
   dqRenderRoomCards(); // วาดเฉพาะการ์ด — ไม่แตะแถวอื่น/ตำแหน่งเลื่อน (การเปิดแถบไม่ใช่แถวเพิ่ม)
 }
 function dqOnMoveClick(id, room) {
@@ -10639,6 +10664,83 @@ function dqOnMoveClick(id, room) {
   dqState.moveOpenId = '';
   dqEnqueueJob({ type: 'dqMove', id: id, room: room, at: new Date().toISOString() });
   showToast('ย้าย ' + q + ' ไปห้อง ' + room + ' แล้ว');
+}
+// ===== รอบ 79: แก้เลขคิวที่ลงผิด (เวลาเดิม) — แพทเทิร์นเดียวกับ dqMove (แถบใต้แถว · state เปิดทีละแถว) · ไม่ใช้ confirm/alert/prompt =====
+function dqCloseEditQueue_() {
+  dqState.editQueueOpenId = '';
+  dqState.editQueueDraft = '';
+  dqState.editQueueError = '';
+  dqState.editQueueFocusReq = false;
+}
+function dqEditQueueBarHtml(log) {
+  return '<div class="dq-editq-bar" data-id="' + escHtml(log.id) + '"><span class="dq-editq-label">แก้เลขคิว ' + escHtml(log.queue) + ' เป็น</span>' +
+    '<input type="text" class="dq-editq-input" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" aria-label="เลขคิวใหม่" value="' + escHtml(dqState.editQueueDraft) + '">' +
+    '<button type="button" class="dq-editq-save">บันทึก</button>' +
+    '<button type="button" class="dq-editq-close" aria-label="ปิด">✕</button>' +
+    (dqState.editQueueError ? '<div class="dq-editq-err" role="alert">' + escHtml(dqState.editQueueError) + '</div>' : '') + '</div>';
+}
+function dqOnEditQueueToggle(id) {
+  if (dqState.editQueueOpenId === id) { dqCloseEditQueue_(); dqRenderRoomCards(); return; }
+  var logs = (dqState.today && dqState.today.logs) || [];
+  var log = null;
+  logs.forEach(function (l) { if (!log && String(l.id) === String(id)) log = l; });
+  if (!log || log.status !== 'บันทึกแล้ว') return;
+  dqState.moveOpenId = ''; // เปิดแถบแก้คิวปิดแถบย้าย
+  dqState.editQueueOpenId = id;
+  dqState.editQueueDraft = String(log.queue == null ? '' : log.queue);
+  dqState.editQueueError = '';
+  dqState.editQueueFocusReq = true;
+  dqRenderRoomCards();
+}
+function dqOnEditQueueInput(inp) {
+  var v = inp.value || '';
+  if (/[a-z]/.test(v)) { // พิมพ์ตัวเล็กแปลงเป็นตัวใหญ่ (เหมือน dqOnQueueInput)
+    var pos = inp.selectionStart;
+    inp.value = v.replace(/[a-z]/g, function (c) { return c.toUpperCase(); });
+    try { inp.setSelectionRange(pos, pos); } catch (e) { /* ไม่รองรับ — ข้าม */ }
+  }
+  dqState.editQueueDraft = inp.value;
+  if (dqState.editQueueError) { // พิมพ์ใหม่ ⇒ ล้างข้อความแดง (ไม่วาดการ์ดใหม่ เพื่อไม่ให้ช่องเสีย focus)
+    dqState.editQueueError = '';
+    var bar = inp.closest('.dq-editq-bar');
+    var er = bar && bar.querySelector('.dq-editq-err');
+    if (er) er.parentNode.removeChild(er);
+  }
+}
+function dqOnEditQueueSave() {
+  if (!dqCanRecord()) return;
+  var id = dqState.editQueueOpenId;
+  if (!id) return;
+  if (String(id).indexOf('dq-pending-') === 0) return; // ยังไม่ยืนยัน — แก้ไม่ได้
+  var logs = (dqState.today && dqState.today.logs) || [];
+  var log = null;
+  logs.forEach(function (l) { if (!log && String(l.id) === String(id)) log = l; });
+  if (!log || log.status !== 'บันทึกแล้ว') { dqCloseEditQueue_(); dqRenderRoomCards(); return; }
+  var inp = qs('dqRoomCards') && qs('dqRoomCards').querySelector('.dq-editq-input');
+  var raw = inp ? inp.value : dqState.editQueueDraft;
+  dqState.editQueueDraft = raw;
+  var q = dqNormQueue(raw);
+  if (!q) {
+    dqState.editQueueError = 'เลขคิวไม่ถูกต้อง — เช่น C1, M5 หรือ ไม่นัด 1';
+    dqState.editQueueFocusReq = false;
+    dqRenderRoomCards();
+    return;
+  }
+  var oldQueue = log.queue;
+  if (dqQueueKey(q) === dqQueueKey(oldQueue)) { dqCloseEditQueue_(); dqRenderRoomCards(); return; } // เท่าเดิม ⇒ ปิดเฉย ๆ ไม่ยิง
+  var dup = null;
+  logs.forEach(function (l) {
+    if (!dup && l && String(l.id) !== String(id) && l.status === 'บันทึกแล้ว' && dqQueueKey(l.queue) === dqQueueKey(q)) dup = l;
+  });
+  if (dup) {
+    dqState.editQueueError = q + ' เข้าห้อง ' + dup.room + ' ไปแล้วตอน ' + dqFmtDot(dup.timeIn);
+    dqState.editQueueFocusReq = false;
+    dqRenderRoomCards();
+    return;
+  }
+  dqCloseEditQueue_();
+  dqEnqueueJob({ type: 'dqEditQueue', id: id, queue: q, at: new Date().toISOString() });
+  showToast('แก้ ' + oldQueue + ' เป็น ' + q + ' แล้ว (เวลาเดิม)');
 }
 // รอบ 50: เวลาที่ห้องนี้เริ่มพัก — มีแถว 'บันทึกแล้ว' แต่ไม่มีแถวเปิด ⇒ timeOut ของแถวล่าสุด (logs ใหม่สุดก่อน) · ไม่ใช่ ⇒ null
 function dqRoomBreakSince(logs, room) {
@@ -10765,6 +10867,9 @@ function dqRenderRoomCards() {
   // รอบ 56 (เจ้าของ 2026-10-06): จำตำแหน่งเลื่อนของรายการแต่ละห้องก่อนวาดใหม่ — เดิมทุกการ์ดเด้งลงล่างสุดทุกครั้งที่วาด
   // (กด ＋ ห้อง 8 ⇒ ห้อง 1 ที่เลื่อนขึ้นไปดูคิวเก่าอยู่เด้งลงไปด้วย) · ล่างสุดอยู่แล้ว (เผื่อ 8px) หรือห้องนั้นมีแถวเพิ่ม ⇒ ลงล่างสุด · นอกนั้นคงที่เดิม
   var prevScroll = {};
+  var editHadFocus = !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('dq-editq-input')); // รอบ 79: วาดใหม่ระหว่างพิมพ์แก้คิว ⇒ คง focus
+  var editSelS = null, editSelE = null;
+  if (editHadFocus) { try { editSelS = document.activeElement.selectionStart; editSelE = document.activeElement.selectionEnd; } catch (e) { /* ข้าม */ } }
   container.querySelectorAll('.dq-card').forEach(function (card) {
     var l = card.querySelector('.dq-card-list');
     if (!l) return;
@@ -10785,6 +10890,10 @@ function dqRenderRoomCards() {
   if (dqState.moveOpenId) { // รอบ 58: คงแถบที่เปิดอยู่ถ้าแถวยังอยู่และยังย้ายได้ · ไม่งั้นปิด
     var keepMove = allLogs.some(function (l) { return String(l.id) === String(dqState.moveOpenId) && l.status === 'บันทึกแล้ว' && !l.pending; });
     if (!keepMove) dqState.moveOpenId = '';
+  }
+  if (dqState.editQueueOpenId) { // รอบ 79: คงแถบแก้คิว (+ ข้อความที่พิมพ์ค้าง) ถ้าแถวยังอยู่และยังแก้ได้ · ไม่งั้นปิด
+    var keepEdit = allLogs.some(function (l) { return String(l.id) === String(dqState.editQueueOpenId) && l.status === 'บันทึกแล้ว' && !l.pending; });
+    if (!keepEdit) dqCloseEditQueue_();
   }
   var openTimeByRoom = {};
   allLogs.forEach(function (log) {
@@ -10829,7 +10938,8 @@ function dqRenderRoomCards() {
       entries.forEach(function (item) {
         var row = document.createElement('div');
         row.className = 'dq-card-row';
-        row.innerHTML = dqEntryCellHtml(item) + ((dqState.moveOpenId && String(item.log.id) === String(dqState.moveOpenId) && item.log.status !== 'ยกเลิก') ? dqMoveBarHtml(item.log, rooms) : '');
+        row.innerHTML = dqEntryCellHtml(item) + ((dqState.moveOpenId && String(item.log.id) === String(dqState.moveOpenId) && item.log.status !== 'ยกเลิก') ? dqMoveBarHtml(item.log, rooms) : '') +
+          ((dqState.editQueueOpenId && String(item.log.id) === String(dqState.editQueueOpenId) && item.log.status !== 'ยกเลิก') ? dqEditQueueBarHtml(item.log) : ''); // รอบ 79
         list.appendChild(row);
       });
     }
@@ -10901,6 +11011,33 @@ function dqRenderRoomCards() {
   container.querySelectorAll('.dq-move-close').forEach(function (btn) {
     btn.addEventListener('click', function (e) { e.stopPropagation(); dqState.moveOpenId = ''; dqRenderRoomCards(); });
   });
+  container.querySelectorAll('.dq-editq-btn').forEach(function (btn) { // รอบ 79
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnEditQueueToggle(btn.getAttribute('data-id')); });
+  });
+  container.querySelectorAll('.dq-editq-input').forEach(function (inp) {
+    inp.addEventListener('input', function () { dqOnEditQueueInput(inp); });
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); dqOnEditQueueSave(); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dqCloseEditQueue_(); dqRenderRoomCards(); }
+    });
+  });
+  container.querySelectorAll('.dq-editq-save').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnEditQueueSave(); });
+  });
+  container.querySelectorAll('.dq-editq-close').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqCloseEditQueue_(); dqRenderRoomCards(); });
+  });
+  if (dqState.editQueueOpenId && (editHadFocus || dqState.editQueueFocusReq)) { // รอบ 79: เพิ่งเปิด ⇒ focus + select ทั้งช่อง · วาดใหม่ตอนกำลังพิมพ์ ⇒ คง focus + ตำแหน่งเคอร์เซอร์
+    var eInp = container.querySelector('.dq-editq-input');
+    if (eInp) {
+      try {
+        eInp.focus(editHadFocus ? { preventScroll: true } : undefined);
+        if (dqState.editQueueFocusReq || editSelS == null) eInp.select();
+        else eInp.setSelectionRange(editSelS, editSelE);
+      } catch (e) { /* ข้าม */ }
+    }
+    dqState.editQueueFocusReq = false;
+  }
   // รอบ 51: เลื่อนรายการในการ์ดไปคิวล่าสุด (ล่างสุด) · รอบ 56: เฉพาะห้องที่วาดครั้งแรก/ล่างสุดอยู่แล้ว/มีแถวเพิ่ม — ห้องที่เลื่อนขึ้นไปดูอยู่คงตำแหน่งเดิม
   container.querySelectorAll('.dq-card').forEach(function (card) {
     var l = card.querySelector('.dq-card-list');
