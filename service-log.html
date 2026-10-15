@@ -4241,6 +4241,12 @@ function pointMainScreenFor_(topics) {
 function pointHasMainScreen_(topics) {
   return pointMainScreenFor_(topics) !== '';
 }
+// รอบ 83 (เจ้าของสั่ง 2026-10-15): จุดที่หน้าหลักเป็น "รายการวันนี้" (จุดขายโปรแกรม/จุดเปิดสิทธิ์ — ไม่ได้บันทึกเอง) ⇒ รายการรายวันเห็นทุกจุด (allPoints)
+// จุดอื่นเห็นเฉพาะของจุดตัวเองเหมือนเดิม · ยังไม่ได้ config (pointTopics ว่าง) ⇒ false
+function todayAllPointsFor_(point) {
+  var t = (STATE.pointTopics && point && STATE.pointTopics[point]) || [];
+  return pointMainScreenFor_(t) === 'today';
+}
 function maybeAutoOpenListForPoint() {
   // รอบ 41 (W1): จุดกัปตัน — 'คิวพบแพทย์' เปิดกระดานคิวให้เลยด้วยกลไกเดียวกัน · รอบ 60: เพิ่ม 'ค้างส่งออก' (⇒ #pendingScreen) / 'รายการวันนี้' (⇒ #todayScreen)
   // จุดอื่นที่ไม่มีคำเหล่านี้ไม่ถูกบังคับย้ายหน้า (เปิดจากปุ่มเมนูได้เอง)
@@ -6012,7 +6018,8 @@ var TODAY_PREFETCH = null;
 // (ดู tryRestoreSession/handleGateKeySubmit กิ่ง else) ⇒ ไม่มีทางที่ผลจาก prefetch หลุดไปแสดงโดยที่รหัสยังไม่ผ่าน
 function startTodayPrefetch(staffKey, point) {
   if (!point) { TODAY_PREFETCH = null; return; }
-  TODAY_PREFETCH = { key: point + '|' + todayStr(), promise: apiCall('today', { staffKey: staffKey, point: point, date: todayStr() }, { timeoutMs: readTimeoutMs_() }) }; // รอบ 72 (เจ้าของสั่ง 2026-10-07): action อ่าน ⇒ ตัดทิ้งที่ 20 วิ · คำตอบเสียเข้า loadToday() ที่ใช้ promise นี้ ⇒ ใช้กติกาเดียวกัน
+  var allPts = todayAllPointsFor_(point); // รอบ 83: config ยังไม่มา ⇒ false ⇒ loadToday() เห็นว่าโหมดไม่ตรงแล้วยิงใหม่เอง
+  TODAY_PREFETCH = { key: point + '|' + todayStr(), allPoints: allPts, promise: apiCall('today', { staffKey: staffKey, point: point, date: todayStr(), allPoints: allPts }, { timeoutMs: readTimeoutMs_() }) }; // รอบ 72 (เจ้าของสั่ง 2026-10-07): action อ่าน ⇒ ตัดทิ้งที่ 20 วิ · คำตอบเสียเข้า loadToday() ที่ใช้ promise นี้ ⇒ ใช้กติกาเดียวกัน
 }
 
 // แทรก/แทนที่ record เดียวในอาร์เรย์ตาม recordId (ไม่เจอ ⇒ ใส่หัวรายการ) — คืนอาร์เรย์ใหม่เสมอ ไม่แก้ของเดิมในที่
@@ -6065,7 +6072,9 @@ function applySavedRecord(record) {
   var today = todayStr();
 
   // "รายการวันนี้" ของจุดบริการตัวเอง — ต้องตรงทั้งวันที่และจุดบริการ ไม่ตรง ⇒ ลบตัวเดิมออก (ถ้าเคยมี)
-  if (record.date === today && record.point === STATE.point) {
+  // รอบ 83: จุดที่รายการรายวันเห็นทุกจุด ⇒ แถวของจุดอื่นที่เพิ่งแก้ต้องอยู่ต่อ (ไม่ลบทิ้ง)
+  var mine = (record.point === STATE.point) || todayAllPointsFor_(STATE.point);
+  if (record.date === today && mine) {
     renderTodayList(upsertRecordInList(LAST_TODAY_RECORDS, record));
   } else {
     renderTodayList(removeRecordFromList(LAST_TODAY_RECORDS, record.recordId));
@@ -6076,7 +6085,7 @@ function applySavedRecord(record) {
   if (!isViewingToday_() && record.date === TODAY_VIEW_DATE) {
     var viewKey = STATE.point + '|' + TODAY_VIEW_DATE;
     var viewBase = (TODAY_VIEW_CACHE.key === viewKey && TODAY_VIEW_CACHE.records) ? TODAY_VIEW_CACHE.records : TODAY_VIEW_RECORDS;
-    var viewList = (record.point === STATE.point) ? upsertRecordInList(viewBase, record) : removeRecordFromList(viewBase, record.recordId);
+    var viewList = mine ? upsertRecordInList(viewBase, record) : removeRecordFromList(viewBase, record.recordId);
     renderTodayViewList_(viewList);
   }
 
@@ -6448,7 +6457,7 @@ function loadTodayViewRun_(isRetry) {
     resetTodayDisplayLoading_(dateStr);
   }
   TODAY_VIEW_INFLIGHT_KEY_ = key;
-  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: todayAllPointsFor_(STATE.point) }, { timeoutMs: readTimeoutMs_() }).then(function (resp) { // รอบ 83: allPoints
     if (TODAY_VIEW_INFLIGHT_KEY_ === key) TODAY_VIEW_INFLIGHT_KEY_ = '';
     // เปลี่ยนวัน/จุด/กลับมาวันนี้ระหว่างรอ ⇒ คำตอบนี้ไม่ใช่ของที่จอควรแสดงแล้ว ทิ้ง
     if (isViewingToday_() || STATE.point + '|' + TODAY_VIEW_DATE !== key) return;
@@ -6535,7 +6544,8 @@ function loadTodayRun_(isRetry) {
   }
   // รอบ 18: มี today ที่ยิงคู่ขนานไปกับ config ไว้ล่วงหน้าแล้วตรงคีย์นี้พอดี -> ใช้ผลอันนั้นแทนยิงซ้ำ
   // one-shot เสมอ (ล้างทิ้งไม่ว่าจะได้ใช้หรือไม่) — prefetch ของจุด/วันอื่นที่ค้างอยู่ก็ถูกทิ้งไปด้วย ไม่มีความหมายอีกต่อไป
-  var todayPromise = (TODAY_PREFETCH && TODAY_PREFETCH.key === key) ? TODAY_PREFETCH.promise : apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr }, { timeoutMs: readTimeoutMs_() });
+  var allPts = todayAllPointsFor_(STATE.point); // รอบ 83
+  var todayPromise = (TODAY_PREFETCH && TODAY_PREFETCH.key === key && !!TODAY_PREFETCH.allPoints === allPts) ? TODAY_PREFETCH.promise : apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: allPts }, { timeoutMs: readTimeoutMs_() });
   TODAY_PREFETCH = null;
   todayPromise.then(function (resp) {
     // เปลี่ยนจุดบริการ/ข้ามวันระหว่างรอ -> คีย์ที่หน้าจอควรแสดงตอนนี้ไม่ตรงกับคำขอนี้แล้ว ทิ้งคำตอบนี้ไปเลย
