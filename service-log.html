@@ -1211,6 +1211,33 @@
   .dq-editq-save { min-width: 72px; }
   .dq-editq-close { min-width: 40px; background: #fff; color: var(--text-muted); }
   .dq-editq-err { flex: 1 1 100%; font-size: 13px; color: var(--danger); overflow-wrap: anywhere; }
+  /* รอบ 80: ชื่อแพทย์ของคิว — แถวปุ่ม/ป้ายใต้หัวการ์ด + แถบ (checkbox ต่อคิว + ช่องแพทย์ combobox) + ข้อความสรุป */
+  .dq-doc-tools { flex: 0 0 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 6px; padding: 4px 6px; background: #fff; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
+  .dq-doc-btn, .dq-doc-badge { flex: 0 0 auto; padding: 2px 8px; font-size: 12px; font-family: inherit; line-height: 1.4; cursor: pointer; border: 1px solid var(--primary); background: #fff; color: var(--primary-dark); border-radius: 6px; font-weight: normal; max-width: 100%; overflow-wrap: anywhere; }
+  .dq-doc-badge { border-color: #E08A00; background: #FFF3E0; color: #B35F00; font-weight: bold; }
+  .dq-doc-notice { flex: 0 0 auto; padding: 4px 8px; font-size: 13px; background: #EBF7EE; color: #1B6B33; overflow-wrap: anywhere; }
+  .dq-doc-notice-warn { margin-top: 2px; color: #B35F00; }
+  .dq-docbar { flex: 0 1 auto; min-height: 0; max-height: 72%; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding: 6px 8px; background: #fff; border-bottom: 1px solid var(--primary); }
+  .dq-docbar-title { font-size: 13px; font-weight: bold; color: var(--text-muted); overflow-wrap: anywhere; }
+  .dq-docbar-pick { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+  .dq-docbar-all, .dq-docbar-clear { padding: 2px 8px; font-size: 12px; font-family: inherit; cursor: pointer; border: 1px solid var(--primary); background: #fff; color: var(--primary-dark); border-radius: 6px; }
+  .dq-docbar-list { max-height: 132px; overflow-y: auto; overflow-x: hidden; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 6px; }
+  .dq-docbar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 4px 6px; min-height: 32px; box-sizing: border-box; border-bottom: 1px solid rgba(0, 0, 0, 0.06); font-size: 14px; cursor: pointer; }
+  .dq-docbar-chk { flex: 0 0 auto; width: 20px; height: 20px; margin: 0; }
+  .dq-docbar-q { font-weight: bold; color: #C00000; font-size: 16px; }
+  .dq-docbar-t { color: var(--text-muted); font-size: 13px; }
+  .dq-docbar-d { flex: 1 1 100px; min-width: 0; overflow-wrap: anywhere; }
+  .dq-docbar-nodoc { color: #E08A00; font-weight: bold; }
+  .dq-docbar-field { margin-top: 6px; min-width: 0; }
+  .dq-docbar-input { width: 100%; box-sizing: border-box; min-height: 40px; padding: 4px 10px; font-family: inherit; font-size: 16px; border: 1px solid var(--primary); border-radius: 6px; background: #fff; }
+  .dq-docbar-input.dq-docbar-bad { border: 2px solid #D93025; background: #FFF4F3; }
+  .dq-docbar-msg { color: #D93025; font-size: 13px; margin-top: 3px; overflow-wrap: anywhere; }
+  .dq-docbar-msg:empty { display: none; }
+  .dq-docbar-act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .dq-docbar-save, .dq-docbar-cancel { min-height: 40px; box-sizing: border-box; padding: 4px 14px; font-family: inherit; font-size: 15px; cursor: pointer; border: 1px solid var(--primary); background: #E4E7FB; color: var(--primary-dark); border-radius: 6px; font-weight: bold; }
+  .dq-docbar-cancel { background: #fff; color: var(--text-muted); }
+  .dq-docbar-save.is-disabled, .dq-docbar-save[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+  .dq-docbar-err { margin-top: 6px; font-size: 13px; color: var(--danger); overflow-wrap: anywhere; }
   .dq-cancelled { text-decoration: line-through; opacity: 0.45; color: var(--text-muted); }
   .dq-timer { font-variant-numeric: tabular-nums; }
   /* รอบ 69 — คิวอยู่ในห้องแพทย์ ≥ dqLongExamMin นาที: ตัวเลข/ข้อความ/ขอบการ์ดแดง + ป้าย · สีโปรแกรมของห้อง (.dq-col-*) เปลี่ยนแค่พื้นหัว/รายการ ไม่แตะ border จึงไม่ชนกัน */
@@ -11180,6 +11207,14 @@ var dqState = {
   editQueueDraft: '',    // รอบ 79: ข้อความที่พิมพ์ค้างในแถบแก้คิว (คงไว้ตอนวาดการ์ดใหม่)
   editQueueError: '',    // รอบ 79: ข้อความแดงใต้ช่อง (ไม่ถูกต้อง/ซ้ำ) · ล้างเมื่อพิมพ์/ปิดแถบ
   editQueueFocusReq: false, // รอบ 79: เพิ่งเปิดแถบ ⇒ วาดเสร็จให้ focus + select ทั้งช่อง
+  doctorBarRoom: '',     // รอบ 80: ห้องที่เปิดแถบ "ชื่อแพทย์ของคิว" อยู่ (ทีละห้อง · เปิดแถบนี้ปิดแถบย้าย/แก้คิว และกลับกัน) · '' = ปิด
+  doctorBarChecked: {},  // รอบ 80: { รหัสแถว: true } คิวที่ติ๊กอยู่ (คงไว้ตอนวาดการ์ดใหม่)
+  doctorBarDraft: '',    // รอบ 80: ข้อความในช่องแพทย์ของแถบ
+  doctorBarLegacy: '',   // รอบ 80: ชื่อแพทย์เดิมของห้องตอนเปิดแถบ — ถ้าไม่อยู่ในรายชื่อ ขึ้น "ชื่อเดิม — กรุณาเลือกใหม่"
+  doctorBarTouched: false, // รอบ 80: ผู้ใช้พิมพ์/เลือกในช่องแพทย์แล้ว ⇒ วาดใหม่ไม่ตัดสิน/เติมชื่อเต็มทับข้อความที่พิมพ์ค้าง
+  doctorBarMsg: '',      // รอบ 80: ข้อความแดงในแถบ (บันทึกไม่สำเร็จ) · ล้างเมื่อพิมพ์/ติ๊ก/ปิดแถบ
+  doctorBarBusy: false,  // รอบ 80: กำลังรอคำตอบ dqSetDoctor
+  doctorNotice: null,    // รอบ 80: { room, text, warns:[], shown } สรุปผลบันทึกในการ์ด — หายเมื่อวาดรอบถัดไปหรือครบ 10 วิ
   rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
@@ -11380,6 +11415,7 @@ function dqAutoRefreshIdle_() {
   if (dqSendQueue.length > 0 || dqSendActive) return false;
   if (dqState.moveOpenId) return false;
   if (dqState.editQueueOpenId) return false; // รอบ 79: กำลังแก้เลขคิวอยู่ ⇒ ไม่วาดทับ
+  if (dqState.doctorBarRoom) return false;   // รอบ 80: กำลังตั้งชื่อแพทย์ของคิวอยู่ ⇒ ไม่วาดทับ (ติ๊ก/ข้อความในช่องไม่หาย)
   if (dqSugActive) return false;
   var qi = qs('dqQueueInput');
   if (qi && String(qi.value || '').trim() !== '') return false;
@@ -11578,7 +11614,7 @@ function dqMoveBarHtml(log, rooms) {
 }
 function dqOnMoveToggle(id) {
   dqState.moveOpenId = (dqState.moveOpenId === id) ? '' : id;
-  if (dqState.moveOpenId) dqCloseEditQueue_(); // รอบ 79: เปิดแถบย้ายปิดแถบแก้คิว
+  if (dqState.moveOpenId) { dqCloseEditQueue_(); dqCloseDoctorBar_(); } // รอบ 79: เปิดแถบย้ายปิดแถบแก้คิว · รอบ 80: และแถบชื่อแพทย์
   dqRenderRoomCards(); // วาดเฉพาะการ์ด — ไม่แตะแถวอื่น/ตำแหน่งเลื่อน (การเปิดแถบไม่ใช่แถวเพิ่ม)
 }
 function dqOnMoveClick(id, room) {
@@ -11614,6 +11650,7 @@ function dqOnEditQueueToggle(id) {
   logs.forEach(function (l) { if (!log && String(l.id) === String(id)) log = l; });
   if (!log || log.status !== 'บันทึกแล้ว') return;
   dqState.moveOpenId = ''; // เปิดแถบแก้คิวปิดแถบย้าย
+  dqCloseDoctorBar_();     // รอบ 80: และแถบชื่อแพทย์
   dqState.editQueueOpenId = id;
   dqState.editQueueDraft = String(log.queue == null ? '' : log.queue);
   dqState.editQueueError = '';
@@ -11669,6 +11706,217 @@ function dqOnEditQueueSave() {
   dqCloseEditQueue_();
   dqEnqueueJob({ type: 'dqEditQueue', id: id, queue: q, at: new Date().toISOString() });
   showToast('แก้ ' + oldQueue + ' เป็น ' + q + ' แล้ว (เวลาเดิม)');
+}
+// ===== รอบ 80: ชื่อแพทย์ของคิว — แถบในการ์ดห้อง (checkbox ต่อคิว + ช่องแพทย์ combobox รอบ 78) · ตั้ง/แก้ชื่อแพทย์ของคิวที่ลงแล้ววันนี้ =====
+// คิวที่ใช้ได้ของห้อง: 'บันทึกแล้ว' (ไม่ยกเลิก) ไม่ pending · เรียงเวลาเข้าเก่า→ใหม่ (logs ใหม่สุดก่อน ⇒ เวลาเท่ากันให้ index มากกว่าขึ้นก่อน)
+function dqDoctorBarRows_(room) {
+  var logs = (dqState.today && dqState.today.logs) || [];
+  var rows = [];
+  logs.forEach(function (l, i) {
+    if (!l || l.room !== room || l.status !== 'บันทึกแล้ว' || l.pending) return;
+    if (String(l.id).indexOf('dq-pending-') === 0) return;
+    var t = l.timeIn ? new Date(l.timeIn).getTime() : NaN;
+    rows.push({ log: l, i: i, t: isNaN(t) ? Infinity : t });
+  });
+  rows.sort(function (a, b) { return a.t !== b.t ? (a.t < b.t ? -1 : 1) : (b.i - a.i); });
+  return rows.map(function (r) { return r.log; });
+}
+function dqDoctorMissingCount_(room) {
+  return dqDoctorBarRows_(room).filter(function (l) { return String(l.doctor == null ? '' : l.doctor).trim() === ''; }).length;
+}
+function dqCloseDoctorBar_() {
+  if (DOCTOR_COMBO_ACTIVE_ && DOCTOR_COMBO_ACTIVE_.input && DOCTOR_COMBO_ACTIVE_.input.classList && DOCTOR_COMBO_ACTIVE_.input.classList.contains('dq-docbar-input')) doctorComboClose_();
+  dqState.doctorBarRoom = '';
+  dqState.doctorBarChecked = {};
+  dqState.doctorBarDraft = '';
+  dqState.doctorBarLegacy = '';
+  dqState.doctorBarTouched = false;
+  dqState.doctorBarMsg = '';
+}
+// เปิดแถบของห้อง: คิวที่ไม่มีชื่อ ติ๊กไว้ก่อน · ช่องแพทย์เริ่มที่แพทย์ปัจจุบันของห้อง · ปิดแถบย้าย/แก้คิว · ยังไม่วาด (ผู้เรียกวาดเอง) · คืน false ถ้าห้องไม่มีคิว
+function dqOpenDoctorBar_(room) {
+  var rows = dqDoctorBarRows_(room);
+  if (!rows.length) return false;
+  dqState.moveOpenId = '';
+  dqCloseEditQueue_();
+  dqCloseDoctorBar_();
+  dqState.doctorBarRoom = room;
+  rows.forEach(function (l) {
+    if (String(l.doctor == null ? '' : l.doctor).trim() === '') dqState.doctorBarChecked[String(l.id)] = true;
+  });
+  var cur = '';
+  ((dqState.today && dqState.today.rooms) || []).forEach(function (rm) { if (rm.room === room) cur = String(rm.doctor == null ? '' : rm.doctor).trim(); });
+  var hit = (cur && dqState.doctorsLoaded && !dqState.doctorsFailed) ? doctorFindByCore_(dqState.doctorNames || [], cur) : '';
+  dqState.doctorBarDraft = hit || cur;
+  dqState.doctorBarLegacy = (cur && !hit) ? cur : '';
+  if (!dqState.doctorsLoaded || dqState.doctorsFailed) {
+    var loading = dqLoadDoctorNames();
+    if (loading && loading.catch) loading.catch(function () { /* ข้าม — ช่องแพทย์ปล่อยให้เซิร์ฟเวอร์ตัดสินตอนบันทึก */ });
+  }
+  return true;
+}
+function dqOnDoctorBarToggle(room, openOnly) {
+  if (dqState.doctorBarRoom === room) {
+    if (openOnly) return;
+    dqCloseDoctorBar_();
+    dqRenderRoomCards();
+    return;
+  }
+  if (!dqOpenDoctorBar_(room)) return;
+  dqRenderRoomCards();
+}
+// หลัง ⚙ บันทึกห้องสำเร็จ: ห้องแรก (ตามลำดับการ์ด) ที่มีคิวไม่มีชื่อแพทย์ ⇒ เปิดแถบของห้องนั้น (ห้องเดียว)
+function dqDoctorBarAutoOpen_() {
+  var rooms = (dqState.today && dqState.today.rooms) || [];
+  for (var i = 0; i < rooms.length; i++) {
+    if (dqDoctorMissingCount_(rooms[i].room) >= 1) {
+      if (dqOpenDoctorBar_(rooms[i].room)) dqRenderRoomCards();
+      return;
+    }
+  }
+}
+function dqDoctorBarHtml_(room, rows) {
+  var items = rows.map(function (l) {
+    var d = String(l.doctor == null ? '' : l.doctor).trim();
+    return '<label class="dq-docbar-row"><input type="checkbox" class="dq-docbar-chk" data-id="' + escHtml(l.id) + '"' + (dqState.doctorBarChecked[String(l.id)] ? ' checked' : '') + ' aria-label="เลือกคิว ' + escHtml(l.queue) + '">' +
+      '<span class="dq-docbar-q">' + escHtml(l.queue) + '</span><span class="dq-docbar-t">' + dqFmtDot(l.timeIn) + '</span>' +
+      '<span class="dq-docbar-d">' + (d ? escHtml(d) : '<span class="dq-docbar-nodoc">— ไม่มี —</span>') + '</span></label>';
+  }).join('');
+  return '<div class="dq-docbar-title">ชื่อแพทย์ของคิว — ห้อง ' + escHtml(room) + '</div>' +
+    '<div class="dq-docbar-pick"><button type="button" class="dq-docbar-all">ติ๊กทั้งหมด</button><button type="button" class="dq-docbar-clear">ไม่ติ๊กเลย</button></div>' +
+    '<div class="dq-docbar-list">' + items + '</div>' +
+    '<div class="dq-docbar-field"><input type="text" class="dq-docbar-input" placeholder="พิมพ์ค้นหาชื่อแพทย์" autocomplete="off" aria-label="ชื่อแพทย์ของคิวที่ติ๊ก">' +
+    '<div class="dq-docbar-msg" aria-live="polite"></div></div>' +
+    '<div class="dq-docbar-act"><button type="button" class="dq-docbar-save is-disabled" aria-disabled="true">บันทึก</button>' +
+    '<button type="button" class="dq-docbar-cancel">ยกเลิก</button></div>' +
+    (dqState.doctorBarMsg ? '<div class="dq-docbar-err" role="alert">' + escHtml(dqState.doctorBarMsg) + '</div>' : '');
+}
+// ชื่อเต็มในรายชื่อของช่องแพทย์ (ต้องเลือกผ่าน combobox แล้ว) · โหลดรายชื่อไม่สำเร็จ ⇒ ใช้ข้อความที่พิมพ์ (ให้เซิร์ฟเวอร์ตัดสิน) · ยังไม่โหลด/ไม่ตรง ⇒ ''
+function dqDoctorBarResolve_(inp) {
+  if (!inp) return '';
+  var text = String(inp.value || '').trim();
+  if (!text) return '';
+  if (dqState.doctorsFailed) return text;
+  if (!dqState.doctorsLoaded) return '';
+  return doctorFindByCore_(dqState.doctorNames || [], text);
+}
+// ปุ่มบันทึก: aria-disabled (ไม่ใช่ disabled — disabled จริงไม่ยิง click) จนกว่า ติ๊ก ≥ 1 และชื่อแพทย์ผ่าน combobox
+function dqDoctorBarSync_() {
+  var c = qs('dqRoomCards');
+  var btn = c && c.querySelector('.dq-docbar-save');
+  if (!btn) return;
+  var n = c.querySelectorAll('.dq-docbar-chk:checked').length;
+  var ok = n >= 1 && !!dqDoctorBarResolve_(c.querySelector('.dq-docbar-input')) && !dqState.doctorBarBusy;
+  btn.classList.toggle('is-disabled', !ok);
+  if (ok) btn.removeAttribute('aria-disabled'); else btn.setAttribute('aria-disabled', 'true');
+}
+function dqDoctorBarClearErr_() {
+  if (!dqState.doctorBarMsg) return;
+  dqState.doctorBarMsg = '';
+  var c = qs('dqRoomCards');
+  var er = c && c.querySelector('.dq-docbar-err');
+  if (er && er.parentNode) er.parentNode.removeChild(er);
+}
+// รายชื่อแพทย์โหลดเสร็จ/เปลี่ยน ⇒ ตัดสินข้อความในช่องใหม่ (เติมชื่อเต็ม/ขอบแดง) + คำนวณปุ่มใหม่ (เรียกจาก dqRefillAllDoctorSelects_)
+function dqDoctorBarSettle_() {
+  if (!dqState.doctorBarRoom) return;
+  var c = qs('dqRoomCards');
+  var inp = c && c.querySelector('.dq-docbar-input');
+  if (!inp) return;
+  dqSettleDoctorField_(inp);
+  dqState.doctorBarDraft = inp.value;
+  dqDoctorBarSync_();
+}
+// ผูกพฤติกรรมของแถบหลังวาดการ์ด (ช่องแพทย์ = combobox รอบ 78 ตัวเดิม) — เรียกจาก dqRenderRoomCards
+function dqDoctorBarBind_(container) {
+  var inp = container.querySelector('.dq-docbar-input');
+  if (!inp) return;
+  var bar = inp.closest('.dq-docbar');
+  doctorComboAttach_(inp, {
+    getNames: function () { return dqState.doctorNames || []; },
+    getMsgEl: function () { return bar.querySelector('.dq-docbar-msg'); },
+    badClass: 'dq-docbar-bad',
+    canValidate: function () { return dqState.doctorsLoaded && !dqState.doctorsFailed; },
+    onChange: function () { dqState.doctorBarDraft = inp.value; dqState.doctorBarTouched = true; dqDoctorBarClearErr_(); dqDoctorBarSync_(); }
+  });
+  inp.value = dqState.doctorBarDraft || '';
+  if (dqState.doctorBarLegacy && inp.value.trim() === dqState.doctorBarLegacy) inp.setAttribute('data-legacy', dqState.doctorBarLegacy);
+  if (!dqState.doctorBarTouched) dqSettleDoctorField_(inp); // ยังไม่ได้พิมพ์เอง ⇒ ค่าตั้งต้น (แพทย์ของห้อง) ตัดสิน/เติมชื่อเต็มได้ · พิมพ์แล้วห้ามทับ
+  dqState.doctorBarDraft = inp.value;
+  container.querySelectorAll('.dq-docbar-chk').forEach(function (chk) {
+    chk.addEventListener('change', function () {
+      var id = chk.getAttribute('data-id');
+      if (chk.checked) dqState.doctorBarChecked[id] = true; else delete dqState.doctorBarChecked[id];
+      dqDoctorBarClearErr_();
+      dqDoctorBarSync_();
+    });
+  });
+  var setAll = function (on) {
+    container.querySelectorAll('.dq-docbar-chk').forEach(function (chk) {
+      chk.checked = on;
+      var id = chk.getAttribute('data-id');
+      if (on) dqState.doctorBarChecked[id] = true; else delete dqState.doctorBarChecked[id];
+    });
+    dqDoctorBarClearErr_();
+    dqDoctorBarSync_();
+  };
+  var allBtn = container.querySelector('.dq-docbar-all');
+  if (allBtn) allBtn.addEventListener('click', function (e) { e.stopPropagation(); setAll(true); });
+  var clearBtn = container.querySelector('.dq-docbar-clear');
+  if (clearBtn) clearBtn.addEventListener('click', function (e) { e.stopPropagation(); setAll(false); });
+  var saveBtn = container.querySelector('.dq-docbar-save');
+  if (saveBtn) saveBtn.addEventListener('click', function (e) { e.stopPropagation(); dqOnDoctorBarSave(); });
+  var cancelBtn = container.querySelector('.dq-docbar-cancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', function (e) { e.stopPropagation(); dqCloseDoctorBar_(); dqRenderRoomCards(); });
+}
+function dqOnDoctorBarSave() {
+  var c = qs('dqRoomCards');
+  var btn = c && c.querySelector('.dq-docbar-save');
+  if (!btn || btn.getAttribute('aria-disabled') === 'true') return; // ปุ่มยังไม่พร้อม (aria-disabled ยังรับ click จึงต้องเช็คเอง)
+  if (dqState.doctorBarBusy) return;
+  var room = dqState.doctorBarRoom;
+  if (!room) return;
+  if (!dqCanRecord()) return;
+  var ids = [];
+  c.querySelectorAll('.dq-docbar-chk:checked').forEach(function (chk) { ids.push(chk.getAttribute('data-id')); });
+  var name = dqDoctorBarResolve_(c.querySelector('.dq-docbar-input'));
+  if (!ids.length || !name) return;
+  dqState.doctorBarBusy = true;
+  dqState.doctorBarMsg = '';
+  dqDoctorBarClearErr_();
+  dqDoctorBarSync_();
+  btn.textContent = 'กำลังบันทึก…';
+  var fail = function (msg) {
+    dqState.doctorBarBusy = false;
+    dqState.doctorBarMsg = msg;
+    dqRenderRoomCards();
+  };
+  dqApi('dqSetDoctor', { ids: ids, doctor: name }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      dqState.doctorBarBusy = false;
+      var n = (Array.isArray(resp.updated) ? resp.updated.length : 0) + (Array.isArray(resp.unchanged) ? resp.unchanged.length : 0);
+      var warns = [];
+      var sk = resp.statsSync && Array.isArray(resp.statsSync.skipped) ? resp.statsSync.skipped : [];
+      sk.forEach(function (s) { warns.push('คิว ' + s.queue + ': บันทึกบริการมีชื่อ "' + s.current + '" อยู่แล้ว — ไม่ได้เปลี่ยน'); });
+      dqCloseDoctorBar_();
+      if (resp.today) dqApplySnapshot(resp.today); else dqRerender();
+      var notice = { room: room, text: 'บันทึกชื่อแพทย์ ' + n + ' คิวแล้ว', warns: warns, shown: false };
+      dqState.doctorNotice = notice;
+      dqRenderRoomCards(); // วาดครั้งนี้แสดงข้อความ · วาดครั้งถัดไปล้าง
+      setTimeout(function () {
+        if (dqState.doctorNotice === notice) dqState.doctorNotice = null;
+        var box = qs('dqRoomCards');
+        if (box) box.querySelectorAll('.dq-doc-notice').forEach(function (el) { if (el.parentNode) el.parentNode.removeChild(el); });
+      }, 10000);
+      if (!resp.today) { var reload = dqLoadToday(); if (reload && reload.catch) reload.catch(function () {}); }
+    } else if (resp && resp.networkError) {
+      fail('เน็ตขัดข้อง — ตรวจในกระดานว่าบันทึกชื่อแพทย์แล้วหรือยัง ก่อนกดซ้ำ');
+    } else {
+      fail((resp && resp.message) ? resp.message : 'บันทึกชื่อแพทย์ไม่สำเร็จ');
+    }
+  }).catch(function () {
+    fail('บันทึกชื่อแพทย์ไม่สำเร็จ — ลองอีกครั้ง');
+  });
 }
 // รอบ 50: เวลาที่ห้องนี้เริ่มพัก — มีแถว 'บันทึกแล้ว' แต่ไม่มีแถวเปิด ⇒ timeOut ของแถวล่าสุด (logs ใหม่สุดก่อน) · ไม่ใช่ ⇒ null
 function dqRoomBreakSince(logs, room) {
@@ -11798,6 +12046,22 @@ function dqRenderRoomCards() {
   var editHadFocus = !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('dq-editq-input')); // รอบ 79: วาดใหม่ระหว่างพิมพ์แก้คิว ⇒ คง focus
   var editSelS = null, editSelE = null;
   if (editHadFocus) { try { editSelS = document.activeElement.selectionStart; editSelE = document.activeElement.selectionEnd; } catch (e) { /* ข้าม */ } }
+  // รอบ 80: วาดใหม่ระหว่างใช้แถบชื่อแพทย์ ⇒ คง focus (ช่องแพทย์+เคอร์เซอร์ / checkbox) และตำแหน่งเลื่อนของแถบ · รายการ combobox ที่เปิดอยู่ปิดก่อน (ช่องเดิมกำลังจะถูกวาดทับ)
+  var docFocus = null, docBarScroll = null;
+  var aeDoc = document.activeElement;
+  if (aeDoc && aeDoc.classList) {
+    if (aeDoc.classList.contains('dq-docbar-input')) {
+      docFocus = { kind: 'input', s: null, e: null };
+      try { docFocus.s = aeDoc.selectionStart; docFocus.e = aeDoc.selectionEnd; } catch (e) { /* ข้าม */ }
+      dqState.doctorBarDraft = aeDoc.value; // เก็บข้อความที่พิมพ์ค้าง · ช่องเดิมกำลังจะถูกลบ ⇒ ถอด combobox ออกก่อน กัน blur ตอนถูกลบไป "ตัดสิน"/เติมชื่อเต็มทับข้อความ
+      aeDoc._dcb = {};
+    } else if (aeDoc.classList.contains('dq-docbar-chk')) {
+      docFocus = { kind: 'chk', id: aeDoc.getAttribute('data-id') };
+    }
+  }
+  var oldBar = container.querySelector('.dq-docbar');
+  if (oldBar) { var oldList = oldBar.querySelector('.dq-docbar-list'); docBarScroll = { bar: oldBar.scrollTop, list: oldList ? oldList.scrollTop : 0 }; }
+  if (DOCTOR_COMBO_ACTIVE_ && DOCTOR_COMBO_ACTIVE_.input && DOCTOR_COMBO_ACTIVE_.input.classList && DOCTOR_COMBO_ACTIVE_.input.classList.contains('dq-docbar-input')) doctorComboClose_();
   container.querySelectorAll('.dq-card').forEach(function (card) {
     var l = card.querySelector('.dq-card-list');
     if (!l) return;
@@ -11823,6 +12087,17 @@ function dqRenderRoomCards() {
     var keepEdit = allLogs.some(function (l) { return String(l.id) === String(dqState.editQueueOpenId) && l.status === 'บันทึกแล้ว' && !l.pending; });
     if (!keepEdit) dqCloseEditQueue_();
   }
+  if (dqState.doctorBarRoom) { // รอบ 80: คงแถบชื่อแพทย์ถ้าห้องยังอยู่และยังมีคิวให้เลือก · ตัดรหัสที่หายไปออกจากรายการที่ติ๊ก
+    var barRows = rooms.some(function (r) { return r.room === dqState.doctorBarRoom; }) ? dqDoctorBarRows_(dqState.doctorBarRoom) : [];
+    if (!barRows.length) dqCloseDoctorBar_();
+    else {
+      var barIds = {};
+      barRows.forEach(function (l) { barIds[String(l.id)] = true; });
+      Object.keys(dqState.doctorBarChecked).forEach(function (id) { if (!barIds[id]) delete dqState.doctorBarChecked[id]; });
+    }
+  }
+  var docNotice = dqState.doctorNotice; // รอบ 80: ข้อความสรุปแสดงในการวาดรอบเดียว — วาดรอบถัดไปล้าง
+  if (docNotice) { if (docNotice.shown) { dqState.doctorNotice = null; docNotice = null; } else docNotice.shown = true; }
   var openTimeByRoom = {};
   allLogs.forEach(function (log) {
     if (log.status === 'บันทึกแล้ว' && !log.timeOut) openTimeByRoom[log.room] = log.timeIn;
@@ -11854,6 +12129,52 @@ function dqRenderRoomCards() {
     var shiftText = (rm.start || rm.end) ? ((rm.start || '—') + '–' + (rm.end || '—')) : '';
     if (shiftText) head.title = 'เวลาตรวจ ' + shiftText;
     card.appendChild(head);
+
+    // รอบ 80: ปุ่ม 👤 แพทย์ + ป้าย ⚠ N คิวไม่มีชื่อแพทย์ (ห้องมีคิว ≥ 1) · ข้อความสรุปหลังบันทึก · แถบชื่อแพทย์ของคิว
+    var docRows = dqDoctorBarRows_(rm.room);
+    if (docRows.length) {
+      var missing = docRows.filter(function (l) { return String(l.doctor == null ? '' : l.doctor).trim() === ''; }).length;
+      var tools = document.createElement('div');
+      tools.className = 'dq-doc-tools';
+      var docBtn = document.createElement('button');
+      docBtn.type = 'button';
+      docBtn.className = 'dq-doc-btn';
+      docBtn.setAttribute('data-room', rm.room);
+      docBtn.setAttribute('aria-expanded', dqState.doctorBarRoom === rm.room ? 'true' : 'false');
+      docBtn.textContent = '👤 แพทย์';
+      tools.appendChild(docBtn);
+      if (missing >= 1) {
+        var docBadge = document.createElement('button');
+        docBadge.type = 'button';
+        docBadge.className = 'dq-doc-badge';
+        docBadge.setAttribute('data-room', rm.room);
+        docBadge.textContent = '⚠ ' + missing + ' คิวไม่มีชื่อแพทย์';
+        tools.appendChild(docBadge);
+      }
+      card.appendChild(tools);
+    }
+    if (docNotice && docNotice.room === rm.room) {
+      var nt = document.createElement('div');
+      nt.className = 'dq-doc-notice';
+      nt.setAttribute('role', 'status');
+      var ntMain = document.createElement('div');
+      ntMain.textContent = docNotice.text;
+      nt.appendChild(ntMain);
+      docNotice.warns.forEach(function (w) {
+        var wl = document.createElement('div');
+        wl.className = 'dq-doc-notice-warn';
+        wl.textContent = w;
+        nt.appendChild(wl);
+      });
+      card.appendChild(nt);
+    }
+    if (dqState.doctorBarRoom === rm.room && docRows.length) {
+      var docBar = document.createElement('div');
+      docBar.className = 'dq-docbar';
+      docBar.setAttribute('data-room', rm.room);
+      docBar.innerHTML = dqDoctorBarHtml_(rm.room, docRows);
+      card.appendChild(docBar);
+    }
 
     var list = document.createElement('div');
     list.className = 'dq-card-list';
@@ -11955,6 +12276,34 @@ function dqRenderRoomCards() {
   container.querySelectorAll('.dq-editq-close').forEach(function (btn) {
     btn.addEventListener('click', function (e) { e.stopPropagation(); dqCloseEditQueue_(); dqRenderRoomCards(); });
   });
+  container.querySelectorAll('.dq-doc-btn').forEach(function (btn) { // รอบ 80
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnDoctorBarToggle(btn.getAttribute('data-room'), false); });
+  });
+  container.querySelectorAll('.dq-doc-badge').forEach(function (btn) {
+    btn.addEventListener('click', function (e) { e.stopPropagation(); dqOnDoctorBarToggle(btn.getAttribute('data-room'), true); });
+  });
+  if (dqState.doctorBarRoom) {
+    dqDoctorBarBind_(container);
+    var nbar = container.querySelector('.dq-docbar');
+    if (nbar && docBarScroll) {
+      nbar.scrollTop = docBarScroll.bar;
+      var nlist = nbar.querySelector('.dq-docbar-list');
+      if (nlist) nlist.scrollTop = docBarScroll.list;
+    }
+    if (docFocus) {
+      try {
+        if (docFocus.kind === 'input') {
+          var dInp = container.querySelector('.dq-docbar-input');
+          if (dInp) { dInp.focus({ preventScroll: true }); if (docFocus.s != null) dInp.setSelectionRange(docFocus.s, docFocus.e); }
+        } else {
+          container.querySelectorAll('.dq-docbar-chk').forEach(function (chk) {
+            if (chk.getAttribute('data-id') === docFocus.id) chk.focus({ preventScroll: true });
+          });
+        }
+      } catch (e) { /* ข้าม */ }
+    }
+    dqDoctorBarSync_();
+  }
   if (dqState.editQueueOpenId && (editHadFocus || dqState.editQueueFocusReq)) { // รอบ 79: เพิ่งเปิด ⇒ focus + select ทั้งช่อง · วาดใหม่ตอนกำลังพิมพ์ ⇒ คง focus + ตำแหน่งเคอร์เซอร์
     var eInp = container.querySelector('.dq-editq-input');
     if (eInp) {
@@ -12410,6 +12759,7 @@ function dqRefillAllDoctorSelects_() {
     dqSettleDoctorField_(sel);
     dqApplyDefaultDoctor_(row);
   });
+  dqDoctorBarSettle_(); // รอบ 80: ช่องแพทย์ของแถบชื่อแพทย์ใช้รายชื่อเดียวกัน
   doctorComboRefresh_();
 }
 function dqAddSetupRow(item) {
@@ -12560,7 +12910,11 @@ function dqOnSaveRoomsClick() {
       dqApplyDoctorsToday_(resp.doctorsToday);
       if (resp.doctorsTodayWarning) showToast(resp.doctorsTodayWarning);
       dqShowView('board');
-      if (resp.today) dqApplySnapshot(resp.today); else dqLoadToday();
+      if (resp.today) { dqApplySnapshot(resp.today); dqDoctorBarAutoOpen_(); } // รอบ 80: มีห้องที่มีคิวไม่มีชื่อแพทย์ ⇒ เปิดแถบชื่อแพทย์ของห้องแรก
+      else {
+        var reloaded = dqLoadToday();
+        if (reloaded && reloaded.then) reloaded.then(dqDoctorBarAutoOpen_, function () {});
+      }
     } else {
       dqShowSetupMsg((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ', true);
     }
