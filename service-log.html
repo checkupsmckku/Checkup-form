@@ -1090,6 +1090,57 @@
     .thd-btn, .thd-pop { display: none !important; }
   }
 
+  /* ===== รอบ 81: บันทึกตรวจสุขภาพล่วงหน้า ("รอมา") ===== */
+  /* แถวเดียวกะทัดรัด (ไม่ใช่การ์ด): ดันฟอร์มลงน้อยที่สุด — แผงคิวบันทึกลอยล่างจอ (รอบ 34) ต้องไม่ทับช่อง HN บนมือถือ (test_round34_web 11a) */
+  #serviceDateRow { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+  #serviceDateRow label.field-label { margin: 0; flex: 0 0 auto; white-space: nowrap; }
+  #serviceDateRow .thd-btn { flex: 1 1 auto; width: auto; min-width: 0; padding: 3px 10px; min-height: 34px; }
+  #serviceDateRow .btn { flex: 0 0 auto; min-height: 34px; padding: 3px 12px; }
+  .pre-mode-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px;
+    background: #FFF3E0; border: 2px solid #F57C00; color: #8A4B00; border-radius: 10px; padding: 10px 14px; font-weight: 700;
+  }
+  .pre-mode-bar[hidden] { display: none; }
+  /* โหมดล่วงหน้า: ซ่อนคิว (+ปุ่มแนะนำ ◀ ▶) · ช่องทางรับผล · นัดรับวันที่ — ค่าในช่องไม่ถูกแตะ แค่ไม่เข้า payload */
+  #svcFormWrap.pre-mode #queueRow, #svcFormWrap.pre-mode #deliveryRow, #svcFormWrap.pre-mode #pickupDateWrap { display: none !important; }
+  /* แผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ: จางลง + inert (กดไม่ได้ โฟกัสไม่ได้) แต่ไม่ซ่อน */
+  .log-panel.pre-disabled { opacity: .45; filter: grayscale(.5); }
+  .log-panel.pre-disabled .log-panel-head { cursor: not-allowed; }
+  #preCard h2 { margin-bottom: 6px; }
+  #preCard h2 .muted { font-size: 14px; font-weight: 600; margin-left: 6px; }
+  .pre-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-top: 1px solid var(--border); }
+  .pre-row.pre-arrived { opacity: .55; }
+  .pre-row-main { flex: 1 1 240px; min-width: 0; }
+  .pre-name { font-weight: 700; overflow-wrap: anywhere; }
+  .pre-meta { font-size: 13px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+  .pre-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pre-badge { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 13px; font-weight: 700; margin-right: 4px; }
+  .pre-badge.pre-waiting { background: #FFF3E0; color: #8A4B00; border: 1px solid #F57C00; }
+  .pre-badge.pre-noshow { background: #FDECEA; color: var(--danger); border: 1px solid var(--danger); }
+  .pre-badge.pre-came { background: var(--green-pale); color: var(--success); border: 1px solid var(--success); }
+  .pre-modal {
+    position: fixed; inset: 0; z-index: 2050; background: rgba(20,20,30,.55);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .pre-modal[hidden] { display: none; }
+  .pre-modal-box {
+    background: var(--surface); border-radius: 12px; max-width: 560px; width: 100%; max-height: 92vh; overflow-y: auto;
+    padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  }
+  .pre-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .pre-modal-title { font-size: 19px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+  .pre-field-err { color: var(--danger); font-size: 14px; margin-top: 3px; overflow-wrap: anywhere; }
+  .pre-field-err:empty { display: none; }
+  .pre-cand-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .pre-cand { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+  .pre-cand-main { min-width: 0; overflow-wrap: anywhere; }
+  .pre-cand-btn { text-align: left; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; min-height: 44px; font-size: 15px; overflow-wrap: anywhere; }
+  .pre-cand-btn.pre-near { border-color: #F57C00; background: #FFF8EE; }
+  @media (max-width: 699px) {
+    .pre-modal { padding: 0; }
+    .pre-modal-box { max-width: none; height: 100%; max-height: none; border-radius: 0; }
+  }
+
   /* รอบ 41 (W1/W2) — กระดานคิวพบแพทย์ (#dqScreen) · ทุกคลาสขึ้นต้น dq · ยกจาก doctor-queue.html (ตรวจรับ 3 รอบ)
      ⚠ ตารางห้องกว้างกว่าจอมือถือได้ ⇒ เลื่อนใน #dqRoomCards เอง (overflow-x:auto) ห้ามให้หน้าเลื่อนแนวนอน */
   #dqScreen > .wrap { max-width: 1200px; } /* รอบ 51: กัปตันใช้คอม — การ์ด 2×2 ใช้ความกว้างจอ (.wrap ปกติ 720px ใช้ร่วมหน้าอื่น ห้ามแก้ตัวรวม) */
@@ -1211,6 +1262,7 @@
     .dq-setup-row { grid-template-columns: 1fr 1fr; }
     .dq-setup-row-head { display: none; }
   }
+
 </style>
 </head>
 <body>
@@ -1236,6 +1288,72 @@
       <button type="button" class="btn small secondary no-print" id="editModalClose" aria-label="ปิด">✕</button>
     </div>
     <div id="editModalBody"></div>
+  </div>
+</div>
+
+<!-- ============== รอบ 81: หน้าต่างลงล่วงหน้า (z-index 2050: เหนือ #editModal 2000 · ต่ำกว่าปฏิทินไทย .thd-pop 2100 ⇒ ปฏิทินในหน้าต่างกดได้) ============== -->
+<!-- W4 เติมคิว -->
+<div id="preActivateModal" class="pre-modal no-print" hidden>
+  <div class="pre-modal-box" role="dialog" aria-modal="true" aria-labelledby="paTitle">
+    <div class="pre-modal-head">
+      <div>
+        <div id="paTitle" class="pre-modal-title"></div>
+        <div id="paSub" class="muted"></div>
+      </div>
+      <button type="button" class="btn small secondary" id="paClose" aria-label="ปิด">✕</button>
+    </div>
+    <label class="field-label" for="paQueue">คิว *</label>
+    <input type="text" id="paQueue" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
+    <button type="button" class="btn small secondary" id="paQueueHint" hidden style="margin-top:4px;"></button>
+    <div id="paQueueErr" class="pre-field-err"></div>
+    <label class="field-label" for="paHn">HN *</label>
+    <input type="text" id="paHn" autocomplete="off" placeholder="เช่น AB1234">
+    <div id="paHnErr" class="pre-field-err"></div>
+    <label class="field-label" for="paDelivery">ช่องทางรับผล *</label>
+    <select id="paDelivery"></select>
+    <div id="paPickupWrap" hidden>
+      <label class="field-label" for="paPickup">นัดรับวันที่ *</label>
+      <span class="cu-date-cell">
+        <input type="date" id="paPickup" data-closed-days="pickup">
+        <span class="cu-date-err-msg"></span>
+      </span>
+    </div>
+    <div id="paError" class="error-box" hidden></div>
+    <div class="row" style="margin-top:12px;">
+      <button type="button" class="btn is-disabled" id="paSave" aria-disabled="true">บันทึก</button>
+      <button type="button" class="btn secondary" id="paCancel">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- W7 🔗 มาแล้ว (บันทึกซ้ำ) -->
+<div id="preLinkModal" class="pre-modal no-print" hidden>
+  <div class="pre-modal-box" role="dialog" aria-modal="true" aria-labelledby="plTitle">
+    <div class="pre-modal-head">
+      <div>
+        <div id="plTitle" class="pre-modal-title"></div>
+        <div id="plSub" class="muted"></div>
+      </div>
+      <button type="button" class="btn small secondary" id="plClose" aria-label="ปิด">✕</button>
+    </div>
+    <input type="search" id="plSearch" autocomplete="off" placeholder="ค้นหา คิว / HN / ชื่อ" style="margin-top:8px;">
+    <div id="plError" class="error-box" hidden></div>
+    <div id="plList" class="pre-cand-list"></div>
+  </div>
+</div>
+
+<!-- W6 อาจเป็นคนที่ลงล่วงหน้าไว้ -->
+<div id="preWarnModal" class="pre-modal no-print" hidden>
+  <div class="pre-modal-box" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <div class="pre-modal-head">
+      <div id="pwTitle" class="pre-modal-title">อาจเป็นคนที่ลงล่วงหน้าไว้</div>
+    </div>
+    <p class="muted" style="margin:6px 0;">มีรายการลงล่วงหน้าของวันนี้ที่ HN / ชื่อ / สกุล ตรงกับฟอร์มนี้ — ถ้าเป็นคนเดียวกันกด "ใช่ คนนี้" ระบบจะบันทึกตามปกติและผูกเป็น "มาแล้ว"</p>
+    <div id="pwList" class="pre-cand-list"></div>
+    <div class="row" style="margin-top:12px;">
+      <button type="button" class="btn secondary" id="pwNew">ไม่ใช่ — บันทึกใหม่</button>
+      <button type="button" class="btn secondary" id="pwClose">ปิด</button>
+    </div>
   </div>
 </div>
 
@@ -1299,6 +1417,18 @@
         ✏️ กำลังแก้ไขรายการเวลา <b id="editBannerTime"></b>
         <button type="button" class="btn small secondary no-print" id="btnCancelEdit" style="margin-left:8px;">ยกเลิกการแก้ไข</button>
         <div id="editBannerMergeNote" class="no-print" hidden style="margin-top:6px;font-weight:600;"></div>
+      </div>
+
+      <!-- รอบ 81 (W1): ช่อง "วันที่รับบริการ" — ค่าตั้งต้น = วันนี้ · เลือกได้ถึงวันนี้+7 (ปฏิทินไทยชุด thd* · input[type=date] เป็นตัวเก็บค่า ห้าม display:none)
+           วันที่ > วันนี้ ⇒ โหมดล่วงหน้า (ดู isPreMode_/applyPreMode_) · อยู่นอก #logForm โดยตั้งใจ: reset()/ร่างที่เก็บ-คืนค่าฟอร์ม/หน้าต่างแก้ไข ไม่แตะช่องนี้ -->
+      <div class="no-print" id="serviceDateRow">
+        <label class="field-label" for="serviceDate">วันที่รับบริการ</label>
+        <input type="date" id="serviceDate">
+        <button type="button" class="btn secondary small" id="btnServiceDateToday">วันนี้</button>
+      </div>
+      <div id="preModeBar" class="pre-mode-bar no-print" hidden role="status">
+        <span id="preModeText"></span>
+        <button type="button" class="btn small secondary no-print" id="btnCancelPreEdit" hidden style="flex:0 0 auto;">ยกเลิกการแก้</button>
       </div>
 
       <form id="logForm" class="log-grid no-print">
@@ -1417,6 +1547,8 @@
                   <input type="number" id="checkupAmount" min="0" step="1" inputmode="numeric" placeholder="กรอกยอดเงินที่เก็บจริง">
                   <p class="muted no-print" id="checkupStandardPriceHint" style="margin-top:2px;" hidden></p>
 
+                  <!-- รอบ 81: #deliveryRow ห่อป้าย+ช่องทางรับผล เพื่อซ่อนทั้งก้อนในโหมดล่วงหน้า (CSS #svcFormWrap.pre-mode) -->
+                  <div id="deliveryRow">
                   <label class="field-label" for="deliveryMethod">ช่องทางรับผล *</label>
                   <select id="deliveryMethod">
                     <option value="">— เลือกช่องทางรับผล —</option>
@@ -1426,6 +1558,7 @@
                     <option value="ส่งทาง Whatsapp">ส่งทาง Whatsapp</option>
                     <option value="นัดรับวันที่">นัดรับวันที่</option>
                   </select>
+                  </div>
 
                   <div id="pickupDateWrap" hidden>
                     <label class="field-label" for="pickupDate">นัดรับวันที่ *</label>
@@ -1583,7 +1716,7 @@
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
       <!-- รอบ 74 (เจ้าของสั่ง 2026-10-08): เลือกวันที่ดูรายการได้ (ปฏิทินไทยชุด thd* — input[type=date] เป็นตัวเก็บค่า ห้าม display:none)
-           ค่าตั้งต้น = วันนี้ · max = วันนี้ (ห้ามเลือกอนาคต) · เห็นเฉพาะจุดบริการที่เลือกอยู่ -->
+           ค่าตั้งต้น = วันนี้ · รอบ 81: max = วันนี้+7 (เลือกวันอนาคตเพื่อดูรายการลงล่วงหน้า) · เห็นเฉพาะจุดบริการที่เลือกอยู่ -->
       <div class="no-print" id="todayViewDateRow" style="margin-bottom:10px;">
         <label class="field-label" for="todayViewDate">วันที่</label>
         <div class="row">
@@ -1594,6 +1727,15 @@
       <!-- รอบ 72: ข้อความตั้งต้นใช้ขีด ไม่ใช่ 0 — โหลดครั้งแรกไม่สำเร็จ แถบนี้ไม่ถูกเขียนทับ ⇒ "0 คน" จะดูเหมือนยอดจริง -->
       <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท</div>
 
+      <!-- รอบ 81 (W3): การ์ด "⏳ ลงล่วงหน้า" — รวมทุกจุด · อยู่เหนือ SUP OPD · ไม่มีรายการ (ไม่นับที่ยกเลิก) ⇒ ซ่อนทั้งใบ · วาดโดย renderPreCard_() -->
+      <div class="card no-print" id="preCard" hidden>
+        <h2>⏳ ลงล่วงหน้า <span class="muted" id="preCounts"></span></h2>
+        <div id="preError" class="error-box" hidden></div>
+        <input type="search" id="preSearch" autocomplete="off" placeholder="ค้นหา ชื่อ / สกุล / HN">
+        <div id="preList"></div>
+      </div>
+      <p class="muted" id="todayFutureMsg" hidden>วันในอนาคต — มีเฉพาะรายการลงล่วงหน้า</p>
+
       <div class="card" id="specialTodaySummaryCard">
         <h2>สรุป SUP OPD</h2>
         <p class="muted" style="margin:0 0 2px;font-weight:700;">Nursing productivity</p>
@@ -1601,6 +1743,8 @@
         <div id="specialTodaySummaryBody"></div>
       </div>
 
+      <!-- รอบ 81 (W3): #todayListBlock ห่อหัวข้อ+ค้นหา HN+รายการ เพื่อซ่อนทั้งก้อนเมื่อดูวันในอนาคต (applyFutureViewState_) -->
+      <div id="todayListBlock">
       <h2 style="margin-top:18px;"><span id="todayListTitle">รายการวันนี้</span><span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
       <div class="today-search no-print">
         <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา HN">
@@ -1608,6 +1752,7 @@
       </div>
       <div class="today-search-hint" id="todayHnHint" hidden></div>
       <div id="todayList"></div>
+      </div>
     </div>
   </div>
 
@@ -2306,7 +2451,13 @@ var STATE = {
   lastPricingKey: null,
   lastAutoCheckupAmount: null,
   // รอบ 31A (A-W2): { <จุด>: [คำหัวข้อหลัก...] } จาก config (ไม่มีคีย์นี้เลย = เซิร์ฟเวอร์รุ่นเก่า -> {} เสมอ ไม่ crash)
-  pointTopics: {}
+  pointTopics: {},
+  // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
+  // preModeApplied = applyPreMode_() ทำงานในโหมดล่วงหน้าอยู่ไหม (ตรวจจับ "เปลี่ยนสถานะ") · serviceDateDay = วันที่ที่ใช้ตั้งขอบเขต #serviceDate ล่าสุด (ตรวจข้ามวัน)
+  preEditId: '',
+  preEditName: '',
+  preModeApplied: false,
+  serviceDateDay: ''
 };
 
 /* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
@@ -2767,9 +2918,11 @@ function updatePersonCardLabels() {
   // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN)
   // ⇒ HN บังคับเฉพาะตรวจสุขภาพ/ส่งตรวจพิเศษเหมือนเดิม (เดิมเคยบังคับวัคซีนด้วยตามคำสั่ง 2026-09-18)
   var needHn = needPerson || medLabAmountNow_() > 0 || isMedLabSpecialOn(); // รอบ 68: ใบรับรองแพทย์มี lab บังคับ HN ด้วย · รอบ 70: รวมติ๊ก EKG/ตรวจสายตา/ตาบอดสี
+  var preM = (typeof isPreMode_ === 'function') && isPreMode_(); // รอบ 81: โหมดล่วงหน้า HN แสดงแต่ไม่บังคับ
+  if (preM) needHn = false;
   if (hnLabelEl) hnLabelEl.textContent = needHn ? 'HN *' : 'HN';
   if (nameLabelEl) nameLabelEl.textContent = needPerson ? 'ชื่อ-นามสกุลผู้รับบริการ *' : 'ชื่อ-นามสกุลผู้รับบริการ';
-  if (hnEl) hnEl.placeholder = needHn ? reqPh : normalPh;
+  if (hnEl) hnEl.placeholder = preM ? 'ไม่บังคับ (ลงล่วงหน้า)' : (needHn ? reqPh : normalPh);
   if (nameEl) nameEl.placeholder = needPerson ? reqPh : normalPh;
 }
 
@@ -3836,9 +3989,10 @@ function syncCheckupPanelToQueue_() {
 function expandCheckupPanelIfBlocking_() {
   if (!pointHasCheckupTopic_() || !isCheckupOn() || !isCheckupPanelCollapsed_()) return;
   var dm = (qs('deliveryMethod').value || '');
-  var blocked = !dm || getCheckupAmountNum() === null ||
+  var preMX = (typeof isPreMode_ === 'function') && isPreMode_(); // รอบ 81: โหมดล่วงหน้าไม่มีช่องทางรับผล/นัดรับ
+  var blocked = (!dm && !preMX) || getCheckupAmountNum() === null ||
     (getSelectedGender() === 'female' && getSelectedPelvic() === '') ||
-    (dm === DELIVERY_PICKUP_APPOINTMENT && (!(qs('pickupDate').value || '') || !!pickupClosedReason(qs('pickupDate').value)));
+    (!preMX && dm === DELIVERY_PICKUP_APPOINTMENT && (!(qs('pickupDate').value || '') || !!pickupClosedReason(qs('pickupDate').value)));
   if (blocked) { setCheckupPanelCollapsed_(false); STATE.checkupAutoExpanded = false; }
 }
 
@@ -4064,6 +4218,8 @@ function validateForm(ctx) {
   var warnEl = qs('formWarning');
   var btn = qs('btnSubmitLog');
   var msg = '';
+  // รอบ 81 (W1): โหมดล่วงหน้า — ไม่บังคับคิว/HN/ช่องทางรับผล · ไม่เช็คคิวซ้ำกับรายการวันนี้ (recalcTotals ส่ง ctx.queue/deliveryMethod ว่าง และปิดแผงอื่นให้แล้ว)
+  var preM = (typeof isPreMode_ === 'function') && isPreMode_();
 
   // รอบ 27 (C3): sync กรอบแดง + ข้อความใต้ช่อง #pickupDate ทุกครั้งที่ validateForm ทำงาน (ครอบทั้งพิมพ์/วาง/
   // ตั้งค่าด้วยโค้ด/เลือกจากปฏิทิน เพราะ recalcTotals เรียก validateForm ทุกครั้งที่มีการเปลี่ยนแปลงอยู่แล้ว)
@@ -4076,18 +4232,18 @@ function validateForm(ctx) {
 
   // รอบ 37 (W3, 2026-09-30): ห้ามคิวซ้ำในวันเดียวกัน — คำนวณไว้ก่อนเข้าเชนเงื่อนไขด้านล่าง (ต้องรู้ผลก่อนตัดสินใจ
   // ว่าจะขึ้นข้อความนี้หรือไม่) ดู queueDupInfoFor_ ด้านบน (เช็คเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถวในโหมดแก้ไข)
-  var queueDupInfo = queueDupInfoFor_(ctx.queue);
+  var queueDupInfo = preM ? null : queueDupInfoFor_(ctx.queue);
 
   // B4 (รอบ 7, เจ้าของสั่งข้อ 0.1): ตรวจสุขภาพบังคับกรอกทุกช่อง (คิว/HN/ชื่อ-สกุล/เพศ/ราคา/ช่องทางรับผล)
   // ⚠ บังคับแค่ฝั่งเว็บเท่านั้น ห้ามเพิ่มฝั่ง Apps Script — แถวเก่าจำนวนมากไม่มีคิว/HN ถ้าเซิร์ฟเวอร์บังคับด้วย
   //   จะแก้ไขแถวเก่าไม่ได้เลย (ผลข้างเคียงที่ยอมรับแล้ว: แก้แถวเก่าที่ไม่มีข้อมูลครบต้องเติมให้ครบก่อนถึงจะบันทึกได้)
   var checkupMissing = [];
   if (ctx.checkupOn) {
-    if (!ctx.queue) checkupMissing.push('คิว');
-    if (!ctx.patientHn) checkupMissing.push('HN');
+    if (!ctx.queue && !preM) checkupMissing.push('คิว');
+    if (!ctx.patientHn && !preM) checkupMissing.push('HN');
     if (!ctx.patientName) checkupMissing.push('ชื่อ-สกุล');
     if (ctx.checkupAmountNum === null) checkupMissing.push('ราคา');
-    if (!ctx.deliveryMethod) checkupMissing.push('ช่องทางรับผล');
+    if (!ctx.deliveryMethod && !preM) checkupMissing.push('ช่องทางรับผล');
   }
 
   // รอบ 9.1: หน้า gate ขั้นที่ 2 (เลือกจุดบริการ+ชื่อผู้บันทึกก่อนเข้าใช้งาน) ถูกตัดออก ย้ายมาเป็นดรอปดาวน์บน topbar
@@ -4095,13 +4251,16 @@ function validateForm(ctx) {
   if (!STATE.point || !STATE.staffName) {
     msg = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
   } else if (!hasAnything) {
-    msg = 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+    msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
   } else if (queueDupInfo) {
     // รอบ 37 (W3, ข้อ 3): ขึ้นทันทีตอนพิมพ์/เลือกคิว — อยู่หลังด่าน "ยังไม่เลือกจุด/ผู้บันทึก" และ "ยังไม่ติ๊กอะไรเลย"
     // (ด่านที่สำคัญกว่าของเดิม) แต่มาก่อนด่านเฉพาะของตรวจสุขภาพด้านล่างทั้งหมด — คิวซ้ำต้องแก้ก่อนเสมอไม่ว่าจะติดด่านอื่นด้วย
     msg = queueDupMessage_(queueDupInfo);
   } else if (ctx.checkupOn && !ctx.gender) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
+  } else if (ctx.checkupOn && !String(qs('patientPrefix').value || '').trim()) {
+    // รอบ 81 (W2): คำนำหน้าบังคับทุกการบันทึกที่มีตรวจสุขภาพ (ปกติ/ล่วงหน้า/แก้ไขแถวเก่า/แก้ไขรายการรอมา) — ข้อความแยกจาก checkupMissing · บังคับฝั่งเว็บ
+    msg = 'กรุณาเลือกคำนำหน้า';
   } else if (ctx.checkupOn && checkupMissing.length) {
     msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
   } else if (ctx.checkupOn && ctx.gender === 'female' && !ctx.pelvic) {
@@ -4270,6 +4429,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 }
 
 function recalcTotals() {
+  if (typeof applyPreMode_ === 'function') applyPreMode_(); // รอบ 81 (W1): ซิงก์หน้าตาโหมดล่วงหน้าก่อนอ่านค่า (idempotent)
   var checkupOn = isCheckupOn();
   var program = checkupOn ? getSelectedProgram() : '';
   var gender = checkupOn ? getSelectedGender() : '';
@@ -4307,6 +4467,9 @@ function recalcTotals() {
   var medOn = isMedOn();
   var nCert = medNums.n5 + medNums.nDriver;                  // เข้าสูตร 120/20 เท่านั้น
   var labAmount = medNums.labAmount;
+  // รอบ 81 (W1): โหมดล่วงหน้า ⇒ ค่าในแผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ ไม่นับ (ไม่เข้ายอด/ด่าน/payload) — ค่าในช่องไม่ถูกล้าง กลับโหมดปกติแล้วยังอยู่
+  var preM = (typeof isPreMode_ === 'function') && isPreMode_();
+  if (preM) { vaccineCodes = []; vaccineOn = false; medNums = { n5: 0, nDriver: 0, labAmount: 0 }; medOn = false; nCert = 0; labAmount = 0; }
 
   var medCertGenAmountEl = qs('medCertGenAmount');
   if (medCertGenAmountEl) medCertGenAmountEl.textContent = 'คิดเงินอัตโนมัติ: ' + money(calcMedCertTotal(nCert, STATE.prices)) + ' บาท';
@@ -4319,6 +4482,7 @@ function recalcTotals() {
   var specialPrepIds = STATE.editSpecialPrep || [];
   var specialOn = isSpecialOn();
   var medLabSpecialOn = isMedLabSpecialOn(); // รอบ 70
+  if (preM) { specialOn = false; medLabSpecialOn = false; } // รอบ 81
 
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim();
@@ -4328,6 +4492,7 @@ function recalcTotals() {
   updatePickupDateVisibility(deliveryMethod);
   var pickupDateEl = qs('pickupDate');
   var pickupDate = (deliveryMethod === DELIVERY_PICKUP_APPOINTMENT) ? ((pickupDateEl && pickupDateEl.value) || '') : '';
+  if (preM) { queue = ''; deliveryMethod = ''; pickupDate = ''; } // รอบ 81 (W1): ซ่อนคิว/ช่องทางรับผล/นัดรับ ⇒ ไม่เข้าด่าน (ค่าในช่องไม่ถูกแตะ)
 
   var checkupAmountNum = getCheckupAmountNum();
   var checkupTotal = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
@@ -4416,7 +4581,8 @@ function updatePanelSummaries(ctx) {
 function applyLogLocks() {
   var hn = (qs('patientHn').value || '').trim();
   var name = (qs('patientName').value || '').trim();
-  var unlocked = !!(hn && name);
+  // รอบ 81 (W1): โหมดล่วงหน้า HN ไม่บังคับ + "ตรวจสุขภาพเปิดเอง" ⇒ ไม่ล็อกแผงตรวจสุขภาพ
+  var unlocked = ((typeof isPreMode_ === 'function') && isPreMode_()) || !!(hn && name);
   [['checkupLockOverlay', 'checkupLockBar'], ['specialLockOverlay', 'specialLockBar']].forEach(function (pair) {
     var overlay = qs(pair[0]), bar = qs(pair[1]);
     if (overlay) overlay.hidden = unlocked;
@@ -4460,6 +4626,7 @@ function resetLogForm() {
   exitEditMode();
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — ล้างร่างแล้ว HN/ชื่อว่าง ต้องกลับไปล็อกทั้ง 2 แผง
   applyPointLayout(); // รอบ 31A (A-W3) — ล้างร่างแล้วจัดแผงใหม่ตามจุดที่เลือกอยู่ (ไม่มีร่างค้างแล้ว จึงพับได้ตามปกติ)
+  if (typeof ensurePreCheckupOpen_ === 'function') ensurePreCheckupOpen_(); // รอบ 81: applyPointLayout พับแผงตรวจสุขภาพกลับ — โหมดล่วงหน้าต้องเปิดไว้เสมอ
   recalcTotals();
   // รอบ 60 ข้อ 2: ล้างฟอร์ม/บันทึกเสร็จ ⇒ ช่องคิวว่าง + คำแนะนำของรายถัดไปโชว์ (คำนวณใหม่หลัง exitEditMode แล้ว)
   syncQueuePrefix();
@@ -5268,6 +5435,20 @@ function onSubmitLog(e) {
   var btn = qs('btnSubmitLog');
   if (btn.disabled) return;
 
+  // รอบ 81 (W1/W5): โหมดล่วงหน้า (วันที่รับบริการ > วันนี้ / กำลังแก้รายการรอมา) ⇒ ยิง preLog/preEdit แทน log · ไม่เช็ค HN ซ้ำ/คิวซ้ำกับรายการวันนี้
+  if (typeof isPreMode_ === 'function' && isPreMode_()) { onSubmitPre_(); return; }
+  // รอบ 81 (W6): ฟอร์มปกติ (วันนี้ · ไม่ใช่แก้ไข · มีตรวจสุขภาพ) — HN/ชื่อต้น/นามสกุลตรงกับคนรอมาของวันนี้ ⇒ ถามก่อนว่าใช่คนเดียวกันไหม
+  // "ใช่" ⇒ บันทึกตามปกติ + แนบ preId (เซิร์ฟเวอร์ผูกเป็นมาแล้ว) · "ไม่ใช่" ⇒ บันทึกตามปกติ · ด่านซ้ำเดิม (รอบ 28/37) ทำงานต่อจากนี้ตามเดิม
+  if (!STATE.editingId && !(e && e.preDecided) && typeof preCandidatesForForm_ === 'function' && isCheckupOn()) {
+    var preCands = preCandidatesForForm_();
+    if (preCands.length) {
+      openPreWarn_(preCands, function (chosenPreId) {
+        onSubmitLog({ preventDefault: function () {}, preDecided: true, preId: chosenPreId || '' });
+      });
+      return;
+    }
+  }
+
   var checkupOn = isCheckupOn();
   var program = checkupOn ? getSelectedProgram() : ''; // อาจเป็น 'pea'
   // ก้อน A (2026-09-21, เจ้าของสั่ง): เดิมส่งเพศเฉพาะตอนมีโปรแกรมตรวจสุขภาพ (checkupOn) — วัคซีนล้วน/ใบรับรองล้วน
@@ -5380,6 +5561,7 @@ function onSubmitLog(e) {
     specialReg: specialRegIds // รอบ 8 (B4)
   };
   if (isEdit) payload.recordId = STATE.editingId;
+  if (!isEdit && e && e.preId) payload.preId = e.preId; // รอบ 81 (W6): "ใช่ คนนี้"
   // รอบ 38 (2026-10-01) W2: log ทุกรายการแนบ clientReqId (สร้างตอนขึ้นคิว ไม่ใช่ตอนยิง ⇒ "ส่งอีกครั้ง" ใช้รหัสเดิม) เซิร์ฟเวอร์ใช้กัน
   // บันทึกซ้ำเมื่อเน็ตหลุดแต่แถวลงชีตไปแล้ว + ตอบ logStatus · edit ไม่ต้องส่ง (เขียนทับตาม payload อยู่แล้ว ส่งซ้ำไม่เกิดแถวใหม่)
   if (!isEdit) payload.clientReqId = newClientReqId_();
@@ -5541,6 +5723,7 @@ function sendQueuedSave_(qid) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
         renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
+      if (!isEdit && payload.preId && typeof reloadPreAfterAction_ === 'function') reloadPreAfterAction_(); // รอบ 81 (W6): log+preId สำเร็จ ⇒ แถวรอมาถูกผูกเป็น 'มาแล้ว' — โหลด PRE_TODAY/การ์ดใหม่
       if (isEdit) refreshPendingAfterEdit_(); // รอบ 75: แก้ไขสำเร็จ (เช่น เปลี่ยนช่องทางรับผล) ⇒ ถ้าอยู่หน้า "ติดตามผล" โหลด pending ใหม่
     } else if (resp && resp.networkError && queued && !isEdit && payload.clientReqId) {
       // รอบ 38 W3: log + เน็ตหลุด ⇒ สถานะ 'checking' แล้วถาม logStatus เองสูงสุด 3 ครั้ง (ไม่ loadToday() ตอนนี้ — เน็ตหลุดอยู่
@@ -5559,6 +5742,8 @@ function sendQueuedSave_(qid) {
       // (ผู้ใช้อาจกด "ทิ้ง" ไปก่อนเซิร์ฟเวอร์ตอบแล้ว — แต่ก็ยังเผื่อไว้ว่าจริง ๆ อาจลงชีตไปแล้วเหมือนกัน)
       if (queued) {
         var msg = (resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
+        // รอบ 81 (W6): log+preId แต่รายการลงล่วงหน้าไม่อยู่ในสถานะรอมาแล้ว (มีคนเติมคิวไปก่อน) — ไม่เขียนอะไรลงชีต · ร่างอยู่ในแผงนี้ ("แก้แล้วบันทึกใหม่" คืนฟอร์ม)
+        if (resp && resp.code === 'preNotWaiting') msg = 'รายการลงล่วงหน้านี้ถูกเติมคิวไปแล้ว — ตรวจรายการวันนี้ก่อน';
         if (resp && resp.networkError) {
           msg += ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ารายการรายวันก่อนบันทึกใหม่';
         }
@@ -5612,7 +5797,9 @@ function triggerSubmit() {
     qs('formWarning').hidden = false;
     // รอบ 60 ข้อ 1: บันทึกไม่ผ่านเพราะ HN/ชื่อ/คิวว่าง (หรือ HN ผิดรูปแบบ) ขณะแผง "ผู้รับบริการ" พับอยู่ ⇒ กางให้เห็นช่องที่ต้องกรอก
     var hnV = (qs('patientHn').value || '').trim(), nmV = (qs('patientName').value || '').trim(), qV = (qs('queueSelect').value || '').trim();
-    if (!hnV || !nmV || (isCheckupOn() && !qV) || (hnV && !isValidHn(hnV))) expandPersonPanel_();
+    var preMT = (typeof isPreMode_ === 'function') && isPreMode_(); // รอบ 81: โหมดล่วงหน้าไม่บังคับ HN/คิว
+    if ((!hnV && !preMT) || !nmV || (isCheckupOn() && !qV && !preMT) || (hnV && !isValidHn(hnV)) ||
+        (isCheckupOn() && !(qs('patientPrefix').value || '').trim())) expandPersonPanel_(); // รอบ 81 (W2): คำนำหน้าว่างก็กางแผงให้เห็นปุ่มคำนำหน้า
     expandCheckupPanelIfBlocking_(); // รอบ 64: ติดที่ช่องในแผงตรวจสุขภาพขณะแผงพับ ⇒ กางให้
     return;
   }
@@ -6093,10 +6280,20 @@ var TODAY_LOAD_SEQ = 0;
 function loadToday() {
   loadTodayRun_(false);
   if (!isViewingToday_() && isTodayScreenVisible_()) loadTodayViewRun_(false);
+  // รอบ 81 (W6/W3): PRE_TODAY (เตือนในฟอร์มปกติ) + การ์ด ⏳ ลงล่วงหน้า โหลดคู่ขนานกัน ไม่บล็อกการโหลดรายการ · ล้มเงียบ
+  if (typeof loadPreToday_ === 'function') {
+    loadPreToday_();
+    if (!isViewingToday_() && isTodayScreenVisible_()) loadPreView_();
+  }
 }
 // รอบ 74: ทางเข้าของหน้า "รายการวันนี้" (เปิดหน้า/เปลี่ยนวัน/กดปุ่มวันนี้) — ดูวันนี้ ⇒ loadToday() เดิมทุกประการ · ดูวันอื่น ⇒ โหลดเฉพาะวันที่ดู
 function loadTodayScreen_() {
-  if (isViewingToday_()) loadToday(); else loadTodayViewRun_(false);
+  if (typeof applyFutureViewState_ === 'function') applyFutureViewState_(); // รอบ 81 (W3): วันอนาคต ⇒ ซ่อน SUP OPD/แถบสรุป/รายการ
+  if (isViewingToday_()) loadToday(); // รวม preList ของวันนี้แล้ว (loadToday → loadPreToday_)
+  else {
+    loadTodayViewRun_(false);
+    if (typeof loadPreView_ === 'function') loadPreView_();
+  }
 }
 // สถานะว่างระหว่างรอโหลดวันใหม่ (ยังไม่มีแคชของวันนั้น) — ห้ามปล่อยแถบสรุป/รายการของวันก่อนหน้าค้างอยู่ใต้ป้ายวันใหม่
 function resetTodayDisplayLoading_(dateStr) {
@@ -6116,6 +6313,7 @@ function resetTodayDisplayLoading_(dateStr) {
 }
 // รอบ 74: วาดใหม่จากชุด records ที่กำลังโชว์ตอนนี้ (วันนี้ = LAST_TODAY_RECORDS · วันอื่น = TODAY_VIEW_RECORDS) — ตัวกรอง HN ใช้ตัวนี้ ไม่ยิง API
 function redrawTodayCurrent_() {
+  if (TODAY_VIEW_DATE > todayStr()) return; // รอบ 81: วันอนาคตไม่มีรายการบันทึกบริการให้วาด
   if (isViewingToday_()) drawTodayList_(LAST_TODAY_RECORDS, todayStr());
   else drawTodayList_(TODAY_VIEW_RECORDS, TODAY_VIEW_DATE);
 }
@@ -6130,6 +6328,13 @@ function renderTodayViewList_(records) {
 // ไม่มีของเดิม = กล่อง "โหลดไม่สำเร็จ"+ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง) แต่แยกตัวแปรผลลัพธ์ทั้งหมด
 function loadTodayViewRun_(isRetry) {
   if (isViewingToday_()) return;
+  // รอบ 81 (W3): วันอนาคต ⇒ ไม่มีรายการบันทึกบริการให้โหลด (มีเฉพาะลงล่วงหน้า — การ์ด #preCard โหลดแยก) · ทิ้งคำตอบที่ค้างอยู่ของวันก่อนหน้า
+  if (TODAY_VIEW_DATE > todayStr()) {
+    TODAY_VIEW_SEQ++;
+    TODAY_VIEW_RECORDS = [];
+    setRefreshHint('todayRefreshHint', 'none');
+    return;
+  }
   if (!STATE.point) {
     TODAY_VIEW_SEQ++;
     var wrapNp = qs('todayList');
@@ -6189,16 +6394,17 @@ function loadTodayViewRun_(isRetry) {
 function setTodayViewDate_(dateStr) {
   var today = todayStr();
   var d = /^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || '')) ? String(dateStr) : today;
-  if (d > today) d = today; // ห้ามเลือกวันในอนาคต
+  var maxView = addDaysYmd_(today, PRE_MAX_DAYS_AHEAD);
+  if (d > maxView) d = today; // รอบ 81: เลือกได้ถึงวันนี้+7 (ดูรายการลงล่วงหน้า) · เกินกว่านั้นถอยเป็นวันนี้
   var el = qs('todayViewDate');
-  if (el) { el.setAttribute('max', today); if (el.value !== d) el.value = d; }
+  if (el) { el.setAttribute('max', maxView); if (el.value !== d) el.value = d; }
   TODAY_VIEW_AUTO_ = (d === today);
   if (d === TODAY_VIEW_DATE) return;
   TODAY_VIEW_DATE = d;
   TODAY_VIEW_SEQ++; // ทิ้งคำตอบของวันก่อนหน้าที่ยังค้าง
   var cached = (d === today) ? !!(TODAY_CACHE.key === STATE.point + '|' + d && TODAY_CACHE.records)
     : !!(TODAY_VIEW_CACHE.key === STATE.point + '|' + d && TODAY_VIEW_CACHE.records);
-  if (!cached) resetTodayDisplayLoading_(d); // มีแคช ⇒ loader วาดของเดิมให้เองทันที
+  if (!cached && d <= today) resetTodayDisplayLoading_(d); // มีแคช ⇒ loader วาดของเดิมให้เองทันที
   loadTodayScreen_();
 }
 // รอบ 74: ตัวเช็คข้ามวัน (เรียกจาก listDatesCheckDayRollover — ตัวเดียวกับหน้ารายชื่อ/ค้างส่งออก) — ดู "วันนี้" อยู่ตอนเที่ยงคืน ⇒ เลื่อนตามเป็นวันใหม่
@@ -6206,7 +6412,9 @@ function setTodayViewDate_(dateStr) {
 function todayViewCheckDayRollover_() {
   var today = todayStr();
   var el = qs('todayViewDate');
-  if (el && el.getAttribute('max') !== today) el.setAttribute('max', today);
+  var maxView = addDaysYmd_(today, PRE_MAX_DAYS_AHEAD); // รอบ 81: max = วันนี้+7
+  if (el && el.getAttribute('max') !== maxView) el.setAttribute('max', maxView);
+  if (typeof applyFutureViewState_ === 'function') applyFutureViewState_(); // วันที่ดูอยู่อาจเพิ่งกลายเป็น "วันนี้"
   if (TODAY_VIEW_AUTO_ && TODAY_VIEW_DATE !== today) {
     TODAY_VIEW_DATE = today;
     TODAY_VIEW_SEQ++;
@@ -6295,6 +6503,722 @@ function onCancelRecord(recordId, btnEl) {
       if (btnEl) btnEl.disabled = false;
     }
   });
+}
+
+/* =========================================================================
+   รอบ 81 — บันทึกตรวจสุขภาพล่วงหน้า ("รอมา") · SPEC_รอบ81_ลงล่วงหน้า.md ก้อน W (เว็บ)
+   แถวลงล่วงหน้าอยู่ในแท็บ "ลงล่วงหน้า" ฝั่งเซิร์ฟเวอร์ (ไม่ใช่แท็บบันทึกบริการ) — เว็บคุยผ่าน action preLog/preEdit/preCancel/preList/preActivate/preLink
+   (+ log ที่แนบ preId) · ⚠ listener ระดับบนสุดของก้อนนี้ทั้งหมดอยู่ในส่วน Bootstrap ท้ายไฟล์ (เทสต์บางไฟล์ตัดโค้ดไปรันใน vm)
+   ⚠ ทุกจุดที่แตะโค้ดเดิมเรียกฟังก์ชันของก้อนนี้ผ่าน typeof guard — vm จำลองของเทสต์เก่าไม่มีฟังก์ชันพวกนี้
+   ========================================================================= */
+var PRE_MAX_DAYS_AHEAD = 7;
+var PRE_DISABLED_PANELS_ = ['panelVaccine', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab']; // โหมดล่วงหน้า: แผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ
+var THAI_WEEKDAY_FULL = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+var PRE_TODAY = [];            // W6: items ของ preList วันนี้ (โหลดล้ม ⇒ ใช้ค่าเก่า ไม่แจ้งเตือน)
+var PRE_TODAY_RESP = null;     // คำตอบ preList วันนี้ล่าสุดทั้งก้อน (ใช้ป้อนการ์ด #preCard ตอนกลับมาดูวันนี้)
+var PRE_TODAY_BUSY_ = false;
+var PRE_TODAY_DIRTY_ = false;
+var PRE_VIEW = { date: '', items: [], counts: null, error: '' }; // W3: preList ของ TODAY_VIEW_DATE
+var PRE_VIEW_SEQ_ = 0;
+var PRE_SAVING_ = false;       // W1: กันกดบันทึกล่วงหน้าซ้ำระหว่างรอคำตอบ
+var PRE_ACTIVATE = { item: null, reqId: '', busy: false };
+var PRE_LINK = { item: null, records: null, busy: false, seq: 0 };
+var PRE_WARN = { onChoose: null };
+
+function addDaysYmd_(ymd, n) {
+  var p = thdParseDate(ymd);
+  if (!p) return String(ymd || '');
+  var d = new Date(Date.UTC(p.y, p.m - 1, p.d + n));
+  return d.getUTCFullYear() + '-' + thdPad2(d.getUTCMonth() + 1) + '-' + thdPad2(d.getUTCDate());
+}
+function preMaxDate_() { return addDaysYmd_(todayStr(), PRE_MAX_DAYS_AHEAD); }
+// "วันจันทร์ที่ 19 ตุลาคม 2569"
+function formatThaiDateFull_(ymd) {
+  var p = thdParseDate(ymd);
+  if (!p) return String(ymd || '');
+  var wd = new Date(Date.UTC(p.y, p.m - 1, p.d)).getUTCDay();
+  return 'วัน' + THAI_WEEKDAY_FULL[wd] + 'ที่ ' + formatThaiDate(ymd);
+}
+
+/* ---------- W1: ช่อง "วันที่รับบริการ" + โหมดล่วงหน้า ---------- */
+function serviceDateValue_() {
+  var el = qs('serviceDate');
+  var v = el ? String(el.value || '') : '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : todayStr();
+}
+function isPreEditMode_() { return !STATE.editingId && !!STATE.preEditId; }
+// โหมดล่วงหน้า = ไม่ใช่แก้ไขแถวปกติ และ (กำลังแก้รายการรอมา หรือ วันที่รับบริการ > วันนี้)
+function isPreMode_() {
+  if (STATE.editingId) return false;
+  if (STATE.preEditId) return true;
+  return serviceDateValue_() > todayStr();
+}
+function syncServiceDateBounds_() {
+  var el = qs('serviceDate');
+  if (!el) return;
+  el.setAttribute('min', todayStr());
+  el.setAttribute('max', preMaxDate_());
+  STATE.serviceDateDay = todayStr();
+}
+// ตั้งกลับเป็นวันนี้ (ไม่ยิง event — ผู้เรียกเรียก recalcTotals() เอง)
+function resetServiceDate_() {
+  var el = qs('serviceDate');
+  if (!el) return;
+  syncServiceDateBounds_();
+  if (el.value !== todayStr()) el.value = todayStr();
+}
+// เปลี่ยนจุดบริการ: ออกจากโหมดแก้รายการรอมา (ล้างฟอร์มที่เติมไว้) + วันที่กลับเป็นวันนี้
+function resetServiceDateAndPreEdit_() {
+  var had = !!STATE.preEditId;
+  STATE.preEditId = '';
+  STATE.preEditName = '';
+  resetServiceDate_();
+  if (had) resetLogForm();
+}
+function onServiceDateChange_() {
+  var el = qs('serviceDate');
+  if (!el) return;
+  syncServiceDateBounds_();
+  var today = todayStr();
+  var v = String(el.value || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < today) v = today;
+  else if (v > preMaxDate_()) {
+    v = today;
+    showToast('ลงล่วงหน้าได้ไม่เกิน ' + PRE_MAX_DAYS_AHEAD + ' วัน (ถึง ' + formatThaiDate(preMaxDate_()) + ')');
+  }
+  if (el.value !== v) el.value = v;
+  recalcTotals();
+}
+// ข้ามวัน: ช่องวันที่ที่ค้างจากเมื่อวาน ⇒ กลับเป็นวันนี้ (ผู้ใช้เปิดแท็บค้างข้ามคืน) · กำลังแก้รายการรอมาอยู่ ⇒ คงรายการไว้ แค่ดันวันที่ที่ผ่านไปแล้วเป็นวันนี้
+function preServiceDateRollover_() {
+  var el = qs('serviceDate');
+  if (!el) return;
+  if (STATE.serviceDateDay === todayStr()) return;
+  syncServiceDateBounds_();
+  var v = String(el.value || '');
+  if (STATE.preEditId) { if (v < todayStr()) el.value = todayStr(); }
+  else el.value = todayStr();
+  if (typeof recalcTotals === 'function') recalcTotals();
+}
+
+// โหมดล่วงหน้า: แผงตรวจสุขภาพต้องเปิดอยู่ (เจ้าหน้าที่ต้องเลือกโปรแกรม) — ตั้งทั้ง data-collapsed (จอแคบ/แผงอื่นจากจุดบริการ) และ data-user-collapsed (จอกว้าง)
+function ensurePreCheckupOpen_() {
+  if (!isPreMode_()) return;
+  var p = qs('panelCheckup');
+  if (!p || !p.setAttribute) return;
+  p.setAttribute('data-collapsed', '0');
+  if (p.removeAttribute) p.removeAttribute('data-user-collapsed');
+  STATE.checkupAutoExpanded = false;
+}
+// ซิงก์หน้าตาโหมดล่วงหน้า (แถบส้ม · แผงอื่นปิด · ซ่อนคิว/ช่องทางรับผล) ตามสถานะปัจจุบัน — เรียกต้น recalcTotals() ทุกครั้ง (idempotent)
+function applyPreMode_() {
+  var wrap = qs('svcFormWrap');
+  var row = qs('serviceDateRow'), bar = qs('preModeBar'), txt = qs('preModeText'), cancelBtn = qs('btnCancelPreEdit');
+  var editing = !!STATE.editingId;
+  var pre = isPreMode_();
+  var edit = isPreEditMode_();
+  if (row) row.hidden = editing; // โหมดแก้ไขแถวปกติ (หน้าต่างแก้ไข) ⇒ ซ่อนแถววันที่
+  if (wrap && wrap.classList) wrap.classList.toggle('pre-mode', pre);
+  if (bar) {
+    bar.hidden = !pre;
+    if (pre && txt) {
+      txt.textContent = edit ? ('✎ แก้ไขรายการลงล่วงหน้า — ' + (STATE.preEditName || ''))
+        : ('⏳ ลงล่วงหน้า ' + formatThaiDateFull_(serviceDateValue_()));
+    }
+    if (cancelBtn) cancelBtn.hidden = !edit;
+  }
+  PRE_DISABLED_PANELS_.forEach(function (id) {
+    var p = qs(id);
+    if (!p || !p.setAttribute) return;
+    if (p.classList) p.classList.toggle('pre-disabled', pre);
+    if (pre) { p.setAttribute('inert', ''); p.setAttribute('aria-disabled', 'true'); }
+    else if (p.removeAttribute) { p.removeAttribute('inert'); p.removeAttribute('aria-disabled'); }
+  });
+  var btn = qs('btnSubmitLog');
+  if (btn && !editing) {
+    var want = pre ? (edit ? 'บันทึกการแก้ไขล่วงหน้า' : 'บันทึกล่วงหน้า') : 'บันทึก';
+    var cur = btn.textContent;
+    if (cur !== want && (cur === 'บันทึก' || cur === 'บันทึกล่วงหน้า' || cur === 'บันทึกการแก้ไขล่วงหน้า')) btn.textContent = want;
+  }
+  if (STATE.preModeApplied !== pre) {
+    STATE.preModeApplied = pre;
+    if (pre) ensurePreCheckupOpen_(); // ตรวจสุขภาพเปิดเอง
+    if (typeof applyLogLocks === 'function') applyLogLocks();
+  }
+}
+
+// บันทึกล่วงหน้า (W1) / บันทึกการแก้ไขรายการรอมา (W5) — ยิงตรง (ไม่ผ่าน SAVE_QUEUE) เพราะ preDuplicate ต้องแสดงข้อความ + ไม่ล้างฟอร์ม
+function onSubmitPre_() {
+  if (PRE_SAVING_) return;
+  var isEdit = isPreEditMode_();
+  var genderDom = getSelectedGender();
+  var amountNum = getCheckupAmountNum();
+  var payload = {
+    staffKey: STATE.staffKey,
+    staffName: STATE.staffName,
+    point: STATE.point,
+    date: serviceDateValue_(),
+    patientPrefix: (qs('patientPrefix').value || '').trim(),
+    patientName: (qs('patientName').value || '').trim(),
+    patientHn: (qs('patientHn').value || '').trim(),
+    program: getSelectedProgram(),
+    gender: genderToThai(genderDom),
+    pelvic: genderDom === 'female' ? getSelectedPelvic() : 'no',
+    checkupAmount: amountNum === null ? 0 : amountNum
+  };
+  if (isEdit) payload.preId = STATE.preEditId;
+  PRE_SAVING_ = true;
+  qs('formError').hidden = true;
+  showToast('กำลังบันทึกล่วงหน้า…');
+  apiCall(isEdit ? 'preEdit' : 'preLog', payload).then(function (resp) {
+    PRE_SAVING_ = false;
+    if (resp && resp.status === 'ok') {
+      var newDate = (resp.pre && resp.pre.date) || payload.date;
+      if (isEdit) {
+        STATE.preEditId = '';
+        STATE.preEditName = '';
+        resetServiceDate_();
+        resetLogForm();
+        showToast('แก้ไขรายการลงล่วงหน้า ' + payload.patientName + ' เป็นวันที่ ' + formatThaiDate(newDate) + ' แล้ว');
+        setTodayViewDate_(newDate);
+        showScreen('today');
+      } else {
+        resetLogForm(); // ล้างฟอร์มตามปกติ — ช่อง #serviceDate อยู่นอก #logForm จึงคงวันเดิมไว้
+        showToast('ลงล่วงหน้า ' + payload.patientName + ' วันที่ ' + formatThaiDate(newDate) + ' แล้ว');
+      }
+      reloadPreAfterAction_();
+    } else {
+      var m = (resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
+      var errEl = qs('formError');
+      if (errEl) { errEl.textContent = '❌ ' + m; errEl.hidden = false; } // ไม่ล้างฟอร์ม (preDuplicate ฯลฯ) — แก้แล้วกดบันทึกใหม่ได้
+      showToast('❌ ลงล่วงหน้าไม่สำเร็จ: ' + m);
+    }
+  });
+}
+
+/* ---------- W5: แก้ไขรายการรอมา ---------- */
+function startPreEdit_(item) {
+  if (!item) return;
+  if (!isMainFormDraftEmpty_() && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการลงล่วงหน้านี้หรือไม่?')) return;
+  STATE.preEditId = '';
+  resetLogForm();
+  var f = (item.form && typeof item.form === 'object') ? item.form : {};
+  var prog = String(f.program != null && f.program !== '' ? f.program : (item.program || ''));
+  setProgramSet(isSundayProgram_(prog) ? 'sun' : 'week', { silent: true });
+  document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = !!prog && (r.value === prog); });
+  var g = genderFromThai(f.gender || item.gender);
+  document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === g); });
+  setGenderAutoHint(false);
+  updatePelvicSection(!!prog, g);
+  var pel = f.pelvic || item.pelvic || 'no';
+  document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === pel); });
+  var amt = (f.checkupAmount != null) ? f.checkupAmount : item.checkupAmount;
+  qs('checkupAmount').value = String(amt != null ? amt : 0);
+  STATE.lastPricingKey = prog + '|' + g + '|' + (g === 'female' ? pel : 'no'); // ค่าที่โหลดมาถือเป็นผู้ใช้กรอกเอง — กันเติมราคามาตรฐานทับ
+  qs('patientName').value = f.patientName || item.patientName || '';
+  qs('patientHn').value = f.patientHn || item.patientHn || '';
+  qs('patientPrefix').value = f.patientPrefix || item.patientPrefix || '';
+  syncPrefixButtons();
+  updateHnHint();
+  STATE.preEditId = item.preId;
+  STATE.preEditName = [qs('patientPrefix').value, qs('patientName').value].filter(function (x) { return String(x || '').trim(); }).join(' ');
+  syncServiceDateBounds_();
+  qs('serviceDate').value = (item.date && item.date >= todayStr()) ? item.date : todayStr(); // รายการ "ไม่มา" (วันนัดผ่านแล้ว) ⇒ เสนอวันนี้ให้เลื่อนวัน
+  applyLogLocks();
+  recalcTotals();
+  applyCheckupPanelDefault_();
+  showScreen('log');
+}
+function exitPreEdit_() {
+  STATE.preEditId = '';
+  STATE.preEditName = '';
+  resetServiceDate_();
+  resetLogForm();
+  showToast('ยกเลิกการแก้ไขแล้ว');
+  showScreen('today');
+}
+
+/* ---------- โหลด preList (W3 / W6) ---------- */
+function preListResp_(resp) { return !!(resp && resp.status === 'ok' && Array.isArray(resp.items)); }
+function preOldServerResp_(resp) { return !!(resp && resp.status === 'error' && String(resp.message || '').indexOf('ไม่รู้จัก action') !== -1); }
+// PRE_TODAY = รายการวันนี้ (ล้มเงียบ ใช้ค่าเก่า) · ถ้ากำลังดูวันนี้อยู่ป้อนการ์ดด้วย
+function loadPreToday_() {
+  if (!STATE.staffKey) return;
+  if (PRE_TODAY_BUSY_) { PRE_TODAY_DIRTY_ = true; return; }
+  PRE_TODAY_BUSY_ = true;
+  var day = todayStr();
+  apiCall('preList', { staffKey: STATE.staffKey, date: day }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    PRE_TODAY_BUSY_ = false;
+    if (day === todayStr()) {
+      if (preListResp_(resp)) {
+        PRE_TODAY = resp.items;
+        PRE_TODAY_RESP = resp;
+        if (isViewingToday_()) preViewApply_(day, resp);
+      } else if (isViewingToday_()) {
+        preViewFail_(day, resp);
+      }
+    }
+    if (PRE_TODAY_DIRTY_) { PRE_TODAY_DIRTY_ = false; loadPreToday_(); }
+  });
+}
+// การ์ด #preCard ของ TODAY_VIEW_DATE ที่ไม่ใช่วันนี้ (วันนี้ผ่าน loadPreToday_)
+function loadPreView_() {
+  if (!STATE.staffKey) return;
+  if (isViewingToday_()) {
+    if (PRE_TODAY_RESP && PRE_TODAY_RESP.date === todayStr()) preViewApply_(todayStr(), PRE_TODAY_RESP);
+    loadPreToday_();
+    return;
+  }
+  var date = TODAY_VIEW_DATE;
+  var seq = ++PRE_VIEW_SEQ_;
+  if (PRE_VIEW.date !== date) { PRE_VIEW = { date: date, items: [], counts: null, error: '' }; renderPreCard_(); }
+  apiCall('preList', { staffKey: STATE.staffKey, date: date }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== PRE_VIEW_SEQ_ || TODAY_VIEW_DATE !== date) return;
+    if (preListResp_(resp)) preViewApply_(date, resp); else preViewFail_(date, resp);
+  });
+}
+function preViewApply_(date, resp) {
+  PRE_VIEW = { date: date, items: resp.items || [], counts: resp.counts || null, error: '' };
+  renderPreCard_();
+}
+function preViewFail_(date, resp) {
+  if (PRE_VIEW.date !== date) PRE_VIEW = { date: date, items: [], counts: null, error: '' };
+  PRE_VIEW.error = preOldServerResp_(resp) ? '' : ('โหลดรายการลงล่วงหน้าไม่สำเร็จ (' + ((resp && resp.status !== 'ok' && resp.message) ? resp.message : 'เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ') + ')');
+  renderPreCard_();
+}
+// หลังทำ pre* สำเร็จ: PRE_TODAY + การ์ดของวันที่ดูอยู่ โหลดใหม่
+function reloadPreAfterAction_() {
+  loadPreToday_();
+  if (!isViewingToday_()) loadPreView_();
+}
+
+/* ---------- W3: การ์ด "⏳ ลงล่วงหน้า" ในหน้ารายการรายวัน ---------- */
+function applyFutureViewState_() {
+  var fut = TODAY_VIEW_DATE > todayStr();
+  ['specialTodaySummaryCard', 'todaySummaryBar', 'todayListBlock'].forEach(function (id) {
+    var el = qs(id);
+    if (el) el.hidden = fut;
+  });
+  var m = qs('todayFutureMsg');
+  if (m) m.hidden = !fut;
+}
+var PRE_PREFIX_RE_ = /^(นางสาว|น\.ส\.|น\.ส|นส\.?|นาย|นาง|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|master|mrs\.?|mr\.?|miss|ms\.?)\s*/i;
+// ตัดคำนำหน้าหัวข้อความ (ซ้ำได้) — ผลว่างคืนข้อความเดิม (กันค้นด้วยคำนำหน้าล้วนแล้วได้เข็มว่าง)
+function preStripPrefix_(s) {
+  var t = String(s == null ? '' : s).trim();
+  var out = t;
+  for (var i = 0; i < 2; i++) {
+    var n = out.replace(PRE_PREFIX_RE_, '');
+    if (n === out) break;
+    out = n;
+  }
+  return out || t;
+}
+function preNormText_(s) { return String(s == null ? '' : s).replace(/[\s.]+/g, '').toLowerCase(); }
+// ค้น ชื่อ / สกุล / HN — ไม่สนคำนำหน้า ช่องว่าง ตัวพิมพ์ · ตรงเมื่อชื่อเต็ม/HN มีข้อความค้นอยู่ (substring)
+function preMatchesQuery_(it, rawQ) {
+  var q = preNormText_(rawQ);
+  if (!q) return true;
+  var needles = [q];
+  var qs2 = preNormText_(preStripPrefix_(rawQ));
+  if (qs2 && qs2 !== q) needles.push(qs2);
+  var hays = [preNormText_(it.patientName), preNormText_((it.patientPrefix || '') + (it.patientName || '')), preNormText_(it.patientHn)];
+  for (var i = 0; i < needles.length; i++) {
+    for (var j = 0; j < hays.length; j++) { if (hays[j] && hays[j].indexOf(needles[i]) !== -1) return true; }
+  }
+  return false;
+}
+function preNameCmp_(a, b) { return String(a.patientName || '').localeCompare(String(b.patientName || ''), 'th'); }
+// รอมา/ไม่มา ก่อน (เรียงชื่อ th) แล้วมาแล้ว (เรียงชื่อ th) · ยกเลิกไม่แสดง
+function preSortItems_(items) {
+  var live = (items || []).filter(function (it) { return it && it.displayStatus !== 'ยกเลิก' && it.status !== 'ยกเลิก'; });
+  var waiting = live.filter(function (it) { return it.displayStatus !== 'มาแล้ว'; }).sort(preNameCmp_);
+  var came = live.filter(function (it) { return it.displayStatus === 'มาแล้ว'; }).sort(preNameCmp_);
+  return waiting.concat(came);
+}
+function preItemFullName_(it) { return [it.patientPrefix, it.patientName].filter(function (x) { return String(x || '').trim(); }).join(' '); }
+function preFindItem_(preId) {
+  var lists = [PRE_VIEW.items, PRE_TODAY];
+  for (var k = 0; k < lists.length; k++) {
+    var l = lists[k] || [];
+    for (var i = 0; i < l.length; i++) { if (l[i] && l[i].preId === preId) return l[i]; }
+  }
+  return null;
+}
+function preRowHtml_(it) {
+  var st = it.displayStatus;
+  var badge, cls = '';
+  if (st === 'มาแล้ว') {
+    var hhmm = queueDupHhmm_(it.arrivedTime);
+    badge = '<span class="pre-badge pre-came">✓ มาแล้ว' + (hhmm ? (' ' + escHtml(hhmm)) : '') + '</span>';
+    cls = ' pre-arrived';
+  } else if (st === 'ไม่มา') {
+    badge = '<span class="pre-badge pre-noshow">✕ ไม่มา</span>';
+  } else {
+    badge = '<span class="pre-badge pre-waiting">⏳ รอมา</span>';
+  }
+  var meta = [];
+  if (it.patientHn) meta.push('HN ' + escHtml(it.patientHn));
+  var progText = it.program ? programLabelForPrint(it.program) : '';
+  if (progText || it.gender) meta.push(escHtml([progText, it.gender].filter(Boolean).join(' · ')));
+  meta.push('ลงโดย ' + escHtml(it.staff || '—') + (it.point ? (' (' + escHtml(it.point) + ')') : ''));
+  var id = escHtml(it.preId);
+  var acts = '';
+  if (st !== 'มาแล้ว') {
+    if (st === 'รอมา' && it.date === todayStr()) acts += '<button type="button" class="btn small" data-pre-act="activate" data-pre-id="' + id + '">✚ เติมคิว</button>';
+    acts += '<button type="button" class="btn small secondary" data-pre-act="edit" data-pre-id="' + id + '">✎ แก้ไข</button>';
+    if (it.date <= todayStr()) acts += '<button type="button" class="btn small secondary" data-pre-act="link" data-pre-id="' + id + '">🔗 มาแล้ว (บันทึกซ้ำ)</button>';
+    acts += '<button type="button" class="btn small danger" data-pre-act="cancel" data-pre-id="' + id + '">✕ ยกเลิก</button>';
+  }
+  return '<div class="pre-row' + cls + '" data-pre-row="' + id + '">' +
+    '<div class="pre-row-main">' + badge + ' <span class="pre-name">' + escHtml(preItemFullName_(it)) + '</span>' +
+    '<div class="pre-meta">' + meta.join(' · ') + '</div></div>' +
+    (acts ? ('<div class="pre-actions no-print">' + acts + '</div>') : '') + '</div>';
+}
+function renderPreCard_() {
+  var card = qs('preCard');
+  if (!card) return;
+  if (!STATE.staffKey || PRE_VIEW.date !== TODAY_VIEW_DATE) { card.hidden = true; return; }
+  var live = (PRE_VIEW.items || []).filter(function (it) { return it && it.displayStatus !== 'ยกเลิก' && it.status !== 'ยกเลิก'; });
+  var err = PRE_VIEW.error;
+  if (!live.length && !err) { card.hidden = true; return; }
+  card.hidden = false;
+  var countsEl = qs('preCounts');
+  if (countsEl) {
+    var c = PRE_VIEW.counts || {};
+    var arrived = live.filter(function (it) { return it.displayStatus === 'มาแล้ว'; }).length;
+    var waiting = live.filter(function (it) { return it.displayStatus === 'รอมา'; }).length;
+    var noShow = live.filter(function (it) { return it.displayStatus === 'ไม่มา'; }).length;
+    var total = (typeof c.total === 'number') ? c.total : live.length;
+    var arrivedN = (typeof c.arrived === 'number') ? c.arrived : arrived;
+    var waitN = (typeof c.waiting === 'number') ? c.waiting : waiting;
+    var noShowN = (typeof c.noShow === 'number') ? c.noShow : noShow;
+    var past = PRE_VIEW.date < todayStr();
+    countsEl.textContent = 'ลงไว้ ' + total + ' · มาแล้ว ' + arrivedN + ' · ' + (past ? ('ไม่มา ' + noShowN) : ('ยังรอ ' + waitN));
+  }
+  var errEl = qs('preError');
+  if (errEl) {
+    if (err) {
+      errEl.textContent = '';
+      errEl.appendChild(document.createTextNode(err + ' '));
+      var rb = document.createElement('button');
+      rb.type = 'button';
+      rb.className = 'btn small';
+      rb.setAttribute('data-pre-retry', '1');
+      rb.textContent = 'ลองใหม่';
+      errEl.appendChild(rb);
+      errEl.hidden = false;
+    } else { errEl.textContent = ''; errEl.hidden = true; }
+  }
+  renderPreList_();
+}
+function renderPreList_() {
+  var wrap = qs('preList');
+  if (!wrap) return;
+  var q = qs('preSearch') ? qs('preSearch').value : '';
+  var rows = preSortItems_(PRE_VIEW.items).filter(function (it) { return preMatchesQuery_(it, q); });
+  if (!rows.length) {
+    wrap.innerHTML = String(q || '').trim() ? '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>' : '';
+    return;
+  }
+  wrap.innerHTML = rows.map(preRowHtml_).join('');
+}
+function onPreCardClick_(e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  var retry = t.closest('[data-pre-retry]');
+  if (retry) { loadPreView_(); return; }
+  var btn = t.closest('[data-pre-act]');
+  if (!btn) return;
+  var item = preFindItem_(btn.getAttribute('data-pre-id'));
+  if (!item) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรช'); return; }
+  var act = btn.getAttribute('data-pre-act');
+  if (act === 'activate') openPreActivate_(item);
+  else if (act === 'edit') startPreEdit_(item);
+  else if (act === 'link') openPreLink_(item);
+  else if (act === 'cancel') preCancelItem_(item, btn);
+}
+function preCancelItem_(item, btn) {
+  if (!window.confirm('ยืนยันยกเลิกการลงล่วงหน้าของ ' + preItemFullName_(item) + '?')) return;
+  if (btn) btn.setAttribute('aria-disabled', 'true');
+  apiCall('preCancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, preId: item.preId }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      showToast('ยกเลิกการลงล่วงหน้า ' + preItemFullName_(item) + ' แล้ว');
+      reloadPreAfterAction_();
+    } else {
+      showToast('❌ ยกเลิกไม่สำเร็จ' + (resp && resp.message ? ': ' + resp.message : ''));
+      if (btn) btn.removeAttribute('aria-disabled');
+    }
+  });
+}
+
+/* ---------- W4: หน้าต่างเติมคิว ---------- */
+// คิว C ถัดไปที่แนะนำ — ตรรกะเดียวกับ maybeSuggestNextCheckupQueue() (นับ LAST_TODAY_RECORDS + CU_CACHE ของวันนี้ + คิวค้างในคิวบันทึก) แต่ไม่แตะ STATE
+function preSuggestQueue_() {
+  var combined = LAST_TODAY_RECORDS.slice();
+  if (CU_CACHE.records && CU_CACHE.key === todayStr()) combined = combined.concat(CU_CACHE.records);
+  SAVE_QUEUE.forEach(function (it) {
+    if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue) combined.push({ queue: it.payload.queue, status: '' });
+  });
+  return suggestNextCheckupQueue(combined) || '';
+}
+function paEl_(id) { return qs(id); }
+function paSetErr_(id, msg) {
+  var el = paEl_(id);
+  if (!el) return;
+  el.textContent = msg || '';
+  if (id === 'paError') el.hidden = !msg;
+}
+function openPreActivate_(item) {
+  PRE_ACTIVATE = { item: item, reqId: newClientReqId_(), busy: false };
+  var m = qs('preActivateModal');
+  if (!m) return;
+  qs('paTitle').textContent = '✚ เติมคิว — ' + preItemFullName_(item);
+  qs('paSub').textContent = [item.program ? programLabelForPrint(item.program) : '', item.gender].filter(Boolean).join(' · ');
+  var dsel = qs('paDelivery');
+  dsel.innerHTML = '';
+  var src = qs('deliveryMethod');
+  Array.prototype.forEach.call(src ? src.options : [], function (o) {
+    var op = document.createElement('option');
+    op.value = o.value;
+    op.textContent = o.textContent;
+    dsel.appendChild(op);
+  });
+  dsel.value = '';
+  qs('paQueue').value = '';
+  qs('paHn').value = item.patientHn || ''; // เติมค่าที่ลงไว้ — แก้ได้
+  qs('paPickup').value = '';
+  var sug = preSuggestQueue_();
+  var hint = qs('paQueueHint');
+  hint.textContent = sug ? ('แนะนำ ' + sug + ' — แตะเพื่อใช้') : '';
+  hint.setAttribute('data-sug', sug);
+  hint.hidden = !sug;
+  ['paQueueErr', 'paHnErr', 'paError'].forEach(function (id) { paSetErr_(id, ''); });
+  m.hidden = false;
+  paRefresh_();
+  qs('paQueue').focus();
+}
+function closePreActivate_() {
+  var m = qs('preActivateModal');
+  if (m) m.hidden = true;
+  PRE_ACTIVATE.item = null;
+  PRE_ACTIVATE.busy = false;
+}
+// ตรวจฟอร์มเติมคิว · คืน { missing: [...], ok } · อัปเดตข้อความใต้ช่อง + สถานะปุ่ม (aria-disabled — disabled จริงไม่ยิง click)
+function paRefresh_() {
+  var item = PRE_ACTIVATE.item;
+  if (!item) return { ok: false, missing: [] };
+  var queue = (qs('paQueue').value || '').trim();
+  var hn = (qs('paHn').value || '').trim();
+  var dm = qs('paDelivery').value || '';
+  var isPick = dm === DELIVERY_PICKUP_APPOINTMENT;
+  qs('paPickupWrap').hidden = !isPick;
+  if (!isPick && qs('paPickup').value) qs('paPickup').value = '';
+  var pd = isPick ? (qs('paPickup').value || '') : '';
+  var pdReason = (isPick && pd) ? pickupClosedReason(pd) : null;
+  setDateFieldError(qs('paPickup'), pdReason);
+  var missing = [];
+  var qErr = '', hErr = '';
+  if (!queue) missing.push('คิว');
+  else {
+    var dup = findQueueDupInBrowser_(queueDupKey_(queue), '', hn, item.patientName);
+    if (dup) { qErr = queueDupMessage_(dup); missing.push('คิว'); }
+  }
+  if (!hn) missing.push('HN');
+  else if (!isValidHn(hn)) { hErr = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)'; missing.push('HN'); }
+  if (!dm) missing.push('ช่องทางรับผล');
+  if (isPick && (!pd || pdReason)) missing.push('นัดรับวันที่');
+  if (!PRE_ACTIVATE.srvQErr || PRE_ACTIVATE.srvQFor !== queue) { paSetErr_('paQueueErr', qErr); } else paSetErr_('paQueueErr', PRE_ACTIVATE.srvQErr);
+  if (!PRE_ACTIVATE.srvHErr || PRE_ACTIVATE.srvHFor !== hn) { paSetErr_('paHnErr', hErr); } else paSetErr_('paHnErr', PRE_ACTIVATE.srvHErr);
+  var ok = missing.length === 0;
+  var save = qs('paSave');
+  if (save) {
+    save.classList.toggle('is-disabled', !ok);
+    if (ok) save.removeAttribute('aria-disabled'); else save.setAttribute('aria-disabled', 'true');
+  }
+  return { ok: ok, missing: missing };
+}
+function paSave_() {
+  var item = PRE_ACTIVATE.item;
+  if (!item || PRE_ACTIVATE.busy) return;
+  var chk = paRefresh_();
+  if (!chk.ok) { paSetErr_('paError', 'กรอกให้ครบก่อนบันทึก: ' + chk.missing.join(', ')); return; }
+  paSetErr_('paError', '');
+  var dm = qs('paDelivery').value || '';
+  var payload = {
+    staffKey: STATE.staffKey,
+    staffName: STATE.staffName,
+    point: STATE.point,
+    preId: item.preId,
+    queue: (qs('paQueue').value || '').trim(),
+    patientHn: (qs('paHn').value || '').trim(),
+    deliveryMethod: dm,
+    pickupDate: dm === DELIVERY_PICKUP_APPOINTMENT ? (qs('paPickup').value || '') : '',
+    clientReqId: PRE_ACTIVATE.reqId
+  };
+  PRE_ACTIVATE.busy = true;
+  var sv = qs('paSave');
+  if (sv) sv.setAttribute('aria-disabled', 'true');
+  apiCall('preActivate', payload).then(function (resp) {
+    PRE_ACTIVATE.busy = false;
+    if (!PRE_ACTIVATE.item || PRE_ACTIVATE.item.preId !== item.preId) return; // ปิดหน้าต่างไปแล้ว
+    if (resp && resp.status === 'ok') {
+      closePreActivate_();
+      showToast('เติมคิว ' + preItemFullName_(item) + ' แล้ว' + (resp.replayed ? ' (เคยเติมไว้แล้ว)' : ''));
+      if (resp.record) applySavedRecord(resp.record); else loadToday();
+      reloadPreAfterAction_();
+      return;
+    }
+    var msg = (resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่';
+    if (resp && resp.code === 'duplicateQueue') {
+      PRE_ACTIVATE.srvQErr = msg; PRE_ACTIVATE.srvQFor = payload.queue;
+    } else if (resp && resp.code === 'duplicate') {
+      PRE_ACTIVATE.srvHErr = msg; PRE_ACTIVATE.srvHFor = payload.patientHn;
+    } else {
+      paSetErr_('paError', msg + (resp && resp.networkError ? ' — กดบันทึกอีกครั้งได้ (ระบบกันบันทึกซ้ำให้)' : ''));
+    }
+    paRefresh_();
+  });
+}
+
+/* ---------- W7: 🔗 มาแล้ว (บันทึกซ้ำ) ---------- */
+function preNameTokens_(name) {
+  var s = preStripPrefix_(String(name == null ? '' : name).trim().replace(/\s+/g, ' '));
+  var parts = s.split(' ').filter(Boolean);
+  return { first: preNormText_(parts[0] || ''), last: preNormText_(parts[parts.length - 1] || '') };
+}
+// ใกล้เคียง = HN ตรง (norm) หรือ ชื่อตัวแรกตรง หรือ นามสกุล (คำสุดท้าย) ตรง · คำต้องยาว ≥ 2 ตัวอักษร
+function preNearScore_(formName, formHn, otherName, otherHn) {
+  var score = 0;
+  var h1 = normDupHn_(formHn), h2 = normDupHn_(otherHn);
+  if (h1 && h1 === h2) score += 4;
+  var a = preNameTokens_(formName), b = preNameTokens_(otherName);
+  if (a.first.length >= 2 && a.first === b.first) score += 1;
+  if (a.last.length >= 2 && a.last === b.last) score += 1;
+  return score;
+}
+function preLinkedIds_(date) {
+  var src = null;
+  if (PRE_VIEW.date === date) src = PRE_VIEW.items;
+  else if (PRE_TODAY_RESP && PRE_TODAY_RESP.date === date) src = PRE_TODAY_RESP.items;
+  var ids = {};
+  (src || []).forEach(function (it) { if (it && it.status === 'มาแล้ว' && it.recordId) ids[it.recordId] = true; });
+  return ids;
+}
+function openPreLink_(item) {
+  var m = qs('preLinkModal');
+  if (!m) return;
+  PRE_LINK = { item: item, records: null, busy: false, seq: PRE_LINK.seq + 1 };
+  qs('plTitle').textContent = '🔗 มาแล้ว (บันทึกซ้ำ) — ' + preItemFullName_(item);
+  qs('plSub').textContent = 'เลือกแถวตรวจสุขภาพของวันที่ ' + formatThaiDate(item.date) + ' (ทุกจุดบริการ) ที่เป็นคนนี้';
+  qs('plSearch').value = '';
+  paSetErr_('plError', '');
+  qs('plError').hidden = true;
+  qs('plList').innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  m.hidden = false;
+  var seq = PRE_LINK.seq;
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: item.date, allPoints: true }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== PRE_LINK.seq || !PRE_LINK.item) return;
+    if (isListResp_(resp)) { PRE_LINK.records = resp.records; renderPreLinkList_(); }
+    else {
+      qs('plList').innerHTML = '';
+      showErrWithRetry_(qs('plError'), 'โหลดรายการบันทึกบริการไม่สำเร็จ (' + badListRespMessage_(resp) + ')', function () { openPreLink_(item); });
+    }
+  });
+}
+function closePreLink_() {
+  var m = qs('preLinkModal');
+  if (m) m.hidden = true;
+  PRE_LINK.item = null;
+  PRE_LINK.seq++;
+}
+function renderPreLinkList_() {
+  var item = PRE_LINK.item;
+  var wrap = qs('plList');
+  if (!item || !wrap || !PRE_LINK.records) return;
+  var linked = preLinkedIds_(item.date);
+  var q = qs('plSearch').value || '';
+  var rows = PRE_LINK.records.filter(function (r) {
+    return r && r.status !== 'ยกเลิก' && r.program && !linked[r.recordId] && recordMatchesQuery(r, q);
+  }).map(function (r) { return { r: r, score: preNearScore_(item.patientName, item.patientHn, r.patientName, r.patientHn) }; });
+  rows.sort(function (x, y) { return (y.score - x.score) || String(x.r.queue || '').localeCompare(String(y.r.queue || ''), 'th', { numeric: true }); });
+  if (!rows.length) { wrap.innerHTML = '<p class="muted">ไม่พบแถวตรวจสุขภาพที่ยังไม่ถูกผูกในวันนี้</p>'; return; }
+  wrap.innerHTML = rows.map(function (x) {
+    var r = x.r;
+    var bits = [];
+    if (r.patientHn) bits.push('HN ' + r.patientHn);
+    if (r.queue) bits.push('คิว ' + r.queue);
+    if (r.point) bits.push(r.point);
+    var hhmm = queueDupHhmm_(r.time);
+    if (hhmm) bits.push(hhmm);
+    return '<button type="button" class="pre-cand-btn' + (x.score ? ' pre-near' : '') + '" data-pl-rid="' + escHtml(r.recordId) + '">' +
+      (x.score ? '<span class="pre-badge pre-waiting">ใกล้เคียง</span> ' : '') +
+      '<b>' + escHtml(preItemFullName_({ patientPrefix: r.patientPrefix, patientName: r.patientName }) || '—') + '</b>' +
+      '<span class="muted"> · ' + escHtml(bits.join(' · ')) + '</span></button>';
+  }).join('');
+}
+function preLinkChoose_(recordId) {
+  var item = PRE_LINK.item;
+  if (!item || PRE_LINK.busy) return;
+  PRE_LINK.busy = true;
+  apiCall('preLink', { staffKey: STATE.staffKey, staffName: STATE.staffName, preId: item.preId, recordId: recordId }).then(function (resp) {
+    PRE_LINK.busy = false;
+    if (!PRE_LINK.item || PRE_LINK.item.preId !== item.preId) return;
+    if (resp && resp.status === 'ok') {
+      closePreLink_();
+      showToast('ผูก ' + preItemFullName_(item) + ' เป็นมาแล้ว');
+      reloadPreAfterAction_();
+    } else {
+      var el = qs('plError');
+      el.textContent = (resp && resp.message) ? resp.message : 'ผูกไม่สำเร็จ กรุณาลองใหม่';
+      el.hidden = false;
+    }
+  });
+}
+
+/* ---------- W6: เตือนในฟอร์มปกติ — อาจเป็นคนที่ลงล่วงหน้าไว้ ---------- */
+// candidate = PRE_TODAY ที่ยังรอมา และ HN ตรง (norm) หรือ ชื่อตัวแรกตรง หรือ นามสกุล (คำสุดท้าย) ตรง
+function preCandidatesForForm_() {
+  var hn = (qs('patientHn').value || '').trim();
+  var name = (qs('patientName').value || '').trim();
+  var out = [];
+  (PRE_TODAY || []).forEach(function (it) {
+    if (!it || it.status !== 'รอมา' || it.date !== todayStr()) return;
+    if (preNearScore_(name, hn, it.patientName, it.patientHn) > 0) out.push(it);
+  });
+  return out;
+}
+function openPreWarn_(cands, onChoose) {
+  var m = qs('preWarnModal');
+  if (!m) { onChoose(''); return; }
+  PRE_WARN.onChoose = onChoose;
+  qs('pwList').innerHTML = cands.map(function (it) {
+    var bits = [];
+    if (it.patientHn) bits.push('HN ' + it.patientHn);
+    if (it.program) bits.push(programLabelForPrint(it.program));
+    bits.push('ลงโดย ' + (it.staff || '—'));
+    return '<div class="pre-cand"><div class="pre-cand-main"><b>' + escHtml(preItemFullName_(it)) + '</b>' +
+      '<div class="muted">' + escHtml(bits.join(' · ')) + '</div></div>' +
+      '<button type="button" class="btn small" data-pw-id="' + escHtml(it.preId) + '">ใช่ คนนี้</button></div>';
+  }).join('');
+  m.hidden = false;
+}
+function closePreWarn_() {
+  var m = qs('preWarnModal');
+  if (m) m.hidden = true;
+  PRE_WARN.onChoose = null;
+}
+
+/* ---------- W8: การ์ด "ลงล่วงหน้า" ในรายงาน (ซ่อนเมื่อไม่มี summary.preReg หรือ total = 0) ---------- */
+function preRegCardHtml_(pr) {
+  if (!pr || typeof pr !== 'object' || numOr0(pr.total) <= 0) return '';
+  var rate = (pr.arrivedRate === null || pr.arrivedRate === undefined || isNaN(Number(pr.arrivedRate))) ? '—' : (Number(pr.arrivedRate).toFixed(1) + '%');
+  var avg = (pr.avgPerDay && typeof pr.avgPerDay === 'object') ? pr.avgPerDay : {};
+  return '<div class="card" id="reportPreRegCard"><h2>7 ลงล่วงหน้า</h2>' +
+    '<div class="line">ลงไว้ <b>' + numOr0(pr.total) + '</b> · มาจริง <b>' + numOr0(pr.arrived) + '</b> · ไม่มา <b>' + numOr0(pr.noShow) + '</b> · ยังรอ <b>' + numOr0(pr.waiting) + '</b></div>' +
+    '<div class="line">มาจริง <b>' + escHtml(rate) + '</b></div>' +
+    '<div class="line">เฉลี่ยต่อวัน: ลงไว้ <b>' + numOr0(avg.registered).toFixed(1) + '</b> คน · มาจริง <b>' + numOr0(avg.arrived).toFixed(1) + '</b> คน</div>' +
+    '</div>';
 }
 
 // รอบ 9 (ก้อน B, B5) — "8.1 ส่งตรวจพิเศษ — ตารางรายชื่อรายวัน" (loadSpecialPeopleToday/specialPeopleRowsForActive/
@@ -9698,6 +10622,9 @@ function renderReport(summary, period) {
   }
   html += '</div>';
 
+  // 7 ลงล่วงหน้า — รอบ 81 (W8) จาก summary.preReg · ไม่มี preReg (เซิร์ฟเวอร์เก่า) หรือ total 0 ⇒ ไม่แสดงการ์ด · พิมพ์ได้เหมือนการ์ดอื่น (ไม่ใส่ no-print)
+  html += preRegCardHtml_(summary.preReg);
+
   // 🗑 เจ้าของสั่งตัดออก 2026-09-13 (ส่งภาพหน้าจอมาชี้): การ์ด "แยกตามจุดบริการ" + "แยกตามผู้บันทึก"
   //    ฝั่ง Apps Script ยังคำนวณ summary.byPoint / summary.byStaff ส่งมาให้เหมือนเดิม (ไม่ได้แตะ backend)
   //    ⇒ ถ้าจะเอากลับมาแสดง เขียน render ใหม่ได้เลย ข้อมูลมาถึงหน้าเว็บอยู่แล้ว ไม่ต้อง deploy ใหม่
@@ -9778,6 +10705,7 @@ function ensurePendingDateDefault() {
 // รอบ 55: ข้ามวันขณะเปิดหน้ารายชื่อ/ค้างส่งออกผลค้างไว้ ⇒ เลื่อนวันที่ที่ระบบตั้งให้เป็นวันใหม่ + โหลดรายชื่อวันใหม่
 // เรียกจากตัวเช็คข้ามวันชุดเดียวกับจุดกัปตัน (นาทีละครั้ง · กลับมาที่แท็บ · focus) · กำลังพิมพ์อยู่ในหน้ารายชื่อ ⇒ รอรอบหน้า (ไม่ทับของที่พิมพ์ค้าง)
 function listDatesCheckDayRollover() {
+  if (typeof preServiceDateRollover_ === 'function') preServiceDateRollover_(); // รอบ 81 (W1): ข้ามวัน ⇒ #serviceDate กลับเป็นวันนี้
   todayViewCheckDayRollover_(); // รอบ 74: หน้า "รายการวันนี้" — ดูวันนี้อยู่ ⇒ เลื่อนตามเป็นวันใหม่ · ดูวันอื่นอยู่ ⇒ ไม่แตะ
   var cuScr = qs('checkupTableScreen');
   if (cuScr && cuScr.style.display === 'block') {
@@ -12102,6 +13030,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
       safeRemoveItem('svcLogPoint');
     }
+    resetServiceDateAndPreEdit_(); // รอบ 81 (W1): เปลี่ยนจุดบริการ ⇒ วันที่รับบริการกลับเป็นวันนี้ (ออกจากโหมดแก้รายการรอมา)
     loadToday();
     // รอบ 74: ดูวันอื่นอยู่ ⇒ โหลดวันที่ดูอยู่ของจุดใหม่ด้วย (ไม่รีเซ็ตเป็นวันนี้) — ล้างรายการของจุดเก่าออกก่อน กันของจุดเก่าค้างใต้ป้ายจุดใหม่
     if (!isViewingToday_()) {
@@ -12260,7 +13189,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // (input[type=date] ยังเป็นตัวเก็บค่า) · max = วันนี้ · เลือกอนาคตได้ด้วยมือ/โค้ด ⇒ setTodayViewDate_ ถอยเป็นวันนี้
   var todayViewDateEl = qs('todayViewDate');
   if (todayViewDateEl) {
-    todayViewDateEl.setAttribute('max', todayStr());
+    todayViewDateEl.setAttribute('max', addDaysYmd_(todayStr(), PRE_MAX_DAYS_AHEAD)); // รอบ 81 (W3): max = วันนี้+7
     todayViewDateEl.value = TODAY_VIEW_DATE;
     todayViewDateEl.addEventListener('change', function () { setTodayViewDate_(todayViewDateEl.value); });
   }
@@ -12268,6 +13197,68 @@ document.addEventListener('DOMContentLoaded', function () {
   if (todayViewTodayBtn) {
     todayViewTodayBtn.addEventListener('click', function () { setTodayViewDate_(todayStr()); });
   }
+  /* ===== รอบ 81: ลงล่วงหน้า — ผูก listener ทั้งหมดที่นี่ (ห้ามผูกระดับบนสุดของสคริปต์: เทสต์บางไฟล์ตัดโค้ดไปรันใน vm) ===== */
+  // W1: ช่อง "วันที่รับบริการ" (ปฏิทินไทย thd* ผูกให้เองท้ายไฟล์) · ปุ่ม "วันนี้" · ยกเลิกการแก้รายการรอมา
+  var serviceDateEl = qs('serviceDate');
+  if (serviceDateEl) {
+    resetServiceDate_();
+    serviceDateEl.addEventListener('input', onServiceDateChange_);
+    serviceDateEl.addEventListener('change', onServiceDateChange_);
+  }
+  var serviceDateTodayBtn = qs('btnServiceDateToday');
+  if (serviceDateTodayBtn) serviceDateTodayBtn.addEventListener('click', function () { resetServiceDate_(); recalcTotals(); });
+  var cancelPreEditBtn = qs('btnCancelPreEdit');
+  if (cancelPreEditBtn) cancelPreEditBtn.addEventListener('click', exitPreEdit_);
+  // W3: การ์ด ⏳ ลงล่วงหน้า (ค้นหา + ปุ่มต่อแถว + ลองใหม่)
+  var preCardEl = qs('preCard');
+  if (preCardEl) preCardEl.addEventListener('click', onPreCardClick_);
+  var preSearchEl = qs('preSearch');
+  if (preSearchEl) {
+    preSearchEl.addEventListener('input', renderPreList_);
+    preSearchEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+  }
+  // W4: หน้าต่างเติมคิว
+  ['paQueue', 'paHn'].forEach(function (id) { var el = qs(id); if (el) el.addEventListener('input', paRefresh_); });
+  var paDeliveryEl = qs('paDelivery');
+  if (paDeliveryEl) paDeliveryEl.addEventListener('change', paRefresh_);
+  var paPickupEl = qs('paPickup');
+  if (paPickupEl) { paPickupEl.addEventListener('input', paRefresh_); paPickupEl.addEventListener('change', paRefresh_); }
+  var paQueueHintEl = qs('paQueueHint');
+  if (paQueueHintEl) paQueueHintEl.addEventListener('click', function () {
+    qs('paQueue').value = paQueueHintEl.getAttribute('data-sug') || '';
+    paRefresh_();
+    qs('paQueue').focus();
+  });
+  var paSaveEl = qs('paSave');
+  if (paSaveEl) paSaveEl.addEventListener('click', paSave_);
+  ['paClose', 'paCancel'].forEach(function (id) { var el = qs(id); if (el) el.addEventListener('click', closePreActivate_); });
+  // W7: 🔗 มาแล้ว (บันทึกซ้ำ)
+  var plSearchEl = qs('plSearch');
+  if (plSearchEl) plSearchEl.addEventListener('input', renderPreLinkList_);
+  var plListEl = qs('plList');
+  if (plListEl) plListEl.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-pl-rid]') : null;
+    if (b) preLinkChoose_(b.getAttribute('data-pl-rid'));
+  });
+  var plCloseEl = qs('plClose');
+  if (plCloseEl) plCloseEl.addEventListener('click', closePreLink_);
+  // W6: อาจเป็นคนที่ลงล่วงหน้าไว้ — ใช่ คนนี้ / ไม่ใช่ บันทึกใหม่ / ปิด (ไม่บันทึก)
+  var pwListEl = qs('pwList');
+  if (pwListEl) pwListEl.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-pw-id]') : null;
+    if (!b) return;
+    var cb = PRE_WARN.onChoose;
+    closePreWarn_();
+    if (cb) cb(b.getAttribute('data-pw-id'));
+  });
+  var pwNewEl = qs('pwNew');
+  if (pwNewEl) pwNewEl.addEventListener('click', function () {
+    var cb = PRE_WARN.onChoose;
+    closePreWarn_();
+    if (cb) cb('');
+  });
+  var pwCloseEl = qs('pwClose');
+  if (pwCloseEl) pwCloseEl.addEventListener('click', closePreWarn_);
   qs('medCert5').addEventListener('input', onServiceFieldChange);
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
   qs('medCertLabAmount').addEventListener('input', onServiceFieldChange);
