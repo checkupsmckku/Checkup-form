@@ -1145,6 +1145,21 @@
   .pre-cand-main { min-width: 0; overflow-wrap: anywhere; }
   .pre-cand-btn { text-align: left; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; min-height: 44px; font-size: 15px; overflow-wrap: anywhere; }
   .pre-cand-btn.pre-near { border-color: #F57C00; background: #FFF8EE; }
+  /* รอบ 84 (W3/W4): แถบนำเข้ารายชื่อนัด + ช่อง 🔎 ค้นคนนัดวันนี้ + แถบหมายเหตุ HO + หน้าต่างตัวอย่างนำเข้า */
+  .ho-bar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .ho-bar[hidden], #hoSearchWrap[hidden], #hoImportRow[hidden], .ho-arrive-bar[hidden] { display: none; }
+  .ho-arrive-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 10px;
+    background: #FFF3E0; border: 2px solid #F57C00; color: #8A4B00; border-radius: 10px; padding: 10px 14px; font-weight: 700;
+  }
+  .ho-arrive-text { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+  #hoImportModal .pre-modal-box { max-width: 920px; }
+  .ho-sum { margin: 8px 0; overflow-wrap: anywhere; }
+  .ho-table-wrap { overflow-x: auto; margin: 6px 0 10px; }
+  .ho-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  .ho-table th, .ho-table td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; vertical-align: top; }
+  .ho-table td.ho-note { min-width: 180px; overflow-wrap: anywhere; }
+  .ho-missing-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); }
   @media (max-width: 699px) {
     .pre-modal { padding: 0; }
     .pre-modal-box { max-width: none; height: 100%; max-height: none; border-radius: 0; }
@@ -1410,6 +1425,25 @@
   </div>
 </div>
 
+<!-- รอบ 84 (W3) นำเข้ารายชื่อนัดจากไฟล์ HO (.xlsx) — หน้าต่างตัวอย่าง → ยืนยัน -->
+<div id="hoImportModal" class="pre-modal no-print" hidden>
+  <div class="pre-modal-box" role="dialog" aria-modal="true" aria-labelledby="hoImpTitle">
+    <div class="pre-modal-head">
+      <div>
+        <div id="hoImpTitle" class="pre-modal-title">📥 นำเข้ารายชื่อนัด (ไฟล์ HO)</div>
+        <div id="hoImpSub" class="muted"></div>
+      </div>
+      <button type="button" class="btn small secondary" id="hoImpClose" aria-label="ปิด">✕</button>
+    </div>
+    <div id="hoImpError" class="error-box" hidden></div>
+    <div id="hoImpBody"></div>
+    <div class="row" style="margin-top:12px;">
+      <button type="button" class="btn" id="hoImpConfirm" hidden disabled>ยืนยันนำเข้า 0 คน</button>
+      <button type="button" class="btn secondary" id="hoImpCancel">ปิด</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============== GATE SCREEN ============== -->
 <div id="gateScreen">
   <div class="gate-wrap">
@@ -1488,6 +1522,24 @@
       <div id="preModeBar" class="pre-mode-bar no-print" hidden role="status">
         <span id="preModeText"></span>
         <button type="button" class="btn small secondary no-print" id="btnCancelPreEdit" hidden style="flex:0 0 auto;">ยกเลิกการแก้</button>
+      </div>
+
+      <!-- รอบ 84 (W3/W4): แถบเฉพาะ 'จุดคีย์ order' (syncHoBar_ สลับ hidden) — ช่อง 🔎 ค้นคนนัดวันนี้ (แสดงเมื่อมีคน 'รอมา' วันนี้) + ปุ่มนำเข้าไฟล์ HO
+           อยู่นอก #logForm โดยตั้งใจ (reset()/ร่างฟอร์ม/หน้าต่างแก้ไขไม่แตะ) · #hoArriveBar = แถบหมายเหตุ HO ของคนที่แตะเลือก (STATE.arrivePreId) -->
+      <div id="hoBar" class="ho-bar no-print" hidden>
+        <div id="hoSearchWrap" hidden>
+          <label class="field-label" for="hoSearch" id="hoSearchLabel">🔎 ค้นคนนัดวันนี้ (ชื่อ / สกุล / HN)</label>
+          <input type="search" id="hoSearch" autocomplete="off" placeholder="พิมพ์ชื่อ / สกุล / HN อย่างน้อย 2 ตัวอักษร">
+          <div id="hoSearchList" class="pre-cand-list"></div>
+        </div>
+        <div id="hoImportRow" hidden>
+          <button type="button" class="btn small secondary" id="btnHoImport">📥 นำเข้ารายชื่อนัด (ไฟล์ HO)</button>
+          <input type="file" id="hoFile" accept=".xlsx" hidden>
+        </div>
+      </div>
+      <div id="hoArriveBar" class="ho-arrive-bar no-print" hidden role="status">
+        <span id="hoArriveText" class="ho-arrive-text"></span>
+        <button type="button" class="btn small secondary no-print" id="btnHoArriveClear" style="flex:0 0 auto;">✕ ไม่ใช่คนนี้</button>
       </div>
 
       <form id="logForm" class="log-grid no-print">
@@ -2517,7 +2569,9 @@ var STATE = {
   preEditId: '',
   preEditName: '',
   preModeApplied: false,
-  serviceDateDay: ''
+  serviceDateDay: '',
+  // รอบ 84 (W4): preId ของคนนัดที่แตะเลือกจากช่อง 🔎 (startPreArrive_) — onSubmitLog แนบ payload.preId + ข้ามหน้าต่างเตือน W6 · resetLogForm()/เข้าโหมดแก้ไข/เปลี่ยนจุด ⇒ ล้าง
+  arrivePreId: ''
 };
 
 /* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
@@ -4690,6 +4744,8 @@ function resetLogForm() {
   qs('legacyExtraInfo').hidden = true;
   applyVaccineFilter();
   exitEditMode();
+  if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): ล้างร่าง ⇒ ล้างการผูกคนนัด + แถบหมายเหตุ HO + ช่องค้น
+  if (typeof hoSearchClear_ === 'function') hoSearchClear_();
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — ล้างร่างแล้ว HN/ชื่อว่าง ต้องกลับไปล็อกทั้ง 2 แผง
   applyPointLayout(); // รอบ 31A (A-W3) — ล้างร่างแล้วจัดแผงใหม่ตามจุดที่เลือกอยู่ (ไม่มีร่างค้างแล้ว จึงพับได้ตามปกติ)
   if (typeof ensurePreCheckupOpen_ === 'function') ensurePreCheckupOpen_(); // รอบ 81: applyPointLayout พับแผงตรวจสุขภาพกลับ — โหมดล่วงหน้าต้องเปิดไว้เสมอ
@@ -4935,6 +4991,7 @@ function scrollAndHighlightRecord_(recordId) {
 
 function enterEditMode(rec) {
   STATE.editingId = rec.recordId;
+  if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): เข้าโหมดแก้ไขแถว ⇒ ล้างการผูกคนนัด
   // รอบ 34 (2026-09-30) W2: เก็บ record ต้นทางที่กำลังแก้ไว้ — ใช้ตอนกด "แก้แล้วบันทึกใหม่" ของรายการที่บันทึกไม่สำเร็จ
   // (onSaveQueueRetry_() เรียก openEditModalForRecord(editCtx.rec) ซ้ำ) ไม่ต้องไปค้น LAST_TODAY_RECORDS/LAST_CU_RECORDS
   // อีกรอบซึ่งอาจโดนรีเฟรชทับไปแล้วตั้งแต่ตอนกดบันทึกครั้งแรก
@@ -5534,7 +5591,8 @@ function onSubmitLog(e) {
   if (typeof isPreMode_ === 'function' && isPreMode_()) { onSubmitPre_(); return; }
   // รอบ 81 (W6): ฟอร์มปกติ (วันนี้ · ไม่ใช่แก้ไข · มีตรวจสุขภาพ) — HN/ชื่อต้น/นามสกุลตรงกับคนรอมาของวันนี้ ⇒ ถามก่อนว่าใช่คนเดียวกันไหม
   // "ใช่" ⇒ บันทึกตามปกติ + แนบ preId (เซิร์ฟเวอร์ผูกเป็นมาแล้ว) · "ไม่ใช่" ⇒ บันทึกตามปกติ · ด่านซ้ำเดิม (รอบ 28/37) ทำงานต่อจากนี้ตามเดิม
-  if (!STATE.editingId && !(e && e.preDecided) && typeof preCandidatesForForm_ === 'function' && isCheckupOn()) {
+  // รอบ 84 (W4): มี STATE.arrivePreId (แตะเลือกจากช่อง 🔎) ⇒ ข้ามหน้าต่างเตือนนี้ — แนบ preId ตรง ๆ ด้านล่าง
+  if (!STATE.editingId && !STATE.arrivePreId && !(e && e.preDecided) && typeof preCandidatesForForm_ === 'function' && isCheckupOn()) {
     var preCands = preCandidatesForForm_();
     if (preCands.length) {
       openPreWarn_(preCands, function (chosenPreId) {
@@ -5657,6 +5715,7 @@ function onSubmitLog(e) {
   };
   if (isEdit) payload.recordId = STATE.editingId;
   if (!isEdit && e && e.preId) payload.preId = e.preId; // รอบ 81 (W6): "ใช่ คนนี้"
+  else if (!isEdit && STATE.arrivePreId) payload.preId = STATE.arrivePreId; // รอบ 84 (W4): คนนัดที่เลือกจากช่อง 🔎 (resetLogForm ท้ายฟังก์ชันล้างให้เอง)
   // รอบ 38 (2026-10-01) W2: log ทุกรายการแนบ clientReqId (สร้างตอนขึ้นคิว ไม่ใช่ตอนยิง ⇒ "ส่งอีกครั้ง" ใช้รหัสเดิม) เซิร์ฟเวอร์ใช้กัน
   // บันทึกซ้ำเมื่อเน็ตหลุดแต่แถวลงชีตไปแล้ว + ตอบ logStatus · edit ไม่ต้องส่ง (เขียนทับตาม payload อยู่แล้ว ส่งซ้ำไม่เกิดแถวใหม่)
   if (!isEdit) payload.clientReqId = newClientReqId_();
@@ -6672,6 +6731,7 @@ function resetServiceDateAndPreEdit_() {
   STATE.preEditId = '';
   STATE.preEditName = '';
   resetServiceDate_();
+  if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): เปลี่ยนจุด ⇒ ล้างการผูกคนนัด
   if (had) resetLogForm();
 }
 function onServiceDateChange_() {
@@ -6744,6 +6804,7 @@ function applyPreMode_() {
     if (pre) ensurePreCheckupOpen_(); // ตรวจสุขภาพเปิดเอง
     if (typeof applyLogLocks === 'function') applyLogLocks();
   }
+  if (typeof syncHoBar_ === 'function') syncHoBar_(); // รอบ 84 (W3/W4): ปุ่มนำเข้า/ช่อง 🔎 ตามจุด + โหมด
 }
 
 // บันทึกล่วงหน้า (W1) / บันทึกการแก้ไขรายการรอมา (W5) — ยิงตรง (ไม่ผ่าน SAVE_QUEUE) เพราะ preDuplicate ต้องแสดงข้อความ + ไม่ล้างฟอร์ม
@@ -6852,6 +6913,7 @@ function loadPreToday_() {
       if (preListResp_(resp)) {
         PRE_TODAY = resp.items;
         PRE_TODAY_RESP = resp;
+        if (typeof hoOnPreTodayLoaded_ === 'function') hoOnPreTodayLoaded_(); // รอบ 84 (W4): ช่อง 🔎 + จำนวนรอมา
         if (isViewingToday_()) preViewApply_(day, resp);
       } else if (isViewingToday_()) {
         preViewFail_(day, resp);
@@ -6922,6 +6984,7 @@ function preMatchesQuery_(it, rawQ) {
   var qs2 = preNormText_(preStripPrefix_(rawQ));
   if (qs2 && qs2 !== q) needles.push(qs2);
   var hays = [preNormText_(it.patientName), preNormText_((it.patientPrefix || '') + (it.patientName || '')), preNormText_(it.patientHn)];
+  if (it.form && typeof it.form === 'object' && it.form.hoNote) hays.push(preNormText_(it.form.hoNote)); // รอบ 84 (W4): ค้นในหมายเหตุ HO ด้วย (หาแถว HN กลางด้วยชื่อในหมายเหตุ)
   for (var i = 0; i < needles.length; i++) {
     for (var j = 0; j < hays.length; j++) { if (hays[j] && hays[j].indexOf(needles[i]) !== -1) return true; }
   }
@@ -6971,7 +7034,9 @@ function preRowHtml_(it) {
   }
   return '<div class="pre-row' + cls + '" data-pre-row="' + id + '">' +
     '<div class="pre-row-main">' + badge + ' <span class="pre-name">' + escHtml(preItemFullName_(it)) + '</span>' +
-    '<div class="pre-meta">' + meta.join(' · ') + '</div></div>' +
+    '<div class="pre-meta">' + meta.join(' · ') + '</div>' +
+    ((it.form && typeof it.form === 'object' && it.form.hoNote) ? ('<div class="pre-meta pre-ho-note">📋 ' + escHtml(hoShortNote_(it.form.hoNote, 60)) + '</div>') : '') + // รอบ 84 (W4)
+    '</div>' +
     (acts ? ('<div class="pre-actions no-print">' + acts + '</div>') : '') + '</div>';
 }
 function renderPreCard_() {
@@ -7306,6 +7371,718 @@ function closePreWarn_() {
   var m = qs('preWarnModal');
   if (m) m.hidden = true;
   PRE_WARN.onChoose = null;
+}
+
+/* =========================================================================
+   รอบ 84 — นำเข้ารายชื่อนัดจาก HO (.xlsx) ลงล่วงหน้า + ช่อง 🔎 ค้นคนนัดวันนี้ · SPEC_รอบ84_นำเข้ารายชื่อนัด.md ก้อน W (เว็บ)
+   W1 ตัวอ่าน .xlsx (ZIP + DecompressionStream) · W2 ตัวแปลงแผ่น → รายการนำเข้า (ฟังก์ชันบริสุทธิ์ ช่วง HO-PURE ด้านล่าง — เทสต์ตัดไปรันใน vm)
+   W3 ปุ่ม + หน้าต่างตัวอย่างนำเข้า (preImport) · W4 ช่อง 🔎 + startPreArrive_ (STATE.arrivePreId ⇒ log + preId)
+   ⚠ listener ระดับบนสุดอยู่ในส่วน Bootstrap ท้ายไฟล์ · ⚠ โค้ดเดิมเรียกฟังก์ชันของก้อนนี้ผ่าน typeof guard (vm จำลองของเทสต์เก่าไม่มี)
+   ⚠ ไม่เก็บ/ไม่ส่งคอลัมน์ Phone และตัดเบอร์โทรออกจากหมายเหตุ (hoStripPhones_) — เซิร์ฟเวอร์ตัดซ้ำอีกชั้น
+   ========================================================================= */
+var HO_POINT_ = 'จุดคีย์ order';          // รอบ 84 (ข้อ 18): เฉพาะจุดนี้นำเข้า/ค้นคนนัดได้
+var HO_NO_HN_NAME_ = 'ยังไม่มี HN';        // ตรงกับ PRE_NO_HN_NAME_ ฝั่งเซิร์ฟเวอร์ (S2)
+var HO_NOTE_MAX_ = 500;
+var HO_IMPORT_CHUNK_ = 200;               // เซิร์ฟเวอร์รับ rows 1…200 ต่อคำขอ
+var HO_MSG_NO_DS_ = 'เบราว์เซอร์นี้อ่านไฟล์ Excel ไม่ได้ กรุณาใช้ Chrome รุ่นใหม่';
+var HO_MSG_BAD_FILE_ = 'อ่านไฟล์ไม่ได้ — ต้องเป็นไฟล์ .xlsx ที่ส่งออกจาก HO';
+
+/* HO-PURE-BEGIN */
+/* ---------- W2: ตัวแปลงแผ่นงาน → รายการนำเข้า (ฟังก์ชันบริสุทธิ์ ไม่แตะ DOM/STATE) ---------- */
+var HO_MONTHS_ = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+// คำนำหน้าคงที่ (W2d) — ยาวก่อน · อังกฤษไม่สนตัวพิมพ์
+var HO_FIXED_PREFIXES_ = ['นางสาว', 'เด็กหญิง', 'เด็กชาย', 'นาง', 'นาย', 'น.ส.', 'ด.ญ.', 'ด.ช.', 'ทพญ.', 'ทพ.', 'พญ.', 'นพ.', 'MISS', 'MRS.', 'MRS', 'MR.', 'MR', 'MS.', 'MS', 'DR.', 'Dr.']
+  .sort(function (a, b) { return b.length - a.length; });
+// หลังคำนำหน้าเหล่านี้ยังมีคำนำหน้าวิชาการ/ยศต่อได้ (เช่น นพ.ดร.) — คำนำหน้าอื่น (นาย/นาง/MISS…) จบทันที
+var HO_PREFIX_CONTINUE_ = ['นพ.', 'พญ.', 'ทพ.', 'ทพญ.', 'DR.', 'Dr.'];
+
+function hoPad2_(n) { return (n < 10 ? '0' : '') + n; }
+function hoYmd_(y, m, d) { return y + '-' + hoPad2_(m) + '-' + hoPad2_(d); }
+function hoValidYmd_(y, m, d) {
+  if (!(y >= 1900 && y <= 2200 && m >= 1 && m <= 12 && d >= 1 && d <= 31)) return false;
+  var dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+function hoAddDays_(ymd, n) {
+  var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!p) return String(ymd || '');
+  var d = new Date(Date.UTC(+p[1], +p[2] - 1, +p[3] + n));
+  return hoYmd_(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+}
+function hoThaiDate_(ymd) {
+  var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!p) return String(ymd || '');
+  return (+p[3]) + ' ' + HO_MONTHS_[+p[2] - 1] + ' ' + (+p[1] + 543);
+}
+// Excel serial (นับจาก 1899-12-30) → 'YYYY-MM-DD' · นอกช่วงที่สมเหตุสมผล ⇒ ''
+function hoSerialToYmd_(serial) {
+  var n = Math.floor(Number(serial));
+  if (!isFinite(n) || n < 20000 || n > 100000) return '';
+  var d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+  return hoYmd_(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+}
+// 'dd/mm/yyyy' (ปี > 2400 ⇒ พ.ศ. ลบ 543) → 'YYYY-MM-DD' · ไม่ถูกต้อง ⇒ ''
+function hoDmyToYmd_(d, m, y) {
+  d = +d; m = +m; y = +y;
+  if (y > 2400) y -= 543;
+  return hoValidYmd_(y, m, d) ? hoYmd_(y, m, d) : '';
+}
+// ตัวอักษรคอลัมน์ Excel → ลำดับ (A=0 … Z=25, AA=26)
+function hoColIdx_(letters) {
+  var s = String(letters || '').toUpperCase(), n = 0;
+  for (var i = 0; i < s.length; i++) n = n * 26 + (s.charCodeAt(i) - 64);
+  return n - 1;
+}
+function hoColLetter_(idx) {
+  var s = '';
+  idx = idx + 1;
+  while (idx > 0) { var r = (idx - 1) % 26; s = String.fromCharCode(65 + r) + s; idx = Math.floor((idx - 1) / 26); }
+  return s;
+}
+function hoNoteNorm_(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
+// คีย์กันซ้ำ — ตรงกับกติกา S1: มี HN ⇒ HN (trim/ตัดช่องว่าง/ตัวพิมพ์ใหญ่) · ไม่มี HN ⇒ ชื่อ(ยุบช่องว่าง) + หมายเหตุ(ยุบช่องว่าง)
+function hoImportKey_(hn, name, note) {
+  var h = String(hn == null ? '' : hn).replace(/\s+/g, '').toUpperCase();
+  if (h) return 'H|' + h;
+  return 'N|' + hoNoteNorm_(name) + '|' + hoNoteNorm_(note);
+}
+
+// ตัดคำนำหน้าคงที่ที่หัวข้อความ · คืนข้อความที่ตรง (คงตัวพิมพ์เดิม) หรือ ''
+function hoMatchFixedPrefix_(s) {
+  for (var i = 0; i < HO_FIXED_PREFIXES_.length; i++) {
+    var p = HO_FIXED_PREFIXES_[i];
+    if (s.length < p.length || s.substr(0, p.length).toLowerCase() !== p.toLowerCase()) continue;
+    if (/[A-Za-z]$/.test(p)) { var nx = s.charAt(p.length); if (nx !== '' && !/\s/.test(nx)) continue; } // อังกฤษต้องจบคำ (MR ≠ MRSMITH)
+    return s.substr(0, p.length);
+  }
+  return '';
+}
+// W2d: แยกคำนำหน้า/ชื่อ — ⚠ คำนำหน้าไทยติดกับชื่อ ไม่มีช่องว่าง (นายสมชาย ใจดี) · ไม่พบ ⇒ prefix '' ชื่อทั้งก้อน
+function hoSplitName_(raw) {
+  var s = String(raw == null ? '' : raw).replace(/\s+/g, ' ').trim();
+  var prefix = '';
+  for (var guard = 0; guard < 4 && s; guard++) {
+    var fx = hoMatchFixedPrefix_(s);
+    if (fx) {
+      prefix += fx;
+      s = s.slice(fx.length).replace(/^\s+/, '');
+      if (HO_PREFIX_CONTINUE_.indexOf(fx) === -1) break;
+      continue;
+    }
+    var m = /^((?:[ก-ฮ]{1,4}\.)+)(หญิง)?/.exec(s);
+    if (m) { prefix += m[0]; s = s.slice(m[0].length).replace(/^\s+/, ''); continue; }
+    break;
+  }
+  return { prefix: prefix, name: s.replace(/\s+/g, ' ').trim() };
+}
+
+// W2e: เพศจากคำนำหน้า — โทเคนหญิง > โทเคนชาย > ยศมีจุด (ไม่ใช่วิชาการ) ⇒ ชาย > '' (ดร./ผศ.ดร./Dr./ว่าง)
+var HO_GENDER_WORDS_ = [
+  ['เด็กหญิง', 'F'], ['เด็กชาย', 'M'], ['นางสาว', 'F'], ['master', 'M'], ['ทพญ', 'F'], ['หญิง', 'F'], ['นาง', 'F'], ['นาย', 'M'],
+  ['พญ', 'F'], ['miss', 'F'], ['mrs', 'F'], ['นพ', 'M'], ['ทพ', 'M'], ['นส', 'F'], ['ดญ', 'F'], ['ดช', 'M'], ['ms', 'F'], ['mr', 'M'],
+  ['ผศ', 'A'], ['รศ', 'A'], ['ดร', 'A'], ['dr', 'A'], ['ศ', 'A']  // A = วิชาการ (ไม่บอกเพศ)
+].sort(function (a, b) { return b[0].length - a[0].length; }).map(function (w) {
+  return { kind: w[1], re: new RegExp('^' + w[0].split('').join('\\.?') + '\\.?', 'i') }; // แทรกจุดได้ทุกตำแหน่ง: น.ส. → นส
+});
+function hoGenderFromPrefix_(prefix) {
+  var s = String(prefix == null ? '' : prefix).replace(/\s+/g, '');
+  var fem = false, mal = false, rank = false;
+  for (var guard = 0; s && guard < 20; guard++) {
+    var hit = null;
+    for (var i = 0; i < HO_GENDER_WORDS_.length; i++) {
+      var mm = HO_GENDER_WORDS_[i].re.exec(s);
+      if (mm) { hit = { kind: HO_GENDER_WORDS_[i].kind, len: mm[0].length }; break; }
+    }
+    if (hit) { if (hit.kind === 'F') fem = true; else if (hit.kind === 'M') mal = true; s = s.slice(hit.len); continue; }
+    var d = /^[ก-ฮ]{1,4}\./.exec(s);
+    if (d) { rank = true; s = s.slice(d[0].length); continue; }
+    var w = /^[A-Za-z]+\.?/.exec(s);
+    s = s.slice(w ? w[0].length : 1);
+  }
+  return fem ? 'หญิง' : ((mal || rank) ? 'ชาย' : '');
+}
+
+// W2f: ตัดเบอร์โทรออกจากหมายเหตุ — อัลกอริทึมเดียวกับเซิร์ฟเวอร์ preStripPhones_ (กลุ่มตัวเลขรวม ≥ 9 หลัก · ป้าย T. หน้าเบอร์ · ไม่แตะเวลา 7.30-8.30 / P4)
+function hoStripPhones_(s) {
+  var MARK = '\u0000';
+  s = String(s == null ? '' : s);
+  // 1) หาช่วงตัวเลขที่คั่นด้วย - / ช่องว่าง แล้วแบ่งกลุ่ม: ต่อด้วย "-" เสมอ · ต่อด้วยช่องว่างเฉพาะเมื่อชิ้นก่อน ≥ 2 หลัก และชิ้นถัดไป ≥ 3 หลัก
+  //    กลุ่มที่รวม ≥ 9 หลัก = เบอร์ ⇒ แทนด้วย MARK · ไม่แตะเวลา (7.30-8.30 มีจุดคั่น ⇒ ชิ้นสั้น ไม่ถึง 9 หลัก)
+  s = s.replace(/\+?\d+(?:[-\s]+\d+)*/g, function (run) {
+    var parts = run.split(/([-\s]+)/);
+    var groups = [];
+    var cur = null;
+    for (var i = 0; i < parts.length; i += 2) {
+      var num = parts[i];
+      var sep = i > 0 ? parts[i - 1] : '';
+      var d = num.replace(/\D/g, '').length;
+      var join = false;
+      if (cur) {
+        if (sep.indexOf('-') !== -1) join = true;
+        else join = cur.last >= 2 && d >= 3;
+      }
+      if (join) { cur.text += sep + num; cur.digits += d; cur.last = d; }
+      else { if (cur) groups.push(cur); cur = { sep: sep, text: num, digits: d, last: d }; }
+    }
+    groups.push(cur);
+    return groups.map(function (g, k) { return (k ? g.sep : '') + (g.digits >= 9 ? MARK : g.text); }).join('');
+  });
+  // 2) ป้าย T. / T: / T ที่อยู่หน้าเบอร์ (ข้างหน้าไม่ใช่ตัวอักษรอังกฤษ — กัน "PAT") ⇒ ลบ
+  s = s.replace(/(^|[^A-Za-z])[Tt]\s*[.:]?\s*:?\s*\u0000/g, '$1' + MARK);
+  // 3) เบอร์หลายเบอร์คั่นด้วย / ⇒ ยุบเป็นอันเดียว แล้วลบ MARK
+  s = s.replace(/\u0000(?:\s*\/\s*\u0000)+/g, MARK).replace(/\u0000/g, '');
+  // 4) เก็บกวาด: / ซ้อนกัน ⇒ " / " · ยุบช่องว่าง · ตัด / และช่องว่างหัวท้าย
+  return s.replace(/(?:\s*\/\s*){2,}/g, ' / ').replace(/\s+/g, ' ').replace(/^[\s\/]+|[\s\/]+$/g, '');
+}
+
+// หา cell แรกที่ไม่ว่างถัดจากคอลัมน์ colIdx ในแถวเดียวกัน
+function hoNextCellText_(row, colIdx) {
+  var best = null, bestIdx = 1e9;
+  Object.keys(row).forEach(function (k) {
+    var ci = hoColIdx_(k);
+    if (ci > colIdx && ci < bestIdx && String(row[k]).trim() !== '') { best = String(row[k]).trim(); bestIdx = ci; }
+  });
+  return best;
+}
+// หัวตาราง: แถวที่มีเซลล์ 'HN' และ 'ชื่อ-สกุล' · คืน { index, hn, name, room, note } (ชื่อคอลัมน์ = ตัวอักษรคอลัมน์) หรือ null
+function hoFindHeader_(rows) {
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i] || {}, cols = {};
+    Object.keys(row).forEach(function (k) {
+      var tx = String(row[k]).trim();
+      if (tx === 'HN' && !cols.hn) cols.hn = k;
+      else if (tx === 'ชื่อ-สกุล' && !cols.name) cols.name = k;
+      else if (tx === 'ห้องตรวจที่นัด' && !cols.room) cols.room = k;
+      else if (tx === 'หมายเหตุ' && !cols.note) cols.note = k;
+    });
+    if (cols.hn && cols.name) { cols.index = i; return cols; }
+  }
+  return null;
+}
+// วันนัดที่หาได้จากหัวรายงาน (แถวก่อนหัวตาราง) → array ของ 'YYYY-MM-DD' (อาจซ้ำ/ขัดกัน — ผู้เรียกตัดสิน)
+function hoHeaderDates_(rows, headerIndex) {
+  var out = [];
+  for (var i = 0; i < headerIndex && i < rows.length; i++) {
+    var row = rows[i] || {};
+    Object.keys(row).forEach(function (k) {
+      var tx = String(row[k]).trim();
+      if (!tx) return;
+      if (tx.indexOf('ตั้งแต่วันที่') !== -1) {
+        var nx = hoNextCellText_(row, hoColIdx_(k));
+        if (nx !== null && /^\d+(\.\d+)?$/.test(nx)) { var y1 = hoSerialToYmd_(nx); if (y1) out.push(y1); }
+        else if (nx !== null) { var m0 = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(nx); if (m0) { var y0 = hoDmyToYmd_(m0[1], m0[2], m0[3]); if (y0) out.push(y0); } }
+      }
+      if (tx.indexOf('พิมพ์') !== -1) return; // วันที่พิมพ์รายงาน ไม่ใช่วันนัด
+      var m = /วันที่\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(tx);
+      if (m) { var y2 = hoDmyToYmd_(m[1], m[2], m[3]); if (y2) out.push(y2); }
+    });
+  }
+  return out;
+}
+
+/* hoParseSheets_(sheets, todayYmd) — sheets = array ของแผ่น · แผ่น = array ของแถว · แถว = object { ตัวอักษรคอลัมน์: ข้อความ }
+   คืน { date, error?, items:[{patientPrefix, patientName, patientHn, gender, program, hoNote, sundayWarn, warns:[]}], skippedOther:{ป้าย:จำนวน}, skippedNoName } */
+function hoParseSheets_(sheets, todayYmd) {
+  var res = { date: '', items: [], skippedOther: {}, skippedNoName: 0 };
+  var usable = [], dates = [];
+  (sheets || []).forEach(function (rows) {
+    rows = Array.isArray(rows) ? rows : [];
+    var h = hoFindHeader_(rows);
+    if (!h || !h.room) return; // แผ่นที่ไม่มีหัว (หรือไม่มีคอลัมน์ ห้องตรวจที่นัด) ⇒ ข้าม
+    usable.push({ rows: rows, h: h });
+    hoHeaderDates_(rows, h.index).forEach(function (d) { if (dates.indexOf(d) === -1) dates.push(d); });
+  });
+  if (!usable.length) { res.error = 'ไม่พบตารางรายชื่อ (หัว HN / ชื่อ-สกุล / ห้องตรวจที่นัด) ในไฟล์'; return res; }
+  if (!dates.length) { res.error = 'ไม่พบวันนัดในหัวรายงาน'; return res; }
+  if (dates.length > 1) { res.error = 'วันนัดในไฟล์ไม่ตรงกัน (' + dates.map(hoThaiDate_).join(' / ') + ')'; return res; }
+  res.date = dates[0];
+  var today = String(todayYmd || '');
+  if (today) {
+    var minD = hoAddDays_(today, 1), maxD = hoAddDays_(today, 7);
+    if (res.date < minD || res.date > maxD) {
+      res.error = 'ไฟล์นี้เป็นนัดวันที่ ' + hoThaiDate_(res.date) + ' นำเข้าได้เฉพาะ ' + hoThaiDate_(minD) + ' – ' + hoThaiDate_(maxD);
+      return res;
+    }
+  }
+  var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(res.date);
+  var isSunday = new Date(Date.UTC(+p[1], +p[2] - 1, +p[3])).getUTCDay() === 0;
+  var seen = {}, seenOther = {};
+  usable.forEach(function (sh) {
+    var h = sh.h;
+    for (var i = h.index + 1; i < sh.rows.length; i++) {
+      var row = sh.rows[i] || {};
+      var rawHn = String(row[h.hn] == null ? '' : row[h.hn]).trim().toUpperCase();
+      var rawName = String(row[h.name] == null ? '' : row[h.name]).trim();
+      if (!rawHn && !rawName) continue;
+      if (rawHn === 'HN' && rawName === 'ชื่อ-สกุล') continue; // หัวตารางซ้ำกลางแผ่น
+      var room = String(row[h.room] == null ? '' : row[h.room]).trim();
+      var rawNote = h.note ? String(row[h.note] == null ? '' : row[h.note]) : '';
+      var pm = /^\s*program\s*([1-4])\s*$/i.exec(room);
+      if (!pm) { // W2b: ไม่ใช่ Program N ⇒ ข้าม + นับตามข้อความ (ตัดซ้ำข้ามแผ่น)
+        var ok = 'O|' + rawHn + '|' + hoNoteNorm_(rawName) + '|' + room + '|' + hoNoteNorm_(rawNote);
+        if (seenOther[ok]) continue;
+        seenOther[ok] = true;
+        var label = room || '(ไม่ระบุห้อง)';
+        res.skippedOther[label] = (res.skippedOther[label] || 0) + 1;
+        continue;
+      }
+      var num = pm[1], program = num, sundayWarn = false;
+      if (isSunday) { if (num === '1' || num === '2') program = num + 'sun'; else sundayWarn = true; }
+      var warns = [];
+      var note = hoStripPhones_(rawNote).slice(0, HO_NOTE_MAX_).trim();
+      var prefix = '', name = '', hn = '', gender = '';
+      if (/^[A-Z]{3}\d{5}$/.test(rawHn)) { // W2c: HN กลาง
+        name = HO_NO_HN_NAME_;
+      } else {
+        var sp = hoSplitName_(rawName);
+        prefix = sp.prefix; name = sp.name;
+        gender = hoGenderFromPrefix_(prefix);
+        if (/^[A-Z]{2}\d{4}$/.test(rawHn)) hn = rawHn;
+        else warns.push(rawHn ? 'HN ในไฟล์ไม่ถูกรูปแบบ' : 'ไม่มี HN ในไฟล์');
+        if (!name) { res.skippedNoName++; continue; }
+      }
+      if (sundayWarn) warns.push('วันอาทิตย์ — ตรวจโปรแกรม');
+      if (!gender) warns.push('เพศว่าง');
+      var key = hoImportKey_(hn, name, note);
+      if (seen[key]) continue; // ตัดซ้ำข้ามแผ่น (แผ่นกรองซ้ำของแผ่นหลัก)
+      seen[key] = true;
+      res.items.push({ patientPrefix: prefix, patientName: name, patientHn: hn, gender: gender, program: program, hoNote: note, sundayWarn: sundayWarn, warns: warns });
+    }
+  });
+  return res;
+}
+/* HO-PURE-END */
+
+/* ---------- W1: ตัวอ่าน .xlsx ในเบราว์เซอร์ (ไม่ใช้ไลบรารี) ---------- */
+function hoUserErr_(msg) { var e = new Error(msg); e.hoUser = true; return e; }
+// หา End of Central Directory → รายการไฟล์ใน ZIP { ชื่อ: { method, csize, lo } }
+function hoZipList_(buf) {
+  var dv = new DataView(buf), n = buf.byteLength, eocd = -1;
+  for (var i = n - 22; i >= 0 && i >= n - 22 - 65535; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw hoUserErr_(HO_MSG_BAD_FILE_);
+  var count = dv.getUint16(eocd + 10, true), p = dv.getUint32(eocd + 16, true);
+  if (count === 0xFFFF || p === 0xFFFFFFFF) throw hoUserErr_(HO_MSG_BAD_FILE_); // ZIP64 ไม่รองรับ
+  var out = {};
+  for (var k = 0; k < count; k++) {
+    if (p + 46 > n || dv.getUint32(p, true) !== 0x02014b50) throw hoUserErr_(HO_MSG_BAD_FILE_);
+    var nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+    var name = new TextDecoder('utf-8').decode(new Uint8Array(buf, p + 46, nl));
+    out[name] = { method: dv.getUint16(p + 10, true), csize: dv.getUint32(p + 20, true), lo: dv.getUint32(p + 42, true) };
+    p += 46 + nl + el + cl;
+  }
+  return out;
+}
+function hoInflate_(u8) {
+  if (typeof DecompressionStream !== 'function' || typeof Blob !== 'function' || typeof Response !== 'function') return Promise.reject(hoUserErr_(HO_MSG_NO_DS_));
+  var stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Response(stream).arrayBuffer().then(function (ab) { return new Uint8Array(ab); });
+}
+// อ่านข้อมูลไฟล์เดียวใน ZIP (method 0 = stored · 8 = deflate)
+function hoZipRead_(buf, ent) {
+  var dv = new DataView(buf), lo = ent.lo;
+  if (lo + 30 > buf.byteLength || dv.getUint32(lo, true) !== 0x04034b50) return Promise.reject(hoUserErr_(HO_MSG_BAD_FILE_));
+  var start = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true);
+  if (start + ent.csize > buf.byteLength) return Promise.reject(hoUserErr_(HO_MSG_BAD_FILE_));
+  var data = new Uint8Array(buf, start, ent.csize);
+  if (ent.method === 0) return Promise.resolve(data);
+  if (ent.method === 8) return hoInflate_(data);
+  return Promise.reject(hoUserErr_(HO_MSG_BAD_FILE_));
+}
+function hoParseXml_(text) {
+  var doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw hoUserErr_(HO_MSG_BAD_FILE_);
+  return doc;
+}
+function hoChildren_(el, local) {
+  var out = [];
+  for (var c = el.firstChild; c; c = c.nextSibling) { if (c.nodeType === 1 && (c.localName || c.nodeName) === local) out.push(c); }
+  return out;
+}
+// <si>/<is>: ข้อความ = <t> ตรง ๆ + <t> ใน <r> ต่อกัน (ไม่เอา <rPh> คำอ่านกำกับ)
+function hoRichText_(el) {
+  var s = '';
+  hoChildren_(el, 't').forEach(function (t) { s += t.textContent; });
+  hoChildren_(el, 'r').forEach(function (r) { hoChildren_(r, 't').forEach(function (t) { s += t.textContent; }); });
+  return s;
+}
+function hoSharedStrings_(text) {
+  if (!text) return [];
+  var doc = hoParseXml_(text), out = [];
+  var sis = doc.getElementsByTagNameNS('*', 'si');
+  for (var i = 0; i < sis.length; i++) out.push(hoRichText_(sis[i]));
+  return out;
+}
+// worksheet XML → array ของแถว { คอลัมน์: ข้อความ } (เซลล์ว่างไม่ใส่)
+function hoSheetRows_(text, shared) {
+  var doc = hoParseXml_(text), rows = [];
+  var rEls = doc.getElementsByTagNameNS('*', 'row');
+  for (var i = 0; i < rEls.length; i++) {
+    var obj = {}, cs = hoChildren_(rEls[i], 'c');
+    for (var j = 0; j < cs.length; j++) {
+      var c = cs[j], ref = c.getAttribute('r') || '';
+      var cm = /^[A-Za-z]+/.exec(ref);
+      var col = cm ? cm[0].toUpperCase() : hoColLetter_(j);
+      var t = c.getAttribute('t'), v = hoChildren_(c, 'v')[0], val = '';
+      if (t === 's') { var si = v ? parseInt(v.textContent, 10) : NaN; val = isNaN(si) ? '' : (shared[si] || ''); }
+      else if (t === 'inlineStr') { var is = hoChildren_(c, 'is')[0]; val = is ? hoRichText_(is) : ''; }
+      else val = v ? v.textContent : '';
+      val = String(val).trim();
+      if (val !== '') obj[col] = val;
+    }
+    rows.push(obj);
+  }
+  return rows;
+}
+// ArrayBuffer ของ .xlsx → Promise<sheets> (array ของแผ่น ตามลำดับใน workbook) · ล้ม ⇒ Error ที่มี hoUser (ข้อความพร้อมโชว์)
+function hoReadXlsx_(buf) {
+  return Promise.resolve().then(function () {
+    var list = hoZipList_(buf);
+    var textOf = function (name) {
+      var e = list[name];
+      return e ? hoZipRead_(buf, e).then(function (u8) { return new TextDecoder('utf-8').decode(u8); }) : Promise.resolve(null);
+    };
+    var REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    return Promise.all([textOf('xl/workbook.xml'), textOf('xl/_rels/workbook.xml.rels'), textOf('xl/sharedStrings.xml')]).then(function (r) {
+      var paths = [];
+      if (r[0] && r[1]) {
+        var rid2t = {};
+        var rels = hoParseXml_(r[1]).getElementsByTagNameNS('*', 'Relationship');
+        for (var i = 0; i < rels.length; i++) {
+          var tg = rels[i].getAttribute('Target') || '';
+          rid2t[rels[i].getAttribute('Id')] = tg.charAt(0) === '/' ? tg.slice(1) : ('xl/' + tg);
+        }
+        var shs = hoParseXml_(r[0]).getElementsByTagNameNS('*', 'sheet');
+        for (var j = 0; j < shs.length; j++) {
+          var rid = shs[j].getAttributeNS(REL_NS, 'id') || shs[j].getAttribute('r:id');
+          if (rid && rid2t[rid]) paths.push(rid2t[rid]);
+        }
+      }
+      if (!paths.length) { // ไม่มี workbook/rels ที่อ่านได้ ⇒ เรียงตามเลขในชื่อไฟล์
+        paths = Object.keys(list).filter(function (nm) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(nm); })
+          .sort(function (a, b) { return parseInt(a.replace(/\D/g, ''), 10) - parseInt(b.replace(/\D/g, ''), 10); });
+      }
+      if (!paths.length) throw hoUserErr_(HO_MSG_BAD_FILE_);
+      var shared = hoSharedStrings_(r[2]);
+      return Promise.all(paths.map(textOf)).then(function (texts) {
+        return texts.filter(function (tx) { return tx !== null; }).map(function (tx) { return hoSheetRows_(tx, shared); });
+      });
+    });
+  }).catch(function (e) {
+    if (e && e.hoUser) throw e;
+    throw hoUserErr_(HO_MSG_BAD_FILE_);
+  });
+}
+
+/* ---------- W3: ปุ่ม + หน้าต่างตัวอย่างนำเข้า ---------- */
+var HO_IMPORT = { seq: 0, busy: false, done: false, date: '', parsed: null, newRows: [], existing: 0, missing: [], result: null, fileName: '' };
+function hoShortNote_(s, n) {
+  var t = hoNoteNorm_(s);
+  return t.length > n ? (t.slice(0, n) + '…') : t;
+}
+function hoItemNote_(it) { return (it && it.form && typeof it.form === 'object' && it.form.hoNote) ? String(it.form.hoNote) : ''; }
+// คีย์ของแถวใน preList (ชื่อ/HN จากคอลัมน์ · hoNote จาก form) — เทียบกับ hoImportKey_ ของแถวในไฟล์
+function hoPreKey_(it) { return hoImportKey_(it && it.patientHn, it && it.patientName, hoItemNote_(it)); }
+function hoImpEl_(id) { return qs(id); }
+function hoImpSetError_(msg) {
+  var el = hoImpEl_('hoImpError');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.hidden = !msg;
+}
+function hoImpUpdateButtons_() {
+  var st = HO_IMPORT, btn = hoImpEl_('hoImpConfirm');
+  if (!btn) return;
+  var show = !!st.parsed && !st.done;
+  btn.hidden = !show;
+  btn.textContent = st.busy ? 'กำลังนำเข้า…' : ('ยืนยันนำเข้า ' + st.newRows.length + ' คน');
+  btn.disabled = !show || st.busy || st.newRows.length === 0;
+}
+function hoImpFail_(msg) {
+  HO_IMPORT.parsed = null;
+  var body = hoImpEl_('hoImpBody');
+  if (body) body.innerHTML = '';
+  hoImpSetError_(msg);
+  hoImpUpdateButtons_();
+}
+function hoImpRender_() {
+  var st = HO_IMPORT, body = hoImpEl_('hoImpBody'), p = st.parsed;
+  if (!body || !p) return;
+  var sub = hoImpEl_('hoImpSub');
+  if (sub) sub.textContent = st.fileName;
+  var parts = ['ใหม่ ' + st.newRows.length, 'มีอยู่แล้ว ' + st.existing + ' (ข้าม)'];
+  var oth = Object.keys(p.skippedOther).map(function (k) { return k + ' ' + p.skippedOther[k]; });
+  if (oth.length) parts.push('ข้าม (ไม่ใช่โปรแกรมตรวจสุขภาพ): ' + oth.join(' · '));
+  if (p.skippedNoName) parts.push('ข้าม (ไม่มีชื่อ): ' + p.skippedNoName);
+  var h = '<div class="ho-sum"><b>นัด' + escHtml(formatThaiDateFull_(p.date)) + '</b><br><span id="hoImpCounts">' + escHtml(parts.join(' · ')) + '</span></div>';
+  if (st.newRows.length) {
+    h += '<div class="ho-table-wrap"><table class="ho-table" id="hoImpNewTable"><thead><tr><th>ชื่อ</th><th>HN</th><th>เพศ</th><th>โปรแกรม</th><th>หมายเหตุ</th><th>⚠</th></tr></thead><tbody>';
+    st.newRows.forEach(function (r) {
+      h += '<tr><td>' + escHtml([r.patientPrefix, r.patientName].filter(Boolean).join(' ')) + '</td>' +
+        '<td>' + (r.patientHn ? escHtml(r.patientHn) : '<span class="muted">' + escHtml(HO_NO_HN_NAME_) + '</span>') + '</td>' +
+        '<td>' + (r.gender ? escHtml(r.gender) : '—') + '</td>' +
+        '<td>' + escHtml(programLabelForPrint(r.program)) + '</td>' +
+        '<td class="ho-note">' + escHtml(r.hoNote) + '</td>' +
+        '<td>' + (r.warns.length ? ('⚠ ' + escHtml(r.warns.join(' · '))) : '') + '</td></tr>';
+    });
+    h += '</tbody></table></div>';
+  } else {
+    h += '<p class="muted">ไม่มีรายการใหม่ให้นำเข้า</p>';
+  }
+  if (st.missing.length) {
+    h += '<div id="hoImpMissing"><h3 style="margin:10px 0 2px;">ไม่อยู่ในไฟล์ล่าสุด ' + st.missing.length + ' คน</h3>' +
+      '<p class="muted" style="margin:0 0 4px;">เคยนำเข้าจาก HO แต่ไม่อยู่ในไฟล์นี้ — ระบบไม่ลบให้เอง ยกเลิกรายคนได้</p>';
+    st.missing.forEach(function (it) {
+      h += '<div class="ho-missing-row" data-ho-miss="' + escHtml(it.preId) + '"><div class="pre-row-main"><span class="pre-name">' + escHtml(preItemFullName_(it)) + '</span>' +
+        '<div class="pre-meta">' + escHtml([it.patientHn ? ('HN ' + it.patientHn) : HO_NO_HN_NAME_, hoShortNote_(hoItemNote_(it), 60)].filter(Boolean).join(' · ')) + '</div></div>' +
+        '<button type="button" class="btn small danger" data-ho-cancel="' + escHtml(it.preId) + '">ยกเลิก</button></div>';
+    });
+    h += '</div>';
+  }
+  var r = st.result;
+  if (r) {
+    h += '<div class="ho-sum" id="hoImpResult"><b>ผลนำเข้า:</b> นำเข้า ' + r.added + ' คน (ซ้ำ ข้าม ' + r.skipped + ' · ผิดพลาด ' + r.errors.length + ')';
+    r.errors.forEach(function (er) {
+      h += '<div class="pre-field-err">' + escHtml('แถวที่ ' + (er.index + 1) + (er.name ? (' ' + er.name) : '') + ': ' + er.message) + '</div>';
+    });
+    h += '</div>';
+  }
+  body.innerHTML = h;
+  hoImpUpdateButtons_();
+}
+function hoImpClose_() {
+  var m = hoImpEl_('hoImportModal');
+  if (m) m.hidden = true;
+  HO_IMPORT.seq++; // ทิ้งผลที่ยังค้างอยู่
+}
+// เลือกไฟล์แล้ว: อ่าน (W1) → แปลง (W2) → ถามเซิร์ฟเวอร์ว่าวันนั้นมีใครแล้ว → หน้าต่างตัวอย่าง
+function hoImportFileChosen_(file) {
+  if (!file) return;
+  if (STATE.point !== HO_POINT_) { showToast('นำเข้ารายชื่อนัดได้เฉพาะจุดคีย์ order'); return; }
+  var seq = HO_IMPORT.seq + 1;
+  HO_IMPORT = { seq: seq, busy: false, done: false, date: '', parsed: null, newRows: [], existing: 0, missing: [], result: null, fileName: file.name || '' };
+  var m = hoImpEl_('hoImportModal');
+  if (m) m.hidden = false;
+  hoImpSetError_('');
+  var sub = hoImpEl_('hoImpSub');
+  if (sub) sub.textContent = HO_IMPORT.fileName;
+  var body = hoImpEl_('hoImpBody');
+  if (body) body.innerHTML = '<p class="muted">กำลังอ่านไฟล์…</p>';
+  hoImpUpdateButtons_();
+  var readP = (typeof file.arrayBuffer === 'function') ? file.arrayBuffer() : Promise.reject(hoUserErr_(HO_MSG_BAD_FILE_));
+  readP.then(function (buf) {
+    return hoReadXlsx_(buf);
+  }).then(function (sheets) {
+    if (seq !== HO_IMPORT.seq) return null;
+    var parsed = hoParseSheets_(sheets, todayStr());
+    if (parsed.error) { hoImpFail_(parsed.error); return null; }
+    if (body) body.innerHTML = '<p class="muted">กำลังตรวจรายการที่มีอยู่แล้ว…</p>';
+    return apiCall('preList', { staffKey: STATE.staffKey, date: parsed.date }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+      if (seq !== HO_IMPORT.seq) return;
+      if (!preListResp_(resp)) {
+        hoImpFail_(preOldServerResp_(resp) ? 'เซิร์ฟเวอร์ยังไม่รองรับการนำเข้า (ต้อง deploy Apps Script ก่อน)'
+          : ('โหลดรายการนัดของวันนั้นไม่สำเร็จ (' + ((resp && resp.status !== 'ok' && resp.message) ? resp.message : 'เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ') + ') — ปิดแล้วเลือกไฟล์ใหม่'));
+        return;
+      }
+      var live = resp.items.filter(function (it) { return it && it.displayStatus !== 'ยกเลิก' && it.status !== 'ยกเลิก'; });
+      var have = {}, fileKeys = {};
+      live.forEach(function (it) { have[hoPreKey_(it)] = true; });
+      var st = HO_IMPORT;
+      st.parsed = parsed; st.date = parsed.date;
+      parsed.items.forEach(function (r) {
+        var k = hoImportKey_(r.patientHn, r.patientName, r.hoNote);
+        fileKeys[k] = true;
+        if (have[k]) st.existing++; else st.newRows.push(r);
+      });
+      st.missing = live.filter(function (it) {
+        return it.status === 'รอมา' && it.form && it.form.source === 'ho' && !fileKeys[hoPreKey_(it)];
+      });
+      hoImpRender_();
+    });
+  }).catch(function (err) {
+    if (seq !== HO_IMPORT.seq) return;
+    hoImpFail_((err && err.hoUser) ? err.message : HO_MSG_BAD_FILE_);
+  });
+}
+// ยืนยัน: ส่ง preImport (เฉพาะแถว "ใหม่") ทีละ ≤200 แถว · กันกดซ้ำระหว่างรอ
+function hoImpConfirm_() {
+  var st = HO_IMPORT;
+  if (!st.parsed || st.busy || st.done || !st.newRows.length) return;
+  if (STATE.point !== HO_POINT_) { hoImpSetError_('นำเข้ารายชื่อนัดได้เฉพาะจุดคีย์ order'); return; }
+  var seq = st.seq, rows = st.newRows;
+  st.busy = true;
+  hoImpSetError_('');
+  hoImpUpdateButtons_();
+  var added = 0, skipped = 0, errors = [], failMsg = '';
+  function next(i) {
+    if (i >= rows.length) return Promise.resolve();
+    var part = rows.slice(i, i + HO_IMPORT_CHUNK_).map(function (r) {
+      return { patientPrefix: r.patientPrefix, patientName: r.patientName, patientHn: r.patientHn, gender: r.gender, program: r.program, hoNote: r.hoNote, sundayWarn: !!r.sundayWarn };
+    });
+    return apiCall('preImport', { staffKey: STATE.staffKey, staffName: STATE.staffName, point: STATE.point, date: st.date, rows: part }).then(function (resp) {
+      if (resp && resp.status === 'ok') {
+        added += Number(resp.added) || 0;
+        skipped += Number(resp.skipped) || 0;
+        (resp.errors || []).forEach(function (er) {
+          var idx = i + (Number(er && er.index) || 0);
+          errors.push({ index: idx, name: rows[idx] ? rows[idx].patientName : '', message: String((er && er.message) || 'ผิดพลาด') });
+        });
+        return next(i + HO_IMPORT_CHUNK_);
+      }
+      failMsg = preOldServerResp_(resp) ? 'เซิร์ฟเวอร์ยังไม่รองรับการนำเข้า (ต้อง deploy Apps Script ก่อน)'
+        : ((resp && resp.message) ? resp.message : 'นำเข้าไม่สำเร็จ กรุณาลองใหม่');
+    });
+  }
+  next(0).then(function () {
+    if (seq !== HO_IMPORT.seq) return;
+    st.busy = false;
+    if (added || skipped || errors.length) {
+      showToast('นำเข้า ' + added + ' คน (ซ้ำ ข้าม ' + skipped + ' · ผิดพลาด ' + errors.length + ')');
+      reloadPreAfterAction_();
+    }
+    if (failMsg) {
+      // ส่วนที่นำเข้าไปแล้วไม่ต้องนำเข้าซ้ำ — ให้เลือกไฟล์ใหม่ (เซิร์ฟเวอร์กันซ้ำให้อยู่แล้ว)
+      hoImpSetError_(failMsg + (added ? ' (นำเข้าไปแล้ว ' + added + ' คน — เลือกไฟล์ใหม่เพื่อดูรายการที่เหลือ)' : ''));
+      if (added) { st.done = true; }
+      hoImpRender_();
+      return;
+    }
+    st.done = true;
+    st.result = { added: added, skipped: skipped, errors: errors };
+    hoImpRender_();
+  });
+}
+// ยกเลิกรายคนในส่วน "ไม่อยู่ในไฟล์ล่าสุด" (preCancel เดิม + confirm)
+function hoImpCancelMissing_(preId, btn) {
+  var st = HO_IMPORT;
+  var item = null;
+  st.missing.forEach(function (it) { if (it.preId === preId) item = it; });
+  if (!item) return;
+  if (!window.confirm('ยืนยันยกเลิกการลงล่วงหน้าของ ' + preItemFullName_(item) + '?')) return;
+  if (btn) btn.disabled = true;
+  var seq = st.seq;
+  apiCall('preCancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, preId: preId }).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      showToast('ยกเลิกการลงล่วงหน้า ' + preItemFullName_(item) + ' แล้ว');
+      reloadPreAfterAction_();
+      if (seq === HO_IMPORT.seq) {
+        HO_IMPORT.missing = HO_IMPORT.missing.filter(function (it) { return it.preId !== preId; });
+        hoImpRender_();
+      }
+    } else {
+      showToast('❌ ยกเลิกไม่สำเร็จ' + (resp && resp.message ? ': ' + resp.message : ''));
+      if (btn) btn.disabled = false;
+    }
+  });
+}
+
+/* ---------- W4: ช่อง 🔎 ค้นคนนัดวันนี้ + แตะ ⇒ เติมฟอร์ม (log + preId) ---------- */
+function hoWaitingToday_() {
+  return (PRE_TODAY || []).filter(function (it) { return it && it.status === 'รอมา' && it.date === todayStr(); });
+}
+// แสดง/ซ่อนแถบ (ปุ่มนำเข้า · ช่อง 🔎) ตามจุด/โหมด/จำนวนคนรอมา — idempotent เรียกจาก applyPreMode_() (ทุก recalcTotals) + หลังโหลด PRE_TODAY
+function syncHoBar_() {
+  var bar = qs('hoBar');
+  if (!bar) return;
+  var atPoint = STATE.point === HO_POINT_;
+  var waiting = atPoint ? hoWaitingToday_() : [];
+  var showImport = atPoint;
+  var showSearch = atPoint && !STATE.editingId && !(typeof isPreMode_ === 'function' && isPreMode_()) && waiting.length >= 1;
+  var importRow = qs('hoImportRow'), wrap = qs('hoSearchWrap');
+  if (importRow) importRow.hidden = !showImport;
+  if (wrap) wrap.hidden = !showSearch;
+  bar.hidden = !(showImport || showSearch);
+  var lbl = qs('hoSearchLabel');
+  if (lbl) {
+    var want = '🔎 ค้นคนนัดวันนี้ (ชื่อ / สกุล / HN) — รอ ' + waiting.length + ' คน';
+    if (lbl.textContent !== want) lbl.textContent = want;
+  }
+  if (!showSearch && typeof hoSearchClear_ === 'function') hoSearchClear_();
+}
+function hoOnPreTodayLoaded_() {
+  syncHoBar_();
+  hoSearchRender_();
+}
+function hoSearchClear_() {
+  var inp = qs('hoSearch'), list = qs('hoSearchList');
+  if (inp && inp.value) inp.value = '';
+  if (list && list.innerHTML) list.innerHTML = '';
+}
+function hoSearchRender_() {
+  var inp = qs('hoSearch'), list = qs('hoSearchList');
+  if (!inp || !list) return;
+  var q = (inp.value || '').trim();
+  if (q.length < 2) { if (list.innerHTML) list.innerHTML = ''; return; }
+  var rows = preSortItems_(hoWaitingToday_()).filter(function (it) { return preMatchesQuery_(it, q); }).slice(0, 8);
+  if (!rows.length) { list.innerHTML = '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>'; return; }
+  list.innerHTML = rows.map(function (it) {
+    var bits = [it.patientHn ? ('HN ' + it.patientHn) : HO_NO_HN_NAME_];
+    if (it.program) bits.push(programLabelForPrint(it.program));
+    var note = hoShortNote_(hoItemNote_(it), 60);
+    if (note) bits.push(note);
+    return '<button type="button" class="pre-cand-btn" data-ho-pick="' + escHtml(it.preId) + '"><b>' + escHtml(preItemFullName_(it)) + '</b>' +
+      '<span class="muted"> · ' + escHtml(bits.join(' · ')) + '</span></button>';
+  }).join('');
+}
+function hoRenderArriveBar_() {
+  var bar = qs('hoArriveBar'), txt = qs('hoArriveText');
+  if (!bar) return;
+  var id = STATE.arrivePreId;
+  if (!id) { bar.hidden = true; if (txt) txt.textContent = ''; return; }
+  var it = null;
+  hoWaitingToday_().forEach(function (x) { if (x.preId === id) it = x; });
+  var f = (it && it.form && typeof it.form === 'object') ? it.form : {};
+  var s;
+  if (f.source === 'ho') {
+    s = '📋 นัดจาก HO: ' + (hoItemNote_(it) || '(ไม่มีหมายเหตุ)');
+    if (f.sundayWarn) s += ' · ⚠ วันอาทิตย์ — ตรวจโปรแกรม';
+  } else {
+    s = '📋 นัดล่วงหน้า' + (it && it.staff ? (' (ลงโดย ' + it.staff + ')') : '');
+  }
+  if (txt) txt.textContent = s;
+  bar.hidden = false;
+}
+function clearHoArrive_() {
+  if (STATE.arrivePreId) STATE.arrivePreId = '';
+  hoRenderArriveBar_();
+}
+// แตะรายชื่อในผลค้น: เติมฟอร์มหลักของวันนี้ (ไม่ใช่โหมดล่วงหน้า) · ผูก STATE.arrivePreId ให้ onSubmitLog แนบ preId
+function startPreArrive_(item) {
+  if (!item) return;
+  if (!isMainFormDraftEmpty_() && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการนัดนี้หรือไม่?')) return;
+  STATE.preEditId = '';
+  STATE.preEditName = '';
+  resetServiceDate_();
+  resetLogForm(); // ล้าง arrivePreId + ช่องค้นด้วย
+  var f = (item.form && typeof item.form === 'object') ? item.form : {};
+  var isHo = f.source === 'ho';
+  var prog = String(f.program != null && f.program !== '' ? f.program : (item.program || ''));
+  setProgramSet(isSundayProgram_(prog) ? 'sun' : 'week', { silent: true });
+  document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = !!prog && (r.value === prog); });
+  var g = genderFromThai(f.gender || item.gender);
+  document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === g); });
+  setGenderAutoHint(false);
+  updatePelvicSection(!!prog, g);
+  // แถวนำเข้าจาก HO: pelvic ที่เก็บไว้ไม่ใช่ค่าที่เจ้าหน้าที่เลือกจริง ⇒ ไม่ติ๊กเลย (เลือกตามหมายเหตุตอนมาถึง) · แถวลงล่วงหน้าปกติ ใช้ค่าที่เลือกไว้
+  if (!isHo) {
+    var pel = f.pelvic || item.pelvic || 'no';
+    document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === pel); });
+  }
+  // ไม่ล็อกราคา (ไม่ตั้ง STATE.lastPricingKey / ไม่เติม checkupAmount) ⇒ recalcTotals() คำนวณราคามาตรฐานตามปกติ
+  var central = String(f.patientName || item.patientName || '') === HO_NO_HN_NAME_ && !String(f.patientHn || item.patientHn || '').trim();
+  qs('patientName').value = central ? '' : (f.patientName || item.patientName || '');
+  qs('patientHn').value = central ? '' : (f.patientHn || item.patientHn || '');
+  qs('patientPrefix').value = central ? '' : (f.patientPrefix || item.patientPrefix || '');
+  syncPrefixButtons();
+  updateHnHint();
+  STATE.arrivePreId = item.preId;
+  hoRenderArriveBar_();
+  applyLogLocks();
+  recalcTotals();
+  applyCheckupPanelDefault_();
+  var qEl = qs('queueSelect');
+  if (qEl && typeof qEl.focus === 'function') qEl.focus();
 }
 
 /* ---------- W8: การ์ด "ลงล่วงหน้า" ในรายงาน (ซ่อนเมื่อไม่มี summary.preReg หรือ total = 0) ---------- */
@@ -14030,6 +14807,39 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   var pwCloseEl = qs('pwClose');
   if (pwCloseEl) pwCloseEl.addEventListener('click', closePreWarn_);
+  /* ===== รอบ 84: นำเข้ารายชื่อนัดจาก HO + ช่อง 🔎 ค้นคนนัดวันนี้ ===== */
+  var hoImportBtn = qs('btnHoImport'), hoFileEl = qs('hoFile');
+  if (hoImportBtn && hoFileEl) {
+    hoImportBtn.addEventListener('click', function () { hoFileEl.value = ''; hoFileEl.click(); });
+    hoFileEl.addEventListener('change', function () {
+      var f = hoFileEl.files && hoFileEl.files[0];
+      hoImportFileChosen_(f);
+      try { hoFileEl.value = ''; } catch (e) {} // เลือกไฟล์เดิมซ้ำได้
+    });
+  }
+  var hoImpConfirmEl = qs('hoImpConfirm');
+  if (hoImpConfirmEl) hoImpConfirmEl.addEventListener('click', hoImpConfirm_);
+  ['hoImpClose', 'hoImpCancel'].forEach(function (id) { var el = qs(id); if (el) el.addEventListener('click', hoImpClose_); });
+  var hoImpBodyEl = qs('hoImpBody');
+  if (hoImpBodyEl) hoImpBodyEl.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-ho-cancel]') : null;
+    if (b) hoImpCancelMissing_(b.getAttribute('data-ho-cancel'), b);
+  });
+  var hoSearchEl = qs('hoSearch');
+  if (hoSearchEl) {
+    hoSearchEl.addEventListener('input', hoSearchRender_);
+    hoSearchEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+  }
+  var hoSearchListEl = qs('hoSearchList');
+  if (hoSearchListEl) hoSearchListEl.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-ho-pick]') : null;
+    if (!b) return;
+    var pid = b.getAttribute('data-ho-pick'), found = null;
+    hoWaitingToday_().forEach(function (x) { if (x.preId === pid) found = x; });
+    if (found) startPreArrive_(found); else showToast('ไม่พบรายการนี้ กรุณาค้นใหม่');
+  });
+  var hoArriveClearEl = qs('btnHoArriveClear');
+  if (hoArriveClearEl) hoArriveClearEl.addEventListener('click', function () { clearHoArrive_(); resetLogForm(); });
   qs('medCert5').addEventListener('input', onServiceFieldChange);
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
   qs('medCertLabAmount').addEventListener('input', onServiceFieldChange);
