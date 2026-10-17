@@ -1210,11 +1210,16 @@
   .dq-card.dq-col-blue .dq-card-list { background: #E9F3FC; }
   .dq-card-row { padding: 4px 10px; font-size: 14px; border-bottom: 1px solid rgba(0, 0, 0, 0.06); overflow-wrap: anywhere; }
   .dq-card-empty { margin: 8px 10px; }
-  .dq-card-foot { flex: 0 0 auto; padding: 6px 8px 8px; border-top: 1px solid var(--primary); background: #fff; }
-  .dq-card-stats { margin-top: 6px; max-height: 96px; overflow-y: auto; font-size: 13px; text-align: center; color: var(--text-muted); }
+  /* รอบ 86: ส่วนล่างการ์ดเตี้ยลง — สถิติเหลือเห็น 1 บรรทัด (เลื่อนดูที่เหลือในกล่อง) · ปุ่ม ＋ เตี้ยลง ⇒ รายการคิวได้ที่เพิ่ม */
+  .dq-card-foot { flex: 0 0 auto; padding: 4px 8px 4px; border-top: 1px solid var(--primary); background: #fff; }
+  .dq-card-stats { margin-top: 3px; line-height: 1.45; max-height: 1.45em; overflow-y: auto; font-size: 13px; text-align: center; color: var(--text-muted); }
   .dq-stat-line { overflow-wrap: anywhere; }
-  .dq-card-doc { margin-top: 2px; font-weight: bold; overflow-wrap: anywhere; color: var(--primary-dark); }
-  .dq-slot { display: block; width: 100%; box-sizing: border-box; min-height: 40px; padding: 6px 8px; font-family: inherit; font-size: 15px; cursor: pointer; text-align: center; color: var(--primary-light); background: #E4E7FB; border: 1px solid var(--primary); border-radius: 6px; font-weight: bold; overflow-wrap: anywhere; }
+  .dq-card-doc { font-weight: bold; overflow-wrap: anywhere; color: var(--primary-dark); }
+  /* รอบ 86: ชื่อแพทย์ + สถิติบรรทัดแรกของแพทย์คนนั้นอยู่บรรทัดเดียวกัน (CSS ล้วน — textContent ของ DOM เดิม) */
+  .dq-card-doc, .dq-card-doc + .dq-stat-line { display: inline; }
+  .dq-card-doc::after { content: ' · '; font-weight: normal; color: var(--text-muted); }
+  .dq-card-doc + .dq-stat-line::after { content: ''; display: block; }
+  .dq-slot { display: block; width: 100%; box-sizing: border-box; min-height: 36px; padding: 4px 8px; font-family: inherit; font-size: 15px; cursor: pointer; text-align: center; color: var(--primary-light); background: #E4E7FB; border: 1px solid var(--primary); border-radius: 6px; font-weight: bold; overflow-wrap: anywhere; }
   .dq-slot.dq-slot-idle { opacity: 0.55; } /* รอบ 51: ยังไม่มีคิวที่จะลง (ยังคลิกได้ ⇒ toast) */
   .dq-entry { font-weight: bold; color: #C00000; font-size: 20px; } /* รอบ 53.1: เจ้าของขอตัวคิวใหญ่ขึ้น (เดิม 14px จาก .dq-card-row) */
   .dq-open { font-weight: normal; font-size: 15px; color: var(--accent); }
@@ -13206,29 +13211,9 @@ function dqRenderRoomCards() {
     if (shiftText) head.title = 'เวลาตรวจ ' + shiftText;
     card.appendChild(head);
 
-    // รอบ 80: ปุ่ม 👤 แพทย์ + ป้าย ⚠ N คิวไม่มีชื่อแพทย์ (ห้องมีคิว ≥ 1) · ข้อความสรุปหลังบันทึก · แถบชื่อแพทย์ของคิว
+    // รอบ 80: ข้อความสรุปหลังบันทึก · แถบชื่อแพทย์ของคิว
+    // รอบ 86 (เจ้าของสั่ง 2026-10-17): ถอดปุ่ม 👤 แพทย์ + ป้าย ⚠ N คิวไม่มีชื่อแพทย์ — จุดจำหน่ายเติมชื่อแพทย์ภายหลังเอง · แถบไม่มีทางเปิดแล้ว (โค้ดแถบ/dqSetDoctor คงไว้)
     var docRows = dqDoctorBarRows_(rm.room);
-    if (docRows.length) {
-      var missing = docRows.filter(function (l) { return String(l.doctor == null ? '' : l.doctor).trim() === ''; }).length;
-      var tools = document.createElement('div');
-      tools.className = 'dq-doc-tools';
-      var docBtn = document.createElement('button');
-      docBtn.type = 'button';
-      docBtn.className = 'dq-doc-btn';
-      docBtn.setAttribute('data-room', rm.room);
-      docBtn.setAttribute('aria-expanded', dqState.doctorBarRoom === rm.room ? 'true' : 'false');
-      docBtn.textContent = '👤 แพทย์';
-      tools.appendChild(docBtn);
-      if (missing >= 1) {
-        var docBadge = document.createElement('button');
-        docBadge.type = 'button';
-        docBadge.className = 'dq-doc-badge';
-        docBadge.setAttribute('data-room', rm.room);
-        docBadge.textContent = '⚠ ' + missing + ' คิวไม่มีชื่อแพทย์';
-        tools.appendChild(docBadge);
-      }
-      card.appendChild(tools);
-    }
     if (docNotice && docNotice.room === rm.room) {
       var nt = document.createElement('div');
       nt.className = 'dq-doc-notice';
@@ -14093,6 +14078,19 @@ function dqOnSaveRoomsClick() {
     suRows[firstBad].querySelector('.dq-su-doctor').focus();
     return;
   }
+  // รอบ 85: แพทย์ 1 คนลงได้ห้องเดียว — เทียบ core (ตัดคำนำหน้า/ช่องว่าง) · ห้องที่ไม่มีแพทย์ไม่นับ · ซ้ำ = ไม่ยิง request
+  var docRoomIdx = {};
+  for (var dj = 0; dj < rows.length; dj++) {
+    if (!rows[dj].doctor) continue;
+    var dcore = doctorNameStrip_(rows[dj].doctor).core.toLowerCase();
+    if (!dcore) continue;
+    if (Object.prototype.hasOwnProperty.call(docRoomIdx, dcore)) {
+      dqShowSetupMsg('แพทย์ ' + rows[dj].doctor + ' อยู่ซ้ำ 2 ห้อง (ห้อง ' + trimmed[docRoomIdx[dcore]] + ' และห้อง ' + trimmed[dj] + ') — แพทย์ 1 คนลงได้ห้องเดียว', true);
+      suRows[dj].querySelector('.dq-su-doctor').focus();
+      return;
+    }
+    docRoomIdx[dcore] = dj;
+  }
   dqShowSetupMsg('');
   var btn = qs('dqBtnSaveRooms');
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก…'; }
@@ -14103,11 +14101,8 @@ function dqOnSaveRoomsClick() {
       dqApplyDoctorsToday_(resp.doctorsToday);
       if (resp.doctorsTodayWarning) showToast(resp.doctorsTodayWarning);
       dqShowView('board');
-      if (resp.today) { dqApplySnapshot(resp.today); dqDoctorBarAutoOpen_(); } // รอบ 80: มีห้องที่มีคิวไม่มีชื่อแพทย์ ⇒ เปิดแถบชื่อแพทย์ของห้องแรก
-      else {
-        var reloaded = dqLoadToday();
-        if (reloaded && reloaded.then) reloaded.then(dqDoctorBarAutoOpen_, function () {});
-      }
+      if (resp.today) dqApplySnapshot(resp.today); // รอบ 86: เลิกเปิดแถบชื่อแพทย์ของคิวเองหลังบันทึกผัง (รอบ 80)
+      else dqLoadToday();
     } else {
       dqShowSetupMsg((resp && resp.message) ? resp.message : 'บันทึกไม่สำเร็จ', true);
     }
