@@ -696,7 +696,8 @@
   /* รอบ 17 (2026-09-17): แถบ #panelTotals ล่างจอมือถือสูงขึ้นได้ถึง ~110px เมื่อมีคำเตือน ⇒ bottom 84px ทับแถวคำเตือน
      จอกว้าง กล่องลอยขวาล่าง 340px ⇒ toast กึ่งกลางชนกล่องที่ 768px ⇒ ย้าย toast ไปซ้ายล่าง พ้นกล่องเสมอ */
   @media (max-width: 699px) { #toast { bottom: 132px; } }
-  @media (min-width: 700px) { #toast { left: 16px; bottom: 16px; transform: none; max-width: calc(100vw - 388px); } }
+  /* รอบ 87 (D14): แถบยอดรวมจอกว้างเป็นแถบเต็มความกว้างล่างจอ ⇒ toast ยกขึ้นพ้นแถบ (สูง ≈ 64–110px) */
+  @media (min-width: 700px) { #toast { left: 16px; bottom: 120px; transform: none; max-width: calc(100vw - 32px); } }
 
   /* รอบ 31B ข้อ 4: แถบ "บันทึกให้ใคร + เลิกทำ" — ลอยล่างจอเหนือ #toast (z-index สูงกว่า) aria-live ผ่าน attribute ใน HTML */
   #saveNoticeBar {
@@ -789,26 +790,32 @@
   #panelTotals #btnDraftClear { font-size: 0; }
   #panelTotals #btnDraftClear::before { content: "🗑"; font-size: 16px; }
 
+  /* รอบ 87 (D14, เจ้าของสั่ง 2026-10-18): จอ ≥ 700px แถบล่างจอเต็มความกว้างบรรทัดเดียว (แทนกล่องลอยขวาล่าง 340px รอบ 17 ที่บังเนื้อหา)
+     คำเตือน (ซ้าย ยืดได้ ตัดบรรทัดได้) · 💰 รวม + ตัวเลข 32px (ไม่ตัดบรรทัด) · ปุ่มบันทึก/ล้างร่าง — สูง ≈ 64px เมื่อไม่มีคำเตือนยาว
+     .wrap-log เผื่อ padding-bottom ตามความสูงจริงของแถบ (syncWrapLogBottomSpace_ วัด offsetHeight) · มือถือ (< 700px) ไม่เปลี่ยน */
   @media (min-width: 700px) {
     #panelTotals {
-      left: auto; right: 16px; bottom: 16px; top: auto;
-      width: 340px; max-width: calc(100vw - 32px);
-      border-radius: 12px;
-      box-shadow: 0 6px 24px rgba(26,30,64,.22);
-      max-height: calc(100vh - 32px);
+      left: 0; right: 0; bottom: 0; top: auto;
+      width: auto; max-width: none;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -4px 16px rgba(26,30,64,.18);
+      max-height: 45vh;
     }
-    #panelTotals .log-panel-head-static { display: block; }
-    #panelTotals .log-panel-body { display: block; padding: 0 16px 16px; }
-    #panelTotals #formWarning, #panelTotals #formError { font-size: 14px; padding: 10px 12px; margin-top: 10px; }
-    #panelTotals .totals-box { background: var(--gray-pale); padding: 12px; margin-top: 12px; }
-    #panelTotals .totals-box .grand { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-size: 20px; align-items: baseline; gap: 10px; }
+    #panelTotals .log-panel-head-static { display: none; }
+    /* !important: ชนะกฎ .log-panel-body{display:block !important} ของจอ ≥ 1100px */
+    #panelTotals .log-panel-body { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px 20px; padding: 10px 16px; }
+    #panelTotals #formWarning, #panelTotals #formError { flex: 1 1 160px; min-width: 0; order: 0; font-size: 14px; padding: 6px 10px; margin: 0; overflow-wrap: anywhere; }
+    #panelTotals .totals-box { order: 1; flex: 0 0 auto; margin: 0 0 0 auto; background: none; padding: 0; }
+    #panelTotals .totals-box .grand { border-top: none; margin-top: 0; padding-top: 0; font-size: 20px; align-items: baseline; gap: 10px; }
     /* เจ้าของสั่ง 2026-09-18: จอคอม ยอดราคาต้องใหญ่กว่านี้ (เดิม 20px เท่าป้าย "รวม") — ขยายเฉพาะตัวเลข ป้ายคงเดิม · มือถือไม่แตะ */
     #panelTotals #totGrand { font-size: 32px; font-weight: 800; line-height: 1.1; white-space: nowrap; }
     /* ป้าย "💰 รวม" ห้ามแตกบรรทัด (ยอด 6 หลักเคยดันจน 💰 กับ รวม แยกกันคนละบรรทัด) */
     #panelTotals .totals-box .grand > span:first-child { white-space: nowrap; flex: 0 0 auto; }
-    #panelTotals .row { margin-top: 10px !important; }
-    #panelTotals .row > * { flex: 1 1 auto; }
-    #panelTotals #btnDraftSave, #panelTotals #btnDraftClear { padding: 12px 18px; min-height: 44px; font-size: 16px; }
+    #panelTotals .row { order: 2; flex: 0 0 auto; margin-top: 0 !important; gap: 10px; }
+    #panelTotals .row > * { flex: 0 0 auto; }
+    #panelTotals #btnDraftSave, #panelTotals #btnDraftClear { padding: 10px 20px; min-height: 44px; font-size: 16px; }
+    #panelTotals #btnDraftSave { flex: 0 1 auto; max-width: 460px; }
+    #panelTotals #btnDraftClear { font-size: 16px; }
     #panelTotals #btnDraftClear::before { content: none; }
   }
 
@@ -916,7 +923,7 @@
      รอบ 17 (2026-09-17): padding-bottom เผื่อที่ท้ายหน้าไม่ให้ #panelTotals (ลอยอยู่แล้ว) บังช่องกรอกสุดท้าย —
      ค่าฐาน (จอแคบ) ~90px พอสำหรับแถบเดียวล่างจอ · จอกว้าง ≥700px เพิ่มเป็น ~240px เผื่อความสูงกล่องลอยเต็มรูป */
   .wrap-log { max-width: 1400px; margin: 0 auto; padding: 12px; padding-bottom: 90px; }
-  @media (min-width: 700px) { .wrap-log { padding-bottom: 240px; } }
+  @media (min-width: 700px) { .wrap-log { padding-bottom: 96px; } } /* รอบ 87 (D14): ค่าตั้งต้นก่อน JS วัดจริง (แถบล่างสูง ≈ 64px) */
   .log-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
   /* กันบันทึกซ้ำ (2026-09-16): ระหว่างรอ apiCall ตอบ ล็อกทั้งฟอร์มด้วย inert แล้วหรี่ให้เห็นว่ากดไม่ได้ */
   #logForm[inert] { opacity: .6; }
@@ -1146,8 +1153,15 @@
   .pre-cand-btn { text-align: left; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; min-height: 44px; font-size: 15px; overflow-wrap: anywhere; }
   .pre-cand-btn.pre-near { border-color: #F57C00; background: #FFF8EE; }
   /* รอบ 84 (W3/W4): แถบนำเข้ารายชื่อนัด + ช่อง 🔎 ค้นคนนัดวันนี้ + แถบหมายเหตุ HO + หน้าต่างตัวอย่างนำเข้า */
-  .ho-bar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-  .ho-bar[hidden], #hoSearchWrap[hidden], #hoImportRow[hidden], .ho-arrive-bar[hidden] { display: none; }
+  .ho-arrive-bar[hidden] { display: none; }
+  /* รอบ 87 (D1/D2): รายการแนะนำคนนัดวันนี้ใต้ช่อง HN / ชื่อ — ปุ่มสูง ≥ 44px (.pre-cand-btn) */
+  .ho-suggest { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 8px; }
+  .ho-suggest[hidden] { display: none; }
+  .ho-suggest-head { font-size: 14px; font-weight: 700; color: #8A4B00; }
+  .ho-suggest .pre-cand-btn { min-height: 44px; }
+  /* รอบ 87 (D10): หน้า #apptScreen — ตาราง 7 วันของรายชื่อนัดล่วงหน้า */
+  .appt-days { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .appt-day-btn { display: block; text-align: left; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; cursor: pointer; overflow-wrap: anywhere; }
   .ho-arrive-bar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 10px;
     background: #FFF3E0; border: 2px solid #F57C00; color: #8A4B00; border-radius: 10px; padding: 10px 14px; font-weight: 700;
@@ -1529,19 +1543,8 @@
         <button type="button" class="btn small secondary no-print" id="btnCancelPreEdit" hidden style="flex:0 0 auto;">ยกเลิกการแก้</button>
       </div>
 
-      <!-- รอบ 84 (W3/W4): แถบเฉพาะ 'จุดคีย์ order' (syncHoBar_ สลับ hidden) — ช่อง 🔎 ค้นคนนัดวันนี้ (แสดงเมื่อมีคน 'รอมา' วันนี้) + ปุ่มนำเข้าไฟล์ HO
-           อยู่นอก #logForm โดยตั้งใจ (reset()/ร่างฟอร์ม/หน้าต่างแก้ไขไม่แตะ) · #hoArriveBar = แถบหมายเหตุ HO ของคนที่แตะเลือก (STATE.arrivePreId) -->
-      <div id="hoBar" class="ho-bar no-print" hidden>
-        <div id="hoSearchWrap" hidden>
-          <label class="field-label" for="hoSearch" id="hoSearchLabel">🔎 ค้นคนนัดวันนี้ (ชื่อ / สกุล / HN)</label>
-          <input type="search" id="hoSearch" autocomplete="off" placeholder="พิมพ์ชื่อ / สกุล / HN อย่างน้อย 2 ตัวอักษร">
-          <div id="hoSearchList" class="pre-cand-list"></div>
-        </div>
-        <div id="hoImportRow" hidden>
-          <button type="button" class="btn small secondary" id="btnHoImport">📥 นำเข้ารายชื่อนัด (ไฟล์ HO)</button>
-          <input type="file" id="hoFile" accept=".xlsx" hidden>
-        </div>
-      </div>
+      <!-- รอบ 87 (D3/D9): ถอดช่อง 🔎 (#hoSearchWrap) และปุ่มนำเข้า (#hoBar) ออกจากหน้าบันทึกแล้ว — ปุ่มนำเข้าย้ายไปหน้า #apptScreen (จุดทำนัดหมาย)
+           ค้นคนนัดวันนี้ทำที่ช่อง HN (D1) / ช่องชื่อ (D2) โดยตรง · #hoArriveBar = แถบหมายเหตุ HO ของคนที่เลือก (STATE.arrivePreId) -->
       <div id="hoArriveBar" class="ho-arrive-bar no-print" hidden role="status">
         <span id="hoArriveText" class="ho-arrive-text"></span>
         <button type="button" class="btn small secondary no-print" id="btnHoArriveClear" style="flex:0 0 auto;">✕ ไม่ใช่คนนี้</button>
@@ -1578,6 +1581,8 @@
                 <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
                 <input type="text" id="patientHn" autocomplete="off" placeholder="บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ">
                 <div id="patientHnHint" class="field-hint-warn" hidden></div>
+                <!-- รอบ 87 (D1): HN ตรงคน "รอมา" วันนี้ — ฟอร์มมีข้อมูลอื่นอยู่ ⇒ แถบ [ใช้ข้อมูลนี้] / ตรงหลายคน ⇒ รายชื่อให้แตะเลือก (เฉพาะจุดคีย์ order) -->
+                <div id="hoHnSuggest" class="ho-suggest no-print" hidden></div>
 
                 <!-- เจ้าของแจ้งบั๊ก 2026-09-20: เดิมช่องนี้เป็น input+datalist -- เบราว์เซอร์กรองตัวเลือกตามข้อความ
                      ที่ค้างอยู่ในช่อง พอมี "นาย" ค้างอยู่ ตัวเลือกที่เหลือมีแค่ "นาย" เอง เลยเลือกตัวอื่นไม่ได้
@@ -1601,6 +1606,8 @@
 
                 <label class="field-label" for="patientName" id="patientNameLabel">ชื่อ-นามสกุลผู้รับบริการ</label>
                 <input type="text" id="patientName" autocomplete="off" placeholder="บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ">
+                <!-- รอบ 87 (D2): พิมพ์ชื่อ ≥ 2 ตัว ⇒ รายการคนนัด "รอมา" วันนี้ ≤ 5 คน — แตะจึงเติม (เฉพาะจุดคีย์ order) -->
+                <div id="hoNameSuggest" class="ho-suggest no-print" hidden></div>
 
                 <!-- ก้อน A (2026-09-21, เจ้าของสั่ง): ย้ายเพศมาจาก #svcCheckup — เพศเป็นของ "คน" ไม่ใช่ของบริการตรวจสุขภาพ
                      ห้ามเปลี่ยน id/name/value — ย้ายตำแหน่ง DOM อย่างเดียว (ยังอยู่นอก checkupLockWrap เสมอ ไม่ถูกล็อกตาม HN/ชื่อ) -->
@@ -1792,6 +1799,12 @@
                 <!-- รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายมาแผงนี้ (นับยอดอย่างเดียว) — บังคับแค่ HN · buildSpecialSendsUI() สร้างแถว -->
                 <p class="muted" style="margin-top:12px;">ตรวจเพิ่ม (นับยอด)</p>
                 <div id="medLabSpecialList"></div>
+                <!-- รอบ 87 (D16): "ส่งตรวจพิเศษ" = เงาของช่อง "ลงชื่อไว้" (sp_reg_<id>) ในแผงส่งตรวจพิเศษ — ติ๊กฝั่งไหนอีกฝั่งตาม (ค่าเดียว ลงชีตครั้งเดียว)
+                     syncMedLabSpMirror_() สร้าง/ซิงก์จาก recalcTotals · เงาไม่ถูกส่งใน payload (อ่านจาก sp_reg_* เท่านั้น)
+                     มียอด Lab แล้วต้องติ๊กส่งตรวจพิเศษ/ตรวจเพิ่ม หรือกด "ไม่มีตรวจเพิ่ม" (STATE.medLabNoExtra · ไม่ลงชีต) -->
+                <p class="muted" style="margin-top:12px;font-weight:700;">ส่งตรวจพิเศษ</p>
+                <div id="medLabSpMirror"></div>
+                <button type="button" class="btn secondary small" id="btnMedLabNoExtra" aria-pressed="false" style="margin-top:8px;">ไม่มีตรวจเพิ่ม</button>
               </section>
             </div>
           </section>
@@ -1828,6 +1841,20 @@
   </div>
 
   <!-- ---------- รายการวันนี้ ---------- -->
+  <!-- ---------- รอบ 87 (D10): หน้า "รายชื่อนัดล่วงหน้า" — หน้าหลักของจุดทำนัดหมาย (หัวข้อ 'นำเข้ารายชื่อนัด') ---------- -->
+  <div id="apptScreen" class="no-print" style="display:none;">
+    <div class="wrap">
+      <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
+      <h2 style="margin-top:0;">📅 รายชื่อนัดล่วงหน้า</h2>
+      <div class="row no-print" id="hoImportRow">
+        <button type="button" class="btn small" id="btnHoImport">📥 นำเข้ารายชื่อนัด (ไฟล์ HO)</button>
+        <input type="file" id="hoFile" accept=".xlsx" hidden>
+      </div>
+      <p id="apptError" class="error-box" hidden></p>
+      <div id="apptDays" class="appt-days" aria-live="polite"></div>
+    </div>
+  </div>
+
   <div id="todayScreen" style="display:none;">
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
@@ -2569,6 +2596,7 @@ var STATE = {
   lastAutoCheckupAmount: null,
   // รอบ 31A (A-W2): { <จุด>: [คำหัวข้อหลัก...] } จาก config (ไม่มีคีย์นี้เลย = เซิร์ฟเวอร์รุ่นเก่า -> {} เสมอ ไม่ crash)
   pointTopics: {},
+  medLabNoExtra: false, // รอบ 87 (D16): กดปุ่ม "ไม่มีตรวจเพิ่ม" แล้ว (ผ่านด่านลืมติ๊ก · ไม่ลงชีต · ล้างเมื่อ resetLogForm/ติ๊กรายการใด)
   // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
   // preModeApplied = applyPreMode_() ทำงานในโหมดล่วงหน้าอยู่ไหม (ตรวจจับ "เปลี่ยนสถานะ") · serviceDateDay = วันที่ที่ใช้ตั้งขอบเขต #serviceDate ล่าสุด (ตรวจข้ามวัน)
   preEditId: '',
@@ -3202,7 +3230,65 @@ function guardBothBreastCheck_(id) {
   }
 }
 // รอบ 66: ติ๊ก MMG/U/S ผ่านด่านเดิมทั้งหมดแล้ว (guard*) ค่อยให้ syncMedLabSoloPrice_ ตัดสินใส่ราคาเดี่ยว (เฉพาะตอนติ๊กจริงทางนี้)
-function onSpecialRegChange(id) { guardSpecialRegUncheck(id); guardBothBreastCheck_(id); syncMedLabSoloPrice_({ ticked: id }); onServiceFieldChange(); }
+function onSpecialRegChange(id) {
+  guardSpecialRegUncheck(id); guardBothBreastCheck_(id);
+  var regCbNow = qs('sp_reg_' + id);
+  if (regCbNow && regCbNow.checked) STATE.medLabNoExtra = false; // รอบ 87 (D16): ติ๊กรายการใด ⇒ ปลดปุ่ม "ไม่มีตรวจเพิ่ม" เอง
+  syncMedLabSoloPrice_({ ticked: id }); onServiceFieldChange();
+}
+
+/* รอบ 87 (D16): แผง "ใบรับรองแพทย์มี Lab" — ส่งตรวจพิเศษ (เงาของ "ลงชื่อไว้") + ด่านลืมติ๊ก
+   · เงา mirror_sp_<id> ทุกรายการใน SP_BOARD_ITEMS: ติ๊กเงา ⇒ ตั้ง sp_reg_<id> แล้วยิง change ของตัวจริง (เส้นเดียวกับติ๊กจริง: guard ต่าง ๆ / solo price / recalc)
+   · syncMedLabSpMirror_() เรียกจาก recalcTotals — ซิงก์ checked/disabled (ล็อกเพศ MMG/U/S ตามตัวจริง) + สถานะปุ่ม "ไม่มีตรวจเพิ่ม"
+   · ด่าน (validateForm): ยอด Lab > 0 ต้องมี getSpecialRegIds() อย่างน้อย 1 หรือกดปุ่ม "ไม่มีตรวจเพิ่ม" (STATE.medLabNoExtra · ไม่ลงชีต)
+   · เงาไม่ถูกส่งใน payload — payload อ่านจาก sp_reg_* เท่านั้น */
+function buildMedLabSpMirror_() {
+  var wrap = qs('medLabSpMirror');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  SP_BOARD_ITEMS.forEach(function (item) {
+    var row = document.createElement('label');
+    row.className = 'check-row';
+    row.id = 'mirror_row_' + item.id;
+    row.innerHTML = '<input type="checkbox" id="mirror_sp_' + escHtml(item.id) + '"><span class="item-name">' + escHtml(item.name) + '</span>';
+    wrap.appendChild(row);
+    var cb = row.querySelector ? row.querySelector('input') : null;
+    if (!cb) return;
+    cb.addEventListener('change', function () {
+      var real = qs('sp_reg_' + item.id);
+      if (!real || real.disabled) { cb.checked = !!(real && real.checked); return; }
+      real.checked = cb.checked;
+      real.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+  var nb = qs('btnMedLabNoExtra');
+  // ปุ่มเป็น element คงที่ (ไม่ถูกสร้างใหม่) แต่ buildSpecialSendsUI() เรียกซ้ำได้ (enterAppScreen 2 ครั้ง) ⇒ ผูกครั้งเดียว ไม่งั้นกด 1 ทีสลับ 2 รอบ
+  if (nb && !nb.__medLabNoExtraBound) {
+    nb.__medLabNoExtraBound = true;
+    nb.addEventListener('click', function () {
+      STATE.medLabNoExtra = !STATE.medLabNoExtra;
+      onServiceFieldChange();
+    });
+  }
+}
+function syncMedLabSpMirror_() {
+  if (typeof SP_BOARD_ITEMS === 'undefined') return;
+  SP_BOARD_ITEMS.forEach(function (item) {
+    var m = qs('mirror_sp_' + item.id);
+    if (!m) return;
+    var real = qs('sp_reg_' + item.id);
+    m.checked = !!(real && real.checked);
+    m.disabled = !!(real && real.disabled);
+    var row = qs('mirror_row_' + item.id);
+    if (row && row.classList) row.classList.toggle('sp-row-locked', !!(real && real.disabled));
+  });
+  var nb = qs('btnMedLabNoExtra');
+  if (nb && nb.setAttribute) { // guard: DOM จำลองของเทสต์เก่าอาจไม่มี setAttribute
+    var on = !!STATE.medLabNoExtra;
+    nb.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (nb.classList) { nb.classList.toggle('is-active', on); nb.classList.toggle('secondary', !on); }
+  }
+}
 
 /* รอบ 66 (เจ้าของสั่ง 2026-10-07, SPEC_รอบ66_MMGราคาตามคิว.md): ติ๊ก MMG / U/S Breast ที่แผงส่งตรวจพิเศษ ⇒ ระบบใส่ราคาเดี่ยวในยอด
    "ใบรับรองแพทย์มี Lab" ตาม "คิว" — เดิม (รอบ 60 ข้อ 3) มีปุ่ม MMG เดี่ยว/U/S Breast เดี่ยวแยกในแผงใบรับรองแพทย์มี Lab ถูกถอดออกแล้ว
@@ -3238,6 +3324,7 @@ function medLabAmountNow_() {
 }
 // ล้างสถานะทั้งหมด (ล้างร่าง/บันทึกเสร็จ) · STATE.medLabAutoAmount = ราคาที่ "ระบบใส่" (0 = ไม่มีธง) · STATE.medLabSeen = สถานะ solo/คิว ล่าสุดที่ sync เห็น
 function resetMedLabSoloState_() {
+  STATE.medLabNoExtra = false; // รอบ 87 (D16): "ไม่มีตรวจเพิ่ม" ล้างเมื่อ resetLogForm
   STATE.medLabAutoAmount = 0;
   STATE.medLabSeen = { solo: '', q: false };
 }
@@ -3616,6 +3703,7 @@ function buildSpecialSendsUI() {
     var regCb = qs('sp_reg_' + item.id);
     if (regCb) regCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
   });
+  if (typeof buildMedLabSpMirror_ === 'function') buildMedLabSpMirror_(); // รอบ 87 (D16) — typeof guard: vm จำลองของเทสต์เก่าตัดมาเฉพาะบางฟังก์ชัน: เงา "ส่งตรวจพิเศษ" ในแผงใบรับรองมี Lab
   if (wrap && SP_COUNT_ONLY_ITEMS.length) {
     var heading = document.createElement('p');
     heading.className = 'muted';
@@ -4166,9 +4254,26 @@ function updatePointBanner() {
 }
 
 // A-W3: จัดแผงตามหัวข้อหลักของจุดที่เลือกอยู่ — เรียกตอนโหลด config เสร็จ/เปลี่ยนจุด/ล้างฟอร์ม
+// รอบ 87 (D15): จุดคีย์ order ไม่แสดงแผงวัคซีนเลย (ไม่อยู่ใต้ "บริการอื่น") — ใช้ attribute hidden (กฎ [hidden]{display:none!important} มีอยู่แล้ว)
+// ⚠ ห้าม uncheck วัคซีนตอนแก้ไข/รวมแถว (STATE.editingId) — แถวเก่าที่มีวัคซีนต้องส่งวัคซีนเดิมกลับครบ ยอดคงเดิม · บันทึกใหม่ที่จุดนี้ ⇒ onSubmitLog บังคับ vaccines: [] อีกชั้น
+var VACCINE_HIDDEN_POINT_ = 'จุดคีย์ order';
+function vaccinePanelHiddenHere_() { return STATE.point === VACCINE_HIDDEN_POINT_; }
+function applyVaccinePanelVisibility_() {
+  var vp = qs('panelVaccine');
+  if (!vp) return;
+  var hide = vaccinePanelHiddenHere_();
+  if (hide) vp.setAttribute('hidden', ''); else if (vp.removeAttribute) vp.removeAttribute('hidden');
+  if (hide && !STATE.editingId) {
+    // ร่างที่คืนกลับ/ค่าค้างจากจุดอื่นห้ามมีวัคซีนติดมาที่จุดนี้ (ไม่ใช่แถวแก้ไข)
+    document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
+    var vwc = qs('vaccineWithCheckup');
+    if (vwc) vwc.checked = false;
+  }
+}
 function applyPointLayout() {
   capturePanelHomePositions_();
   updatePointBanner();
+  applyVaccinePanelVisibility_(); // รอบ 87 (D15)
   // รอบ 60 ข้อ 1: #panelPerson พับได้ทุกจอ (ไม่อยู่ใน MOVABLE_PANEL_IDS_) — ล้างเปลี่ยนจุด/ล้างฟอร์ม ⇒ กางคืนเสมอ
   expandPersonPanel_();
   // รอบ 60 ข้อ 1: ล้างสถานะ "ผู้ใช้พับเองบนจอกว้าง" ทุกแผง — ล้างฟอร์ม/เปลี่ยนจุดแล้วรายถัดไปต้องเห็นแผงหลักกางเหมือนเดิม
@@ -4242,7 +4347,7 @@ function applyPointLayout() {
     // มีทั้งคู่ / เฉพาะตรวจสุขภาพ -> checkup ก่อน · เฉพาะใบรับรองทั่วไปอย่างเดียว -> medcert ก่อน
     reorderSpecialSendsRows_(hasCheckupTopic ? ['checkup', 'medcert'] : ['medcert', 'checkup']);
   }
-  var remaining = MOVABLE_PANEL_IDS_.filter(function (id) { return !placed[id]; });
+  var remaining = MOVABLE_PANEL_IDS_.filter(function (id) { return !placed[id] && !(id === 'panelVaccine' && vaccinePanelHiddenHere_()); }); // รอบ 87 (D15): แผงวัคซีนที่ซ่อนอยู่ไม่เข้ากลุ่ม "บริการอื่น"
 
   var anchor = personEl;
   order.forEach(function (id) {
@@ -4286,7 +4391,8 @@ var POINT_MAIN_SCREEN_TOPICS_ = [
   { topic: 'รายชื่อ', screen: 'checkupTable' },
   { topic: 'คิวพบแพทย์', screen: 'dq' },
   { topic: 'ค้างส่งออก', screen: 'pending' },
-  { topic: 'รายการวันนี้', screen: 'today' }
+  { topic: 'รายการวันนี้', screen: 'today' },
+  { topic: 'นำเข้ารายชื่อนัด', screen: 'appt' } // รอบ 87 (D10): จุดทำนัดหมาย ⇒ หน้ารายชื่อนัดล่วงหน้า
 ];
 // ชื่อหน้าหลักของจุดตามหัวข้อ (ไม่มีคำพิเศษ ⇒ '') — ใช้ทั้ง maybeAutoOpenListForPoint() และตัวฟังเปลี่ยนจุด
 function pointMainScreenFor_(topics) {
@@ -4300,7 +4406,7 @@ function pointMainScreenFor_(topics) {
 function pointHasMainScreen_(topics) {
   return pointMainScreenFor_(topics) !== '';
 }
-// รอบ 83 (เจ้าของสั่ง 2026-10-15): จุดที่หน้าหลักเป็น "รายการวันนี้" (จุดขายโปรแกรม/จุดเปิดสิทธิ์ — ไม่ได้บันทึกเอง) ⇒ รายการรายวันเห็นทุกจุด (allPoints)
+// รอบ 83 (เจ้าของสั่ง 2026-10-15): จุดที่หน้าหลักเป็น "รายการวันนี้" (จุดขายโปรแกรม — ไม่ได้บันทึกเอง · รอบ 87: จุดเปิดสิทธิ์ถูกยกเลิกแล้ว) ⇒ รายการรายวันเห็นทุกจุด (allPoints)
 // จุดอื่นเห็นเฉพาะของจุดตัวเองเหมือนเดิม · ยังไม่ได้ config (pointTopics ว่าง) ⇒ false
 function todayAllPointsFor_(point) {
   var t = (STATE.pointTopics && point && STATE.pointTopics[point]) || [];
@@ -4410,6 +4516,9 @@ function validateForm(ctx) {
     // รอบ 68 (2026-10-08, เจ้าของสั่ง): ใบรับรองแพทย์มี lab บังคับ HN (ชื่อไม่บังคับ) · ฝั่งเว็บเท่านั้น เหตุผลเดียวกับด่านตรวจสุขภาพ
     // รอบ 70 (เจ้าของสั่ง 2026-10-07): ติ๊ก EKG/ตรวจสายตา/ตาบอดสี (ctx.medLabSpecialOn) บังคับแค่ HN เหมือนกัน · ฝั่งเซิร์ฟเวอร์บังคับด้วยข้อความเดียวกัน
     msg = 'ใบรับรองแพทย์มี lab ต้องกรอก HN';
+  } else if (ctx.labAmount > 0 && getSpecialRegIds().length === 0 && !ctx.specialOn && !ctx.medLabSpecialOn && !STATE.medLabNoExtra) {
+    // รอบ 87 (D16 ข): พิมพ์ยอด Lab แล้วลืมติ๊กส่งตรวจพิเศษ (อยู่คนละแผง) ⇒ ต้องติ๊กรายการ หรือกด "ไม่มีตรวจเพิ่ม" · ใช้ทุกจุด รวมแก้ไขแถวเก่า · ฝั่งเว็บเท่านั้น
+    msg = 'ใบรับรองมี Lab: ติ๊กส่งตรวจพิเศษ/ตรวจเพิ่ม หรือกด "ไม่มีตรวจเพิ่ม"';
   } else if (ctx.patientHn && !isValidHn(ctx.patientHn)) {
     msg = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
   } else if (prefixNameLangMismatch_(qs('patientPrefix').value, qs('patientName').value)) {
@@ -4536,8 +4645,9 @@ function syncWrapLogBottomSpace_() {
   var h = pt.offsetHeight;
   if (!h) return; // #panelTotals ไม่ได้แสดงอยู่ตอนนี้ (หน้าอื่นที่ไม่ใช่ log) — ไม่ต้องแตะค่าที่ตั้งไว้ก่อนหน้า
   var narrow = (typeof window.innerWidth === 'number') && window.innerWidth < 700; // ตรงกับเบรกพอยต์ @media (min-width:700px) ของ #panelTotals/.wrap-log
-  // จอแคบ: กล่องแปะชิด bottom:0 พอดี ไม่มีช่องว่างคั่น · จอกว้าง: กล่องลอยเว้น bottom:16px จากขอบจอ
-  var gap = narrow ? 0 : 16;
+  // รอบ 87 (D14): ทั้งจอแคบและจอกว้าง แถบแปะชิด bottom:0 เต็มความกว้าง ⇒ ไม่มีช่องว่างคั่น (เดิมจอกว้างเป็นกล่องลอยเว้น 16px)
+  var gap = 0;
+  void narrow;
   var safety = 16; // กันเคสขอบพอดีเป๊ะ/ความคลาดเคลื่อน sub-pixel ระหว่างการวัด
   wrap.style.paddingBottom = (h + gap + safety) + 'px';
 }
@@ -4570,6 +4680,7 @@ function recalcTotals() {
   // รอบ 66: ต้องรันก่อนอ่านยอด Lab (getMedCertNums) ด้านล่าง — ถ้าตั้งยอดทีหลัง ยอดรวม/validate ของรอบนี้จะค้างค่าเก่า
   // (ต่อจาก applyMmgGenderLock เพราะล็อกเพศชายอาจปลดติ๊ก MMG ⇒ ต้องเห็นเป็น "ปลดติ๊ก" ใน sync นี้) · ทำงานจริงเฉพาะตอนสถานะ solo/คิวเปลี่ยน
   syncMedLabSoloPrice_();
+  if (typeof syncMedLabSpMirror_ === 'function') syncMedLabSpMirror_(); // รอบ 87 (D16): เงา "ส่งตรวจพิเศษ" ตามตัวจริง (หลังล็อกเพศ MMG/U/S + solo price)
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
 
   // รอบ 29 (S3) W3 (ข้อ 3): เติมราคามาตรฐานเฉพาะตอน "คีย์ราคา" (โปรแกรม/เพศ/ตรวจมะเร็งปากมดลูก) เปลี่ยนจริง ๆ —
@@ -4749,8 +4860,9 @@ function resetLogForm() {
   qs('legacyExtraInfo').hidden = true;
   applyVaccineFilter();
   exitEditMode();
-  if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): ล้างร่าง ⇒ ล้างการผูกคนนัด + แถบหมายเหตุ HO + ช่องค้น
-  if (typeof hoSearchClear_ === 'function') hoSearchClear_();
+  if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): ล้างร่าง ⇒ ล้างการผูกคนนัด + แถบหมายเหตุ HO (รอบ 87: รายการแนะนำใต้ช่อง HN/ชื่อ ถูกซ่อนผ่าน syncHoBar_ ใน recalcTotals)
+  if (typeof hoCancelHnTimer_ === 'function') hoCancelHnTimer_();
+  if (typeof hoSuggestHide_ === 'function') { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — ล้างร่างแล้ว HN/ชื่อว่าง ต้องกลับไปล็อกทั้ง 2 แผง
   applyPointLayout(); // รอบ 31A (A-W3) — ล้างร่างแล้วจัดแผงใหม่ตามจุดที่เลือกอยู่ (ไม่มีร่างค้างแล้ว จึงพับได้ตามปกติ)
   if (typeof ensurePreCheckupOpen_ === 'function') ensurePreCheckupOpen_(); // รอบ 81: applyPointLayout พับแผงตรวจสุขภาพกลับ — โหมดล่วงหน้าต้องเปิดไว้เสมอ
@@ -4827,6 +4939,7 @@ function restoreFormDraft_(data) {
   updateHnHint();
   applyVaccineFilter();
   applyLogLocks();
+  if (!STATE.editingId && typeof applyVaccinePanelVisibility_ === 'function') applyVaccinePanelVisibility_(); // รอบ 87 (F3/D15): ร่างจากจุดอื่นห้ามมีวัคซีนติดมาที่จุดคีย์ order
   initMedLabSoloState_(); // รอบ 66: ตั้งธง/สถานะจากค่าที่คืน "ก่อน" recalcTotals — ไม่ให้ sync เข้าใจว่าเป็นการเปลี่ยนคิว/ติ๊กใหม่แล้วใส่ราคาเอง
   recalcTotals();
   applyCheckupPanelDefault_(); // รอบ 64: คืนร่างหลังปิดโมดัลแก้ไข ⇒ สถานะแผงตรวจสุขภาพตามค่าของร่างที่คืน (ร่างเลือกโปรแกรมไว้ ⇒ กาง)
@@ -5621,6 +5734,8 @@ function onSubmitLog(e) {
   var checkupAmountNum = getCheckupAmountNum();
   var checkupAmount = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
   var vaccineCodes = getCheckedVaccineCodes();
+  // รอบ 87 (D15): จุดคีย์ order ไม่มีแผงวัคซีน — บันทึกใหม่ (ไม่ใช่แก้ไข) บังคับ [] กันร่าง/ค่าค้างจากจุดอื่น · แก้ไข/รวมแถว ใช้ค่าที่โหลดมาตามเดิม (ยอดคงเดิม)
+  if (!STATE.editingId && vaccinePanelHiddenHere_()) vaccineCodes = [];
   var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
   var medCert5 = Math.max(0, parseInt(qs('medCert5').value, 10) || 0);
   var medCertDriver = Math.max(0, parseInt(qs('medCertDriver').value, 10) || 0);
@@ -6954,6 +7069,7 @@ function preViewFail_(date, resp) {
 }
 // หลังทำ pre* สำเร็จ: PRE_TODAY + การ์ดของวันที่ดูอยู่ โหลดใหม่
 function reloadPreAfterAction_() {
+  if (typeof apptReloadIfVisible_ === 'function') apptReloadIfVisible_(); // รอบ 87 (D10): ตัวเลขรายวันบนหน้ารายชื่อนัดเปลี่ยนหลังนำเข้า/ยกเลิก
   loadPreToday_();
   if (!isViewingToday_()) loadPreView_();
 }
@@ -7032,8 +7148,10 @@ function preRowHtml_(it) {
   var id = escHtml(it.preId);
   var acts = '';
   if (st !== 'มาแล้ว') {
-    if (st === 'รอมา' && it.date === todayStr()) acts += '<button type="button" class="btn small" data-pre-act="activate" data-pre-id="' + id + '">✚ เติมคิว</button>';
-    acts += '<button type="button" class="btn small secondary" data-pre-act="edit" data-pre-id="' + id + '">✎ แก้ไข</button>';
+    // รอบ 87 (D5): แถว "รอมา" ที่วันนัด = วันนี้ ⇒ ปุ่มเดียว "▶ บันทึกการมา" (ฟอร์มหลักเดียว) แทน ✚ เติมคิว / ✎ แก้ไข · แถววันอนาคต/ไม่มา ปุ่มเหมือนเดิม
+    var arriveToday = (st === 'รอมา' && it.date === todayStr());
+    if (arriveToday) acts += '<button type="button" class="btn small" data-pre-act="arrive" data-pre-id="' + id + '">▶ บันทึกการมา</button>';
+    else acts += '<button type="button" class="btn small secondary" data-pre-act="edit" data-pre-id="' + id + '">✎ แก้ไข</button>';
     if (it.date <= todayStr()) acts += '<button type="button" class="btn small secondary" data-pre-act="link" data-pre-id="' + id + '">🔗 มาแล้ว (บันทึกซ้ำ)</button>';
     acts += '<button type="button" class="btn small danger" data-pre-act="cancel" data-pre-id="' + id + '">✕ ยกเลิก</button>';
   }
@@ -7085,9 +7203,13 @@ function renderPreList_() {
   var wrap = qs('preList');
   if (!wrap) return;
   var q = qs('preSearch') ? qs('preSearch').value : '';
-  var rows = preSortItems_(PRE_VIEW.items).filter(function (it) { return preMatchesQuery_(it, q); });
+  // รอบ 87 (D13): แถว "ไม่มา" ไม่แสดงในรายการ (ตัวเลข "ไม่มา N" บนหัวการ์ดคงไว้) · ชีต/รายงานไม่แตะ
+  var sorted = preSortItems_(PRE_VIEW.items);
+  var noShowN = sorted.filter(function (it) { return it.displayStatus === 'ไม่มา'; }).length;
+  var rows = sorted.filter(function (it) { return it.displayStatus !== 'ไม่มา' && preMatchesQuery_(it, q); });
   if (!rows.length) {
-    wrap.innerHTML = String(q || '').trim() ? '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>' : '';
+    wrap.innerHTML = String(q || '').trim() ? '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>'
+      : (noShowN > 0 ? ('<p class="muted">ไม่มีรายการรอ — ไม่มา ' + noShowN + ' คน</p>') : '');
     return;
   }
   wrap.innerHTML = rows.map(preRowHtml_).join('');
@@ -7103,6 +7225,7 @@ function onPreCardClick_(e) {
   if (!item) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรช'); return; }
   var act = btn.getAttribute('data-pre-act');
   if (act === 'activate') openPreActivate_(item);
+  else if (act === 'arrive') { showScreen('log'); startPreArrive_(item); } // รอบ 87 (D5): หน้าบันทึก + เติมฟอร์มหลัก (confirm เดิมถ้าฟอร์มมีค่า) · ที่จุดอื่นก็ทำได้ (บันทึกที่จุดนั้น)
   else if (act === 'edit') startPreEdit_(item);
   else if (act === 'link') openPreLink_(item);
   else if (act === 'cancel') preCancelItem_(item, btn);
@@ -7385,7 +7508,10 @@ function closePreWarn_() {
    ⚠ listener ระดับบนสุดอยู่ในส่วน Bootstrap ท้ายไฟล์ · ⚠ โค้ดเดิมเรียกฟังก์ชันของก้อนนี้ผ่าน typeof guard (vm จำลองของเทสต์เก่าไม่มี)
    ⚠ ไม่เก็บ/ไม่ส่งคอลัมน์ Phone และตัดเบอร์โทรออกจากหมายเหตุ (hoStripPhones_) — เซิร์ฟเวอร์ตัดซ้ำอีกชั้น
    ========================================================================= */
-var HO_POINT_ = 'จุดคีย์ order';          // รอบ 84 (ข้อ 18): เฉพาะจุดนี้นำเข้า/ค้นคนนัดได้
+// รอบ 87 (D9): แยก HO_POINT_ เดิมเป็น 2 ค่า — นำเข้าไฟล์ HO ได้เฉพาะ จุดทำนัดหมาย (คนทำนัด) · ค้น/เติมคนนัดวันนี้ที่ จุดคีย์ order (ตรงกับ PRE_IMPORT_POINT_ ฝั่งเซิร์ฟเวอร์)
+var HO_IMPORT_POINT_ = 'จุดทำนัดหมาย';
+var HO_ARRIVE_POINT_ = 'จุดคีย์ order';
+var HO_MSG_IMPORT_POINT_ = 'นำเข้ารายชื่อนัดได้เฉพาะจุดทำนัดหมาย';
 var HO_NO_HN_NAME_ = 'ยังไม่มี HN';        // ตรงกับ PRE_NO_HN_NAME_ ฝั่งเซิร์ฟเวอร์ (S2)
 var HO_NOTE_MAX_ = 500;
 var HO_IMPORT_CHUNK_ = 200;               // เซิร์ฟเวอร์รับ rows 1…200 ต่อคำขอ
@@ -7443,6 +7569,11 @@ function hoColLetter_(idx) {
   idx = idx + 1;
   while (idx > 0) { var r = (idx - 1) % 26; s = String.fromCharCode(65 + r) + s; idx = Math.floor((idx - 1) / 26); }
   return s;
+}
+// รอบ 87 (D8): ช่อง ชื่อ-สกุล ของแถว HN กลางเป็นชื่อ placeholder (เช่น "ตรวจสุขภาพ 043-366312") ไหม — ขึ้นต้น "ตรวจสุขภาพ" หรือมีตัวเลข
+function hoNameIsPlaceholder_(raw) {
+  var s = String(raw == null ? '' : raw);
+  return /^\s*ตรวจสุขภาพ/.test(s) || /\d/.test(s);
 }
 function hoNoteNorm_(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
 // คีย์กันซ้ำ — ตรงกับกติกา S1: มี HN ⇒ HN (trim/ตัดช่องว่าง/ตัวพิมพ์ใหญ่) · ไม่มี HN ⇒ ชื่อ(ยุบช่องว่าง) + หมายเหตุ(ยุบช่องว่าง)
@@ -7636,8 +7767,14 @@ function hoParseSheets_(sheets, todayYmd) {
       var warns = [];
       var note = hoStripPhones_(rawNote).slice(0, HO_NOTE_MAX_).trim();
       var prefix = '', name = '', hn = '', gender = '';
+      var centralReal = false;
       if (/^[A-Z]{3}\d{5}$/.test(rawHn)) { // W2c: HN กลาง
-        name = HO_NO_HN_NAME_;
+        // รอบ 87 (D8): HN กลาง + ช่อง ชื่อ-สกุล เป็นชื่อจริง ⇒ คำนำหน้า/ชื่อ/เพศ ตามปกติ (HN ว่าง + เตือน) · ชื่อ placeholder (ขึ้นต้น "ตรวจสุขภาพ" หรือมีตัวเลข) ⇒ แบบเดิม
+        if (!hoNameIsPlaceholder_(rawName)) {
+          var spC = hoSplitName_(rawName);
+          if (spC.name) { prefix = spC.prefix; name = spC.name; gender = hoGenderFromPrefix_(prefix); centralReal = true; warns.push('ไม่มี HN (HN กลางในไฟล์)'); }
+        }
+        if (!centralReal) name = HO_NO_HN_NAME_;
       } else {
         var sp = hoSplitName_(rawName);
         prefix = sp.prefix; name = sp.name;
@@ -7864,7 +8001,7 @@ function hoImpClose_() {
 // เลือกไฟล์แล้ว: อ่าน (W1) → แปลง (W2) → ถามเซิร์ฟเวอร์ว่าวันนั้นมีใครแล้ว → หน้าต่างตัวอย่าง
 function hoImportFileChosen_(file) {
   if (!file) return;
-  if (STATE.point !== HO_POINT_) { showToast('นำเข้ารายชื่อนัดได้เฉพาะจุดคีย์ order'); return; }
+  if (STATE.point !== HO_IMPORT_POINT_) { showToast(HO_MSG_IMPORT_POINT_); return; }
   var seq = HO_IMPORT.seq + 1;
   HO_IMPORT = { seq: seq, busy: false, done: false, date: '', parsed: null, newRows: [], existing: 0, missing: [], result: null, fileName: file.name || '' };
   var m = hoImpEl_('hoImportModal');
@@ -7914,7 +8051,7 @@ function hoImportFileChosen_(file) {
 function hoImpConfirm_() {
   var st = HO_IMPORT;
   if (!st.parsed || st.busy || st.done || !st.newRows.length) return;
-  if (STATE.point !== HO_POINT_) { hoImpSetError_('นำเข้ารายชื่อนัดได้เฉพาะจุดคีย์ order'); return; }
+  if (STATE.point !== HO_IMPORT_POINT_) { hoImpSetError_(HO_MSG_IMPORT_POINT_); return; }
   var seq = st.seq, rows = st.newRows;
   st.busy = true;
   hoImpSetError_('');
@@ -7982,53 +8119,109 @@ function hoImpCancelMissing_(preId, btn) {
   });
 }
 
-/* ---------- W4: ช่อง 🔎 ค้นคนนัดวันนี้ + แตะ ⇒ เติมฟอร์ม (log + preId) ---------- */
+/* ---------- รอบ 87 (D1/D2): ค้นคนนัดวันนี้ที่ช่อง HN / ชื่อ ของฟอร์มหลัก (จุดคีย์ order) — แทนช่อง 🔎 ที่ถอดแล้ว ---------- */
 function hoWaitingToday_() {
   return (PRE_TODAY || []).filter(function (it) { return it && it.status === 'รอมา' && it.date === todayStr(); });
 }
-// แสดง/ซ่อนแถบ (ปุ่มนำเข้า · ช่อง 🔎) ตามจุด/โหมด/จำนวนคนรอมา — idempotent เรียกจาก applyPreMode_() (ทุก recalcTotals) + หลังโหลด PRE_TODAY
+// D1/D2 ทำงานเมื่อ: จุดคีย์ order · ไม่ใช่แก้ไข · ไม่ใช่โหมดล่วงหน้า · ยังไม่ได้ผูกคนนัด (STATE.arrivePreId)
+function hoArriveActive_() {
+  return STATE.point === HO_ARRIVE_POINT_ && !STATE.editingId && !STATE.arrivePreId &&
+    !(typeof isPreMode_ === 'function' && isPreMode_());
+}
+function hoSuggestHide_(id) {
+  var box = qs(id);
+  if (!box) return;
+  if (box.innerHTML) box.innerHTML = '';
+  box.hidden = true;
+}
+// ซ่อนรายการแนะนำเมื่อไม่เข้าเงื่อนไข — idempotent เรียกจาก applyPreMode_() (ทุก recalcTotals) + หลังโหลด PRE_TODAY
 function syncHoBar_() {
-  var bar = qs('hoBar');
-  if (!bar) return;
-  var atPoint = STATE.point === HO_POINT_;
-  var waiting = atPoint ? hoWaitingToday_() : [];
-  var showImport = atPoint;
-  var showSearch = atPoint && !STATE.editingId && !(typeof isPreMode_ === 'function' && isPreMode_()) && waiting.length >= 1;
-  var importRow = qs('hoImportRow'), wrap = qs('hoSearchWrap');
-  if (importRow) importRow.hidden = !showImport;
-  if (wrap) wrap.hidden = !showSearch;
-  bar.hidden = !(showImport || showSearch);
-  var lbl = qs('hoSearchLabel');
-  if (lbl) {
-    var want = '🔎 ค้นคนนัดวันนี้ (ชื่อ / สกุล / HN) — รอ ' + waiting.length + ' คน';
-    if (lbl.textContent !== want) lbl.textContent = want;
+  if (!hoArriveActive_()) { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
+}
+function hoItemButtonHtml_(it, extraAttr) {
+  var bits = [it.patientHn ? ('HN ' + it.patientHn) : HO_NO_HN_NAME_];
+  if (it.program) bits.push(programLabelForPrint(it.program));
+  var note = hoShortNote_(hoItemNote_(it), 60);
+  if (note) bits.push(note);
+  return '<button type="button" class="pre-cand-btn" data-ho-pick="' + escHtml(it.preId) + '"' + (extraAttr || '') + '><b>' + escHtml(preItemFullName_(it)) + '</b>' +
+    '<span class="muted"> · ' + escHtml(bits.join(' · ')) + '</span></button>';
+}
+// "ฟอร์มว่าง ยกเว้น HN" (D1) — ห้ามแก้ความหมาย isMainFormDraftEmpty_ เดิม · ignoreName = ช่องชื่อเป็นข้อความค้นอยู่ (D2) ไม่นับเป็นร่าง
+function isMainFormDraftEmptyExceptHn_(ignoreName) {
+  if (isCheckupOn() || isVaccineOn() || isMedOn() || isSpecialOn() || isMedLabSpecialOn()) return false;
+  if (!ignoreName && (qs('patientName').value || '').trim()) return false;
+  if ((qs('queueSelect').value || '').trim()) return false;
+  // รอบ 87 (F2): ค่าอื่นที่เจ้าหน้าที่กรอก/เลือกไว้แล้วก็นับเป็นร่าง — เพศ · คำนำหน้า · ช่องทางรับผล · วันนัดรับ · ราคา (D1 เติมอัตโนมัติจะได้ไม่ทับ)
+  if (document.querySelector('input[name="gender"]:checked')) return false;
+  if ((qs('patientPrefix').value || '').trim()) return false;
+  if (qs('deliveryMethod') && (qs('deliveryMethod').value || '').trim()) return false;
+  if (qs('pickupDate') && (qs('pickupDate').value || '').trim()) return false;
+  if (qs('checkupAmount') && (qs('checkupAmount').value || '').trim()) return false;
+  return true;
+}
+// D1: HN ครบรูปแบบ (isValidHn) และตรงคน "รอมา" วันนี้ (normDupHn_ ตัวเดียวกับด่านซ้ำ)
+// รอบ 87 (F1): เครื่องสแกน/พิมพ์เร็วส่งตัวอักษรทีละตัว — HN ครบ 6 ตัวก่อนสแกนจบ ถ้าเติม+โฟกัสคิวทันทีตัวที่เหลือจะไปลงช่องคิว
+// ⇒ ตอน input รอ 300ms นิ่งก่อนค่อยทำ (อ่านค่าสดตอนนั้น) · change / Enter ทำทันที (ยกเลิกตัวจับเวลา)
+var HO_HN_TIMER_ = null;
+function hoCancelHnTimer_() { if (HO_HN_TIMER_) { clearTimeout(HO_HN_TIMER_); HO_HN_TIMER_ = null; } }
+function hoOnHnInputDebounced_() {
+  hoCancelHnTimer_();
+  HO_HN_TIMER_ = setTimeout(function () { HO_HN_TIMER_ = null; hoOnHnInput_(); }, 300);
+}
+function hoOnHnImmediate_() { hoCancelHnTimer_(); hoOnHnInput_(); }
+function hoOnHnInput_() {
+  var box = qs('hoHnSuggest');
+  if (!box) return;
+  if (!hoArriveActive_()) { hoCancelHnTimer_(); hoSuggestHide_('hoHnSuggest'); return; }
+  var hn = (qs('patientHn').value || '').trim();
+  if (!hn || !isValidHn(hn)) { hoSuggestHide_('hoHnSuggest'); return; }
+  var key = normDupHn_(hn);
+  var m = preSortItems_(hoWaitingToday_()).filter(function (it) { return it.patientHn && normDupHn_(it.patientHn) === key; });
+  if (!m.length) { hoSuggestHide_('hoHnSuggest'); return; }
+  // เติมเองเฉพาะตอนโฟกัสยังอยู่ช่อง HN — สแกนแบบ HN<Tab>… โฟกัสย้ายไปแล้ว ถ้าเติม+โฟกัสช่องคิว ตัวที่เหลือจะลงช่องคิว ⇒ แถบ "ใช้ข้อมูลนี้" แทน
+  if (m.length === 1 && isMainFormDraftEmptyExceptHn_(false) && document.activeElement === qs('patientHn')) {
+    hoSuggestHide_('hoHnSuggest');
+    startPreArrive_(m[0], { mode: 'hn' }); // เติมทันที (ฟอร์มว่าง · ไม่ confirm · คง HN ที่พิมพ์)
+    return;
   }
-  if (!showSearch && typeof hoSearchClear_ === 'function') hoSearchClear_();
+  var attr = ' data-ho-mode="hn"';
+  if (m.length === 1) {
+    var it = m[0];
+    box.innerHTML = '<div class="ho-suggest-head">📋 พบนัดวันนี้: ' + escHtml(preItemFullName_(it)) + (it.program ? (' · ' + escHtml(programLabelForPrint(it.program))) : '') + '</div>' +
+      '<button type="button" class="btn small" data-ho-pick="' + escHtml(it.preId) + '"' + attr + '>ใช้ข้อมูลนี้</button>';
+  } else {
+    box.innerHTML = '<div class="ho-suggest-head">📋 พบนัดวันนี้ ' + m.length + ' รายการ — แตะเลือก</div>' + m.map(function (x) { return hoItemButtonHtml_(x, attr); }).join('');
+  }
+  box.hidden = false;
+}
+// D2: พิมพ์ชื่อ ≥ 2 ตัว ⇒ รายการแนะนำ ≤ 5 คน (รอมา วันนี้ · preMatchesQuery_ ค้นในหมายเหตุ HO ด้วย) · แตะจึงเติม
+function hoOnNameInput_() {
+  var box = qs('hoNameSuggest');
+  if (!box) return;
+  if (!hoArriveActive_()) { hoSuggestHide_('hoNameSuggest'); return; }
+  var q = (qs('patientName').value || '').trim();
+  if (q.length < 2) { hoSuggestHide_('hoNameSuggest'); return; }
+  var rows = preSortItems_(hoWaitingToday_()).filter(function (it) { return preMatchesQuery_(it, q); }).slice(0, 5);
+  if (!rows.length) { hoSuggestHide_('hoNameSuggest'); return; }
+  box.innerHTML = rows.map(function (it) { return hoItemButtonHtml_(it, ' data-ho-mode="name"'); }).join('');
+  box.hidden = false;
 }
 function hoOnPreTodayLoaded_() {
   syncHoBar_();
-  hoSearchRender_();
+  // โหลด PRE_TODAY เสร็จหลังผู้ใช้พิมพ์ไปแล้ว ⇒ คำนวณรายการแนะนำใหม่ (เฉพาะช่องที่กำลังโฟกัส — ไม่เติมเองจากการโหลดเบื้องหลัง)
+  if (typeof document !== 'undefined' && document.activeElement) {
+    if (document.activeElement === qs('patientName')) hoOnNameInput_();
+    else if (document.activeElement === qs('patientHn')) hoOnHnInput_();
+  }
 }
-function hoSearchClear_() {
-  var inp = qs('hoSearch'), list = qs('hoSearchList');
-  if (inp && inp.value) inp.value = '';
-  if (list && list.innerHTML) list.innerHTML = '';
-}
-function hoSearchRender_() {
-  var inp = qs('hoSearch'), list = qs('hoSearchList');
-  if (!inp || !list) return;
-  var q = (inp.value || '').trim();
-  if (q.length < 2) { if (list.innerHTML) list.innerHTML = ''; return; }
-  var rows = preSortItems_(hoWaitingToday_()).filter(function (it) { return preMatchesQuery_(it, q); }).slice(0, 8);
-  if (!rows.length) { list.innerHTML = '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>'; return; }
-  list.innerHTML = rows.map(function (it) {
-    var bits = [it.patientHn ? ('HN ' + it.patientHn) : HO_NO_HN_NAME_];
-    if (it.program) bits.push(programLabelForPrint(it.program));
-    var note = hoShortNote_(hoItemNote_(it), 60);
-    if (note) bits.push(note);
-    return '<button type="button" class="pre-cand-btn" data-ho-pick="' + escHtml(it.preId) + '"><b>' + escHtml(preItemFullName_(it)) + '</b>' +
-      '<span class="muted"> · ' + escHtml(bits.join(' · ')) + '</span></button>';
-  }).join('');
+function onHoSuggestClick_(e) {
+  var b = e.target && e.target.closest ? e.target.closest('[data-ho-pick]') : null;
+  if (!b) return;
+  var pid = b.getAttribute('data-ho-pick'), found = null;
+  hoWaitingToday_().forEach(function (x) { if (x.preId === pid) found = x; });
+  if (!found) { showToast('ไม่พบรายการนี้ กรุณาค้นใหม่'); return; }
+  var mode = b.getAttribute('data-ho-mode') || 'name';
+  startPreArrive_(found, { mode: mode });
 }
 function hoRenderArriveBar_() {
   var bar = qs('hoArriveBar'), txt = qs('hoArriveText');
@@ -8053,9 +8246,14 @@ function clearHoArrive_() {
   hoRenderArriveBar_();
 }
 // แตะรายชื่อในผลค้น: เติมฟอร์มหลักของวันนี้ (ไม่ใช่โหมดล่วงหน้า) · ผูก STATE.arrivePreId ให้ onSubmitLog แนบ preId
-function startPreArrive_(item) {
+// รอบ 87: opts.mode — 'hn' (D1: HN ที่พิมพ์ไม่ถูกนับเป็นร่าง + คง HN ที่พิมพ์ไว้) · 'name' (D2: ช่องชื่อ+HN เป็นข้อความค้น ไม่นับเป็นร่าง) · ไม่ระบุ (ปุ่ม ▶ บันทึกการมา D5) = เกณฑ์เดิม + confirm เดิม
+function startPreArrive_(item, opts) {
   if (!item) return;
-  if (!isMainFormDraftEmpty_() && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการนัดนี้หรือไม่?')) return;
+  opts = opts || {};
+  var typedHn = (opts.mode === 'hn') ? (qs('patientHn').value || '') : '';
+  var formEmpty = opts.mode === 'hn' ? isMainFormDraftEmptyExceptHn_(false)
+    : (opts.mode === 'name' ? isMainFormDraftEmptyExceptHn_(true) : isMainFormDraftEmpty_());
+  if (!formEmpty && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการนัดนี้หรือไม่?')) return;
   STATE.preEditId = '';
   STATE.preEditName = '';
   resetServiceDate_();
@@ -8079,6 +8277,10 @@ function startPreArrive_(item) {
   qs('patientName').value = central ? '' : (f.patientName || item.patientName || '');
   qs('patientHn').value = central ? '' : (f.patientHn || item.patientHn || '');
   qs('patientPrefix').value = central ? '' : (f.patientPrefix || item.patientPrefix || '');
+  if (typedHn) { // รอบ 87 (D1): HN ที่พิมพ์/สแกนไม่ถูกล้างตอน resetLogForm · F4: ถ้าตรงกับ HN ของรายการ (normDupHn_) ใช้รูปแบบมาตรฐานของรายการ (AB7777 ไม่ใช่ ab7777)
+    var itemHn = String(f.patientHn || item.patientHn || '').trim();
+    qs('patientHn').value = (itemHn && normDupHn_(itemHn) === normDupHn_(typedHn)) ? itemHn : typedHn;
+  }
   syncPrefixButtons();
   updateHnHint();
   STATE.arrivePreId = item.preId;
@@ -8088,6 +8290,69 @@ function startPreArrive_(item) {
   applyCheckupPanelDefault_();
   var qEl = qs('queueSelect');
   if (qEl && typeof qEl.focus === 'function') qEl.focus();
+}
+
+/* ---------- รอบ 87 (D10): หน้า #apptScreen (จุดทำนัดหมาย) — ตาราง 7 วัน (พรุ่งนี้ … +7) จาก action preDays ครั้งเดียว ---------- */
+var APPT_SEQ_ = 0;
+var APPT_DOW_ = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+var APPT_MONTH_ = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+function apptDayLabel_(ymd) {
+  var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!p) return String(ymd || '');
+  var dow = new Date(Date.UTC(+p[1], +p[2] - 1, +p[3])).getUTCDay();
+  return APPT_DOW_[dow] + ' ' + (+p[3]) + ' ' + APPT_MONTH_[+p[2] - 1];
+}
+function apptDaysHtml_(days) {
+  return days.map(function (d) {
+    return '<button type="button" class="appt-day-btn" data-appt-date="' + escHtml(d.date) + '"><b>' + escHtml(apptDayLabel_(d.date)) + '</b> — ' +
+      'ลงไว้ ' + numOr0(d.total) + ' · มาแล้ว ' + numOr0(d.arrived) + ' · ยกเลิก ' + numOr0(d.cancelled) + '</button>';
+  }).join('');
+}
+function apptShowError_(msg) {
+  var err = qs('apptError'), box = qs('apptDays');
+  if (box) box.innerHTML = ''; // ล้มแล้วห้ามวาดเลข 0 แทน (จอบอก "ไม่มีนัด" ทั้งที่แค่โหลดไม่ได้)
+  if (!err) return;
+  err.textContent = '';
+  err.appendChild(document.createTextNode('โหลดรายชื่อนัดไม่สำเร็จ (' + msg + ') '));
+  var rb = document.createElement('button');
+  rb.type = 'button';
+  rb.className = 'btn small';
+  rb.setAttribute('data-appt-retry', '1');
+  rb.textContent = 'ลองใหม่';
+  err.appendChild(rb);
+  err.hidden = false;
+}
+function loadApptDays_() {
+  var box = qs('apptDays');
+  if (!box || !STATE.staffKey) return;
+  var seq = ++APPT_SEQ_;
+  var err = qs('apptError');
+  if (err) { err.textContent = ''; err.hidden = true; }
+  if (!box.innerHTML) box.innerHTML = '<p class="muted">กำลังโหลด…</p>';
+  apiCall('preDays', { staffKey: STATE.staffKey, from: addDaysYmd_(todayStr(), 1), days: PRE_MAX_DAYS_AHEAD }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== APPT_SEQ_) return;
+    if (resp && resp.status === 'ok' && Array.isArray(resp.days)) {
+      box.innerHTML = apptDaysHtml_(resp.days);
+    } else if (preOldServerResp_(resp)) {
+      apptShowError_('เซิร์ฟเวอร์ยังไม่รองรับการดูรายชื่อนัด — ต้อง deploy Apps Script ก่อน');
+    } else {
+      apptShowError_((resp && resp.status !== 'ok' && resp.message) ? resp.message : 'เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ');
+    }
+  });
+}
+// หลังนำเข้า/ยกเลิก/แก้ไข ⇒ ตัวเลขรายวันเปลี่ยน — โหลดใหม่เฉพาะตอนหน้านี้เปิดอยู่
+function apptReloadIfVisible_() {
+  var scr = qs('apptScreen');
+  if (scr && scr.style && scr.style.display === 'block') loadApptDays_();
+}
+function onApptClick_(e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  if (t.closest('[data-appt-retry]')) { loadApptDays_(); return; }
+  var b = t.closest('[data-appt-date]');
+  if (!b) return;
+  setTodayViewDate_(b.getAttribute('data-appt-date')); // หน้ารายการรายวันของวันนั้น (การ์ด ⏳ เดิม)
+  showScreen('today');
 }
 
 /* ---------- W8: การ์ด "ลงล่วงหน้า" ในรายงาน (ซ่อนเมื่อไม่มี summary.preReg หรือ total = 0) ---------- */
@@ -14162,10 +14427,10 @@ function dqInit() {
 function showScreen(name) {
   // รอบ 28 (2026-09-23) W8: เพิ่มหน้า "ค้างส่งออกผล" (pending -> pendingScreen)
   // รอบ 41 (W1): เพิ่มหน้า "คิวพบแพทย์" (dq -> dqScreen)
-  var outerMap = { log: 'svcFormWrap', today: 'todayScreen', report: 'tabReport', checkupTable: 'checkupTableScreen', spBoard: 'spBoardScreen', pending: 'pendingScreen', dq: 'dqScreen' };
+  var outerMap = { log: 'svcFormWrap', today: 'todayScreen', report: 'tabReport', checkupTable: 'checkupTableScreen', spBoard: 'spBoardScreen', pending: 'pendingScreen', dq: 'dqScreen', appt: 'apptScreen' }; // รอบ 87 (D10): appt = หน้ารายชื่อนัดล่วงหน้า
   var outerName = outerMap[name] || 'svcFormWrap';
 
-  ['svcFormWrap', 'todayScreen', 'tabReport', 'checkupTableScreen', 'spBoardScreen', 'pendingScreen', 'dqScreen'].forEach(function (id) {
+  ['svcFormWrap', 'todayScreen', 'tabReport', 'checkupTableScreen', 'spBoardScreen', 'apptScreen', 'pendingScreen', 'dqScreen'].forEach(function (id) {
     var el = qs(id);
     if (el) el.style.display = (id === outerName) ? 'block' : 'none';
   });
@@ -14181,6 +14446,7 @@ function showScreen(name) {
   if (name === 'today') { todayViewCheckDayRollover_(); loadTodayScreen_(); } // รอบ 74: คงวันที่ที่เลือกไว้เดิมเมื่อออกแล้วกลับมา (TODAY_VIEW_DATE ไม่ถูกรีเซ็ต)
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable('list'); } // รอบ 8 (B7)
   if (name === 'pending') { ensurePendingDateDefault(); loadPending(); } // รอบ 28 (W8)
+  if (name === 'appt' && typeof loadApptDays_ === 'function') loadApptDays_(); // รอบ 87 (D10)
   if (name === 'spBoard') { // รอบ 9 (ก้อน A)
     SP_BOARD_CAP_MODE = false;
     var spL1 = qs('spBoardLayer1'), spL2 = qs('spBoardLayer2');
@@ -14820,19 +15086,24 @@ document.addEventListener('DOMContentLoaded', function () {
     var b = e.target && e.target.closest ? e.target.closest('[data-ho-cancel]') : null;
     if (b) hoImpCancelMissing_(b.getAttribute('data-ho-cancel'), b);
   });
-  var hoSearchEl = qs('hoSearch');
-  if (hoSearchEl) {
-    hoSearchEl.addEventListener('input', hoSearchRender_);
-    hoSearchEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
-  }
-  var hoSearchListEl = qs('hoSearchList');
-  if (hoSearchListEl) hoSearchListEl.addEventListener('click', function (e) {
-    var b = e.target && e.target.closest ? e.target.closest('[data-ho-pick]') : null;
-    if (!b) return;
-    var pid = b.getAttribute('data-ho-pick'), found = null;
-    hoWaitingToday_().forEach(function (x) { if (x.preId === pid) found = x; });
-    if (found) startPreArrive_(found); else showToast('ไม่พบรายการนี้ กรุณาค้นใหม่');
+  // รอบ 87 (D1/D2/D3): ถอดช่อง 🔎 ออกแล้ว — ค้นคนนัดวันนี้ที่ช่อง HN (ตรง ⇒ เติม/แถบ) และช่องชื่อ (รายการแนะนำ แตะจึงเติม) ของฟอร์มหลัก (จุดคีย์ order)
+  // ⚠ ผูกหลัง listener ของ patientHn/patientName ที่ recalcTotals ข้างบน (ลำดับ = ทำงานหลัง applyLogLocks/recalcTotals)
+  qs('patientHn').addEventListener('input', hoOnHnInputDebounced_); // รอบ 87 (F1): หน่วง 300ms กันเติมกลางการสแกน
+  qs('patientHn').addEventListener('keydown', function (e) { if (e.key === 'Enter') hoOnHnImmediate_(); }); // ต่อจาก applyHnScan ที่ผูกไว้ก่อนหน้า
+  qs('patientHn').addEventListener('change', hoOnHnImmediate_); // หลัง applyHnScan (ยิงบาร์โค้ด/เติม HN ด้วยโค้ด)
+  var hoNameEl = qs('patientName');
+  hoNameEl.addEventListener('input', hoOnNameInput_);
+  hoNameEl.addEventListener('keydown', function (e) { if (e.key === 'Escape') hoSuggestHide_('hoNameSuggest'); });
+  hoNameEl.addEventListener('blur', function () { setTimeout(function () { hoSuggestHide_('hoNameSuggest'); }, 150); }); // หน่วงให้แตะรายการทัน
+  ['hoHnSuggest', 'hoNameSuggest'].forEach(function (id) {
+    var box = qs(id);
+    if (!box) return;
+    box.addEventListener('mousedown', function (e) { e.preventDefault(); }); // แตะรายการแล้วไม่ให้ช่องกรอกเสียโฟกัสก่อน click
+    box.addEventListener('click', onHoSuggestClick_);
   });
+  var apptDaysEl = qs('apptDays'), apptErrEl = qs('apptError');
+  if (apptDaysEl) apptDaysEl.addEventListener('click', onApptClick_);
+  if (apptErrEl) apptErrEl.addEventListener('click', onApptClick_);
   var hoArriveClearEl = qs('btnHoArriveClear');
   if (hoArriveClearEl) hoArriveClearEl.addEventListener('click', function () { clearHoArrive_(); resetLogForm(); });
   qs('medCert5').addEventListener('input', onServiceFieldChange);
