@@ -1162,6 +1162,8 @@
   /* รอบ 87 (D10): หน้า #apptScreen — ตาราง 7 วันของรายชื่อนัดล่วงหน้า */
   .appt-days { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
   .appt-day-btn { display: block; text-align: left; width: 100%; min-height: 48px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; cursor: pointer; overflow-wrap: anywhere; }
+  .appt-day-btn.appt-selected { border-color: var(--primary); border-width: 2px; background: #EEF0FB; font-weight: 700; }  /* รอบ 88 (E3): แถวที่เลือกอยู่ */
+  #apptScreen #preCard { margin-top: 12px; }
   .ho-arrive-bar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 10px;
     background: #FFF3E0; border: 2px solid #F57C00; color: #8A4B00; border-radius: 10px; padding: 10px 14px; font-weight: 700;
@@ -1499,6 +1501,8 @@
         <button type="button" class="btn secondary small nav-link" data-target="report">📊 รายงานรายวัน/รายเดือน</button>
         <button type="button" class="btn secondary small nav-link" data-target="spBoard">📣 รวมรายชื่อส่งตรวจพิเศษ</button>
         <button type="button" class="btn secondary small nav-link" data-target="dq" id="dqNavBtn">🩺 คิวพบแพทย์</button>
+        <!-- รอบ 88 (E1): เห็นเฉพาะจุดคีย์ order กับจุดทำนัดหมาย — syncApptNavBtn_() สลับ hidden ตามจุด (เรียกจาก applyPointLayout) -->
+        <button type="button" class="btn secondary small nav-link" data-target="appt" id="apptNavBtn" hidden>📅 รายชื่อนัดล่วงหน้า</button>
       </div>
     </div>
   </header>
@@ -1852,6 +1856,13 @@
       </div>
       <p id="apptError" class="error-box" hidden></p>
       <div id="apptDays" class="appt-days" aria-live="polite"></div>
+      <!-- รอบ 88 (E3/E4/E6): การ์ด "⏳ รายชื่อนัด" ย้ายมาจากหน้ารายการรายวัน — กางรายชื่อของวันที่แตะใต้ตาราง · วาดโดย renderPreCard_() · วันว่างยังแสดงการ์ด (ป้ายวัน + "ไม่มีรายชื่อนัด…") -->
+      <div class="card no-print" id="preCard" hidden>
+        <h2>⏳ ลงล่วงหน้า <span class="muted" id="preCounts"></span></h2>
+        <div id="preError" class="error-box" hidden></div>
+        <input type="search" id="preSearch" autocomplete="off" placeholder="ค้นหา ชื่อ / สกุล / HN">
+        <div id="preList"></div>
+      </div>
     </div>
   </div>
 
@@ -1859,7 +1870,7 @@
     <div class="wrap">
       <button type="button" class="btn secondary small no-print" data-back-menu style="margin-bottom:10px;">← กลับหน้าบันทึก</button>
       <!-- รอบ 74 (เจ้าของสั่ง 2026-10-08): เลือกวันที่ดูรายการได้ (ปฏิทินไทยชุด thd* — input[type=date] เป็นตัวเก็บค่า ห้าม display:none)
-           ค่าตั้งต้น = วันนี้ · รอบ 81: max = วันนี้+7 (เลือกวันอนาคตเพื่อดูรายการลงล่วงหน้า) · เห็นเฉพาะจุดบริการที่เลือกอยู่ -->
+           ค่าตั้งต้น = วันนี้ · รอบ 88: max = วันนี้ (วันอนาคตดูที่หน้า 📅 รายชื่อนัดล่วงหน้า) · เห็นเฉพาะจุดบริการที่เลือกอยู่ -->
       <div class="no-print" id="todayViewDateRow" style="margin-bottom:10px;">
         <label class="field-label" for="todayViewDate">วันที่</label>
         <div class="row">
@@ -1870,14 +1881,7 @@
       <!-- รอบ 72: ข้อความตั้งต้นใช้ขีด ไม่ใช่ 0 — โหลดครั้งแรกไม่สำเร็จ แถบนี้ไม่ถูกเขียนทับ ⇒ "0 คน" จะดูเหมือนยอดจริง -->
       <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท</div>
 
-      <!-- รอบ 81 (W3): การ์ด "⏳ ลงล่วงหน้า" — รวมทุกจุด · อยู่เหนือ SUP OPD · ไม่มีรายการ (ไม่นับที่ยกเลิก) ⇒ ซ่อนทั้งใบ · วาดโดย renderPreCard_() -->
-      <div class="card no-print" id="preCard" hidden>
-        <h2>⏳ ลงล่วงหน้า <span class="muted" id="preCounts"></span></h2>
-        <div id="preError" class="error-box" hidden></div>
-        <input type="search" id="preSearch" autocomplete="off" placeholder="ค้นหา ชื่อ / สกุล / HN">
-        <div id="preList"></div>
-      </div>
-      <p class="muted" id="todayFutureMsg" hidden>วันในอนาคต — มีเฉพาะรายการลงล่วงหน้า</p>
+      <!-- รอบ 88 (E6): การ์ด ⏳ (#preCard) ย้ายไปหน้า #apptScreen แล้ว — หน้านี้ดูได้ถึงวันนี้เท่านั้น -->
 
       <div class="card" id="specialTodaySummaryCard">
         <h2>สรุป SUP OPD</h2>
@@ -4273,6 +4277,7 @@ function applyVaccinePanelVisibility_() {
 function applyPointLayout() {
   capturePanelHomePositions_();
   updatePointBanner();
+  if (typeof syncApptNavBtn_ === 'function') syncApptNavBtn_(); // รอบ 88 (E1): ปุ่ม 📅 ตามจุด
   applyVaccinePanelVisibility_(); // รอบ 87 (D15)
   // รอบ 60 ข้อ 1: #panelPerson พับได้ทุกจอ (ไม่อยู่ใน MOVABLE_PANEL_IDS_) — ล้างเปลี่ยนจุด/ล้างฟอร์ม ⇒ กางคืนเสมอ
   expandPersonPanel_();
@@ -6557,20 +6562,14 @@ var TODAY_LOAD_SEQ = 0;
 function loadToday() {
   loadTodayRun_(false);
   if (!isViewingToday_() && isTodayScreenVisible_()) loadTodayViewRun_(false);
-  // รอบ 81 (W6/W3): PRE_TODAY (เตือนในฟอร์มปกติ) + การ์ด ⏳ ลงล่วงหน้า โหลดคู่ขนานกัน ไม่บล็อกการโหลดรายการ · ล้มเงียบ
-  if (typeof loadPreToday_ === 'function') {
-    loadPreToday_();
-    if (!isViewingToday_() && isTodayScreenVisible_()) loadPreView_();
-  }
+  // รอบ 81 (W6): PRE_TODAY (เตือนในฟอร์มปกติ) โหลดคู่ขนานกัน ไม่บล็อกการโหลดรายการ · ล้มเงียบ (รอบ 88: การ์ด ⏳ ย้ายไป #apptScreen — โหลดจาก apptOnShow_/onApptClick_)
+  if (typeof loadPreToday_ === 'function') loadPreToday_();
 }
 // รอบ 74: ทางเข้าของหน้า "รายการวันนี้" (เปิดหน้า/เปลี่ยนวัน/กดปุ่มวันนี้) — ดูวันนี้ ⇒ loadToday() เดิมทุกประการ · ดูวันอื่น ⇒ โหลดเฉพาะวันที่ดู
 function loadTodayScreen_() {
   if (typeof applyFutureViewState_ === 'function') applyFutureViewState_(); // รอบ 81 (W3): วันอนาคต ⇒ ซ่อน SUP OPD/แถบสรุป/รายการ
   if (isViewingToday_()) loadToday(); // รวม preList ของวันนี้แล้ว (loadToday → loadPreToday_)
-  else {
-    loadTodayViewRun_(false);
-    if (typeof loadPreView_ === 'function') loadPreView_();
-  }
+  else loadTodayViewRun_(false);
 }
 // สถานะว่างระหว่างรอโหลดวันใหม่ (ยังไม่มีแคชของวันนั้น) — ห้ามปล่อยแถบสรุป/รายการของวันก่อนหน้าค้างอยู่ใต้ป้ายวันใหม่
 function resetTodayDisplayLoading_(dateStr) {
@@ -6671,8 +6670,8 @@ function loadTodayViewRun_(isRetry) {
 function setTodayViewDate_(dateStr) {
   var today = todayStr();
   var d = /^\d{4}-\d{2}-\d{2}$/.test(String(dateStr || '')) ? String(dateStr) : today;
-  var maxView = addDaysYmd_(today, PRE_MAX_DAYS_AHEAD);
-  if (d > maxView) d = today; // รอบ 81: เลือกได้ถึงวันนี้+7 (ดูรายการลงล่วงหน้า) · เกินกว่านั้นถอยเป็นวันนี้
+  var maxView = today; // รอบ 88 (E6): เลือกได้ถึงวันนี้ (รายการลงล่วงหน้าย้ายไปหน้า #apptScreen)
+  if (d > maxView) d = today; // อนาคต ⇒ ถอยเป็นวันนี้
   var el = qs('todayViewDate');
   if (el) { el.setAttribute('max', maxView); if (el.value !== d) el.value = d; }
   TODAY_VIEW_AUTO_ = (d === today);
@@ -6689,7 +6688,7 @@ function setTodayViewDate_(dateStr) {
 function todayViewCheckDayRollover_() {
   var today = todayStr();
   var el = qs('todayViewDate');
-  var maxView = addDaysYmd_(today, PRE_MAX_DAYS_AHEAD); // รอบ 81: max = วันนี้+7
+  var maxView = today; // รอบ 88 (E6): max = วันนี้
   if (el && el.getAttribute('max') !== maxView) el.setAttribute('max', maxView);
   if (typeof applyFutureViewState_ === 'function') applyFutureViewState_(); // วันที่ดูอยู่อาจเพิ่งกลายเป็น "วันนี้"
   if (TODAY_VIEW_AUTO_ && TODAY_VIEW_DATE !== today) {
@@ -6796,7 +6795,8 @@ var PRE_TODAY = [];            // W6: items ของ preList วันนี้
 var PRE_TODAY_RESP = null;     // คำตอบ preList วันนี้ล่าสุดทั้งก้อน (ใช้ป้อนการ์ด #preCard ตอนกลับมาดูวันนี้)
 var PRE_TODAY_BUSY_ = false;
 var PRE_TODAY_DIRTY_ = false;
-var PRE_VIEW = { date: '', items: [], counts: null, error: '' }; // W3: preList ของ TODAY_VIEW_DATE
+var PRE_VIEW = { date: '', items: [], counts: null, error: '', loading: false }; // W3: preList ของ APPT_VIEW_DATE_ (รอบ 88: เดิมผูก TODAY_VIEW_DATE)
+var APPT_VIEW_DATE_ = '';      // รอบ 88 (E3): วันที่เลือกอยู่ในหน้า #apptScreen ('' = ยังไม่เลือก ⇒ apptOnShow_ เลือกวันนี้ให้)
 var PRE_VIEW_SEQ_ = 0;
 var PRE_SAVING_ = false;       // W1: กันกดบันทึกล่วงหน้าซ้ำระหว่างรอคำตอบ
 var PRE_ACTIVATE = { item: null, reqId: '', busy: false };
@@ -6960,8 +6960,8 @@ function onSubmitPre_() {
         resetServiceDate_();
         resetLogForm();
         showToast('แก้ไขรายการลงล่วงหน้า ' + payload.patientName + ' เป็นวันที่ ' + formatThaiDate(newDate) + ' แล้ว');
-        setTodayViewDate_(newDate);
-        showScreen('today');
+        APPT_VIEW_DATE_ = newDate; // รอบ 88 (E7): กลับหน้ารายชื่อนัดที่วันนัดใหม่
+        showScreen('appt');
       } else {
         resetLogForm(); // ล้างฟอร์มตามปกติ — ช่อง #serviceDate อยู่นอก #logForm จึงคงวันเดิมไว้
         showToast('ลงล่วงหน้า ' + payload.patientName + ' วันที่ ' + formatThaiDate(newDate) + ' แล้ว');
@@ -7015,7 +7015,7 @@ function exitPreEdit_() {
   resetServiceDate_();
   resetLogForm();
   showToast('ยกเลิกการแก้ไขแล้ว');
-  showScreen('today');
+  showScreen('appt'); // รอบ 88 (E7): กลับหน้ารายชื่อนัด (APPT_VIEW_DATE_ คงวันเดิมที่แตะเข้ามาแก้)
 }
 
 /* ---------- โหลด preList (W3 / W6) ---------- */
@@ -7034,36 +7034,38 @@ function loadPreToday_() {
         PRE_TODAY = resp.items;
         PRE_TODAY_RESP = resp;
         if (typeof hoOnPreTodayLoaded_ === 'function') hoOnPreTodayLoaded_(); // รอบ 84 (W4): ช่อง 🔎 + จำนวนรอมา
-        if (isViewingToday_()) preViewApply_(day, resp);
-      } else if (isViewingToday_()) {
+        if (APPT_VIEW_DATE_ === day) preViewApply_(day, resp); // รอบ 88: การ์ดอยู่ที่ #apptScreen — ป้อนเมื่อวันที่เลือกอยู่ = วันนี้
+      } else if (APPT_VIEW_DATE_ === day) {
         preViewFail_(day, resp);
       }
     }
     if (PRE_TODAY_DIRTY_) { PRE_TODAY_DIRTY_ = false; loadPreToday_(); }
   });
 }
-// การ์ด #preCard ของ TODAY_VIEW_DATE ที่ไม่ใช่วันนี้ (วันนี้ผ่าน loadPreToday_)
+// การ์ด #preCard (ใน #apptScreen) ของ APPT_VIEW_DATE_ ที่ไม่ใช่วันนี้ (วันนี้ผ่าน loadPreToday_)
 function loadPreView_() {
-  if (!STATE.staffKey) return;
-  if (isViewingToday_()) {
+  if (!STATE.staffKey || !APPT_VIEW_DATE_) return;
+  if (APPT_VIEW_DATE_ === todayStr()) {
     if (PRE_TODAY_RESP && PRE_TODAY_RESP.date === todayStr()) preViewApply_(todayStr(), PRE_TODAY_RESP);
+    else if (PRE_VIEW.date !== todayStr()) { PRE_VIEW = { date: todayStr(), items: [], counts: null, error: '', loading: true }; renderPreCard_(); } // รอบ 88 (M1): ยังไม่มีคำตอบของวันนี้ ⇒ "กำลังโหลด…" ไม่ใช่ "ลงไว้ 0"
     loadPreToday_();
     return;
   }
-  var date = TODAY_VIEW_DATE;
+  var date = APPT_VIEW_DATE_;
   var seq = ++PRE_VIEW_SEQ_;
-  if (PRE_VIEW.date !== date) { PRE_VIEW = { date: date, items: [], counts: null, error: '' }; renderPreCard_(); }
+  if (PRE_VIEW.date !== date) { PRE_VIEW = { date: date, items: [], counts: null, error: '', loading: true }; renderPreCard_(); }
   apiCall('preList', { staffKey: STATE.staffKey, date: date }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
-    if (seq !== PRE_VIEW_SEQ_ || TODAY_VIEW_DATE !== date) return;
+    if (seq !== PRE_VIEW_SEQ_ || APPT_VIEW_DATE_ !== date) return;
     if (preListResp_(resp)) preViewApply_(date, resp); else preViewFail_(date, resp);
   });
 }
 function preViewApply_(date, resp) {
-  PRE_VIEW = { date: date, items: resp.items || [], counts: resp.counts || null, error: '' };
+  PRE_VIEW = { date: date, items: resp.items || [], counts: resp.counts || null, error: '', loading: false };
   renderPreCard_();
 }
 function preViewFail_(date, resp) {
-  if (PRE_VIEW.date !== date) PRE_VIEW = { date: date, items: [], counts: null, error: '' };
+  if (PRE_VIEW.date !== date) PRE_VIEW = { date: date, items: [], counts: null, error: '', loading: false };
+  PRE_VIEW.loading = false;
   PRE_VIEW.error = preOldServerResp_(resp) ? '' : ('โหลดรายการลงล่วงหน้าไม่สำเร็จ (' + ((resp && resp.status !== 'ok' && resp.message) ? resp.message : 'เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ') + ')');
   renderPreCard_();
 }
@@ -7071,7 +7073,7 @@ function preViewFail_(date, resp) {
 function reloadPreAfterAction_() {
   if (typeof apptReloadIfVisible_ === 'function') apptReloadIfVisible_(); // รอบ 87 (D10): ตัวเลขรายวันบนหน้ารายชื่อนัดเปลี่ยนหลังนำเข้า/ยกเลิก
   loadPreToday_();
-  if (!isViewingToday_()) loadPreView_();
+  if (APPT_VIEW_DATE_ && APPT_VIEW_DATE_ !== todayStr()) loadPreView_(); // รอบ 88: การ์ดของวันที่เลือกในหน้า appt (วันนี้ป้อนผ่าน loadPreToday_)
 }
 
 /* ---------- W3: การ์ด "⏳ ลงล่วงหน้า" ในหน้ารายการรายวัน ---------- */
@@ -7149,10 +7151,12 @@ function preRowHtml_(it) {
   var acts = '';
   if (st !== 'มาแล้ว') {
     // รอบ 87 (D5): แถว "รอมา" ที่วันนัด = วันนี้ ⇒ ปุ่มเดียว "▶ บันทึกการมา" (ฟอร์มหลักเดียว) แทน ✚ เติมคิว / ✎ แก้ไข · แถววันอนาคต/ไม่มา ปุ่มเหมือนเดิม
-    var arriveToday = (st === 'รอมา' && it.date === todayStr());
+    // รอบ 88 (E5): ▶ / 🔗 เฉพาะจุดคีย์ order (กันบันทึกบริการลงชีตในนามจุดทำนัดหมาย) — จุดอื่นเหลือ ✎ / ✕
+    var keyOrderHere = (STATE.point === HO_ARRIVE_POINT_);
+    var arriveToday = (st === 'รอมา' && it.date === todayStr() && keyOrderHere);
     if (arriveToday) acts += '<button type="button" class="btn small" data-pre-act="arrive" data-pre-id="' + id + '">▶ บันทึกการมา</button>';
     else acts += '<button type="button" class="btn small secondary" data-pre-act="edit" data-pre-id="' + id + '">✎ แก้ไข</button>';
-    if (it.date <= todayStr()) acts += '<button type="button" class="btn small secondary" data-pre-act="link" data-pre-id="' + id + '">🔗 มาแล้ว (บันทึกซ้ำ)</button>';
+    if (keyOrderHere && it.date <= todayStr()) acts += '<button type="button" class="btn small secondary" data-pre-act="link" data-pre-id="' + id + '">🔗 มาแล้ว (บันทึกซ้ำ)</button>';
     acts += '<button type="button" class="btn small danger" data-pre-act="cancel" data-pre-id="' + id + '">✕ ยกเลิก</button>';
   }
   return '<div class="pre-row' + cls + '" data-pre-row="' + id + '">' +
@@ -7165,13 +7169,23 @@ function preRowHtml_(it) {
 function renderPreCard_() {
   var card = qs('preCard');
   if (!card) return;
-  if (!STATE.staffKey || PRE_VIEW.date !== TODAY_VIEW_DATE) { card.hidden = true; return; }
+  if (!STATE.staffKey || PRE_VIEW.date !== APPT_VIEW_DATE_) { card.hidden = true; return; }
   var live = (PRE_VIEW.items || []).filter(function (it) { return it && it.displayStatus !== 'ยกเลิก' && it.status !== 'ยกเลิก'; });
   var err = PRE_VIEW.error;
-  if (!live.length && !err) { card.hidden = true; return; }
-  card.hidden = false;
+  card.hidden = false; // รอบ 88 (E3): วันว่างก็ยังแสดงการ์ด (หัวมีป้ายวัน + ข้อความ "ไม่มีรายชื่อนัด") — ไม่ปล่อยให้แตะแล้วเงียบ
+  var searchEl = qs('preSearch');
+  if (searchEl) { searchEl.hidden = !live.length; if (!live.length) searchEl.value = ''; }
   var countsEl = qs('preCounts');
-  if (countsEl) {
+  var dayHead = apptDayLabel_(PRE_VIEW.date) + (PRE_VIEW.date === todayStr() ? ' (วันนี้)' : '');
+  if (PRE_VIEW.loading) { // รอบ 88 (M1): กำลังโหลด ⇒ ไม่มีตัวเลข ไม่มีข้อความวันว่าง
+    if (countsEl) countsEl.textContent = dayHead + ' — กำลังโหลด…';
+    var errL = qs('preError');
+    if (errL) { errL.textContent = ''; errL.hidden = true; }
+    renderPreList_();
+    return;
+  }
+  if (countsEl && err && !live.length) countsEl.textContent = dayHead + ' —'; // โหลดล้มและไม่มีข้อมูลเดิม ⇒ ไม่โชว์เลข 0
+  else if (countsEl) {
     var c = PRE_VIEW.counts || {};
     var arrived = live.filter(function (it) { return it.displayStatus === 'มาแล้ว'; }).length;
     var waiting = live.filter(function (it) { return it.displayStatus === 'รอมา'; }).length;
@@ -7181,7 +7195,7 @@ function renderPreCard_() {
     var waitN = (typeof c.waiting === 'number') ? c.waiting : waiting;
     var noShowN = (typeof c.noShow === 'number') ? c.noShow : noShow;
     var past = PRE_VIEW.date < todayStr();
-    countsEl.textContent = 'ลงไว้ ' + total + ' · มาแล้ว ' + arrivedN + ' · ' + (past ? ('ไม่มา ' + noShowN) : ('ยังรอ ' + waitN));
+    countsEl.textContent = dayHead + ' — ลงไว้ ' + total + ' · มาแล้ว ' + arrivedN + ' · ' + (past ? ('ไม่มา ' + noShowN) : ('ยังรอ ' + waitN));
   }
   var errEl = qs('preError');
   if (errEl) {
@@ -7202,14 +7216,17 @@ function renderPreCard_() {
 function renderPreList_() {
   var wrap = qs('preList');
   if (!wrap) return;
+  if (PRE_VIEW.loading) { wrap.innerHTML = '<p class="muted">กำลังโหลด…</p>'; return; }
   var q = qs('preSearch') ? qs('preSearch').value : '';
   // รอบ 87 (D13): แถว "ไม่มา" ไม่แสดงในรายการ (ตัวเลข "ไม่มา N" บนหัวการ์ดคงไว้) · ชีต/รายงานไม่แตะ
   var sorted = preSortItems_(PRE_VIEW.items);
   var noShowN = sorted.filter(function (it) { return it.displayStatus === 'ไม่มา'; }).length;
   var rows = sorted.filter(function (it) { return it.displayStatus !== 'ไม่มา' && preMatchesQuery_(it, q); });
   if (!rows.length) {
+    if (PRE_VIEW.error && !sorted.length) { wrap.innerHTML = ''; return; } // โหลดล้ม ไม่มีข้อมูล ⇒ กล่องผิดพลาด+ลองใหม่เท่านั้น ไม่บอกว่า "ไม่มีรายชื่อ"
     wrap.innerHTML = String(q || '').trim() ? '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>'
-      : (noShowN > 0 ? ('<p class="muted">ไม่มีรายการรอ — ไม่มา ' + noShowN + ' คน</p>') : '');
+      : (noShowN > 0 ? ('<p class="muted">ไม่มีรายการรอ — ไม่มา ' + noShowN + ' คน</p>')
+        : ('<p class="muted">ไม่มีรายชื่อนัด' + (PRE_VIEW.date === todayStr() ? 'วันนี้' : ('วันที่ ' + apptDayLabel_(PRE_VIEW.date))) + '</p>')); // รอบ 88: วันว่าง
     return;
   }
   wrap.innerHTML = rows.map(preRowHtml_).join('');
@@ -7224,6 +7241,7 @@ function onPreCardClick_(e) {
   var item = preFindItem_(btn.getAttribute('data-pre-id'));
   if (!item) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรช'); return; }
   var act = btn.getAttribute('data-pre-act');
+  if ((act === 'arrive' || act === 'link') && STATE.point !== HO_ARRIVE_POINT_) return; // รอบ 88 (E5): ▶/🔗 เฉพาะจุดคีย์ order
   if (act === 'activate') openPreActivate_(item);
   else if (act === 'arrive') { showScreen('log'); startPreArrive_(item); } // รอบ 87 (D5): หน้าบันทึก + เติมฟอร์มหลัก (confirm เดิมถ้าฟอร์มมีค่า) · ที่จุดอื่นก็ทำได้ (บันทึกที่จุดนั้น)
   else if (act === 'edit') startPreEdit_(item);
@@ -8292,7 +8310,7 @@ function startPreArrive_(item, opts) {
   if (qEl && typeof qEl.focus === 'function') qEl.focus();
 }
 
-/* ---------- รอบ 87 (D10): หน้า #apptScreen (จุดทำนัดหมาย) — ตาราง 7 วัน (พรุ่งนี้ … +7) จาก action preDays ครั้งเดียว ---------- */
+/* ---------- รอบ 87 (D10): หน้า #apptScreen — รอบ 88: ตาราง วันนี้ + 7 วัน (8 แถว) จาก action preDays ครั้งเดียว · แตะแถว ⇒ รายชื่อกางใต้ตาราง ---------- */
 var APPT_SEQ_ = 0;
 var APPT_DOW_ = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 var APPT_MONTH_ = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -8303,8 +8321,11 @@ function apptDayLabel_(ymd) {
   return APPT_DOW_[dow] + ' ' + (+p[3]) + ' ' + APPT_MONTH_[+p[2] - 1];
 }
 function apptDaysHtml_(days) {
+  var today = todayStr();
   return days.map(function (d) {
-    return '<button type="button" class="appt-day-btn" data-appt-date="' + escHtml(d.date) + '"><b>' + escHtml(apptDayLabel_(d.date)) + '</b> — ' +
+    var sel = (d.date === APPT_VIEW_DATE_); // รอบ 88 (E3): ไฮไลต์แถวที่เลือกอยู่
+    return '<button type="button" class="appt-day-btn' + (sel ? ' appt-selected' : '') + '" aria-pressed="' + (sel ? 'true' : 'false') + '" data-appt-date="' + escHtml(d.date) + '"><b>' + escHtml(apptDayLabel_(d.date)) + '</b>' +
+      (d.date === today ? ' <b>(วันนี้)</b>' : '') + ' — ' + // รอบ 88 (E2): แถวแรก = วันนี้
       'ลงไว้ ' + numOr0(d.total) + ' · มาแล้ว ' + numOr0(d.arrived) + ' · ยกเลิก ' + numOr0(d.cancelled) + '</button>';
   }).join('');
 }
@@ -8329,7 +8350,7 @@ function loadApptDays_() {
   var err = qs('apptError');
   if (err) { err.textContent = ''; err.hidden = true; }
   if (!box.innerHTML) box.innerHTML = '<p class="muted">กำลังโหลด…</p>';
-  apiCall('preDays', { staffKey: STATE.staffKey, from: addDaysYmd_(todayStr(), 1), days: PRE_MAX_DAYS_AHEAD }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+  apiCall('preDays', { staffKey: STATE.staffKey, from: todayStr(), days: PRE_MAX_DAYS_AHEAD + 1 }, { timeoutMs: readTimeoutMs_() }).then(function (resp) { // รอบ 88 (E2): วันนี้ + 7 วันข้างหน้า = 8 แถว
     if (seq !== APPT_SEQ_) return;
     if (resp && resp.status === 'ok' && Array.isArray(resp.days)) {
       box.innerHTML = apptDaysHtml_(resp.days);
@@ -8351,8 +8372,36 @@ function onApptClick_(e) {
   if (t.closest('[data-appt-retry]')) { loadApptDays_(); return; }
   var b = t.closest('[data-appt-date]');
   if (!b) return;
-  setTodayViewDate_(b.getAttribute('data-appt-date')); // หน้ารายการรายวันของวันนั้น (การ์ด ⏳ เดิม)
-  showScreen('today');
+  // รอบ 88 (E3): กางรายชื่อของวันนั้นใต้ตารางในหน้าเดียวกัน (ไม่ย้ายหน้า)
+  var pickedDate = b.getAttribute('data-appt-date');
+  if (pickedDate !== APPT_VIEW_DATE_) { var srch = qs('preSearch'); if (srch) srch.value = ''; } // รอบ 88 (m4): เปลี่ยนวัน ⇒ ล้างคำค้นของวันก่อน
+  APPT_VIEW_DATE_ = pickedDate;
+  apptMarkSelected_();
+  loadPreView_();
+}
+function apptMarkSelected_() {
+  var box = qs('apptDays');
+  if (!box || !box.querySelectorAll) return;
+  var btns = box.querySelectorAll('[data-appt-date]');
+  for (var i = 0; i < btns.length; i++) {
+    var on = (btns[i].getAttribute('data-appt-date') === APPT_VIEW_DATE_);
+    btns[i].classList.toggle('appt-selected', on);
+    btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+// เปิดหน้า #apptScreen: ยังไม่เลือกวัน (หรือวันที่เลือกผ่านไปแล้ว เพราะข้ามวัน) ⇒ วันนี้ · โหลดตารางวัน + รายชื่อของวันที่เลือก
+function apptOnShow_() {
+  var today = todayStr();
+  if (!APPT_VIEW_DATE_ || APPT_VIEW_DATE_ < today) APPT_VIEW_DATE_ = today;
+  loadApptDays_();
+  loadPreView_();
+}
+// รอบ 88 (E1/E8): ปุ่ม 📅 เห็นเฉพาะจุดคีย์ order + จุดทำนัดหมาย · ปุ่มนำเข้า 📥 เห็นเฉพาะจุดทำนัดหมาย (เรียกจาก applyPointLayout)
+function syncApptNavBtn_() {
+  var nav = qs('apptNavBtn');
+  if (nav) nav.hidden = !(STATE.point === HO_ARRIVE_POINT_ || STATE.point === HO_IMPORT_POINT_);
+  var imp = qs('hoImportRow');
+  if (imp) imp.hidden = (STATE.point !== HO_IMPORT_POINT_);
 }
 
 /* ---------- W8: การ์ด "ลงล่วงหน้า" ในรายงาน (ซ่อนเมื่อไม่มี summary.preReg หรือ total = 0) ---------- */
@@ -14446,7 +14495,7 @@ function showScreen(name) {
   if (name === 'today') { todayViewCheckDayRollover_(); loadTodayScreen_(); } // รอบ 74: คงวันที่ที่เลือกไว้เดิมเมื่อออกแล้วกลับมา (TODAY_VIEW_DATE ไม่ถูกรีเซ็ต)
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable('list'); } // รอบ 8 (B7)
   if (name === 'pending') { ensurePendingDateDefault(); loadPending(); } // รอบ 28 (W8)
-  if (name === 'appt' && typeof loadApptDays_ === 'function') loadApptDays_(); // รอบ 87 (D10)
+  if (name === 'appt' && typeof apptOnShow_ === 'function') apptOnShow_(); // รอบ 87 (D10) · รอบ 88: + เลือกวัน + โหลดรายชื่อของวันที่เลือก
   if (name === 'spBoard') { // รอบ 9 (ก้อน A)
     SP_BOARD_CAP_MODE = false;
     var spL1 = qs('spBoardLayer1'), spL2 = qs('spBoardLayer2');
@@ -14998,7 +15047,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // (input[type=date] ยังเป็นตัวเก็บค่า) · max = วันนี้ · เลือกอนาคตได้ด้วยมือ/โค้ด ⇒ setTodayViewDate_ ถอยเป็นวันนี้
   var todayViewDateEl = qs('todayViewDate');
   if (todayViewDateEl) {
-    todayViewDateEl.setAttribute('max', addDaysYmd_(todayStr(), PRE_MAX_DAYS_AHEAD)); // รอบ 81 (W3): max = วันนี้+7
+    todayViewDateEl.setAttribute('max', todayStr()); // รอบ 88 (E6): max = วันนี้
     todayViewDateEl.value = TODAY_VIEW_DATE;
     todayViewDateEl.addEventListener('change', function () { setTodayViewDate_(todayViewDateEl.value); });
   }
