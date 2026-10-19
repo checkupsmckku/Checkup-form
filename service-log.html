@@ -6894,9 +6894,15 @@ function applyPreMode_() {
   var wrap = qs('svcFormWrap');
   var row = qs('serviceDateRow'), bar = qs('preModeBar'), txt = qs('preModeText'), cancelBtn = qs('btnCancelPreEdit');
   var editing = !!STATE.editingId;
+  // m1 หลังรอบ 88 (เจ้าของตัดสิน 2026-10-19): ช่องวันที่เห็นเฉพาะจุดที่มีหน้า 📅 (ชุดเดียวกับ syncApptNavBtn_) · จุดอื่นบังคับวันนี้ กันค่าค้างพาเข้าโหมดล่วงหน้า
+  var apptPoint = (STATE.point === HO_ARRIVE_POINT_ || STATE.point === HO_IMPORT_POINT_);
+  if (!apptPoint && !STATE.preEditId) {
+    var sd = qs('serviceDate');
+    if (sd && sd.value !== todayStr()) sd.value = todayStr();
+  }
   var pre = isPreMode_();
   var edit = isPreEditMode_();
-  if (row) row.hidden = editing; // โหมดแก้ไขแถวปกติ (หน้าต่างแก้ไข) ⇒ ซ่อนแถววันที่
+  if (row) row.hidden = editing || !apptPoint; // โหมดแก้ไขแถวปกติ (หน้าต่างแก้ไข) / จุดที่ไม่มีหน้า 📅 ⇒ ซ่อนแถววันที่
   if (wrap && wrap.classList) wrap.classList.toggle('pre-mode', pre);
   if (bar) {
     bar.hidden = !pre;
