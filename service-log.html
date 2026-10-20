@@ -2821,6 +2821,7 @@ function applyStandardCheckupPriceIfAuto_() {
 
 function applyConfigResponse(resp, staffKey) {
   STATE.staffKey = staffKey;
+  PRE_FUTURE_.date = ''; PRE_FUTURE_.items = []; PRE_FUTURE_.busy = false; PRE_FUTURE_.busyDate = ''; PRE_FUTURE_SEQ_++; // รอบ 89: เข้าระบบ/เปลี่ยนรหัสเจ้าหน้าที่ ⇒ ล้างแคชค้นนัดล่วงหน้า
   STATE.prices = Object.assign({}, PRICE_DEFAULTS, resp.prices || {});
   STATE.programs = buildProgramsFromPrices(STATE.prices);
   STATE.vaccines = (resp.vaccines && resp.vaccines.length) ? resp.vaccines : VACCINES_DEFAULT;
@@ -6798,6 +6799,9 @@ var PRE_TODAY_DIRTY_ = false;
 var PRE_VIEW = { date: '', items: [], counts: null, error: '', loading: false }; // W3: preList ของ APPT_VIEW_DATE_ (รอบ 88: เดิมผูก TODAY_VIEW_DATE)
 var APPT_VIEW_DATE_ = '';      // รอบ 88 (E3): วันที่เลือกอยู่ในหน้า #apptScreen ('' = ยังไม่เลือก ⇒ apptOnShow_ เลือกวันนี้ให้)
 var PRE_VIEW_SEQ_ = 0;
+// รอบ 89 (F1): แคชรายชื่อนัดของ "วันที่รับบริการ" ที่เลือกล่วงหน้า (ใช้ค้น HN/ชื่อที่ฟอร์มหลัก) — busyDate = วันที่กำลังโหลด · seq กันคำตอบเก่าทับ
+var PRE_FUTURE_ = { date: '', items: [], busy: false, busyDate: '' };
+var PRE_FUTURE_SEQ_ = 0;
 var PRE_SAVING_ = false;       // W1: กันกดบันทึกล่วงหน้าซ้ำระหว่างรอคำตอบ
 var PRE_ACTIVATE = { item: null, reqId: '', busy: false };
 var PRE_LINK = { item: null, records: null, busy: false, seq: 0 };
@@ -6866,7 +6870,10 @@ function onServiceDateChange_() {
     showToast('ลงล่วงหน้าได้ไม่เกิน ' + PRE_MAX_DAYS_AHEAD + ' วัน (ถึง ' + formatThaiDate(preMaxDate_()) + ')');
   }
   if (el.value !== v) el.value = v;
+  // รอบ 89 (F1): เปลี่ยนวัน ⇒ รายการแนะนำเดิมเป็นของวันอื่น ซ่อนก่อน แล้วโหลดรายชื่อนัดของวันใหม่ (ถ้าเปิดค้นล่วงหน้าอยู่)
+  if (typeof hoSuggestHide_ === 'function') { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
   recalcTotals();
+  if (typeof hoFutureEnsure_ === 'function') hoFutureEnsure_();
 }
 // ข้ามวัน: ช่องวันที่ที่ค้างจากเมื่อวาน ⇒ กลับเป็นวันนี้ (ผู้ใช้เปิดแท็บค้างข้ามคืน) · กำลังแก้รายการรอมาอยู่ ⇒ คงรายการไว้ แค่ดันวันที่ที่ผ่านไปแล้วเป็นวันนี้
 function preServiceDateRollover_() {
@@ -6983,9 +6990,11 @@ function onSubmitPre_() {
 }
 
 /* ---------- W5: แก้ไขรายการรอมา ---------- */
-function startPreEdit_(item) {
+// รอบ 89 (F5): opts.searchText — HN/ชื่อในฟอร์มเป็นข้อความที่พิมพ์ค้น (แตะจากรายการแนะนำ) ไม่นับเป็นร่าง · ไม่ส่ง opts = พฤติกรรมเดิม
+function startPreEdit_(item, opts) {
   if (!item) return;
-  if (!isMainFormDraftEmpty_() && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการลงล่วงหน้านี้หรือไม่?')) return;
+  var formEmpty = (opts && opts.searchText) ? isMainFormDraftEmptyExceptHn_(true) : isMainFormDraftEmpty_();
+  if (!formEmpty && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการลงล่วงหน้านี้หรือไม่?')) return;
   STATE.preEditId = '';
   resetLogForm();
   var f = (item.form && typeof item.form === 'object') ? item.form : {};
@@ -7077,6 +7086,7 @@ function preViewFail_(date, resp) {
 }
 // หลังทำ pre* สำเร็จ: PRE_TODAY + การ์ดของวันที่ดูอยู่ โหลดใหม่
 function reloadPreAfterAction_() {
+  PRE_FUTURE_.date = ''; PRE_FUTURE_.items = []; PRE_FUTURE_.busy = false; PRE_FUTURE_.busyDate = ''; PRE_FUTURE_SEQ_++; // รอบ 89 (F1): บันทึก/แก้/ยกเลิกนัดสำเร็จ ⇒ ล้างแคชค้นล่วงหน้า (คำตอบที่ยังค้างอยู่ถูกทิ้ง) โหลดใหม่ตอนพิมพ์ครั้งถัดไป
   if (typeof apptReloadIfVisible_ === 'function') apptReloadIfVisible_(); // รอบ 87 (D10): ตัวเลขรายวันบนหน้ารายชื่อนัดเปลี่ยนหลังนำเข้า/ยกเลิก
   loadPreToday_();
   if (APPT_VIEW_DATE_ && APPT_VIEW_DATE_ !== todayStr()) loadPreView_(); // รอบ 88: การ์ดของวันที่เลือกในหน้า appt (วันนี้ป้อนผ่าน loadPreToday_)
@@ -8152,6 +8162,38 @@ function hoArriveActive_() {
   return STATE.point === HO_ARRIVE_POINT_ && !STATE.editingId && !STATE.arrivePreId &&
     !(typeof isPreMode_ === 'function' && isPreMode_());
 }
+// รอบ 89 (F2): ค้นนัดของ "วันที่รับบริการ" ล่วงหน้า — จุดคีย์ order + จุดทำนัดหมาย · ไม่ใช่แก้ไข/แก้นัด · วันที่เลือก > วันนี้ (ไม่ซ้อนกับ hoArriveActive_)
+function hoFutureActive_() {
+  return (STATE.point === HO_ARRIVE_POINT_ || STATE.point === HO_IMPORT_POINT_) && !STATE.editingId && !STATE.preEditId &&
+    serviceDateValue_() > todayStr();
+}
+// รอบ 89 (F1): โหลดรายชื่อนัดของวันที่เลือก (preList เดิม) เมื่อยังไม่มีแคชของวันนั้น · ไม่ยิงซ้ำระหว่างโหลดวันเดียวกัน · ล้ม ⇒ เงียบ ไม่แคช (เรียกครั้งถัดไปลองใหม่)
+function hoFutureEnsure_() {
+  if (!STATE.staffKey || !hoFutureActive_()) return;
+  var day = serviceDateValue_();
+  if (PRE_FUTURE_.date === day) return;
+  if (PRE_FUTURE_.busy && PRE_FUTURE_.busyDate === day) return;
+  var seq = ++PRE_FUTURE_SEQ_;
+  PRE_FUTURE_.busy = true;
+  PRE_FUTURE_.busyDate = day;
+  apiCall('preList', { staffKey: STATE.staffKey, date: day }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== PRE_FUTURE_SEQ_) return; // มีคำขอใหม่/ล้างแคชแล้ว ⇒ ทิ้งผลนี้
+    PRE_FUTURE_.busy = false;
+    PRE_FUTURE_.busyDate = '';
+    if (serviceDateValue_() !== day) return; // วันในช่องเปลี่ยนไปแล้ว ⇒ ทิ้ง
+    if (!preListResp_(resp)) { PRE_FUTURE_.date = ''; PRE_FUTURE_.items = []; return; } // ล้ม ⇒ เงียบ + ไม่แคช + ทิ้งแคชวันเก่า (พิมพ์ครั้งถัดไปลองใหม่)
+    PRE_FUTURE_.date = day;
+    PRE_FUTURE_.items = resp.items;
+    if (typeof document !== 'undefined' && document.activeElement) {
+      if (document.activeElement === qs('patientName')) hoOnNameInput_();
+      else if (document.activeElement === qs('patientHn')) hoOnHnInput_();
+    }
+  });
+}
+function hoFutureWaiting_() {
+  if (PRE_FUTURE_.date !== serviceDateValue_()) return [];
+  return preSortItems_(PRE_FUTURE_.items).filter(function (it) { return it && it.status === 'รอมา'; });
+}
 function hoSuggestHide_(id) {
   var box = qs(id);
   if (!box) return;
@@ -8160,7 +8202,7 @@ function hoSuggestHide_(id) {
 }
 // ซ่อนรายการแนะนำเมื่อไม่เข้าเงื่อนไข — idempotent เรียกจาก applyPreMode_() (ทุก recalcTotals) + หลังโหลด PRE_TODAY
 function syncHoBar_() {
-  if (!hoArriveActive_()) { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
+  if (!hoArriveActive_() && !hoFutureActive_()) { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
 }
 function hoItemButtonHtml_(it, extraAttr) {
   var bits = [it.patientHn ? ('HN ' + it.patientHn) : HO_NO_HN_NAME_];
@@ -8196,7 +8238,12 @@ function hoOnHnImmediate_() { hoCancelHnTimer_(); hoOnHnInput_(); }
 function hoOnHnInput_() {
   var box = qs('hoHnSuggest');
   if (!box) return;
-  if (!hoArriveActive_()) { hoCancelHnTimer_(); hoSuggestHide_('hoHnSuggest'); return; }
+  if (!hoArriveActive_()) {
+    hoCancelHnTimer_();
+    if (hoFutureActive_()) { hoFutureHn_(box); return; }
+    hoSuggestHide_('hoHnSuggest');
+    return;
+  }
   var hn = (qs('patientHn').value || '').trim();
   if (!hn || !isValidHn(hn)) { hoSuggestHide_('hoHnSuggest'); return; }
   var key = normDupHn_(hn);
@@ -8218,13 +8265,45 @@ function hoOnHnInput_() {
   }
   box.hidden = false;
 }
+// รอบ 89 (F3): HN ที่ฟอร์มหลักตรงนัดของวันที่เลือกล่วงหน้า ⇒ กล่อง "มีนัดวันที่ … แล้ว" + ปุ่ม ✎ แก้ไขนัดนี้ (ไม่เปิดเองแม้เจอ 1 คน)
+function hoFutureHn_(box) {
+  hoFutureEnsure_();
+  var hn = (qs('patientHn').value || '').trim();
+  if (!hn || !isValidHn(hn)) { hoSuggestHide_('hoHnSuggest'); return; }
+  var key = normDupHn_(hn);
+  var m = hoFutureWaiting_().filter(function (it) { return it.patientHn && normDupHn_(it.patientHn) === key; });
+  if (!m.length) { hoSuggestHide_('hoHnSuggest'); return; }
+  var attr = ' data-ho-mode="future"';
+  var dayTxt = escHtml(formatThaiDate(serviceDateValue_()));
+  if (m.length === 1) {
+    var it = m[0];
+    box.innerHTML = '<div class="ho-suggest-head">📅 มีนัดวันที่ ' + dayTxt + ' แล้ว: ' + escHtml(preItemFullName_(it)) + (it.program ? (' · ' + escHtml(programLabelForPrint(it.program))) : '') + '</div>' +
+      '<button type="button" class="btn small" data-ho-pick="' + escHtml(it.preId) + '"' + attr + '>✎ แก้ไขนัดนี้</button>';
+  } else {
+    box.innerHTML = '<div class="ho-suggest-head">📅 มีนัดวันที่ ' + dayTxt + ' ' + m.length + ' รายการ — แตะเพื่อแก้ไข</div>' + m.map(function (x) { return hoItemButtonHtml_(x, attr); }).join('');
+  }
+  box.hidden = false;
+}
 // D2: พิมพ์ชื่อ ≥ 2 ตัว ⇒ รายการแนะนำ ≤ 5 คน (รอมา วันนี้ · preMatchesQuery_ ค้นในหมายเหตุ HO ด้วย) · แตะจึงเติม
 function hoOnNameInput_() {
   var box = qs('hoNameSuggest');
   if (!box) return;
-  if (!hoArriveActive_()) { hoSuggestHide_('hoNameSuggest'); return; }
+  var future = false;
+  if (!hoArriveActive_()) {
+    if (!hoFutureActive_()) { hoSuggestHide_('hoNameSuggest'); return; }
+    future = true;
+    hoFutureEnsure_();
+  }
   var q = (qs('patientName').value || '').trim();
   if (q.length < 2) { hoSuggestHide_('hoNameSuggest'); return; }
+  if (future) { // รอบ 89 (F4): นัดของวันที่เลือกล่วงหน้า · แตะ ⇒ แก้ไขนัดนั้น (ไม่เติมเอง)
+    var frows = hoFutureWaiting_().filter(function (it) { return preMatchesQuery_(it, q); }).slice(0, 5);
+    if (!frows.length) { hoSuggestHide_('hoNameSuggest'); return; }
+    box.innerHTML = '<div class="ho-suggest-head">📅 นัดวันที่ ' + escHtml(formatThaiDate(serviceDateValue_())) + ' — แตะเพื่อแก้ไข</div>' +
+      frows.map(function (it) { return hoItemButtonHtml_(it, ' data-ho-mode="future"'); }).join('');
+    box.hidden = false;
+    return;
+  }
   var rows = preSortItems_(hoWaitingToday_()).filter(function (it) { return preMatchesQuery_(it, q); }).slice(0, 5);
   if (!rows.length) { hoSuggestHide_('hoNameSuggest'); return; }
   box.innerHTML = rows.map(function (it) { return hoItemButtonHtml_(it, ' data-ho-mode="name"'); }).join('');
@@ -8242,9 +8321,15 @@ function onHoSuggestClick_(e) {
   var b = e.target && e.target.closest ? e.target.closest('[data-ho-pick]') : null;
   if (!b) return;
   var pid = b.getAttribute('data-ho-pick'), found = null;
+  var mode = b.getAttribute('data-ho-mode') || 'name';
+  if (mode === 'future') { // รอบ 89 (F5): นัดล่วงหน้า ⇒ เปิดแก้ไขนัดนั้น (เหมือนกด ✎ ในหน้า 📅) · HN/ชื่อที่พิมพ์ไม่ถามยืนยัน
+    PRE_FUTURE_.items.forEach(function (x) { if (x.preId === pid) found = x; });
+    if (!found) { showToast('ไม่พบรายการนี้ กรุณาค้นใหม่'); return; }
+    startPreEdit_(found, { searchText: true });
+    return;
+  }
   hoWaitingToday_().forEach(function (x) { if (x.preId === pid) found = x; });
   if (!found) { showToast('ไม่พบรายการนี้ กรุณาค้นใหม่'); return; }
-  var mode = b.getAttribute('data-ho-mode') || 'name';
   startPreArrive_(found, { mode: mode });
 }
 function hoRenderArriveBar_() {
