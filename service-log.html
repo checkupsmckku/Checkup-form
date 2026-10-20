@@ -7264,8 +7264,15 @@ function onPreCardClick_(e) {
   else if (act === 'link') openPreLink_(item);
   else if (act === 'cancel') preCancelItem_(item, btn);
 }
+// รอบ 90 (เจ้าของตัดสิน 2026-10-20): เจ้าหน้าที่กดยกเลิกคนที่ไม่มา ⇒ หลุดจากสถิติไม่มา · เตือนในข้อความยืนยัน (เฉพาะหน้า 📅 — ยกเลิกในหน้านำเข้าคงเดิม) · วันนัด <= วันนี้ ⇒ ขึ้นต้น ⚠
+function preCancelConfirmText_(item) {
+  var due = !!(item && item.date && item.date <= todayStr());
+  return (due ? '⚠ ' : '') + 'ยกเลิกนัดของ ' + preItemFullName_(item) + '?\n' +
+    'ใช้เฉพาะคนที่แจ้งยกเลิก หรือลงผิด\n' +
+    'คนที่ไม่มาเฉย ๆ ไม่ต้องกด — ระบบนับเป็น "ไม่มา" ให้เองตั้งแต่วันถัดไป (ถ้ากดยกเลิก จะไม่ถูกนับในสถิติไม่มา)';
+}
 function preCancelItem_(item, btn) {
-  if (!window.confirm('ยืนยันยกเลิกการลงล่วงหน้าของ ' + preItemFullName_(item) + '?')) return;
+  if (!window.confirm(preCancelConfirmText_(item))) return;
   if (btn) btn.setAttribute('aria-disabled', 'true');
   apiCall('preCancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, preId: item.preId }).then(function (resp) {
     if (resp && resp.status === 'ok') {
