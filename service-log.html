@@ -1012,6 +1012,20 @@
   .log-panel[data-svc="vaccine"] { --svc-tint: #FFF3C9; --svc-line: #E0AE00; --svc-ink: #7A5500; }
   .log-panel[data-svc="medcert"] { --svc-tint: #DCEEFB; --svc-line: #3E8FD0; --svc-ink: #0F4E7C; }
 
+  /* รอบ 92: แถบปุ่มบริการ #svcBar (เฉพาะจุดคีย์ order) — ปุ่ม ≥44px · ตัวอักษร ≥16px · ห่อบรรทัดได้ (2x2 ที่จอแคบ) ไม่ล้นแนวนอน */
+  .svc-bar { display: flex; flex-wrap: wrap; gap: 8px; }
+  .svc-btn {
+    flex: 1 1 calc(50% - 8px); min-width: 0; min-height: 48px; padding: 8px 10px;
+    font-size: 16px; font-weight: 700; line-height: 1.25; cursor: pointer; text-align: center;
+    background: var(--svc-tint); color: var(--svc-ink); border: 2px solid var(--svc-line); border-radius: 12px;
+    overflow-wrap: anywhere;
+  }
+  .svc-btn[aria-pressed="true"] { background: var(--svc-line); color: #fff; box-shadow: 0 0 0 3px var(--svc-tint), 0 0 0 5px var(--svc-line); }
+  .svc-btn[data-svc-key="checkup"] { --svc-tint: #FFEBD8; --svc-line: #F47920; --svc-ink: #8A4206; }
+  .svc-btn[data-svc-key="special"] { --svc-tint: #FCE1EE; --svc-line: #E0559B; --svc-ink: #8C2059; }
+  .svc-btn[data-svc-key="medGen"], .svc-btn[data-svc-key="medLab"] { --svc-tint: #DCEEFB; --svc-line: #3E8FD0; --svc-ink: #0F4E7C; }
+  @media (min-width: 700px) { .svc-btn { flex: 1 1 0; } }
+
   /* รอบ 31A (A-W2..A-W4) — หน้าจอของแต่ละจุด: เส้นคั่น "บริการอื่น" + แถบหัวจุด + บังคับ 1 คอลัมน์เมื่อจัดเลย์เอาต์ตามหัวข้อหลัก */
   .log-panel-divider {
     margin: 8px 2px 0; padding-top: 10px; border-top: 1px dashed var(--border);
@@ -1645,6 +1659,14 @@
               </div>
             </div>
           </section>
+
+          <!-- รอบ 92: แถบปุ่มบริการ (เฉพาะจุดคีย์ order · โหมดล่วงหน้าซ่อน) — applyPointLayout() วางแถบนี้ต่อจาก #panelPerson ทุกครั้ง · ● ใส่ด้วย textContent -->
+          <div id="svcBar" class="svc-bar no-print" role="group" aria-label="เลือกบริการที่ต้องการกรอก" hidden>
+            <button type="button" class="svc-btn" data-svc-key="checkup" aria-pressed="false">ตรวจสุขภาพ</button>
+            <button type="button" class="svc-btn" data-svc-key="medGen" aria-pressed="false">ใบรับรองทั่วไป</button>
+            <button type="button" class="svc-btn" data-svc-key="medLab" aria-pressed="false">ใบรับรองมี Lab</button>
+            <button type="button" class="svc-btn" data-svc-key="special" aria-pressed="false">ส่งตรวจพิเศษ</button>
+          </div>
 
           <!-- แผง "ตรวจสุขภาพ" — ล็อกจนกว่าจะกรอก HN + ชื่อ (SPEC 4.5) -->
           <section class="log-panel" id="panelCheckup" data-svc="checkup" data-collapsed="1">
@@ -2656,7 +2678,14 @@ var STATE = {
   preModeApplied: false,
   serviceDateDay: '',
   // รอบ 84 (W4): preId ของคนนัดที่แตะเลือกจากช่อง 🔎 (startPreArrive_) — onSubmitLog แนบ payload.preId + ข้ามหน้าต่างเตือน W6 · resetLogForm()/เข้าโหมดแก้ไข/เปลี่ยนจุด ⇒ ล้าง
-  arrivePreId: ''
+  arrivePreId: '',
+  // รอบ 92: แถบปุ่มบริการที่จุดคีย์ order — svcBarSel = ปุ่มที่จำไว้ (ใช้หลังบันทึก/ล้างร่าง) · svcBarLastMed = medGen|medLab ที่กดล่าสุด (คิว M เลือกให้) ·
+  // svcBarShown = ปุ่มที่ไฮไลต์ตอนนี้ (โหมดแก้ไขอาจต่างจาก svcBarSel) · svcBarPointSeen = จุดที่ความจำนี้ใช้อยู่ (เปลี่ยนจุด ⇒ ล้าง) · svcQueueSeen = สถานะคิวล่าสุด (ตรวจจับ "เปลี่ยนสถานะ")
+  svcBarSel: 'checkup',
+  svcBarLastMed: 'medGen',
+  svcBarShown: 'checkup',
+  svcBarPointSeen: null,
+  svcQueueSeen: null
 };
 
 /* gender ฝั่งเว็บใช้โดเมน DOM ('male'/'female') ตลอด — แปลงเป็นภาษาไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น
@@ -4228,6 +4257,7 @@ function isCheckupPanelCollapsed_() {
 // ตั้งสถานะตั้งต้นตามค่าปัจจุบัน (ไม่ใช่การเปลี่ยนแปลง) — เรียกจาก applyPointLayout() / enterEditMode() / restoreFormDraft_()
 // กาง ⇔ มีค่าในแผง หรือคิวปัจจุบันเป็นคิวตรวจสุขภาพ · STATE.checkupAutoExpanded = กางเพราะคิวอย่างเดียว (พับกลับได้เมื่อคิวหาย)
 function applyCheckupPanelDefault_() {
+  if (typeof svcBarActive_ === 'function' && svcBarActive_()) { applySvcBarDefault_(); return; } // รอบ 92: จุดคีย์ order ใช้แถบปุ่มบริการคุมแผงแทน
   if (!pointHasCheckupTopic_()) return;
   var qNow = currentQueueIsCheckup_(), dNow = checkupPanelHasInput_();
   setCheckupPanelCollapsed_(!(qNow || dNow));
@@ -4237,6 +4267,7 @@ function applyCheckupPanelDefault_() {
 // ตามการเปลี่ยนค่าที่ผู้ใช้ทำ (เรียกท้าย recalcTotals() — ครอบพิมพ์/เลือก datalist/◀ ▶/ลูกศร/ปัด เพราะทุกทางยิง input/change)
 // ทำงานเฉพาะตอน "เปลี่ยนสถานะ" (seen → now) ไม่ใช่ทุกครั้ง ⇒ ผู้ใช้กดหัวแผงพับ/เปิดเองแล้ว recalcTotals รอบถัดไปไม่ดึงกลับ
 function syncCheckupPanelToQueue_() {
+  if (typeof svcBarActive_ === 'function' && svcBarActive_()) { syncSvcBarToQueue_(); return; } // รอบ 92: จุดคีย์ order — แถบปุ่มบริการคุมแทน (B6)
   if (!pointHasCheckupTopic_()) return;
   var panel = qs('panelCheckup');
   if (!panel || !panel.getAttribute) return;
@@ -4262,6 +4293,133 @@ function expandCheckupPanelIfBlocking_() {
     (getSelectedGender() === 'female' && getSelectedPelvic() === '') ||
     (!preMX && dm === DELIVERY_PICKUP_APPOINTMENT && (!(qs('pickupDate').value || '') || !!pickupClosedReason(qs('pickupDate').value)));
   if (blocked) { setCheckupPanelCollapsed_(false); STATE.checkupAutoExpanded = false; }
+}
+
+/* =========================================================================
+   รอบ 92 — แถบปุ่มบริการ #svcBar (เฉพาะ STATE.point === 'จุดคีย์ order' · โหมดล่วงหน้าซ่อนแถบ ใช้พฤติกรรมแผงเดิม)
+   ปุ่ม → แผงที่กาง: checkup = panelCheckup + panelSpecial · medGen = panelMedcertGen · medLab = panelMedcertLab · special = panelSpecial
+   แผงอื่นใน 4 แผงนี้พับ (เหลือหัวแผง) ยกเว้นแผงที่มีข้อมูลในร่าง ⇒ กางเสมอ · ตั้งทั้ง data-collapsed + data-user-collapsed (จอกว้าง/แคบเหมือนกัน)
+   ========================================================================= */
+var SVC_BAR_POINT_ = 'จุดคีย์ order';
+var SVC_BAR_KEYS_ = ['checkup', 'medGen', 'medLab', 'special'];
+var SVC_BAR_LABELS_ = { checkup: 'ตรวจสุขภาพ', medGen: 'ใบรับรองทั่วไป', medLab: 'ใบรับรองมี Lab', special: 'ส่งตรวจพิเศษ' };
+var SVC_BAR_PANELS_ = { checkup: ['panelCheckup', 'panelSpecial'], medGen: ['panelMedcertGen'], medLab: ['panelMedcertLab'], special: ['panelSpecial'] };
+var SVC_PANEL_IDS_ = ['panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab'];
+var SVC_PANEL_KEY_ = { panelCheckup: 'checkup', panelSpecial: 'special', panelMedcertGen: 'medGen', panelMedcertLab: 'medLab' };
+function svcBarActive_() {
+  if (STATE.point !== SVC_BAR_POINT_) return false;
+  return !((typeof isPreMode_ === 'function') && isPreMode_());
+}
+function setPanelCollapsed_(id, collapsed) {
+  var p = qs(id);
+  if (!p || !p.setAttribute) return;
+  p.setAttribute('data-collapsed', collapsed ? '1' : '0');
+  if (collapsed) p.setAttribute('data-user-collapsed', '1');
+  else if (p.removeAttribute) p.removeAttribute('data-user-collapsed');
+}
+function isPanelCollapsed_(id) {
+  var p = qs(id);
+  if (!p || !p.getAttribute) return false;
+  return isWideScreen_() ? (p.getAttribute('data-user-collapsed') === '1') : (p.getAttribute('data-collapsed') === '1');
+}
+// B4: แผงของปุ่มนั้นมีข้อมูลในร่างไหม (ใช้ทั้งขีด ● และข้อยกเว้น "แผงมีข้อมูล ⇒ กางเสมอ")
+function svcKeyHasData_(key) {
+  if (key === 'checkup') return checkupPanelHasInput_();
+  if (key === 'medGen') return isMedGenOn();
+  if (key === 'medLab') return isMedLabOn();
+  if (key === 'special') return isSpecialOn();
+  return false;
+}
+// B8: บริการแรกที่มีข้อมูลตามลำดับ checkup > medLab > medGen > special · ไม่มีเลย = ''
+function svcFirstDataKey_() {
+  var order = ['checkup', 'medLab', 'medGen', 'special'];
+  for (var i = 0; i < order.length; i++) if (svcKeyHasData_(order[i])) return order[i];
+  return '';
+}
+// B5: ความจำผูกกับจุด — เปลี่ยนจุด (แล้วกลับมา) ⇒ ล้างกลับ checkup/medGen
+function svcBarSyncPoint_() {
+  if (STATE.svcBarPointSeen === STATE.point) return;
+  STATE.svcBarPointSeen = STATE.point;
+  STATE.svcBarSel = 'checkup';
+  STATE.svcBarLastMed = 'medGen';
+  STATE.svcBarShown = 'checkup';
+  STATE.svcQueueSeen = null;
+}
+function renderSvcBar_() {
+  var bar = qs('svcBar');
+  if (!bar) return;
+  var act = svcBarActive_();
+  bar.hidden = !act;
+  if (!act || !bar.querySelectorAll) return;
+  bar.querySelectorAll('button[data-svc-key]').forEach(function (b) {
+    var key = b.getAttribute('data-svc-key');
+    var pressed = (key === STATE.svcBarShown) ? 'true' : 'false';
+    if (b.getAttribute('aria-pressed') !== pressed) b.setAttribute('aria-pressed', pressed);
+    var has = svcKeyHasData_(key);
+    var txt = (SVC_BAR_LABELS_[key] || key) + (has ? ' ●' : '');
+    if (b.textContent !== txt) b.textContent = txt; // textContent เท่านั้น (ไม่ใช้ innerHTML)
+    b.setAttribute('data-has-data', has ? '1' : '0');
+  });
+}
+function applySvcBarKey_(key) {
+  if (SVC_BAR_KEYS_.indexOf(key) === -1) key = 'checkup';
+  STATE.svcBarShown = key;
+  var open = SVC_BAR_PANELS_[key];
+  SVC_PANEL_IDS_.forEach(function (id) {
+    setPanelCollapsed_(id, !(open.indexOf(id) !== -1 || svcKeyHasData_(SVC_PANEL_KEY_[id])));
+  });
+  STATE.checkupAutoExpanded = false;
+  renderSvcBar_();
+}
+function svcQueueState_() {
+  var q = qs('queueSelect');
+  var v = q ? q.value : '';
+  return { c: isCheckupQueueValue_(v), m: mQueueNum_(v) > 0 };
+}
+// ตั้งสถานะตั้งต้น (ไม่ใช่การเปลี่ยนแปลง) — applyPointLayout / คืนร่าง / โหมดแก้ไข: ปกติใช้ปุ่มที่จำไว้ · แก้ไขแถวเก่า ⇒ ปุ่มบริการแรกที่มีข้อมูล (ไม่แตะ svcBarSel)
+function applySvcBarDefault_() {
+  svcBarSyncPoint_();
+  var key = STATE.svcBarSel;
+  if (STATE.editingId) { var f = svcFirstDataKey_(); if (f) key = f; }
+  applySvcBarKey_(key);
+  STATE.svcQueueSeen = svcQueueState_();
+}
+// B6: เฉพาะตอน "เปลี่ยนสถานะ" ของคิว (ไม่ดึงกลับทุก keystroke) — คิวกลายเป็นคิว C ⇒ checkup · กลายเป็นคิว M ⇒ svcBarLastMed
+function syncSvcBarToQueue_() {
+  var now = svcQueueState_();
+  var seen = STATE.svcQueueSeen || { c: false, m: false };
+  if (!STATE.editingId) {
+    var key = '';
+    if (now.c && !seen.c) key = 'checkup';
+    else if (now.m && !seen.m) key = STATE.svcBarLastMed;
+    if (key) { STATE.svcBarSel = key; applySvcBarKey_(key); }
+  }
+  STATE.svcQueueSeen = now;
+}
+// เรียกท้าย recalcTotals(): แถบเข้า/ออกโหมดล่วงหน้า ⇒ ซ่อน/แสดง (กลับมาแสดง ⇒ จัดแผงตามปุ่ม) · อัปเดตขีด ●
+function updateSvcBar_() {
+  svcBarSyncPoint_();
+  var act = svcBarActive_();
+  var was = STATE.svcBarWasActive;
+  STATE.svcBarWasActive = act;
+  if (act && was === false) { applySvcBarDefault_(); return; }
+  renderSvcBar_();
+}
+// applyPointLayout(): วางแถบต่อจาก #panelPerson ทุกครั้ง (แผงถูกแทรกต่อจาก person ไปแล้ว) แล้ว render
+function placeSvcBar_() {
+  var bar = qs('svcBar'), person = qs('panelPerson');
+  if (bar && person && person.parentNode) person.parentNode.insertBefore(bar, person.nextSibling);
+  svcBarSyncPoint_();
+  STATE.svcBarWasActive = svcBarActive_();
+  renderSvcBar_();
+}
+function onSvcBarPress_(key) {
+  if (!svcBarActive_()) return;
+  if (!STATE.editingId) { // แก้ไขแถวเก่า: ไม่เปลี่ยนความจำ (B8)
+    STATE.svcBarSel = key;
+    if (key === 'medGen' || key === 'medLab') STATE.svcBarLastMed = key;
+  }
+  applySvcBarKey_(key);
 }
 
 // A-W3: รายการในแผงส่งตรวจพิเศษเรียง "กลุ่มของจุดขึ้นก่อน" — ย้าย <label> แถวเดิม (ไม่ clone -> checkbox/listener อยู่ครบ)
@@ -4374,6 +4532,8 @@ function applyPointLayout() {
     }
     if (dividerEl) dividerEl.hidden = true;
     if (logFormEl) logFormEl.classList.remove('point-layout-custom');
+    placeSvcBar_(); // รอบ 92: จุดคีย์ order ที่ config ไม่มีหัวข้อแผง — แถบยังขึ้นตามชื่อจุด
+    if (svcBarActive_()) applySvcBarDefault_();
     return;
   }
 
@@ -4440,6 +4600,7 @@ function applyPointLayout() {
   }
 
   if (logFormEl) logFormEl.classList.add('point-layout-custom');
+  placeSvcBar_(); // รอบ 92: แถบปุ่มบริการต่อจาก #panelPerson (หลังแทรกแผงทั้งหมดแล้ว) · จุดคีย์ order: applyCheckupPanelDefault_ ข้างล่างจัดแผงตามปุ่มที่จำไว้
   // รอบ 64: จุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ แผงตรวจสุขภาพพับ ยกเว้นมีค่าในแผง/คิวปัจจุบันเป็นคิวตรวจสุขภาพ (ต้องอยู่หลังลูป data-collapsed='0' ข้างบน)
   applyCheckupPanelDefault_();
 }
@@ -4827,6 +4988,7 @@ function recalcTotals() {
   updatePersonCardLabels(); // รอบ 9 (ก้อน B, B7) — ไม่มีชื่อหน้าให้ส่งแล้ว อ่านสถานะร่างเอง
   renderQueueSuggestion_(); // รอบ 60 ข้อ 2: ผู้ใช้พิมพ์/ล้างช่องคิวเอง ⇒ hint/placeholder ต้องตามทัน (ไม่เขียนค่าในช่อง)
   syncCheckupPanelToQueue_(); // รอบ 64: คิวเปลี่ยนเป็น C/ไม่นัด ⇒ กางแผงตรวจสุขภาพ · เปลี่ยนเป็นอย่างอื่น ⇒ พับกลับ (เฉพาะที่ระบบกางเอง)
+  if (typeof updateSvcBar_ === 'function') updateSvcBar_(); // รอบ 92: ขีด ● ท้ายป้ายปุ่ม + ซ่อน/แสดงแถบตามโหมดล่วงหน้า
   updatePanelSummaries({ checkupOn: checkupOn, program: program, vaccineCodes: vaccineCodes, medNums: medNums }); // รอบ 9 (ก้อน B, B3)
 
   validateForm({
@@ -5462,6 +5624,7 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   applyVaccineFilter();
   applyLogLocks();
   recalcTotals();
+  if (svcBarActive_()) applySvcBarDefault_(); // รอบ 92 (M1): แผงของบริการที่รวมเข้ามาต้องกาง (enterEditMode จัดแผงจากแถวเก่าก่อนรวม)
 
   var mergeMsg = 'รวมกับแถวเดิมเวลา ' + (rec.time || '') + ' แล้ว — ตรวจยอดรวมแล้วกด "บันทึกการแก้ไข"';
   var mergeNoteEl = qs('editBannerMergeNote');
@@ -8651,6 +8814,7 @@ function startPreArrive_(item, opts) {
   hoRenderArriveBar_();
   applyLogLocks();
   recalcTotals();
+  if (prog && svcBarActive_()) STATE.svcBarShown = STATE.svcBarSel = 'checkup'; // รอบ 92 (m1): คนนัดมีโปรแกรม ⇒ เลือกปุ่มตรวจสุขภาพ (แผงตรวจสุขภาพ+ส่งตรวจพิเศษกาง)
   applyCheckupPanelDefault_();
   var qEl = qs('queueSelect');
   if (qEl && typeof qEl.focus === 'function') qEl.focus();
@@ -15557,6 +15721,12 @@ document.addEventListener('DOMContentLoaded', function () {
       // data-collapsed (CSS ฝั่งจอกว้างมองเฉพาะ attribute นี้) · นอกนั้นพฤติกรรมเดิมทุกประการ
       // รอบ 64: แผงตรวจสุขภาพของจุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ สลับผ่าน helper เดียวที่ตั้งทั้ง data-collapsed + data-user-collapsed ให้สอดคล้อง
       // (จอกว้าง/แคบ ให้ผลเหมือนกัน) · กดเองเมื่อไหร่ ⇒ ล้างธงกางอัตโนมัติ ไม่พับกลับเองอีก
+      // รอบ 92 (B7): จุดคีย์ order — 4 แผงของแถบสลับผ่าน helper เดียวที่ตั้งทั้ง 2 attribute (ไม่เปลี่ยนปุ่มที่เลือก)
+      if (typeof svcBarActive_ === 'function' && svcBarActive_() && SVC_PANEL_IDS_.indexOf(panel.id) !== -1) {
+        setPanelCollapsed_(panel.id, !isPanelCollapsed_(panel.id));
+        STATE.checkupAutoExpanded = false;
+        return;
+      }
       if (panel.id === 'panelCheckup' && pointHasCheckupTopic_()) {
         setCheckupPanelCollapsed_(!isCheckupPanelCollapsed_());
         STATE.checkupAutoExpanded = false;
@@ -15570,6 +15740,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       panel.setAttribute('data-collapsed', panel.getAttribute('data-collapsed') === '1' ? '0' : '1');
     });
+  });
+  // รอบ 92: แถบปุ่มบริการ — กดปุ่ม ⇒ กาง/พับแผงตามปุ่ม (ดู onSvcBarPress_)
+  document.querySelectorAll('#svcBar button[data-svc-key]').forEach(function (b) {
+    b.addEventListener('click', function () { onSvcBarPress_(b.getAttribute('data-svc-key')); });
   });
   // รอบ 9 (ก้อน B, B4) — overlay ล็อกแผงต้องรับคลิกได้เอง (คลิกทะลุไปหาช่องข้างในไม่ได้อยู่แล้วเพราะ overlay ครอบทับ)
   var lockMsg = 'กรอก HN และชื่อ-สกุลก่อน จึงจะเลือกตรวจสุขภาพ/ส่งตรวจพิเศษได้';
