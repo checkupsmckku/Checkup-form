@@ -8205,7 +8205,8 @@ function hoParseSheets_(sheets, todayYmd) {
       if (rawHn === 'HN' && rawName === 'ชื่อ-สกุล') continue; // หัวตารางซ้ำกลางแผ่น
       var room = String(row[h.room] == null ? '' : row[h.room]).trim();
       var rawNote = h.note ? String(row[h.note] == null ? '' : row[h.note]) : '';
-      var pm = /^\s*program\s*([1-4])\s*$/i.exec(room);
+      // 2026-10-24: ไฟล์วันอาทิตย์เขียน "Program 2 Sunday" ⇒ รับคำ Sunday/Sun ต่อท้าย (ชุดวันอาทิตย์ยังตัดสินจากวันนัด isSunday เหมือนเดิม)
+      var pm = /^\s*program\s*([1-4])(?:\s*sun(?:day)?)?\s*$/i.exec(room);
       if (!pm) { // W2b: ไม่ใช่ Program N ⇒ ข้าม + นับตามข้อความ (ตัดซ้ำข้ามแผ่น)
         var ok = 'O|' + rawHn + '|' + hoNoteNorm_(rawName) + '|' + room + '|' + hoNoteNorm_(rawNote);
         if (seenOther[ok]) continue;
