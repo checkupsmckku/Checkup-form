@@ -8186,7 +8186,8 @@ function hoParseSheets_(sheets, todayYmd) {
   res.date = dates[0];
   var today = String(todayYmd || '');
   if (today) {
-    var minD = hoAddDays_(today, 1), maxD = hoAddDays_(today, 7);
+    // 2026-10-25 (เจ้าของสั่ง): นำเข้าได้ตั้งแต่วันนี้ (ตรงกับ handlePreImport_) · ลงทีละคนยังเริ่มพรุ่งนี้
+    var minD = today, maxD = hoAddDays_(today, 7);
     if (res.date < minD || res.date > maxD) {
       res.error = 'ไฟล์นี้เป็นนัดวันที่ ' + hoThaiDate_(res.date) + ' นำเข้าได้เฉพาะ ' + hoThaiDate_(minD) + ' – ' + hoThaiDate_(maxD);
       return res;
