@@ -15556,7 +15556,9 @@ document.addEventListener('click', function (ev) {
    เครื่องสแกนทำตัวเป็นคีย์บอร์ด: แยกจากคนพิมพ์ด้วยความเร็ว (ห่างปุ่มละ ≤ SCAN_GAP_MS) · อ่านจาก e.code (กันแป้นไทย)
    ไม่ใช่บัตรคิว (เช่น HN) ⇒ ปล่อยผ่านทุกอย่างตามเดิม · ห้ามเรียก recalcTotals/syncSvcBar เอง — ยิง input+change ให้ listener เดิมทำ */
 var SCAN_GAP_MS = 40;
-var SCAN_ = { buf: '', last: 0, startEl: null, startVal: '' };
+// รอบ 93 แก้: ชุดสแกนต้องเริ่มหลังเงียบ ≥ SCAN_IDLE_MS (กันพิมพ์ไทยเร็วกลางคำ เช่น "ไต"+Enter ถูกอ่านเป็น W9)
+var SCAN_IDLE_MS = 100;
+var SCAN_ = { buf: '', last: 0, startEl: null, startVal: '', anyLast: 0, idleOk: false };
 function scanToQueue_(str) {
   var s = String(str || '');
   var m = /^([MCV])([1-9][0-9]{0,2})$/.exec(s);
@@ -15579,22 +15581,26 @@ function scanChar_(e) {
 function scanBlocked_() {
   var wrap = qs('svcFormWrap');
   if (!wrap || window.getComputedStyle(wrap).display === 'none') return true;
+  if (wrap.classList.contains('pre-mode')) return true; // โหมดล่วงหน้า: ช่องคิวถูกซ่อน
   if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return true;
   if (document.querySelector('.pre-modal:not([hidden])')) return true;
   if (typeof THD_POP !== 'undefined' && THD_POP && THD_POP.style.display !== 'none') return true;
   return false;
 }
-function scanReset_() { SCAN_.buf = ''; SCAN_.last = 0; SCAN_.startEl = null; SCAN_.startVal = ''; }
+function scanReset_() { SCAN_.buf = ''; SCAN_.last = 0; SCAN_.startEl = null; SCAN_.startVal = ''; SCAN_.idleOk = false; }
 function scanKeydown_(e) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   if (scanBlocked_()) { scanReset_(); return; }
-  var now = Date.now();
+  // เวลาที่ OS รับปุ่ม (ไม่ใช่เวลาที่ handler ได้รัน) — เครื่องช้า input handler ของช่องที่โฟกัสหน่วงคิวอีเวนต์จนเกิน SCAN_GAP_MS
+  var now = e.timeStamp || performance.now();
+  var prevAny = SCAN_.anyLast;
+  if (!/^(Shift|CapsLock)$/.test(e.key || '')) SCAN_.anyLast = now; // Shift ของเครื่องสแกน (ตัวพิมพ์ใหญ่) ไม่นับ
   var isEnd = (e.key === 'Enter' || e.key === 'Tab');
   if (isEnd) {
-    var buf = SCAN_.buf, fast = (now - SCAN_.last) <= SCAN_GAP_MS;
+    var buf = SCAN_.buf, fast = (now - SCAN_.last) <= SCAN_GAP_MS, idleOk = SCAN_.idleOk;
     var startEl = SCAN_.startEl, startVal = SCAN_.startVal;
     scanReset_();
-    if (buf.length < 2 || !fast) return;
+    if (buf.length < 2 || !fast || !idleOk) return;
     var q = scanToQueue_(buf);
     if (!q) return; // ไม่ใช่บัตรคิว (เช่น HN) ⇒ ปล่อยผ่านตามเดิม
     e.preventDefault(); e.stopPropagation();
@@ -15615,6 +15621,7 @@ function scanKeydown_(e) {
   if (!ch) return; // Shift ฯลฯ ไม่นับ ไม่ตัดบัฟเฟอร์
   if (SCAN_.buf && (now - SCAN_.last) > SCAN_GAP_MS) scanReset_();
   if (!SCAN_.buf) {
+    SCAN_.idleOk = !prevAny || (now - prevAny) >= SCAN_IDLE_MS;
     var a = document.activeElement;
     SCAN_.startEl = a;
     SCAN_.startVal = (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) ? a.value : '';
