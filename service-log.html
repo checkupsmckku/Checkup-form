@@ -490,6 +490,9 @@
   .cu-person-head.prog-c2, .cu-person-alt .cu-person-head.prog-c2 { background: #FFFFFF; border-bottom-color: #B9BDD6; }
   .cu-person-head.prog-c3, .cu-person-alt .cu-person-head.prog-c3 { background: #D7F5DF; border-bottom-color: #2E9E5B; }
   .cu-person-head.prog-c4, .cu-person-alt .cu-person-head.prog-c4 { background: #FDD9E8; border-bottom-color: #D6427F; }
+  /* เจ้าของสั่ง 2026-10-25: ชุดวันอาทิตย์ — โปรแกรม 1 สีขาว · โปรแกรม 2 สีฟ้า (เฉพาะกล่องรายชื่อตรวจสุขภาพ) */
+  .cu-person-head.prog-sun1, .cu-person-alt .cu-person-head.prog-sun1 { background: #FFFFFF; border-bottom-color: #B9BDD6; }
+  .cu-person-head.prog-sun2, .cu-person-alt .cu-person-head.prog-sun2 { background: #DCEBFF; border-bottom-color: #3B7DD8; }
   .cu-person-queue { font-size: 22px; font-weight: 800; color: var(--primary-dark); }
   .cu-person-hn { font-weight: 700; color: var(--text); }
   .cu-person-name { font-weight: 700; color: var(--text); }
@@ -1363,6 +1366,14 @@
   .dq-ds-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; max-height: 30vh; overflow-y: auto; }
   .dq-ds-item { border: 1px solid var(--primary); border-radius: 999px; padding: 4px 10px; font-size: 14px; background: #fff; overflow-wrap: anywhere; max-width: 100%; }
   /* รอบ 47: 3 ช่อง — จอแคบยังเป็น 3 คอลัมน์ ลด padding/ตัวอักษรให้ไม่ล้น 320px */
+  /* รอบ 94: ยอดตรวจสุขภาพที่กัปตันกรอกเอง (ช่อง ≥ 16px · ปุ่ม ≥ 44px) */
+  .dq-ds-manual { margin-top: 4px; font-size: 12px; color: var(--text-muted); text-align: center; overflow-wrap: anywhere; }
+  .dq-ds-ctotal { margin-top: 8px; margin-bottom: 8px; padding: 8px 10px; background: #fff; border: 1px solid var(--primary); border-radius: 8px; min-width: 0; }
+  .dq-ds-ctotal label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+  .dq-ds-ctotal-row { display: flex; gap: 8px; align-items: stretch; }
+  .dq-ds-ctotal-row input { flex: 1 1 0; min-width: 0; font-size: 16px; min-height: 44px; padding: 6px 10px; border: 1px solid var(--primary); border-radius: 8px; box-sizing: border-box; }
+  .dq-ds-ctotal-row button { flex: 0 0 auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
+  .dq-ds-norec { margin-top: 6px; font-size: 14px; font-weight: 600; color: #7A5A00; overflow-wrap: anywhere; }
   @media (max-width: 480px) { .dq-ds-grid { gap: 6px; } .dq-ds-cell { padding: 6px 4px; } .dq-ds-label { font-size: 12px; } .dq-ds-num { font-size: 20px; } }
   .dq-today-item { border-bottom: 1px solid var(--border); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .dq-today-item.dq-cancelled-row { opacity: 0.55; text-decoration: line-through; }
@@ -3468,9 +3479,12 @@ function isValidHn(v) {
 }
 
 /* รอบ 31B ข้อ 1: สีประจำโปรแกรม — ใช้คลาส .opt-btn.prog-c1..c4 ของรอบ 6 ซ้ำ (ห้ามตั้งสีใหม่) เฉพาะโปรแกรม
-   1-4 (ชุดจันทร์-ศุกร์) เท่านั้นที่มีสีกำหนดไว้ · pea/1sun/2sun ไม่มีสี ⇒ คืนค่าว่าง (พื้นหลังปริยายของ .cu-person-head) */
+   1-4 (ชุดจันทร์-ศุกร์) เท่านั้นที่มีสีกำหนดไว้ · pea ไม่มีสี ⇒ คืนค่าว่าง (พื้นหลังปริยายของ .cu-person-head)
+   เจ้าของสั่ง 2026-10-25: 1sun = ขาว (prog-sun1) · 2sun = ฟ้า (prog-sun2) — กฎ CSS มีเฉพาะ .cu-person-head */
 function programColorClass(program) {
   var p = String(program == null ? '' : program).trim();
+  if (p === '1sun') return 'prog-sun1';
+  if (p === '2sun') return 'prog-sun2';
   return (p === '1' || p === '2' || p === '3' || p === '4') ? ('prog-c' + p) : '';
 }
 
@@ -9891,7 +9905,8 @@ function checkupFootText(rows, totalMoney) {
    รอบนี้แยกกล่องออกมาเป็น .cu-extra ต่างหาก (ดู checkupExtraSummaryHtml ด้านล่าง) แล้วบังคับคลาส no-print
    ให้กล่องนั้นเสมอ ⇒ checkupFootText() เดิมข้างบนไม่ต้องแก้อะไรเลย ยังพิมพ์ขึ้นกระดาษแบบเดิมทุกตัวอักษร */
 // รอบ 63: โปรแกรมคู่รัก ไม่มี U/S และไม่มี EKG (เจ้าของยืนยัน) ⇒ ไม่เติม 'couple' ที่นี่ และไม่อยู่ในเงื่อนไข ekg ของ computeSupOpd_
-var CU_US_PROGRAMS = ['3', '4']; // U/S = อัลตราซาวด์ อยู่ในโปรแกรม 3 และ 4 ⚠ ถ้าโปรแกรมที่มี U/S เปลี่ยน แก้ที่ตัวแปรนี้ที่เดียว
+// เจ้าของสั่ง 2026-10-25: วันอาทิตย์ U/S = โปรแกรม 2 วันอาทิตย์ ('2sun') ⇒ เติมเข้าชุดนี้ (เดิมยอด U/S วันอาทิตย์ขึ้น 0)
+var CU_US_PROGRAMS = ['3', '4', '2sun']; // U/S = อัลตราซาวด์ อยู่ในโปรแกรม 3 · 4 · 2 วันอาทิตย์ ⚠ ถ้าโปรแกรมที่มี U/S เปลี่ยน แก้ที่ตัวแปรนี้ที่เดียว
 
 // นับแถวที่โปรแกรมอยู่ใน CU_US_PROGRAMS — ⚠ String() ก่อนเทียบเสมอ เพราะชีต/records อาจคืน program เป็นตัวเลข (3)
 // ไม่ใช่สตริง ('3') แล้วแต่ทางที่ข้อมูลผ่านมา (JSON.parse ของ apiCall ไม่ได้บังคับชนิดให้)
@@ -10477,7 +10492,7 @@ function checkupExtraSummaryHtml(rows) {
   var doctors = checkupDoctorCounts(rows);
   var html = '<div class="cu-extra no-print">';
   // รอบ 36 (W3, เจ้าของสั่ง "consult นับเป็นแพทย์"): หน่วย "ครั้ง"->"แพทย์" · "(M คน)"->"(M เคส)" — ตัวเลข/การนับไม่เปลี่ยน
-  html += '<div class="cu-extra-line">ยอด U/S (P3+4) <b>' + usCount + '</b> คน · consult <b>' + consultTotal + '</b> แพทย์ (<b>' + consultPeople + '</b> เคส)</div>';
+  html += '<div class="cu-extra-line">ยอด U/S (P3+4 · P2 อาทิตย์) <b>' + usCount + '</b> คน · consult <b>' + consultTotal + '</b> แพทย์ (<b>' + consultPeople + '</b> เคส)</div>';
   if (doctors.length > 0) {
     // ชื่อแพทย์เป็นข้อความที่เจ้าหน้าที่พิมพ์เอง ⇒ ต้องผ่าน escHtml() เสมอ กัน < > โดนอ่านเป็นแท็ก
     var parts = doctors.map(function (d) { return escHtml(d.name) + ' = ' + d.count + ' เคส'; });
@@ -12961,6 +12976,8 @@ var dqState = {
   doctorBarMsg: '',      // รอบ 80: ข้อความแดงในแถบ (บันทึกไม่สำเร็จ) · ล้างเมื่อพิมพ์/ติ๊ก/ปิดแถบ
   doctorBarBusy: false,  // รอบ 80: กำลังรอคำตอบ dqSetDoctor
   doctorNotice: null,    // รอบ 80: { room, text, warns:[], shown } สรุปผลบันทึกในการ์ด — หายเมื่อวาดรอบถัดไปหรือครบ 10 วิ
+  cTotalDraft: null,   // รอบ 94: ข้อความที่พิมพ์ค้างในช่องยอดตรวจสุขภาพ (null = ไม่มี · ล้างเมื่อบันทึกสำเร็จ)
+  cTotalSaving: false, // รอบ 94: กำลังรอคำตอบ dqSetCTotal (กันกดซ้ำ)
   rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
@@ -13119,6 +13136,7 @@ function dqCheckDayRollover() {
     if (dqState.rolloverFor === today) return;
     dqState.rolloverFor = today;
     dqState.base = null;
+    dqState.cTotalDraft = null; // รอบ 94: ข้ามวัน ⇒ ล้างร่างยอดที่พิมพ์ค้างของเมื่อวาน
     var dt = qs('dqDateText');
     if (dt) dt.textContent = dqThaiDateText();
     dqRerender();
@@ -13166,7 +13184,19 @@ function dqAutoRefreshIdle_() {
   if (dqSugActive) return false;
   var qi = qs('dqQueueInput');
   if (qi && String(qi.value || '').trim() !== '') return false;
+  // รอบ 94: กำลังพิมพ์ยอดตรวจสุขภาพ (โฟกัสอยู่ หรือค่าในช่อง ≠ ค่าที่บันทึกไว้) ⇒ ไม่วาดทับ
+  var ci = qs('dqCTotalInput');
+  if (ci) {
+    if (document.activeElement === ci) return false;
+    if (String(ci.value || '').trim() !== dqSavedCTotalText_()) return false;
+  }
+  if (dqState.cTotalSaving) return false;
   return true;
+}
+// รอบ 94: ค่ายอดที่บันทึกไว้ในกระดานตอนนี้ (ข้อความ) · ไม่มี = ''
+function dqSavedCTotalText_() {
+  var ct = dqState.today && dqState.today.cTotal;
+  return (ct && typeof ct.value === 'number') ? String(ct.value) : '';
 }
 // รอบ 64: วาดจาก snapshot รีเฟรชเอง โดยไม่ทำลายสิ่งที่กัปตันกำลังดูอยู่ — ตำแหน่งเลื่อนการ์ดห้องรักษาโดย dqRenderRoomCards (รอบ 56) อยู่แล้ว
 // เพิ่ม: ตำแหน่งเลื่อนหน้า + แถบชิปคำแนะนำ (dqRenderSuggest ล้าง/สร้างปุ่มใหม่) + โฟกัสช่องคิว · ไม่เรียก dqAlignBoard (ห้ามเลื่อนหน้า)
@@ -14522,6 +14552,22 @@ var dqAfternoonHour = 13;
 // pendingQueues ไม่ใช่ array ⇒ pending null · total null (เซิร์ฟเวอร์เก่า) · nowMs ไม่ใช้แล้ว (คงพารามิเตอร์ไว้ให้ผู้เรียกเดิม)
 function dqComputeDaySummary(st, nowMs) {
   if (!st) return null;
+  // รอบ 94: ยอดที่กัปตันกรอกเอง (st.cTotal) ทับ total/pending ของสองสาขาด้านล่าง · ไม่มี cTotal ⇒ ค่าเดิมทุกตัว + manual:null, noRecord:0, lowWarn:false
+  // recorded = จำนวนคิว C/ไม่นัดที่บันทึกแล้ว · seen = จำนวนคิวที่เข้าห้องตรวจแล้ว (ทุกคีย์ใน earliest)
+  var finishCT = function (res, recorded, seen) {
+    res.manual = null; res.noRecord = 0; res.lowWarn = false;
+    var ct = st.cTotal;
+    if (ct && typeof ct.value === 'number' && isFinite(ct.value) && Math.floor(ct.value) === ct.value && ct.value >= 0) {
+      res.total = ct.value;
+      res.pending = Math.max(0, ct.value - seen);
+      // m1 (เจ้าของ 2026-10-25 "นับให้ลงกัน"): คิวนอกรายการ (unknownList) ถือว่ากดเลขผิด ⇒ ไม่นับซ้ำใน noRecord
+      res.noRecord = Math.max(0, ct.value - recorded - res.unknownList.length);
+      res.lowWarn = ct.value < recorded;
+      res.recorded = recorded;
+      res.manual = { value: ct.value, by: ct.by || '', time: ct.time || '' };
+    }
+    return res;
+  };
   var earliest = {}; // คีย์คิว → ms ของ timeIn ที่เร็วที่สุด
   var shownQueue = {}; // คีย์คิว → สตริงคิวตามที่แสดงในจุดกัปตัน (ไว้ทำ unknownList)
   (st.logs || []).forEach(function (l) {
@@ -14563,8 +14609,8 @@ function dqComputeDaySummary(st, nowMs) {
       var kx = uKey(x), ky = uKey(y);
       return kx[0] !== ky[0] ? kx[0] - ky[0] : kx[1] - ky[1];
     });
-    return { total: orderKeys.length, morning: morningO, afternoon: afternoonO, pending: pendingO.length,
-      pendingList: pendingO, unknownList: unknownList };
+    return finishCT({ total: orderKeys.length, morning: morningO, afternoon: afternoonO, pending: pendingO.length,
+      pendingList: pendingO, unknownList: unknownList }, orderKeys.length, Object.keys(earliest).length);
   }
 
   var morning = 0, afternoon = 0;
@@ -14584,13 +14630,19 @@ function dqComputeDaySummary(st, nowMs) {
     });
     pending = pendingList.length;
   }
-  return { total: pending === null ? null : morning + afternoon + pending,
-    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList, unknownList: [] };
+  return finishCT({ total: pending === null ? null : morning + afternoon + pending,
+    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList, unknownList: [] },
+    morning + afternoon + pendingList.length, Object.keys(earliest).length);
 }
 function dqRenderDaySummary() {
   var box = qs('dqDaySummary');
   if (!box) return;
   var sm = dqComputeDaySummary(dqState.today, Date.now());
+  // รอบ 94: วาดใหม่ทั้งกล่อง ⇒ จำโฟกัส/ตำแหน่งเคอร์เซอร์ของช่องยอดไว้ก่อน แล้วคืนให้หลังวาด
+  var prevCi = qs('dqCTotalInput');
+  var ciHadFocus = !!(prevCi && document.activeElement === prevCi);
+  var ciSelStart = null, ciSelEnd = null;
+  if (ciHadFocus) { try { ciSelStart = prevCi.selectionStart; ciSelEnd = prevCi.selectionEnd; } catch (e0) {} }
   box.innerHTML = '';
   if (!sm) return;
   // รอบ 54: แถบหัว "วันนี้มียอดตรวจสุขภาพ N คิว" (total = เช้า + บ่าย + ยังไม่ได้พบแพทย์) · total null ⇒ ไม่แสดง
@@ -14603,6 +14655,46 @@ function dqRenderDaySummary() {
     hl.appendChild(hn);
     hl.appendChild(document.createTextNode(' คิว'));
     box.appendChild(hl);
+  }
+  // รอบ 94: บรรทัด "กรอกเอง · ผู้กรอก HH:MM" + ช่องกรอก — แสดงเฉพาะเมื่อเซิร์ฟเวอร์รู้จักคีย์ cTotal (เซิร์ฟเวอร์เก่า ⇒ ไม่มีช่อง กันกดแล้วได้ "ไม่รู้จัก action")
+  if (sm.manual) {
+    var mn = document.createElement('div');
+    mn.className = 'dq-ds-manual';
+    mn.textContent = 'กรอกเอง · ' + (sm.manual.by ? sm.manual.by + ' ' : '') + sm.manual.time;
+    box.appendChild(mn);
+  }
+  if (dqState.today && typeof dqState.today === 'object' && 'cTotal' in dqState.today) {
+    var cb = document.createElement('div');
+    cb.className = 'dq-ds-ctotal';
+    var clb = document.createElement('label');
+    clb.setAttribute('for', 'dqCTotalInput');
+    clb.textContent = 'ยอดตรวจสุขภาพวันนี้ (กรอกเอง)';
+    var crow = document.createElement('div');
+    crow.className = 'dq-ds-ctotal-row';
+    var cin = document.createElement('input');
+    cin.type = 'text';
+    cin.id = 'dqCTotalInput';
+    cin.setAttribute('inputmode', 'numeric');
+    cin.setAttribute('autocomplete', 'off');
+    cin.value = (dqState.cTotalDraft !== null && dqState.cTotalDraft !== undefined) ? String(dqState.cTotalDraft) : dqSavedCTotalText_();
+    cin.addEventListener('input', function () { dqState.cTotalDraft = (cin.value.trim() === dqSavedCTotalText_()) ? null : cin.value; }); // พิมพ์กลับเป็นค่าที่บันทึกไว้ ⇒ ไม่ถือเป็นร่าง (ไม่งั้น snapshot ใหม่จากเครื่องอื่นถูกบัง)
+    cin.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); dqSaveCTotal_(); }
+    });
+    var csv = document.createElement('button');
+    csv.type = 'button';
+    csv.id = 'dqCTotalSave';
+    csv.className = 'btn small';
+    csv.textContent = 'บันทึกยอด';
+    csv.disabled = !!dqState.cTotalSaving;
+    csv.addEventListener('click', function () { dqSaveCTotal_(); });
+    crow.appendChild(cin); crow.appendChild(csv);
+    cb.appendChild(clb); cb.appendChild(crow);
+    box.appendChild(cb);
+    if (ciHadFocus) {
+      try { cin.focus({ preventScroll: true }); } catch (e1) { cin.focus(); }
+      if (ciSelStart !== null) { try { cin.setSelectionRange(ciSelStart, ciSelEnd); } catch (e2) {} }
+    }
   }
   var grid = document.createElement('div');
   grid.className = 'dq-ds-grid';
@@ -14628,6 +14720,13 @@ function dqRenderDaySummary() {
     unk.textContent = 'คิวที่ไม่มีในรายการตรวจสุขภาพของวันนี้: ' + sm.unknownList.join(', ') + ' — ตรวจเลขคิวอีกครั้ง';
     box.appendChild(unk);
   }
+  // รอบ 94: ยอดที่กรอกน้อยกว่าคิวที่บันทึกแล้ว ⇒ เตือน (โทนเดียวกับ unknownList) · ตัวเลขทั้งหมดผ่าน textContent
+  if (sm.lowWarn && sm.manual) {
+    var lw = document.createElement('div');
+    lw.className = 'dq-ds-unknown';
+    lw.textContent = 'ยอดที่กรอก (' + sm.manual.value + ') น้อยกว่าคิวที่บันทึกแล้ว (' + sm.recorded + ') — ตรวจยอดอีกครั้ง';
+    box.appendChild(lw);
+  }
   if (sm.pending === null) return;
   if (sm.pending === 0) {
     var done = document.createElement('div');
@@ -14652,7 +14751,45 @@ function dqRenderDaySummary() {
     wrap.appendChild(it);
   });
   pd.appendChild(wrap);
+  if (sm.manual && sm.noRecord > 0) {
+    var nr = document.createElement('div');
+    nr.className = 'dq-ds-norec';
+    nr.textContent = 'อีก ' + sm.noRecord + ' คนยังไม่มีบันทึก';
+    pd.appendChild(nr);
+  }
   box.appendChild(pd);
+}
+// รอบ 94: บันทึก/ล้างยอดตรวจสุขภาพที่กัปตันกรอกเอง (ช่อง #dqCTotalInput) — ว่าง = ล้าง (ถามก่อน) · ไม่ใช่เลข 0–999 ⇒ toast ไม่ยิง · กันกดซ้ำระหว่างรอ
+function dqSaveCTotal_() {
+  if (dqState.cTotalSaving) return;
+  var inp = qs('dqCTotalInput');
+  if (!inp) return;
+  var txt = String(inp.value == null ? '' : inp.value);
+  var sendVal;
+  if (txt.trim() === '') {
+    if (!window.confirm('ล้างยอดที่กรอก กลับไปนับจากคิวที่บันทึก?')) return;
+    sendVal = '';
+  } else {
+    if (!/^\s*[0-9]{1,3}\s*$/.test(txt)) { showToast('ยอดตรวจสุขภาพต้องเป็นจำนวนเต็ม 0–999'); return; }
+    sendVal = parseInt(txt.trim(), 10);
+  }
+  if (!dqCanRecord()) return;
+  dqState.cTotalSaving = true;
+  var btn = qs('dqCTotalSave');
+  if (btn) btn.disabled = true;
+  dqApi('dqSetCTotal', { value: sendVal }).then(function (resp) {
+    dqState.cTotalSaving = false;
+    if (!resp || resp.status !== 'ok') {
+      showToast((resp && resp.message) ? resp.message : 'บันทึกยอดไม่สำเร็จ');
+      var b2 = qs('dqCTotalSave');
+      if (b2) b2.disabled = false;
+      return;
+    }
+    dqState.cTotalDraft = null;
+    if (isListResp_(resp.today, ['rooms', 'logs'])) dqApplySnapshot(resp.today);
+    else if (dqState.base) { dqState.base.cTotal = resp.cTotal || null; dqRerender(); }
+    showToast('บันทึกยอดแล้ว');
+  });
 }
 function dqRenderSuggest() {
   var box = qs('dqSuggest');
@@ -15408,7 +15545,79 @@ document.addEventListener('click', function (ev) {
 // รอบ 78: ติดตามว่าปุ่มเมาส์/นิ้วกดอยู่ไหม (capture) — ช่องชื่อแพทย์ที่เสียโฟกัสตอนกดปุ่มอื่นจะเลื่อนการขึ้นข้อความใต้ช่องไปหลังปล่อยปุ่ม (ดู doctorComboJudge_)
 ['pointerdown', 'mousedown'].forEach(function (t) { document.addEventListener(t, function () { doctorComboPointer_(true); }, true); });
 ['pointerup', 'pointercancel', 'mouseup', 'dragend'].forEach(function (t) { document.addEventListener(t, function () { doctorComboPointer_(false); }, true); });
+/* ===== รอบ 93: สแกนบัตรคิว (Code128 จาก บาร์โค้ดบัตรคิว.html) แล้วเติม #queueSelect ทันที ไม่ต้องคลิกช่องก่อน =====
+   เครื่องสแกนทำตัวเป็นคีย์บอร์ด: แยกจากคนพิมพ์ด้วยความเร็ว (ห่างปุ่มละ ≤ SCAN_GAP_MS) · อ่านจาก e.code (กันแป้นไทย)
+   ไม่ใช่บัตรคิว (เช่น HN) ⇒ ปล่อยผ่านทุกอย่างตามเดิม · ห้ามเรียก recalcTotals/syncSvcBar เอง — ยิง input+change ให้ listener เดิมทำ */
+var SCAN_GAP_MS = 40;
+var SCAN_ = { buf: '', last: 0, startEl: null, startVal: '' };
+function scanToQueue_(str) {
+  var s = String(str || '');
+  var m = /^([MCV])([1-9][0-9]{0,2})$/.exec(s);
+  if (m) return s;
+  m = /^W([1-9][0-9]{0,2})$/.exec(s);
+  if (m) return 'ไม่นัด ' + m[1];
+  return '';
+}
+function scanChar_(e) {
+  var code = e.code || '', m;
+  if (code) {
+    m = /^Key([A-Z])$/.exec(code); if (m) return m[1];
+    m = /^Digit([0-9])$/.exec(code); if (m) return m[1];
+    m = /^Numpad([0-9])$/.exec(code); if (m) return m[1];
+    return '';
+  }
+  if (e.key && /^[A-Za-z0-9]$/.test(e.key)) return String(e.key).toUpperCase();
+  return '';
+}
+function scanBlocked_() {
+  var wrap = qs('svcFormWrap');
+  if (!wrap || window.getComputedStyle(wrap).display === 'none') return true;
+  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return true;
+  if (document.querySelector('.pre-modal:not([hidden])')) return true;
+  if (typeof THD_POP !== 'undefined' && THD_POP && THD_POP.style.display !== 'none') return true;
+  return false;
+}
+function scanReset_() { SCAN_.buf = ''; SCAN_.last = 0; SCAN_.startEl = null; SCAN_.startVal = ''; }
+function scanKeydown_(e) {
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (scanBlocked_()) { scanReset_(); return; }
+  var now = Date.now();
+  var isEnd = (e.key === 'Enter' || e.key === 'Tab');
+  if (isEnd) {
+    var buf = SCAN_.buf, fast = (now - SCAN_.last) <= SCAN_GAP_MS;
+    var startEl = SCAN_.startEl, startVal = SCAN_.startVal;
+    scanReset_();
+    if (buf.length < 2 || !fast) return;
+    var q = scanToQueue_(buf);
+    if (!q) return; // ไม่ใช่บัตรคิว (เช่น HN) ⇒ ปล่อยผ่านตามเดิม
+    e.preventDefault(); e.stopPropagation();
+    var qEl = qs('queueSelect');
+    // ตัวอักษรที่หลุดลงช่องพิมพ์อื่นที่โฟกัสอยู่ ⇒ คืนค่าเดิม แล้วยิง input ให้ตัวฟังของช่องนั้นคำนวณใหม่
+    var ae = document.activeElement;
+    if (ae && ae === startEl && ae !== qEl && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && ae.value !== startVal) {
+      ae.value = startVal;
+      ae.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    qEl.value = q;
+    qEl.dispatchEvent(new Event('input', { bubbles: true }));
+    qEl.dispatchEvent(new Event('change', { bubbles: true }));
+    showToast('คิว ' + q + ' จากบาร์โค้ด');
+    return;
+  }
+  var ch = scanChar_(e);
+  if (!ch) return; // Shift ฯลฯ ไม่นับ ไม่ตัดบัฟเฟอร์
+  if (SCAN_.buf && (now - SCAN_.last) > SCAN_GAP_MS) scanReset_();
+  if (!SCAN_.buf) {
+    var a = document.activeElement;
+    SCAN_.startEl = a;
+    SCAN_.startVal = (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) ? a.value : '';
+  }
+  SCAN_.buf += ch;
+  SCAN_.last = now;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('keydown', scanKeydown_, true); // รอบ 93: ตัวดักสแกนบัตรคิว (ผูกครั้งเดียว)
   qs('btnGateKey').addEventListener('click', handleGateKeySubmit);
   qs('gateStaffKey').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleGateKeySubmit(e); });
 
