@@ -8171,7 +8171,7 @@ function hoHeaderDates_(rows, headerIndex) {
 /* hoParseSheets_(sheets, todayYmd) — sheets = array ของแผ่น · แผ่น = array ของแถว · แถว = object { ตัวอักษรคอลัมน์: ข้อความ }
    คืน { date, error?, items:[{patientPrefix, patientName, patientHn, gender, program, hoNote, sundayWarn, warns:[]}], skippedOther:{ป้าย:จำนวน}, skippedNoName } */
 function hoParseSheets_(sheets, todayYmd) {
-  var res = { date: '', items: [], skippedOther: {}, skippedNoName: 0 };
+  var res = { date: '', items: [], skippedOther: {}, skippedNoName: 0, mergedDup: [] };
   var usable = [], dates = [];
   (sheets || []).forEach(function (rows) {
     rows = Array.isArray(rows) ? rows : [];
@@ -8244,6 +8244,27 @@ function hoParseSheets_(sheets, todayYmd) {
       seen[key] = true;
       res.items.push({ patientPrefix: prefix, patientName: name, patientHn: hn, gender: gender, program: program, hoNote: note, sundayWarn: sundayWarn, warns: warns });
     }
+  });
+  // 2026-10-25: คนเดียวกันอยู่คนละแผ่น — แผ่นหนึ่งช่องชื่อเป็นชื่อจริง อีกแผ่นเป็น "ตรวจสุขภาพ…" (ชื่อจริงอยู่ในหมายเหตุ) ⇒ คีย์ไม่ตรง ได้ 2 รายการ
+  // ⇒ รวมรายการ "ยังไม่มี HN" เข้ากับรายการชื่อจริงที่ โปรแกรมเดียวกัน และหมายเหตุ (ตัดคำนำหน้า + ตัดช่องว่าง) ขึ้นต้นด้วยชื่อ-สกุลเต็มของรายการนั้น
+  //   (ขึ้นต้นเท่านั้น — "ภรรยา นายสมชาย ใจดี" ไม่ถูกรวมเข้า นายสมชาย) · ชื่อที่ใช้จับคู่ต้องมี ≥ 2 คำ และ ≥ 4 ตัวอักษรเมื่อตัดช่องว่าง
+  //   รวมแล้ว: mergedDup เก็บ "ชื่อ ← หมายเหตุที่ถูกรวม" ให้หน้าตัวอย่างแสดง (ไม่ตัดเงียบ) · หมายเหตุที่ถูกรวมติดไปกับรายการชื่อจริง (mergedNotes) ให้กติการอบ 95 เทียบแถวเดิม
+  var hoNs_ = function (v) { return String(v == null ? '' : v).replace(/\s+/g, ''); };
+  var realKeys = [];
+  res.items.forEach(function (it) {
+    var nm = String(it.patientName || '').trim();
+    if (nm === HO_NO_HN_NAME_ || nm.split(/\s+/).length < 2 || hoNs_(nm).length < 4) return;
+    realKeys.push({ n: hoNs_(nm), program: it.program, label: (it.patientPrefix || '') + nm, item: it });
+  });
+  res.items = res.items.filter(function (it) {
+    if (it.patientName !== HO_NO_HN_NAME_) return true;
+    var rest = hoNs_(hoSplitName_(it.hoNote).name);
+    var hit = null;
+    realKeys.some(function (rk) { if (rk.program === it.program && rest.indexOf(rk.n) === 0) { hit = rk; return true; } return false; });
+    if (!hit) return true;
+    (hit.item.mergedNotes = hit.item.mergedNotes || []).push(it.hoNote);
+    res.mergedDup.push(hit.label + ' ← ' + (it.hoNote.length > 40 ? it.hoNote.slice(0, 40) + '…' : it.hoNote));
+    return false;
   });
   return res;
 }
@@ -8411,6 +8432,7 @@ function hoImpRender_() {
   var oth = Object.keys(p.skippedOther).map(function (k) { return k + ' ' + p.skippedOther[k]; });
   if (oth.length) parts.push('ข้าม (ไม่ใช่โปรแกรมตรวจสุขภาพ): ' + oth.join(' · '));
   if (p.skippedNoName) parts.push('ข้าม (ไม่มีชื่อ): ' + p.skippedNoName);
+  if (p.mergedDup && p.mergedDup.length) parts.push('รวมรายการซ้ำข้ามแผ่น (ชื่ออยู่ในหมายเหตุ): ' + p.mergedDup.length + ' — ' + p.mergedDup.join(', '));
   var h = '<div class="ho-sum"><b>นัด' + escHtml(formatThaiDateFull_(p.date)) + '</b><br><span id="hoImpCounts">' + escHtml(parts.join(' · ')) + '</span></div>';
   if (st.newRows.length) {
     h += '<div class="ho-table-wrap"><table class="ho-table" id="hoImpNewTable"><thead><tr><th>ชื่อ</th><th>HN</th><th>เพศ</th><th>โปรแกรม</th><th>หมายเหตุ</th><th>⚠</th></tr></thead><tbody>';
@@ -8482,17 +8504,26 @@ function hoImportFileChosen_(file) {
         return;
       }
       var live = resp.items.filter(function (it) { return it && it.displayStatus !== 'ยกเลิก' && it.status !== 'ยกเลิก'; });
-      var have = {}, fileKeys = {};
-      live.forEach(function (it) { have[hoPreKey_(it)] = true; });
+      var have = {}, fileKeys = {}, haveNote = {}, fileNoHnNotes = {};
+      live.forEach(function (it) {
+        have[hoPreKey_(it)] = true;
+        var n0 = hoNoteNorm_(hoItemNote_(it));
+        if (n0) haveNote[n0] = true; // รอบ 95 (N1): หมายเหตุแถวเดิม ไม่สนชื่อ/HN
+      });
       var st = HO_IMPORT;
       st.parsed = parsed; st.date = parsed.date;
       parsed.items.forEach(function (r) {
         var k = hoImportKey_(r.patientHn, r.patientName, r.hoNote);
         fileKeys[k] = true;
-        if (have[k]) st.existing++; else st.newRows.push(r);
+        var rn = hoNoteNorm_(r.hoNote), noHnNote = !String(r.patientHn == null ? '' : r.patientHn).trim() && hoNoteNorm_(r.patientName) === HO_NO_HN_NAME_ && rn;
+        if (noHnNote) fileNoHnNotes[rn] = true;
+        // 2026-10-25: หมายเหตุของรายการ "ยังไม่มี HN" ที่ถูกรวมเข้ารายการนี้ (ข้ามแผ่น) — แถวเดิมที่หมายเหตุตรง = คนนี้ (นับมีอยู่แล้ว · ไม่ขึ้น "ไม่อยู่ในไฟล์ล่าสุด")
+        var mergedHave = false;
+        (r.mergedNotes || []).forEach(function (mn) { var mnn = hoNoteNorm_(mn); if (!mnn) return; fileNoHnNotes[mnn] = true; if (haveNote[mnn]) mergedHave = true; });
+        if (have[k] || (noHnNote && haveNote[rn]) || mergedHave) st.existing++; else st.newRows.push(r);
       });
       st.missing = live.filter(function (it) {
-        return it.status === 'รอมา' && it.form && it.form.source === 'ho' && !fileKeys[hoPreKey_(it)];
+        return it.status === 'รอมา' && it.form && it.form.source === 'ho' && !fileKeys[hoPreKey_(it)] && !fileNoHnNotes[hoNoteNorm_(hoItemNote_(it))];
       });
       hoImpRender_();
     });
