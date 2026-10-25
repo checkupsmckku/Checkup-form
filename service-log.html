@@ -14788,6 +14788,9 @@ function dqSaveCTotal_() {
     dqState.cTotalDraft = null;
     if (isListResp_(resp.today, ['rooms', 'logs'])) dqApplySnapshot(resp.today);
     else if (dqState.base) { dqState.base.cTotal = resp.cTotal || null; dqRerender(); }
+    // รอบ 94 (reviewer m-b): บันทึกเสร็จแล้วปล่อยโฟกัส — ไม่งั้น dqAutoRefreshIdle_ ถือว่ายังพิมพ์อยู่ กระดานหยุดรีเฟรชเองจนกว่าจะคลิกที่อื่น
+    var ciDone = qs('dqCTotalInput');
+    if (ciDone && document.activeElement === ciDone) ciDone.blur();
     showToast('บันทึกยอดแล้ว');
   });
 }
