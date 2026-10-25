@@ -11565,7 +11565,7 @@ function renderCheckupList(records, dateStr) {
   // — หน้าตาอย่างเดียว เนื้อหาข้างใน (recordItemHtml + cuNoteHtml) เหมือนเดิมทุกประการ · เรียงตาม compareByQueue แล้ว (checkupTableRows)
   shownRows.forEach(function (rec, idx) {
     var progLabel = rec.program ? escHtml(programShortLabel_(rec.program)) : '';
-    // รอบ 31B ข้อ 1: แถบหัวกล่องใช้สีประจำโปรแกรมของรอบ 6 (programColorClass — ว่างสำหรับ pea/1sun/2sun)
+    // รอบ 31B ข้อ 1: แถบหัวกล่องใช้สีประจำโปรแกรมของรอบ 6 (programColorClass — ว่างสำหรับ pea · 1sun ขาว · 2sun ฟ้า)
     var headClass = 'cu-person-head' + (programColorClass(rec.program) ? (' ' + programColorClass(rec.program)) : '');
     // รอบ 36 (W2, เจ้าของสั่งตามภาพหน้าจอ): ชื่อในแถบหัว = คำนำหน้า + ชื่อ (เว้นวรรค 1 ช่อง ไม่มีคำนำหน้า ⇒ ชื่อเฉย ๆ)
     // แพตเทิร์นเดียวกับที่ใช้อยู่แล้วในตาราง/ใบพิมพ์ (renderCheckupTable/printCheckupTable) — ผ่าน escHtml เสมอ
@@ -14644,8 +14644,13 @@ function dqRenderDaySummary() {
   var ciHadFocus = !!(prevCi && document.activeElement === prevCi);
   var ciSelStart = null, ciSelEnd = null;
   if (ciHadFocus) { try { ciSelStart = prevCi.selectionStart; ciSelEnd = prevCi.selectionEnd; } catch (e0) {} }
-  box.innerHTML = '';
-  if (!sm) return;
+  // m2 หลังรอบ 94: กำลังพิมพ์ยอด ⇒ คงก้อนช่องกรอกเดิมไว้ (ไม่ถอด/ย้าย node) — focus() จากโค้ดบน iOS ไม่เปิดคีย์บอร์ดคืน ⇒ วาดใหม่ทุก 60 วิ คีย์บอร์ดจะปิดเอง
+  var keepCb = (ciHadFocus && prevCi.closest) ? prevCi.closest('.dq-ds-ctotal') : null;
+  if (keepCb && keepCb.parentNode !== box) keepCb = null;
+  if (keepCb) Array.prototype.slice.call(box.childNodes).forEach(function (n) { if (n !== keepCb) box.removeChild(n); });
+  else box.innerHTML = '';
+  var put = function (n) { if (keepCb) box.insertBefore(n, keepCb); else box.appendChild(n); }; // ของที่อยู่เหนือช่องกรอก
+  if (!sm) { if (keepCb) box.removeChild(keepCb); return; }
   // รอบ 54: แถบหัว "วันนี้มียอดตรวจสุขภาพ N คิว" (total = เช้า + บ่าย + ยังไม่ได้พบแพทย์) · total null ⇒ ไม่แสดง
   if (sm.total !== null) {
     var hl = document.createElement('div');
@@ -14655,16 +14660,24 @@ function dqRenderDaySummary() {
     var hn = document.createElement('b'); hn.className = 'dq-ds-headline-num'; hn.textContent = String(sm.total);
     hl.appendChild(hn);
     hl.appendChild(document.createTextNode(' คิว'));
-    box.appendChild(hl);
+    put(hl);
   }
   // รอบ 94: บรรทัด "กรอกเอง · ผู้กรอก HH:MM" + ช่องกรอก — แสดงเฉพาะเมื่อเซิร์ฟเวอร์รู้จักคีย์ cTotal (เซิร์ฟเวอร์เก่า ⇒ ไม่มีช่อง กันกดแล้วได้ "ไม่รู้จัก action")
   if (sm.manual) {
     var mn = document.createElement('div');
     mn.className = 'dq-ds-manual';
     mn.textContent = 'กรอกเอง · ' + (sm.manual.by ? sm.manual.by + ' ' : '') + sm.manual.time;
-    box.appendChild(mn);
+    put(mn);
   }
-  if (dqState.today && typeof dqState.today === 'object' && 'cTotal' in dqState.today) {
+  var hasCTotal = !!(dqState.today && typeof dqState.today === 'object' && 'cTotal' in dqState.today);
+  if (keepCb && !hasCTotal) { box.removeChild(keepCb); keepCb = null; }
+  if (keepCb) {
+    // ไม่มีร่าง (ยังไม่ได้พิมพ์ต่างจากที่บันทึก) ⇒ ตามค่าที่บันทึกล่าสุด · มีร่าง ⇒ ไม่แตะค่าที่กำลังพิมพ์
+    var keepSaved = dqSavedCTotalText_();
+    if ((dqState.cTotalDraft === null || dqState.cTotalDraft === undefined) && prevCi.value !== keepSaved) prevCi.value = keepSaved;
+    var keepBtn = qs('dqCTotalSave');
+    if (keepBtn) keepBtn.disabled = !!dqState.cTotalSaving;
+  } else if (hasCTotal) {
     var cb = document.createElement('div');
     cb.className = 'dq-ds-ctotal';
     var clb = document.createElement('label');
