@@ -14562,7 +14562,8 @@ function dqComputeDaySummary(st, nowMs) {
       res.pending = Math.max(0, ct.value - seen);
       // m1 (เจ้าของ 2026-10-25 "นับให้ลงกัน"): คิวนอกรายการ (unknownList) ถือว่ากดเลขผิด ⇒ ไม่นับซ้ำใน noRecord
       res.noRecord = Math.max(0, ct.value - recorded - res.unknownList.length);
-      res.lowWarn = ct.value < recorded;
+      // m-a (เจ้าของ 2026-10-25): เตือนเมื่อยอดน้อยกว่า บันทึกแล้ว + คิวนอกรายการ (ไม่งั้นหัว "ยังไม่ได้พบแพทย์" กับชิปไม่ลงกันโดยไม่มีคำเตือน)
+      res.lowWarn = ct.value < recorded + res.unknownList.length;
       res.recorded = recorded;
       res.manual = { value: ct.value, by: ct.by || '', time: ct.time || '' };
     }
@@ -14724,7 +14725,10 @@ function dqRenderDaySummary() {
   if (sm.lowWarn && sm.manual) {
     var lw = document.createElement('div');
     lw.className = 'dq-ds-unknown';
-    lw.textContent = 'ยอดที่กรอก (' + sm.manual.value + ') น้อยกว่าคิวที่บันทึกแล้ว (' + sm.recorded + ') — ตรวจยอดอีกครั้ง';
+    var lwUnk = sm.unknownList.length;
+    lw.textContent = lwUnk
+      ? 'ยอดที่กรอก (' + sm.manual.value + ') น้อยกว่าคิวที่บันทึกแล้ว + คิวนอกรายการ (' + sm.recorded + ' + ' + lwUnk + ' = ' + (sm.recorded + lwUnk) + ') — ตรวจยอดอีกครั้ง'
+      : 'ยอดที่กรอก (' + sm.manual.value + ') น้อยกว่าคิวที่บันทึกแล้ว (' + sm.recorded + ') — ตรวจยอดอีกครั้ง';
     box.appendChild(lw);
   }
   if (sm.pending === null) return;
