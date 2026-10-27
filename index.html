@@ -3850,10 +3850,14 @@ const TESTS = [
   { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'], note:'รวม Ultrasound Breast อยู่แล้ว — แนะนำสำหรับอายุ <strong>35 ปีขึ้นไป</strong><br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม U/S Breast ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:36, name:'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', eng:'Hemoglobin typing (Thalassemia screening)', price:320, gender:'all', tags:[] },
 ];
-// ชื่ออังกฤษที่ต่อท้ายในวงเล็บบนใบสรุป — ชื่อไทยมีวงเล็บอยู่แล้วไม่ต่อ (เจ้าของสั่ง 2026-10-27: กันวงเล็บซ้อน/ชื่อซ้ำ
-// เช่น "ตรวจมะเร็งเต้านม (Mammogram) (Mammogram and Ultrasound Breast)")
+// ชื่ออังกฤษที่ต่อท้ายในวงเล็บบนใบสรุป — ข้ามเฉพาะเมื่อซ้ำจริง: ข้อความในวงเล็บของชื่อไทยอยู่ในชื่ออังกฤษแล้ว
+// (เจ้าของสั่ง 2026-10-27) เช่น "ตรวจมะเร็งเต้านม (Mammogram)" ไม่ต่อ "(Mammogram and Ultrasound Breast)"
+// แต่ "ตรวจไขมันในเลือด (Lipid Profile)" ยังต่อ "(Cholesterol, Triglyceride, HDL, LDL)"
 function summaryEng(th, eng) {
-  return eng && String(th || '').indexOf('(') === -1 ? eng : '';
+  if (!eng) return '';
+  const inParens = String(th || '').match(/\([^)]+\)/g) || [];
+  const dup = inParens.some(p => eng.toLowerCase().indexOf(p.slice(1, -1).trim().toLowerCase()) !== -1);
+  return dup ? '' : eng;
 }
 // ชื่อภาษาอังกฤษของรายการตรวจจากชื่อไทย (ใบสรุปฝั่งเจ้าหน้าที่อ่านจากชีตซึ่งเก็บแค่ชื่อไทย) — ไม่พบคืน ''
 function testEngByName(name) {
