@@ -471,6 +471,7 @@
     margin-bottom: 20px;
   }
   .pap-toggle.show { display: flex; }
+  .pap-toggle.field-error { border-color: var(--danger); }
   .pap-toggle-top { display: flex; align-items: center; gap: 14px; }
   .pap-toggle .pap-text { flex: 1; }
   .pap-toggle .pap-title { font-size: 14px; font-weight: 600; color: #2E7D32; }
@@ -2965,7 +2966,6 @@
                 <li>ตรวจปัสสาวะ</li>
                 <li>ตรวจอุจจาระ</li>
                 <li>ตรวจเม็ดเลือด CBC</li>
-                <li>ตรวจมะเร็งปากมดลูก (หญิง)</li>
               </ul>
             </div>
             <div class="prog-price-section">
@@ -2992,7 +2992,6 @@
                 <li>ตรวจไขมันในเลือด</li>
                 <li>ตรวจการทำงานตับ</li>
                 <li>ตรวจการทำงานไต</li>
-                <li>ตรวจมะเร็งปากมดลูก (หญิง)</li>
               </ul>
             </div>
             <div class="prog-price-section">
@@ -3019,7 +3018,6 @@
                 <li>อัลตราซาวด์ช่องท้อง</li>
                 <li>ตรวจน้ำตาลสะสม HBA1C</li>
                 <li>คลื่นไฟฟ้าหัวใจ EKG</li>
-                <li>ตรวจมะเร็งปากมดลูก (หญิง)</li>
               </ul>
             </div>
             <div class="prog-price-section">
@@ -3045,7 +3043,6 @@
                 <li>ตรวจไวรัสตับอักเสบ B, C</li>
                 <li>ตรวจ HIV, ซิฟิลิส</li>
                 <li>มะเร็ง PSA (ชาย), CEA, AFP</li>
-                <li>ตรวจมะเร็งปากมดลูก (หญิง)</li>
               </ul>
             </div>
             <div class="prog-price-section">
@@ -3068,7 +3065,7 @@
           </div>
           <div class="pap-options">
             <div class="pap-opt">
-              <input type="radio" name="pap" id="papNo" value="no" checked onchange="calcTotal(); papChoice='no'; updatePickupPapDetail();">
+              <input type="radio" name="pap" id="papNo" value="no" onchange="calcTotal(); papChoice='no'; updatePickupPapDetail();">
               <label for="papNo">ไม่ตรวจภายใน</label>
             </div>
             <div class="pap-opt">
@@ -3832,7 +3829,7 @@ const TESTS = [
   { id:10, name:'ตรวจความเสี่ยงโรคเก๊าท์', eng:'Uric Acid', price:75,   gender:'all', tags:['heart'] },
   { id:12, name:'ตรวจค่าน้ำตาลสะสม', eng:'HBA1C', price:180,  gender:'all', tags:['heart'] },
   { id:13, name:'คลื่นไฟฟ้าหัวใจ', eng:'Electrocardiogram (EKG)', price:240,  gender:'all', tags:['heart'] },
-  { id:14, name:'ตรวจเชื้อไวรัสตับอักเสบ บี', eng:'Hepatitis B Antigen (HBsAg)', price:150,  gender:'all', tags:['liver'] },
+  { id:14, name:'ตรวจเชื้อไวรัสตับอักเสบ บี', eng:'Hepatitis B Antigen (HBsAg)', price:150,  gender:'all', tags:['liver'], note:'หากตรวจไม่พบเชื้อและไม่มีภูมิคุ้มกัน สามารถแจ้งฉีดวัคซีนในวันเข้ารับบริการ' },
   { id:15, name:'ตรวจภูมิคุ้มกันตับอักเสบ บี', eng:'Hepatitis B Antibody (Anti-Hbs)', price:180,  gender:'all', tags:['liver'] },
   { id:16, name:'ตรวจเชื้อไวรัสตับอักเสบ ซี', eng:'Hepatitis C (Anti-HCV)', price:320,  gender:'all', tags:['liver'] },
   { id:17, name:'ตรวจเชื้อไวรัสเอชไอวี', eng:'Anti-HIV', price:140,  gender:'all', tags:[] },
@@ -3853,6 +3850,16 @@ const TESTS = [
   { id:35, name:'ตรวจมะเร็งเต้านม (Mammogram)', eng:'Mammogram and Ultrasound Breast', price:3243, gender:'female', tags:['cancer','female'], note:'รวม Ultrasound Breast อยู่แล้ว — แนะนำสำหรับอายุ <strong>35 ปีขึ้นไป</strong><br><span style="color:#9D174D">⚠ ไม่สามารถเลือกพร้อม U/S Breast ได้ (รวมกันอยู่แล้ว)</span>' },
   { id:36, name:'ตรวจหาชนิดฮีโมโกลบิน (Thalassemia screening)', eng:'Hemoglobin typing (Thalassemia screening)', price:320, gender:'all', tags:[] },
 ];
+// ชื่ออังกฤษที่ต่อท้ายในวงเล็บบนใบสรุป — ชื่อไทยมีวงเล็บอยู่แล้วไม่ต่อ (เจ้าของสั่ง 2026-10-27: กันวงเล็บซ้อน/ชื่อซ้ำ
+// เช่น "ตรวจมะเร็งเต้านม (Mammogram) (Mammogram and Ultrasound Breast)")
+function summaryEng(th, eng) {
+  return eng && String(th || '').indexOf('(') === -1 ? eng : '';
+}
+// ชื่อภาษาอังกฤษของรายการตรวจจากชื่อไทย (ใบสรุปฝั่งเจ้าหน้าที่อ่านจากชีตซึ่งเก็บแค่ชื่อไทย) — ไม่พบคืน ''
+function testEngByName(name) {
+  const t = TESTS.find(tt => tt.name === name);
+  return t ? summaryEng(t.name, t.eng) : '';
+}
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let selectedProgram = null;
@@ -3869,6 +3876,10 @@ const PAP_LABELS = {
   thinprep: ' + ตรวจภายใน (Thinprep)',
   thinprep_hpv: ' + ตรวจภายใน (Thinprep + HPV)'
 };
+// ต่อท้ายชื่อโปรแกรมเมื่อเป็นหญิงและเลือก "ไม่ตรวจภายใน" — ส่งลงคอลัมน์โปรแกรมของชีตด้วย (เจ้าของสั่ง 2026-10-27:
+// อิงค่าที่ผู้รับบริการเลือกเอง) ⇒ ใบสรุปของฉัน/รูปภาพ/ใบเจ้าหน้าที่อ่านจากชีตได้ตรง ๆ ไม่ต้องเดาจากราคา
+// (ห้ามใส่ใน PAP_LABELS: ใบเจ้าหน้าที่หา papKey จากข้อความเหล่านั้นในคอลัมน์โปรแกรม · ข้อความนี้ไม่มีคำว่า "ตรวจภายใน")
+const PAP_NONE_LABEL = ' (ไม่ตรวจมะเร็งปากมดลูก)';
 const PAP_ITEM_MAP = {
   pap:          { th: 'ตรวจภายใน (Pap smear)',        eng: 'Pap Smear',               price: 200  },
   thinprep:     { th: 'ตรวจภายใน (Thinprep)',          eng: 'ThinPrep Pap Test',        price: 700  },
@@ -4081,7 +4092,9 @@ function onGenderChange() {
   } else {
     papToggle.classList.remove('show');
     if (papInfoBox) papInfoBox.classList.remove('show');
-    document.getElementById('papNo').checked = true;
+    // ล้างทิ้ง ไม่ติ๊ก "ไม่ตรวจ" ให้ — ไม่งั้นเปลี่ยนชาย→หญิง แล้วได้ "ไม่ตรวจ" ค้างมาโดยไม่ได้เลือกเอง
+    document.querySelectorAll('input[name="pap"]').forEach(r => { r.checked = false; });
+    papChoice = 'no';
   }
   // Update program prices
   updateProgramPrices();
@@ -5775,6 +5788,15 @@ function validateAndScrollToError() {
     }
   }
 
+  // ผู้หญิงต้องเลือก ตรวจ/ไม่ตรวจภายใน เอง (เพิ่ม 2026-10-27) — เช็คจากกล่องที่แสดงอยู่จริง
+  const papToggleEl = document.getElementById('papToggle');
+  if (papToggleEl && papToggleEl.classList.contains('show') && !document.querySelector('input[name="pap"]:checked')) {
+    papToggleEl.classList.add('field-error');
+    window.scrollTo({ top: papToggleEl.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
+    showToast('⚠ กรุณาเลือก ตรวจ หรือ ไม่ตรวจ มะเร็งปากมดลูก');
+    return false;
+  }
+
   // ตรวจคำถามการตั้งครรภ์ — บังคับเฉพาะตอนบล็อกแสดงอยู่จริง (เพิ่ม 2026-08-27)
   // ⚠ เช็คจาก display ของบล็อก ไม่ใช่คำนวณเงื่อนไขเพศ/อายุซ้ำ ไม่งั้นเงื่อนไข 2 ที่จะแตกจากกันได้
   const pregBlock = document.getElementById('pregnancyBlock');
@@ -6200,7 +6222,7 @@ function buildRegistrationFormData() {
     oldLastName:   subOldLast,
     // โปรแกรม
     // หมายเหตุ: ต้องเทียบ selectedGender ('male'/'female') ไม่ใช่ g เพราะ g ถูกแปลงเป็นภาษาไทย ('ชาย'/'หญิง') ไปแล้วที่บรรทัดด้านบน
-    program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}` : '',
+    program:       selectedProgram ? `โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${selectedGender === 'female' ? (PAP_LABELS[papChoice] || PAP_NONE_LABEL) : ''}` : '',
     // สแนปช็อตรายการตรวจในโปรแกรม ณ เวลาที่ลงทะเบียน (เก็บเป็น JSON)
     // ใบสรุปย้อนหลังจะอ่านจากค่านี้ก่อน ถ้าไม่มีค่อย fallback ไป PROG_DETAIL ปัจจุบัน
     programTests: JSON.stringify((PROG_DETAIL[selectedProgram] && PROG_DETAIL[selectedProgram].tests) || []),
@@ -6365,7 +6387,7 @@ function handleSubmit(e, precomputedFormData) {
     <div class="success-row"><span class="slabel">หน่วยงาน</span><span class="sval">${escHtml(dept)}</span></div>
     ${payRight ? `<div class="success-row"><span class="slabel">สิทธิ์ชำระเงิน</span><span class="sval">${escHtml(payRight)}</span></div>` : ''}
     <div class="success-row"><span class="slabel">อายุ / เพศ</span><span class="sval">${escHtml(age)} ปี / ${g}</span></div>
-    <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${(selectedGender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : ''}</span></div>
+    <div class="success-row"><span class="slabel">โปรแกรมที่เลือก</span><span class="sval">โปรแกรม ${selectedProgram} — ${progNames[selectedProgram]}${selectedGender === 'female' ? (PAP_LABELS[papChoice] || PAP_NONE_LABEL) : ''}</span></div>
     ${addList.length ? `<div class="success-row"><span class="slabel">รายการเพิ่มเติม</span><span class="sval" style="text-align:right;max-width:200px">${addList.map(x=>x.th).join(', ')}</span></div>` : ''}
     <div class="success-row" style="margin-top:4px"><span class="slabel" style="font-weight:700;color:#00575E">ยอดรวม</span><span class="sval" style="font-size:20px;color:#00575E">${totalTxt} บาท</span></div>
   `;
@@ -6822,10 +6844,26 @@ const STEP_GATES = [
   { sec:'sec2', ok:() => !!document.querySelector('input[name="gender"]:checked'),
     msg:'กรุณาเลือก "เพศ" ในหัวข้อที่ 1 ให้เรียบร้อยก่อน จึงจะเลือกโปรแกรมตรวจสุขภาพได้ (ราคาบางโปรแกรมขึ้นกับเพศ)',
     focus:'.gender-group' },
-  { sec:'sec3', ok:() => !!document.querySelector('input[name="program"]:checked'),
-    msg:'กรุณาเลือก "โปรแกรมตรวจสุขภาพ" ในหัวข้อที่ 2 ก่อน จึงจะเลือกรายการตรวจเพิ่มเติมได้',
-    focus:'#programGrid' }
+  // ผู้หญิงต้องเลือก ตรวจ/ไม่ตรวจภายใน เองก่อน (เจ้าของสั่ง 2026-10-27 — ไม่มีค่าตั้งต้นให้แล้ว)
+  // msg/focus เป็น getter เพราะข้อความเปลี่ยนตามว่ายังขาดโปรแกรมหรือขาดตัวเลือกตรวจภายใน
+  { sec:'sec3', ok:() => !!document.querySelector('input[name="program"]:checked') && papAnswered(),
+    get msg() { return document.querySelector('input[name="program"]:checked')
+      ? 'กรุณาเลือก "ตรวจ หรือ ไม่ตรวจ มะเร็งปากมดลูก" ในหัวข้อที่ 2 ก่อน จึงจะเลือกรายการตรวจเพิ่มเติมได้'
+      : 'กรุณาเลือก "โปรแกรมตรวจสุขภาพ" ในหัวข้อที่ 2 ก่อน จึงจะเลือกรายการตรวจเพิ่มเติมได้'; },
+    get focus() { return document.querySelector('input[name="program"]:checked') ? '#papToggle' : '#programGrid'; } }
 ];
+// เช็คจากกล่องที่แสดงอยู่จริง (เหมือน validateAndScrollToError) ไม่ใช่ radio เพศ — กด back แล้วเบราว์เซอร์คืน
+// radio หญิงแต่กล่องยังซ่อน ⇒ ถ้าดู radio จะล็อก sec3 แล้วพาไปกล่องที่มองไม่เห็น ผู้ใช้ติดอยู่ตรงนั้น
+function papAnswered() {
+  return !document.getElementById('papToggle')?.classList.contains('show')
+    || !!document.querySelector('input[name="pap"]:checked');
+}
+document.addEventListener('change', e => {
+  if (e.target && e.target.name === 'pap') {
+    document.getElementById('papToggle')?.classList.remove('field-error');
+    applyStepLocks();
+  }
+});
 const HN_STEP_MSG = 'กรุณาระบุว่าท่านมี หมายเลขผู้ป่วย (HN) หรือไม่';
 
 function applyStepLocks() {
@@ -6847,7 +6885,9 @@ function applyStepLocks() {
         overlay.onclick = () => openStepLockModal(gate.msg, gate.focus);
         sec.appendChild(overlay);
       }
-      if (body && !document.getElementById('steplock-bar-' + gate.sec)) {
+      const oldBar = document.getElementById('steplock-bar-' + gate.sec);
+      if (oldBar) oldBar.textContent = '🔒 ' + gate.msg;  // ข้อความของ sec3 เปลี่ยนได้ระหว่างที่ยังล็อก
+      if (body && !oldBar) {
         const bar = document.createElement('div');
         bar.className = 'step-lock-bar';
         bar.id = 'steplock-bar-' + gate.sec;
@@ -7531,7 +7571,7 @@ function showSuccessModal(data) {
   if (data.medCertHealthCount) html += `<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรคทั่วไป</span><span class="sv">${escHtml(data.medCertHealthCount)} ชุด</span></div>`;
 
   // ── โปรแกรมที่เลือก + รายการในโปรแกรม ──
-  const progPapSuffix = (data.gender === 'female' && PAP_LABELS[papChoice]) ? PAP_LABELS[papChoice] : '';
+  const progPapSuffix = data.gender === 'female' ? (PAP_LABELS[papChoice] || PAP_NONE_LABEL) : '';
   html += `<div class="sr-section-title">โปรแกรม ${data.prog} — ${progNames[data.prog]}${progPapSuffix}</div>`;
 
   const hasPapLineItem = data.gender === 'female' && papChoice && papChoice !== 'no';
@@ -7574,7 +7614,7 @@ function showSuccessModal(data) {
     html += `<div class="sr-section-title extra">${addHeaderTxt} (${data.addListPriced.length} รายการ)</div>`;
     html += `<div class="sr-test-list">`;
     data.addListPriced.forEach(n => {
-      html += `<div class="sr-test-item extra" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">${n.th}</span></span><span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">${n.price.toLocaleString()} บาท</span></div>`;
+      html += `<div class="sr-test-item extra" style="justify-content:space-between"><span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">${n.th}</span>${summaryEng(n.th, n.eng) ? `<span class="sr-name-eng">(${n.eng})</span>` : ''}</span><span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">${n.price.toLocaleString()} บาท</span></div>`;
     });
     html += `</div>`;
     if (data.addTotal > 0 && !isFamilySelfPay) {
@@ -7585,7 +7625,7 @@ function showSuccessModal(data) {
     html += `<div class="sr-section-title extra">${addHeaderTxt} (${data.addList.length} รายการ)</div>`;
     html += `<div class="sr-test-list">`;
     data.addList.forEach(n => {
-      html += `<div class="sr-test-item extra"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">${n.th}</span><span class="sr-name-eng">${n.eng}</span></div>`;
+      html += `<div class="sr-test-item extra"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">${n.th}</span>${summaryEng(n.th, n.eng) ? `<span class="sr-name-eng">(${n.eng})</span>` : ''}</div>`;
     });
     html += `</div>`;
   }
@@ -8495,7 +8535,9 @@ function buildMySummaryCanvas(rec) {
   if (m.addItems.length) {
     sectionTitle('➕ รายการเพิ่มเติม (' + m.addItems.length + ' รายการ)', '#FFF3E0', '#E65100');
     m.addItems.forEach(function(item) {
-      testItem(item.name, null, '#E65100', item.price || '', '#E65100', '700 13px ' + FONT);
+      // ชื่ออังกฤษในวงเล็บ เหมือนใบพิมพ์ (printMySummary) — ไม่รู้จักชื่อ ⇒ ไม่มีวงเล็บว่าง
+      const eng = testEngByName(item.name);
+      testItem(item.name, eng ? '(' + eng + ')' : null, '#E65100', item.price || '', '#E65100', '700 13px ' + FONT);
     });
   }
 
@@ -8717,7 +8759,8 @@ function printMySummary(i) {
     body += '<div class="sr-test-list">';
     addItems.forEach(function(item) {
       body += '<div class="sr-test-item extra" style="justify-content:space-between">'
-        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(item.name) + '</span></span>'
+        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(item.name) + '</span>'
+        + (testEngByName(item.name) ? '<span class="sr-name-eng">(' + escHtml(testEngByName(item.name)) + ')</span>' : '') + '</span>'
         + (item.price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + escHtml(item.price) + '</span>' : '')
         + '</div>';
     });
@@ -8797,6 +8840,7 @@ function showStaffSummary(idx) {
   const totalNum = parseFloat((r.total || '').toString().replace(/,/g, ''));
   let staffBasePrice = 0;
   let papKey;
+  let staffPapNone = false;  // หญิงที่ส่วนต่างราคา = 0 พอดี ⇒ ไม่ตรวจภายใน (กติกาเดียวกับ decidePapSuffix ใน Apps Script)
   if (staffProg) {
     if (genderTxt === 'ชาย') {
       // เช่นเดียวกับฝั่งหญิง: คำนวณย้อนหลังจากยอดรวมที่บันทึกไว้ในชีต แทนการอ่านราคาจากตาราง PROGRAMS
@@ -8808,6 +8852,7 @@ function showStaffSummary(idx) {
       const extra = Math.round((staffBasePrice - staffProg.femaleNo) * 100) / 100;
       papKey = Object.keys(PAP_EXTRA).find(function(k) { return PAP_EXTRA[k] === extra; });
       if (papKey === 'no') papKey = undefined;
+      staffPapNone = extra === 0 && genderTxt === 'หญิง' && (r.program || '').indexOf('ตรวจภายใน') === -1;
       // ถ้าจับคู่ตัวเลขไม่ได้ (เช่น PROGRAMS ถูกแก้ราคาไปหลังจากบันทึกแถวนี้) ให้เดาจากข้อความในชื่อโปรแกรมแทน
       // ซึ่งเป็นข้อมูลประวัติศาสตร์ที่บันทึกไว้ในชีต ณ วันลงทะเบียนจริง
       if (!papKey) {
@@ -8888,7 +8933,9 @@ function showStaffSummary(idx) {
   if (r.medCertHealthCount && r.medCertHealthCount !== '0')   html += '<div class="sr"><span class="sl">📄 ใบรับรองแพทย์สุขภาพดี 5 โรค</span><span class="sv">' + escHtml(r.medCertHealthCount) + ' ชุด</span></div>';
 
   // ── โปรแกรม + รายการในโปรแกรม ──
-  html += '<div class="sr-section-title">' + escHtml(r.program || 'ไม่ระบุโปรแกรม') + '</div>';
+  html += '<div class="sr-section-title">' + escHtml(r.program || 'ไม่ระบุโปรแกรม')
+    // แถวใหม่มีคำนี้ในชีตแล้ว (ค่าที่ผู้รับบริการเลือก) — เดาจากราคาเฉพาะแถวเก่าที่ยังไม่มี กันต่อซ้ำ
+    + (staffPapNone && r.gender === 'หญิง' && (r.program || '').indexOf(PAP_NONE_LABEL.trim()) === -1 ? PAP_NONE_LABEL : '') + '</div>';
   // ย่อรายการโปรแกรมหลักเมื่อมีรายการเพิ่มเติม หรือเมื่อรายการรวมทั้งหมดยาวพอที่จะดันยอดรวมตกไปหน้าถัดไป
   // (เช่นโปรแกรม 4 ที่มีรายการตรวจในตัวมากอยู่แล้วแม้ไม่มีรายการเพิ่มเติมก็ตาม)
   const totalStaffItemCount = (staffTests ? staffTests.length : 0) + (papKey ? 1 : 0) + addItemsForCondense.length;
@@ -8925,7 +8972,8 @@ function showStaffSummary(idx) {
       const name  = pm ? item.slice(0, item.lastIndexOf(pm[0])).trim() : item;
       const price = pm ? pm[1] : '';
       html += '<div class="sr-test-item extra" style="justify-content:space-between">'
-        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(name) + '</span></span>'
+        + '<span style="display:flex;align-items:baseline;gap:6px"><span class="sr-dot extra-dot">●</span><span class="sr-name-th">' + escHtml(name) + '</span>'
+        + (testEngByName(name) ? '<span class="sr-name-eng">(' + escHtml(testEngByName(name)) + ')</span>' : '') + '</span>'
         + (price ? '<span style="font-weight:700;color:#E65100;white-space:nowrap;margin-left:8px">' + escHtml(price) + '</span>' : '')
         + '</div>';
     });
