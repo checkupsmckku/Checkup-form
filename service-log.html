@@ -922,10 +922,10 @@
   .sp-board-status { margin: 4px 0; font-weight: 600; }
   .sp-saving { font-size: 12px; color: var(--text-muted); } /* รอบ 9.2 — ตัวบอกสถานะระหว่างรอ apiCall() ของปุ่มสถานะรายคน */
   /* รอบ 29 (S7) W7 (ข้อ 8): ป้ายเล็กบอกชนิดในแท็บ MMG — MMG / U/S Breast / MMG + U/S Breast */
-  /* รอบ 82 (ก้อน A): ป้าย DF ของแท็บ CA breast (โหมดแคปถาวร) ตัวใหญ่ (≥ 1.1em ของชื่อ) ตัวหนา สีน้ำเงินเข้ม · ตัดบรรทัดได้ ไม่ล้นจอ 390px */
+  /* รอบ 82 (ก้อน A): ป้าย DF ของแท็บ CA breast (โหมดแคปถาวร) ตัวใหญ่ (≥ 1.1em ของชื่อ) ตัวหนา สีแดง #D93025 (รอบ 98: เดิมสีน้ำเงินเข้ม) · ตัดบรรทัดได้ ไม่ล้นจอ 390px */
   .sp-board-type-tag {
     display: inline-block; max-width: 100%; box-sizing: border-box; font-size: 1.1em; font-weight: 800; margin-left: 6px;
-    padding: 1px 10px; border-radius: 12px; background: var(--gray-pale); color: var(--primary-dark); vertical-align: middle;
+    padding: 1px 10px; border-radius: 12px; background: var(--gray-pale); color: #D93025; vertical-align: middle;
     white-space: normal; overflow-wrap: anywhere; line-height: 1.3;
   }
 
@@ -1062,6 +1062,12 @@
     background: rgba(244, 245, 251, .75); border-radius: 8px;
   }
 
+  .cu-foot-block { break-inside: avoid; page-break-inside: avoid; }
+  .cu-foot-head { font-weight: 700; margin-bottom: 2px; }
+  .cu-foot-docs { display: inline-grid; grid-template-columns: auto auto; column-gap: 10mm; row-gap: 1px; }
+  .cu-foot-name { text-align: left; }
+  .cu-foot-n { text-align: right; justify-self: end; }
+
   @media print {
     header.topbar, .no-print { display: none !important; }
     body { background: #fff; padding: 0; }
@@ -1122,17 +1128,42 @@
        (เจอจริง: สลับคอลัมน์แล้วลืมแก้ ⇒ HN กว้างเกิน ชื่อ/โปรแกรมถูกตัดกลางคำ "โปรแ/กรม")
        ⚠ ตรวจด้วยการพิมพ์จริงลง PDF (Page.printToPDF, A4 แนวตั้ง) ทุกครั้งที่แก้ % ชุดนี้ — ดูบันทึกการตรวจใน
        final report ของรอบ 28 ว่าตรวจกับชื่อยาว/ค่าบริการหลักหมื่นแล้วไม่มีตรงไหนตัดกลางคำ/ล้นขอบกระดาษ */
+    /* รอบ 97 ข้อ 7 (เจ้าของ 2026-10-28 "ช่องชื่อกว้างไป"): ชื่อ 30% -> 23% (≈ 45 mm) เซ็นรับ 16% -> 23% · รวม 100% (5+9+23+10+7+11+12+23) · CU_NAME_COL_FRAC = 0.23 */
     /* รอบ 65 (เจ้าของ 2026-10-07 "ชื่อ-สกุลตกไปบรรทัดถัดไป"): ชื่อ-สกุล (คำนำหน้า+ชื่อ+สกุล) ต้องอยู่บรรทัดเดียว ⇒ ขยาย 20% -> 30%
        (พื้นที่พิมพ์ A4 กว้าง 210-16 = 194 mm ⇒ ชื่อ ≈ 58 mm) โดยหักจาก HN/ช่องทาง/ค่าบริการ/ตรวจมะเร็ง/เซ็นรับ
        รวมต้องได้ 100% พอดี · ⚠ เซ็นรับห้ามต่ำกว่า ~30 mm (16% ≈ 31 mm) ไม่งั้นเซ็นไม่ได้ */
-    table.cu-table th:nth-child(1), table.cu-table td:nth-child(1) { width: 5%; }   /* คิว */
-    table.cu-table th:nth-child(2), table.cu-table td:nth-child(2) { width: 9%; }   /* HN */
-    table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { width: 30%; white-space: nowrap; word-break: normal; } /* ชื่อ-สกุล · บรรทัดเดียว (รอบ 65) — ชื่อยาวผิดปกติ JS ลดฟอนต์เฉพาะช่องนั้น (cuFitNamesForPrint) */
-    table.cu-table th:nth-child(4), table.cu-table td:nth-child(4) { width: 10%; }  /* โปรแกรม */
-    table.cu-table th:nth-child(5), table.cu-table td:nth-child(5) { width: 7%; }   /* ค่าบริการ */
-    table.cu-table th:nth-child(6), table.cu-table td:nth-child(6) { width: 11%; }  /* ตรวจมะเร็งปากมดลูก */
-    table.cu-table th:nth-child(7), table.cu-table td:nth-child(7) { width: 12%; }  /* ช่องทางส่งผลตรวจสุขภาพ */
-    table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 16%; }  /* เซ็นรับ ~31 mm */
+    table.cu-table th:nth-child(1), table.cu-table td:nth-child(1) { width: 5.5%; }   /* คิว */
+    table.cu-table th:nth-child(2), table.cu-table td:nth-child(2) { width: 9.9%; }   /* HN */
+    table.cu-table th:nth-child(3), table.cu-table td:nth-child(3) { width: 23%; white-space: nowrap; word-break: normal; } /* ชื่อ-สกุล · บรรทัดเดียว (รอบ 65) — ชื่อยาวผิดปกติ JS ลดฟอนต์เฉพาะช่องนั้น (cuFitNamesForPrint) */
+    table.cu-table th:nth-child(4), table.cu-table td:nth-child(4) { width: 11%; }  /* โปรแกรม */
+    table.cu-table th:nth-child(5), table.cu-table td:nth-child(5) { width: 7%; }   /* ค่าบริการ (รอบ 97 ข้อ 10: ซ่อนตอนพิมพ์ — ไม่นับใน 100%) */
+    table.cu-table th:nth-child(6), table.cu-table td:nth-child(6) { width: 12.1%; }  /* ตรวจมะเร็งปากมดลูก */
+    table.cu-table th:nth-child(7), table.cu-table td:nth-child(7) { width: 13.2%; }  /* ช่องทางส่งผลตรวจสุขภาพ */
+    table.cu-table th:nth-child(8), table.cu-table td:nth-child(8) { width: 25.3%; }  /* เซ็นรับ (รอบ 97 ข้อ 10: ไม่มีค่าบริการ ⇒ 5.5+9.9+23+11+12.1+13.2+25.3 = 100) */
+    /* รอบ 97: ตารางโหมดกว้าง (.cu-table-wide) = 10 คอลัมน์ เพิ่ม ชื่อแพทย์ + Consult ก่อนเซ็นรับ — ขึ้นเฉพาะเมื่อมีแถวที่มีแพทย์/consult
+       พิมพ์บน A4 แนวตั้ง 194 mm เหมือนโหมด 8 คอลัมน์ (ข้อ 8: เจ้าของเลือกแนวตั้งทั้ง 2 โหมด) · ชุดนี้ชนะชุด 8 คอลัมน์ข้างบนด้วยคลาสที่เพิ่ม
+       รวมต้อง 100% (ไม่นับค่าบริการ ซึ่งซ่อนตอนพิมพ์ ข้อ 10): 5.4+8.7+22+9.8+8.7+9.8+14.1+4.3+17.2 · เซ็นรับ 16% ≈ 31 mm ห้ามต่ำกว่า 30 mm · ค่าสำรองเมื่อ JS ไม่ทำงาน — ตอนพิมพ์จริง cuFitNamesForPrint() ตั้งความกว้างตามชื่อ (ข้อ 9) */
+    table.cu-table.cu-table-wide th:nth-child(1), table.cu-table.cu-table-wide td:nth-child(1) { width: 5.4%; }   /* คิว */
+    table.cu-table.cu-table-wide th:nth-child(2), table.cu-table.cu-table-wide td:nth-child(2) { width: 8.7%; }   /* HN */
+    table.cu-table.cu-table-wide th:nth-child(3), table.cu-table.cu-table-wide td:nth-child(3) { width: 22%; white-space: nowrap; word-break: normal; } /* ชื่อ-สกุล */
+    table.cu-table.cu-table-wide th:nth-child(4), table.cu-table.cu-table-wide td:nth-child(4) { width: 9.8%; }   /* โปรแกรม */
+    table.cu-table.cu-table-wide th:nth-child(5), table.cu-table.cu-table-wide td:nth-child(5) { width: 6%; }   /* ค่าบริการ (ซ่อนตอนพิมพ์ ข้อ 10 — ไม่นับใน 100%) */
+    table.cu-table.cu-table-wide th:nth-child(6), table.cu-table.cu-table-wide td:nth-child(6) { width: 8.7%; }   /* ตรวจมะเร็งปากมดลูก */
+    table.cu-table.cu-table-wide th:nth-child(7), table.cu-table.cu-table-wide td:nth-child(7) { width: 9.8%; }   /* ช่องทางส่งผลตรวจสุขภาพ */
+    table.cu-table.cu-table-wide th:nth-child(8), table.cu-table.cu-table-wide td:nth-child(8) { width: 14.1%; white-space: normal; word-break: break-word; } /* ชื่อแพทย์ — ตัดบรรทัดได้ */
+    table.cu-table.cu-table-wide th:nth-child(9), table.cu-table.cu-table-wide td:nth-child(9) { width: 4.3%; white-space: normal; word-break: break-word; } /* Consult — ตัวเลขอย่างเดียว */
+    table.cu-table.cu-table-wide th:nth-child(10), table.cu-table.cu-table-wide td:nth-child(10) { width: 17.2%; } /* เซ็นรับ ~31 mm */
+    /* รอบ 97 ข้อ 6b: แถวรวมของโหมดกว้าง — บรรทัดแรกตัวหนา + แพทย์บรรทัดละคน (ชื่อชิดซ้าย · จำนวนชิดขวา) · ห้ามถูกตัดข้ามหน้า
+       ⚠ ใช้ div/grid ไม่ใช่ <table> ซ้อน — กฎ table.cu-table td:nth-child(n) ข้างบนจะไปจับเซลล์ซ้อนด้วย */
+    table.cu-table tr.sp-total { break-inside: avoid; page-break-inside: avoid; }
+    /* รอบ 97 ข้อ 10 (เจ้าของ): คอลัมน์ "ค่าบริการ" ไม่พิมพ์ (ตัวเลขบนกระดาษอาจไม่ตรงยอดจริงหลังแก้ราคา) · บนจอยังเห็น · ซ่อนด้วยคลาส ไม่ใช้ nth-child
+       (กฎ nth-child อื่นยังชี้คอลัมน์ถูก เพราะ display:none ไม่เปลี่ยนลำดับ DOM) · colspan ของแถวยกเลิก/รวม/ไม่พบ = จำนวนคอลัมน์เต็ม
+       ⚠ ห้ามใช้ display:none — คอลัมน์หายแล้ว colspan เกิน ⇒ เกิดคอลัมน์ผีที่ขยับความกว้างคอลัมน์อื่นเมื่อมีแถวยกเลิก (test_round67_ui จับได้)
+       ⇒ ยุบเป็นคอลัมน์กว้าง 0 (ยังเป็นคอลัมน์ในกริด) + visibility:hidden ไม่ให้วาด/ไม่อยู่ใน innerText */
+    table.cu-table th.cu-col-amt, table.cu-table td.cu-col-amt {
+      width: 0 !important; min-width: 0 !important; max-width: 0 !important; padding: 0 !important; border-width: 0 !important;
+      font-size: 0 !important; line-height: 0 !important; overflow: hidden !important; visibility: hidden !important;
+    }
     /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     table.cu-table tr.cu-cancelled-row td { color: #555; } /* รอบ 67: แถวคิวยกเลิกบนกระดาษ — เทาเข้มพอให้อ่านได้ */
@@ -1381,6 +1412,7 @@
   .dq-setup-row-head { font-weight: bold; color: var(--text-muted); }
   .dq-setup-row input, .dq-setup-row select { min-width: 0; }
   .dq-setup-row select { width: 100%; }
+  .dq-setup-row select.dq-su-room { min-height: 44px; } /* รอบ 96: ช่องห้องเป็น select · แตะง่ายบนมือถือ (≥44px) */
   .dq-setup-row input.dq-su-bad, .dq-setup-row select.dq-su-bad { border: 2px solid #D93025; background: #FFF4F3; } /* รอบ 43: ชื่อแพทย์ผิดรูปแบบ (รอบ 52: ไม่อยู่ในรายชื่อ) */
   /* รอบ 78: ช่องชื่อแพทย์เป็นช่องพิมพ์ค้นหา (combobox) + ข้อความใต้ช่อง · แถวไม่จัดกึ่งกลางแนวตั้ง กันเซลล์อื่นเลื่อนเมื่อข้อความโผล่ */
   .dq-su-doc-wrap { min-width: 0; }
@@ -2156,12 +2188,6 @@
         <div id="spBoardHeading" class="sp-board-heading" role="heading" aria-level="2"></div>
         <div class="row" id="spBoardBulkRow">
           <button type="button" class="btn small" id="btnSpBoardBulkPrep">✔ ติ๊กว่าส่งรายชื่อแล้วทั้งชุด</button>
-        </div>
-        <!-- ⚠ ปุ่มโหมดแคปต้องอยู่ *นอก* #spBoardBulkRow — toggleSpBoardCapMode() ซ่อนแถวนั้นทั้งแถว
-             ถ้าย้ายปุ่มนี้กลับเข้าไปข้างใน ผู้ใช้จะเข้าโหมดแคปแล้ว **ออกไม่ได้** (เจอจริงตอนตรวจ 2026-09-06:
-             ตัวปุ่มเอง hidden=false แต่พ่อถูกซ่อน เทสต์ที่ดูแค่ property ของปุ่มจึงผ่านทั้งที่ของจริงพัง) -->
-        <div class="row" id="spBoardCapRow">
-          <button type="button" class="btn small secondary" id="btnSpBoardCap">🖼 โหมดแคป</button>
         </div>
         <div class="muted" id="spBoardBulkStatus"></div>
         <div id="spBoardPeopleWrap"></div>
@@ -4730,6 +4756,10 @@ function validateForm(ctx) {
     msg = 'ใบรับรองแพทย์ต้องใส่คิว M (เช่น M7)';
   } else if (!preM && mGroupFormOn_(ctx) && !mQueueNum_(ctx.queue)) {
     msg = 'ใบรับรองแพทย์ใช้คิว M เท่านั้น (เช่น M7)';
+  } else if (!preM && mGroupFormOn_(ctx) && ctx.nCert > 0 && !ctx.patientHn) {
+    // รอบ 98 (เจ้าของ 2026-10-28): ใบรับรองแพทย์ทั่วไป (5 โรค/ขับขี่ · ctx.nCert > 0) ต้องใส่ HN เหมือนมี Lab — ชื่อไม่บังคับ
+    // ฝั่งเว็บเท่านั้น (แถวเก่าในชีตไม่มี HN) · มี Lab ไม่มี nCert ใช้ด่าน "ใบรับรองแพทย์มี lab ต้องกรอก HN" ด้านล่างตามเดิม
+    msg = 'ใบรับรองแพทย์ต้องกรอก HN';
   } else if (ctx.checkupOn && !ctx.gender) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
   } else if (ctx.checkupOn && !String(qs('patientPrefix').value || '').trim()) {
@@ -8985,7 +9015,7 @@ function preRegCardHtml_(pr) {
    ========================================================================= */
 var SP_BOARD_RECORDS = [];
 var SP_BOARD_ACTIVE_ID = '';
-var SP_BOARD_CAP_MODE = false;
+// รอบ 98: ถอดปุ่ม/โหมดแคปทั้งหมดแล้ว (SP_BOARD_CAP_MODE · toggle · ปุ่ม) — หน้าตาทุกแท็บเหมือนเดิมตอนไม่อยู่ในโหมดแคป · แท็บ CA breast ยังเป็นหน้าแบ่ง 2 ส่วน + ป้าย DF
 // รอบ 9.2 — ตัวนับ sequence ต่อ recordId กันคำตอบเก่าที่มาถึงทีหลัง (out-of-order response) มาทับสถานะที่ใหม่กว่า
 var SP_SAVE_SEQ = {};
 
@@ -9087,17 +9117,8 @@ function renderSpBoardCards() {
   grid.innerHTML = html;
 }
 
-// รอบ 82 (ก้อน A): แท็บ mmg (CA breast) เป็นหน้าแบบโหมดแคปเสมอ (วาดด้วย renderSpPeopleCardsMmgCapSplit_ โดยไม่ซ่อนการนำทาง/ปุ่ม) ⇒ ปุ่ม 🖼 โหมดแคปซ่อนในแท็บนี้ · แท็บอื่นเหมือนเดิม
-function spBoardSyncCapBtn_() {
-  var isMmg = (SP_BOARD_ACTIVE_ID === 'mmg');
-  var capBtn = qs('btnSpBoardCap'), capRow = qs('spBoardCapRow');
-  if (capBtn) capBtn.hidden = isMmg;
-  if (capRow) capRow.hidden = isMmg;
-}
 function openSpBoardCategory(id) {
   SP_BOARD_ACTIVE_ID = id;
-  if (SP_BOARD_CAP_MODE) toggleSpBoardCapMode(); // ออกจากโหมดแคปของแท็บอื่นก่อน (แท็บ mmg ไม่ติดโหมดแคปเดิม)
-  spBoardSyncCapBtn_();
   var l1 = qs('spBoardLayer1'), l2 = qs('spBoardLayer2');
   if (l1) l1.hidden = true;
   if (l2) l2.hidden = false;
@@ -9106,7 +9127,6 @@ function openSpBoardCategory(id) {
 }
 
 function closeSpBoardCategory() {
-  if (SP_BOARD_CAP_MODE) toggleSpBoardCapMode();
   var l1 = qs('spBoardLayer1'), l2 = qs('spBoardLayer2');
   if (l2) l2.hidden = true;
   if (l1) l1.hidden = false;
@@ -9129,7 +9149,7 @@ function renderSpBoardSwitchBar() {
     btn.addEventListener('click', function () { openSpBoardCategory(item.id); });
     bar.appendChild(btn);
   });
-  bar.hidden = SP_BOARD_CAP_MODE;
+  bar.hidden = false;
 }
 
 // รอบ 29 (S7) W7 (ข้อ 7-8): วาดการ์ดรายคนของ rows ลงใน container ตัวเดียว — แยกออกมาจาก renderSpPeopleCards()
@@ -9146,9 +9166,9 @@ function appendSpPeopleCards_(container, rows, tabId) {
     // รอบ 26 (2026-09-22, เจ้าของสั่ง): BMD ที่ส่งตัวแล้ว แสดง "ส่งตัว HH:mm น." ต่อท้ายสถานะ (วันที่ด้วยถ้าไม่ใช่วันเดียวกับแถว)
     var bmdTimeText = (effId === 'bmd' && isSent) ? bmdSentTimeLabel(rec) : '';
     // รอบ 29 (S7) W7 (ข้อ 7): ป้ายเล็กบอกชนิด — เฉพาะแท็บ mmg เท่านั้น (MMG/U/S Breast/MMG + U/S Breast)
-    // รอบ 35 (W3, 2026-09-30): โหมดแคป (SP_BOARD_CAP_MODE) ⇒ ป้ายมีรหัส DF ต่อท้าย · ออกจากโหมดแคปกลับเป็นป้ายสั้น
-    // รอบ 82 (ก้อน A): แท็บ mmg เป็นโหมดแคปถาวร ⇒ ป้ายมีรหัส DF เสมอ
-    var typeTagHtml = (tabId === 'mmg') ? ('<span class="sp-board-type-tag">' + escHtml(spBoardMmgTypeLabel_(rec, SP_BOARD_CAP_MODE || tabId === 'mmg')) + '</span>') : '';
+    // รอบ 35 (W3, 2026-09-30): โหมดแคป (ถอดแล้ว รอบ 98) ⇒ ป้ายมีรหัส DF ต่อท้าย · ออกจากโหมดแคปกลับเป็นป้ายสั้น
+    // รอบ 82 (ก้อน A): แท็บ mmg เป็นโหมดแคปถาวร ⇒ ป้ายมีรหัส DF เสมอ · รอบ 98: ถอดปุ่มโหมดแคปแล้ว หน้านี้ยังเหมือนเดิม
+    var typeTagHtml = (tabId === 'mmg') ? ('<span class="sp-board-type-tag">' + escHtml(spBoardMmgTypeLabel_(rec, true)) + '</span>') : '';
     var isPrep = (rec.specialPrep || []).indexOf(effId) !== -1;
     if (tabId === 'mmg' && isPrep) card.className += ' is-prep'; // รอบ 82 (ก้อน A): ส่งรายชื่อแล้ว ⇒ กรอบเขียว
     // รอบ 9.2 — renderSpPeopleCards() rebuild การ์ดใหม่ทั้งหมดทุกครั้ง ⇒ ตัวบอก "กำลังบันทึก…" ต้องอ่านจาก
@@ -9162,7 +9182,6 @@ function appendSpPeopleCards_(container, rows, tabId) {
 
     var btnRow = document.createElement('div');
     btnRow.className = 'row sp-board-status-btns';
-    btnRow.hidden = SP_BOARD_CAP_MODE;
 
     if (tabId === 'mmg') {
       // รอบ 82 (ก้อน A): แท็บ CA breast ไม่มี ส่งตัวไปแล้ว / กลับมาแล้ว · มี "ส่งรายชื่อ" (กดซ้ำ = ยกเลิก) ผ่านเส้นทางเดียวกับปุ่มกระดาน (specialStatus · specialPrep)
@@ -9191,8 +9210,7 @@ function appendSpPeopleCards_(container, rows, tabId) {
     btnRow.appendChild(backBtn);
     }
 
-    // รอบ 9.2 — ปุ่มลบ/ยกเลิกรายคน อยู่ท้ายแถวเดียวกับปุ่มสถานะ ⇒ btnRow.hidden = SP_BOARD_CAP_MODE
-    // ข้างบนซ่อนมันไปด้วยโดยอัตโนมัติตอนโหมดแคป (ไม่ต้องเขียนซ้ำ)
+    // รอบ 9.2 — ปุ่มลบ/ยกเลิกรายคน อยู่ท้ายแถวเดียวกับปุ่มสถานะ (รอบ 98: ถอดโหมดแคปแล้ว ไม่มีการซ่อนแถวนี้อีก)
     var delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'btn small secondary';
@@ -9552,23 +9570,7 @@ function bulkMarkPrep(tabId) {
   });
 }
 
-function toggleSpBoardCapMode() {
-  if (SP_BOARD_ACTIVE_ID === 'mmg' && !SP_BOARD_CAP_MODE) return; // รอบ 82 (ก้อน A): แท็บ mmg เป็นหน้าแคปเสมอแล้ว — ห้ามซ่อนการนำทาง/ปุ่ม (ออกจากแท็บไม่ได้)
-  SP_BOARD_CAP_MODE = !SP_BOARD_CAP_MODE;
-  var backBtn = qs('spBoardBackBtn'), switchBar = qs('spBoardSwitchBar'), bulkRow = qs('spBoardBulkRow');
-  if (backBtn) backBtn.hidden = SP_BOARD_CAP_MODE;
-  // ปุ่ม "← กลับเมนู" ของหน้านี้ก็ต้องหายไปจากภาพแคปด้วย (SPEC_รอบ9.md 3.3.5 = ซ่อน "ทุกปุ่ม")
-  var backMenuBtn = document.querySelector('#spBoardScreen [data-back-menu]');
-  if (backMenuBtn) backMenuBtn.hidden = SP_BOARD_CAP_MODE;
-  if (switchBar) switchBar.hidden = SP_BOARD_CAP_MODE;
-  if (bulkRow) bulkRow.hidden = SP_BOARD_CAP_MODE;
-  document.querySelectorAll('.sp-board-status-btns').forEach(function (row) { row.hidden = SP_BOARD_CAP_MODE; });
-  var toggleBtn = qs('btnSpBoardCap');
-  if (toggleBtn) toggleBtn.textContent = SP_BOARD_CAP_MODE ? '✕ ออกจากโหมดแคป' : '🖼 โหมดแคป';
-  // รอบ 29 (S7) W7 (ข้อ 8): แท็บ mmg ต้องสลับโครงสร้างจริง (รายการรวม <-> แบ่ง 2 ส่วน) ตอนเข้า/ออกโหมดแคป
-  // ไม่ใช่แค่ซ่อนปุ่มเหมือนแท็บอื่น (แท็บอื่นในโหมดแคปเหมือนเดิมทุกประการ — ไม่ต้อง re-render)
-  if (SP_BOARD_ACTIVE_ID === 'mmg') renderSpPeopleCards(SP_BOARD_ACTIVE_ID);
-}
+// รอบ 98: toggleSpBoardCapMode() ถูกถอดแล้ว (เจ้าของสั่ง "ไม่ใช้โหมดแคป ให้ทีมถ่ายจากหน้าจอได้เลย")
 
 /* =========================================================================
    8.1 ใบรายชื่อผู้รับบริการ "ตรวจสุขภาพ" รายวันสำหรับพิมพ์ (รอบ 8, B7)
@@ -10509,6 +10511,35 @@ function needsPickupSignature(rec) {
   return rec.deliveryMethod === 'รอรับด้วยตนเอง' || rec.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT;
 }
 
+/* รอบ 97: ชื่อแพทย์ / Consult ในตารางพิมพ์ — ว่าง = เซลล์ว่าง (ให้เขียนมือได้ ไม่ใส่ "-")
+   consult เข้มงวด === true เหมือน checkupConsultCount · แสดงเฉพาะจำนวนครั้งเป็นตัวเลข (กติกาเดียวกับ cuNoteHtml: cuConsultTimes_) */
+function cuDoctorCellText_(rec) {
+  return String((rec && rec.doctorName) == null ? '' : rec.doctorName).trim().replace(/\s+/g, ' ');
+}
+function cuConsultTimes_(rec, consult) {
+  var rawCount = rec && rec.consultCount;
+  return (typeof rawCount === 'number' && rawCount >= 1 && Math.floor(rawCount) === rawCount) ? rawCount : (consult ? 1 : 0);
+}
+function cuConsultCellText_(rec) {
+  if (!rec || rec.consult !== true) return '';
+  return String(cuConsultTimes_(rec, true)); // รอบ 97: ตัวเลขจำนวนครั้งล้วน (ไม่มี ✓/คำว่าแพทย์/note)
+}
+function cuRowHasDoctorOrConsult_(rec) {
+  return !!rec && rec.status !== 'ยกเลิก' && (cuDoctorCellText_(rec) !== '' || rec.consult === true);
+}
+
+/* รอบ 97 ข้อ 6/6b (เจ้าของ 2026-10-28): แถวรวมของตารางโหมดกว้าง (10 คอลัมน์) — พิมพ์ออกกระดาษ (ห้าม no-print)
+   บรรทัดแรกตัวหนา "รวมทั้งหมด N เคส · Consult C ครั้ง" (+ " · ยกเลิก K คิว") แล้วแพทย์บรรทัดละคน · N = rows.length · แพทย์ = checkupDoctorCounts(rows) ตัวเดิม
+   C = checkupConsultTotalCount(rows) ตัวเดิม · ⚠ ห้ามมียอด U/S (ห้ามขึ้นกระดาษ) · โหมด 8 คอลัมน์ใช้ checkupTableFootText_ ("รวม N คน") เหมือนเดิม */
+function cuWideFootHtml_(rows, cancelledCount) {
+  var head = 'รวมทั้งหมด ' + rows.length + ' เคส · Consult ' + checkupConsultTotalCount(rows) + ' ครั้ง';
+  if (cancelledCount > 0) head += ' · ยกเลิก ' + cancelledCount + ' คิว';
+  var docs = checkupDoctorCounts(rows).map(function (d) {
+    return '<span class="cu-foot-name">' + escHtml(d.name) + '</span><span class="cu-foot-n">' + d.count + ' เคส</span>';
+  }).join('');
+  return '<div class="cu-foot-block"><div class="cu-foot-head">' + escHtml(head) + '</div>' + (docs ? '<div class="cu-foot-docs">' + docs + '</div>' : '') + '</div>';
+}
+
 function renderCheckupTable(records, dateStr) {
   var wrap = qs('cuTableWrap');
   if (!wrap) return;
@@ -10526,9 +10557,14 @@ function renderCheckupTable(records, dateStr) {
 
   // รอบ 28 (2026-09-23) W7 (ข้อ 11 + ภาพของเจ้าของ): 8 คอลัมน์ตามภาพที่เจ้าของส่ง — ตัดคอลัมน์
   // "ช่องทางส่งผลตรวจมะเร็งปากมดลูก" ออก (คิว/HN/ชื่อ-สกุล/โปรแกรม/ค่าบริการ/ตรวจมะเร็งปากมดลูก/ช่องทางส่งผลตรวจสุขภาพ/เซ็นรับ)
-  var html = '<div class="scroll-x"><table class="report-table cu-table"><thead><tr>' +
-    '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
-    '<th>ช่องทางส่งผลตรวจสุขภาพ</th><th>เซ็นรับ</th></tr></thead><tbody>';
+  // รอบ 97 (เจ้าของ 2026-10-28 "ช่วงที่ยังไม่มีคิวไหนมีชื่อแพทย์ ไม่ต้องแสดงชื่อแพทย์และ consult"): คอลัมน์ขึ้นตามข้อมูล
+  // มีอย่างน้อย 1 แถวที่แสดง (ไม่ใช่ยกเลิก) ที่ doctorName ไม่ว่าง หรือ consult === true ⇒ 10 คอลัมน์ (+ชื่อแพทย์ +Consult ก่อนเซ็นรับ)
+  // ไม่มีเลย ⇒ 8 คอลัมน์ · ทั้ง 2 โหมดพิมพ์ A4 แนวตั้ง (ข้อ 8) · ลำดับคอลัมน์ 10 ช่อง = ชุด % .cu-table-wide ใน @media print
+  var cuWide = shownRows.some(cuRowHasDoctorOrConsult_);
+  var cuCols = cuWide ? 10 : 8;
+  var html = '<div class="scroll-x"><table class="report-table cu-table' + (cuWide ? ' cu-table-wide' : '') + '"><thead><tr>' +
+    '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th class="cu-col-amt">ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
+    '<th>ช่องทางส่งผลตรวจสุขภาพ</th>' + (cuWide ? '<th>ชื่อแพทย์</th><th>Consult</th>' : '') + '<th>เซ็นรับ</th></tr></thead><tbody>';
 
   // รอบ 67: คิวยกเลิก/ขาดหายของทั้งวัน (K ในแถวสรุปนับทั้งวันเสมอ แม้กำลังค้นหา) · SAVE_QUEUE นับเฉพาะเมื่อดูวันนี้ (payload ไม่มีวันที่ — บันทึกลงวันนี้เสมอ)
   var cancelledSlots = cuCancelledQueueSlots_(records, (dateStr === todayStr()) ? cuPendingSaveQueues_() : []);
@@ -10538,10 +10574,10 @@ function renderCheckupTable(records, dateStr) {
   if (showCancelled) cancelledSlots.forEach(function (q) { tableItems.push({ queue: q, _cuCancelled: true }); });
   tableItems.sort(compareByQueue);
 
-  if (shownRows.length === 0) html += '<tr><td colspan="8" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
+  if (shownRows.length === 0) html += '<tr><td colspan="' + cuCols + '" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
   tableItems.forEach(function (rec) {
     if (rec._cuCancelled) {
-      html += '<tr class="cu-cancelled-row"><td>' + escHtml(rec.queue) + '</td><td colspan="7" class="cu-cancelled-cell">ยกเลิก</td></tr>';
+      html += '<tr class="cu-cancelled-row"><td>' + escHtml(rec.queue) + '</td><td colspan="' + (cuCols - 1) + '" class="cu-cancelled-cell">ยกเลิก</td></tr>';
       return;
     }
     var amt = (rec.totals && typeof rec.totals.checkup === 'number') ? rec.totals.checkup : 0;
@@ -10555,15 +10591,16 @@ function renderCheckupTable(records, dateStr) {
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
       '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
-      '<td>' + money(amt) + '</td>' +
+      '<td class="cu-col-amt">' + money(amt) + '</td>' +
       '<td>' + (pelvicTested ? escHtml(pelvicTypeLabel(rec)) : '-') + '</td>' +
       '<td>' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</td>' +
+      (cuWide ? ('<td class="cu-doctor-cell">' + escHtml(cuDoctorCellText_(rec)) + '</td><td class="cu-consult-cell">' + escHtml(cuConsultCellText_(rec)) + '</td>') : '') +
       '<td class="cu-sig-cell">' + sigCell + '</td>' +
       '</tr>';
   });
 
   // รอบ 28 (W7): แถวท้าย = "รวม N คน" อย่างเดียว ไม่มียอดเงิน (checkupFootText(rows) ไม่ส่ง totalMoney)
-  html += '<tr class="sp-total"><td colspan="8">' + escHtml(checkupTableFootText_(rows, cancelledSlots.length)) + '</td></tr>'; // รอบ 67: + " · ยกเลิก K คิว"
+  html += '<tr class="sp-total"><td colspan="' + cuCols + '">' + (cuWide ? cuWideFootHtml_(rows, cancelledSlots.length) : escHtml(checkupTableFootText_(rows, cancelledSlots.length))) + '</td></tr>'; // รอบ 67: + " · ยกเลิก K คิว"
   html += '</tbody></table></div>';
   html += checkupExtraSummaryHtml(rows); // นอกตาราง (no-print) — ห้ามเอากลับไปต่อท้าย checkupFootText() ในแถว <tr> ข้างบน
   wrap.innerHTML = html;
@@ -10574,28 +10611,80 @@ function renderCheckupTable(records, dateStr) {
    ถ้าชื่อยาวผิดปกติจนเกินช่อง → ลดฟอนต์เฉพาะช่องชื่อนั้นทีละ 0.25pt ลงไปไม่ต่ำกว่า 6.5pt · ห้ามตัด/ซ่อนตัวอักษร
    ⚠ ตอน beforeprint เบราว์เซอร์ยังจัดหน้าแบบจอ (scrollWidth ของ td ใช้ไม่ได้) ⇒ วัดความกว้างข้อความจริงด้วย span ลอยที่ฟอนต์ 8.5pt
    แล้วเทียบกับความกว้างช่องบนกระดาษที่คำนวณเอง (A4 กว้าง 210mm − ขอบ 8mm×2 = 194mm × 30% − padding 3px×2)
-   ⚠ 0.30 ตรงกับ width ของ td:nth-child(3) ในบล็อก @media print — แก้ % ตรงนั้นต้องแก้ตรงนี้ด้วย
+   ⚠ 0.23 (เดิม 0.30 ก่อนรอบ 97 ข้อ 7) ตรงกับ width ของ td:nth-child(3) ในบล็อก @media print — แก้ % ตรงนั้นต้องแก้ตรงนี้ด้วย
    ถ้า media print ทำงานจริงอยู่แล้ว (matchMedia) ใช้ความกว้างจริงของ td แทน */
-var CU_NAME_COL_FRAC = 0.30, CU_PRINT_BASE_PT = 8.5, CU_PRINT_MIN_PT = 6.5, CU_PRINT_PAGE_PX = 194 * 96 / 25.4;
+var CU_NAME_COL_FRAC = 0.23, CU_PRINT_BASE_PT = 8.5, CU_PRINT_MIN_PT = 6.5, CU_PRINT_PAGE_PX = 194 * 96 / 25.4;
+/* รอบ 97 ข้อ 9 (เจ้าของ 2026-10-28 "ปรับตามชื่อของผู้รับบริการ ไม่ให้ตกบรรทัด"): ตอนพิมพ์ความกว้างช่องชื่อ = ชื่อ (คำนำหน้า+ชื่อ-สกุล) ที่ยาวที่สุด + หัวคอลัมน์
+   + padding 6px + เผื่อ 2 mm · ต่ำสุด 25 mm · เพดาน 30% (8 คอลัมน์) / 24% (10 คอลัมน์) ของ 194 mm · ชื่อที่ยาวเกินเพดานลดฟอนต์ (≥ 6.5pt)
+   คอลัมน์อื่นแบ่งพื้นที่ที่เหลือตามสัดส่วนของ % ใน CSS (ไม่นับช่องชื่อ) · ตั้งด้วย inline width (%) ที่ <th> แถวหัวเท่านั้น (table-layout: fixed) แล้วคืนที่ afterprint
+   CU_NAME_COL_FRAC / CU_NAME_COL_FRAC_WIDE = % ของช่องชื่อใน CSS (ค่าสำรองเมื่อ JS ไม่ทำงาน ข้อ 7/8) — ไม่ได้ใช้คำนวณตอนพิมพ์แล้ว */
+var CU_NAME_COL_FRAC_WIDE = 0.22;
+var CU_NAME_MIN_MM = 25, CU_NAME_PAD_MM = 2, CU_NAME_CAP_FRAC = 0.30, CU_NAME_CAP_FRAC_WIDE = 0.24;
+var CU_OTHER_PCT = [5, 9, 10, 11, 12, 23];                    // 8 คอลัมน์ (ข้อ 7 · ไม่นับค่าบริการ ข้อ 10): คิว HN โปรแกรม มะเร็ง ช่องทาง เซ็นรับ
+var CU_OTHER_PCT_WIDE = [5, 8, 9, 8, 9, 13, 4, 16];           // 10 คอลัมน์ (ข้อ 8 · ไม่นับค่าบริการ ข้อ 10): คิว HN โปรแกรม มะเร็ง ช่องทาง แพทย์ Consult เซ็นรับ
+function cuTableIsWide_() { return !!document.querySelector('#cuTableWrap table.cu-table.cu-table-wide'); }
 function cuNameCells_() {
   return document.querySelectorAll('table.cu-table tbody tr:not(.sp-total) td:nth-child(3)');
 }
+function cuMeasureText_(text, fontFamily) {
+  var sp = document.createElement('span');
+  sp.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:' + CU_PRINT_BASE_PT + 'pt';
+  sp.style.fontFamily = fontFamily;
+  sp.textContent = text;
+  document.body.appendChild(sp);
+  var w = sp.getBoundingClientRect().width;
+  document.body.removeChild(sp);
+  return w;
+}
 function cuFitNamesForPrint() {
-  var cells = cuNameCells_(), i, td, sp, natural, avail, pt, inPrint = false;
+  var cells = cuNameCells_(), i, td, natural, avail, pt, inPrint = false;
   if (!cells.length) return;
   try { inPrint = !!(window.matchMedia && window.matchMedia('print').matches); } catch (e) { inPrint = false; }
+  // 1) ความกว้างช่องชื่อตามชื่อที่ยาวที่สุด (รวมหัวคอลัมน์)
+  var table = cells[0].closest('table.cu-table');
+  var wide = !!(table && table.classList.contains('cu-table-wide'));
+  var family = window.getComputedStyle(cells[0]).fontFamily;
+  var widest = 0, naturals = [];
+  for (i = 0; i < cells.length; i++) {
+    cells[i].style.fontSize = '';
+    natural = cells[i].textContent ? cuMeasureText_(cells[i].textContent, family) : 0;
+    naturals.push(natural);
+    if (natural > widest) widest = natural;
+  }
+  var headTh = table ? table.querySelectorAll('thead th') : [];
+  if (headTh.length > 2) widest = Math.max(widest, cuMeasureText_(headTh[2].textContent, family));
+  var mmPx = 96 / 25.4;
+  // ความกว้างตารางจริงบนกระดาษ = พื้นที่พิมพ์ 194 mm − padding ซ้าย/ขวาของ .wrap (12px × 2 ≈ 6.4 mm) — print จริงวัดจากตารางเลย · นอก print ประมาณจาก padding ของ .wrap
+  var tableW = (inPrint && table) ? table.getBoundingClientRect().width : 0;
+  if (!tableW) {
+    var padW = 24, wr = table && table.closest ? table.closest('.wrap') : null;
+    try { if (wr) { var wcs = window.getComputedStyle(wr); padW = (parseFloat(wcs.paddingLeft) || 0) + (parseFloat(wcs.paddingRight) || 0); } } catch (e) { padW = 24; }
+    tableW = CU_PRINT_PAGE_PX - padW;
+  }
+  var others = wide ? CU_OTHER_PCT_WIDE : CU_OTHER_PCT, sum = 0, k;
+  for (k = 0; k < others.length; k++) sum += others[k];
+  var namePx = widest + 6 + CU_NAME_PAD_MM * mmPx;
+  // เพดาน: 30% / 24% ของ 194 mm (ข้อ 9) · และต้องเหลือพื้นที่ให้ "เซ็นรับ" (คอลัมน์สุดท้าย) ≥ 30 mm จริง (+0.3 mm กันเศษ) ตามสัดส่วนที่เหลือ
+  var capPx = CU_PRINT_PAGE_PX * (wide ? CU_NAME_CAP_FRAC_WIDE : CU_NAME_CAP_FRAC);
+  var sigGuardPx = tableW - (30.3 * mmPx) * sum / others[others.length - 1];
+  capPx = Math.min(capPx, sigGuardPx);
+  namePx = Math.max(CU_NAME_MIN_MM * mmPx, Math.min(namePx, capPx));
+  // 2) คอลัมน์อื่นแบ่งที่เหลือตามสัดส่วน % ใน CSS
+  var namePct = namePx / tableW * 100, restPct = 100 - namePct;
+  // headTh รวมหัว "ค่าบริการ" (.cu-col-amt ซ่อนตอนพิมพ์) ซึ่งไม่ร่วมแบ่งพื้นที่
+  if (table && headTh.length === others.length + 2) {
+    var oi = 0;
+    for (k = 0; k < headTh.length; k++) {
+      if (headTh[k].classList.contains('cu-col-amt')) continue;
+      headTh[k].style.width = (k === 2 ? namePct : restPct * others[oi++] / sum).toFixed(3) + '%';
+    }
+  }
+  // 3) ชื่อที่ยังยาวเกินช่องที่ได้ ⇒ ลดฟอนต์ (กลไกเดิมรอบ 65) · ในโหมด print จริงวัดเทียบความกว้างช่องจริง
   for (i = 0; i < cells.length; i++) {
     td = cells[i];
-    td.style.fontSize = '';
-    if (!td.textContent) continue;
-    sp = document.createElement('span');
-    sp.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;font-size:' + CU_PRINT_BASE_PT + 'pt';
-    sp.style.fontFamily = window.getComputedStyle(td).fontFamily;
-    sp.textContent = td.textContent;
-    document.body.appendChild(sp);
-    natural = sp.getBoundingClientRect().width;
-    document.body.removeChild(sp);
-    avail = inPrint ? (td.clientWidth - 6) : (CU_PRINT_PAGE_PX * CU_NAME_COL_FRAC - 6);
+    natural = naturals[i];
+    if (!natural) continue;
+    avail = inPrint ? (td.clientWidth - 6) : (namePx - 6);
     if (natural <= avail) continue;
     pt = CU_PRINT_BASE_PT;
     while (pt > CU_PRINT_MIN_PT && natural * (pt / CU_PRINT_BASE_PT) > avail) pt -= 0.25;
@@ -10606,6 +10695,8 @@ function cuFitNamesForPrint() {
 function cuRestoreNamesAfterPrint() {
   var cells = cuNameCells_(), i;
   for (i = 0; i < cells.length; i++) cells[i].style.fontSize = '';
+  var ths = document.querySelectorAll('table.cu-table thead th');
+  for (i = 0; i < ths.length; i++) ths[i].style.width = '';
 }
 try {
   window.addEventListener('beforeprint', cuFitNamesForPrint);
@@ -10733,8 +10824,7 @@ function cuNoteHtml(rec) {
   // รับได้ทั้งแบบใหม่ (resendList) และ rec ที่ยังไม่มีคีย์นี้เลย (ปริยาย [])
   var resendList = (rec && Array.isArray(rec.resendList)) ? rec.resendList : [];
   // แถวเก่าที่ consult=true แต่ยังไม่มี consultCount (ก่อนรอบ 14) ถือเป็น 1 ครั้ง — ไม่ใช่แถวใหม่ก็ยังกรอกได้ปกติ
-  var rawCount = rec && rec.consultCount;
-  var consultCount = (typeof rawCount === 'number' && rawCount >= 1 && Math.floor(rawCount) === rawCount) ? rawCount : (consult ? 1 : 0);
+  var consultCount = cuConsultTimes_(rec, consult); // รอบ 97: สูตรเดียวกับตารางพิมพ์
   var consultCountVal = consult ? String(consultCount || 1) : '';
   // รอบ 36 (W3): "× N" -> "N แพทย์" (ยังแสดงเฉพาะ >= 2 ครั้งเหมือนเดิม — 2 จุดนี้กับ syncConsultCountPrint() ต้องสูตรเดียวกัน)
   var consultPrintText = (consult && consultCount >= 2) ? (consultCount + ' แพทย์') : '';
@@ -12940,6 +13030,8 @@ function onPendingBulkSave() {
    ⚠ ส่งทุก action พร้อม staffName: STATE.staffName · เซิร์ฟเวอร์ลงเวลาเอง (ห้ามเชื่อเวลา client) · เน็ตหลุด = ไม่ส่งซ้ำเอง แล้วโหลด dqToday ใหม่
    ========================================================================= */
 // เจ้าของสั่ง 2026-10-05: เวลาเริ่มตรวจตั้งต้น 09:30 ทุกห้อง (ใช้เฉพาะวันที่ยังไม่มีผัง · แก้ได้ในหน้าตั้งห้อง)
+// รอบ 96: รายการห้องที่เลือกได้ในหน้า ⚙ ตั้งห้อง (ลำดับเดียวกับ dqDefaultRooms · เซิร์ฟเวอร์ใช้ DQ_ROOMS_ ชุดเดียวกัน)
+var dqRoomChoices = ['1', '8', 'ล็อกขาย', '5'];
 var dqDefaultRooms = [
   { room: '1', doctor: '', start: '09:30', end: '' },
   { room: '8', doctor: '', start: '09:30', end: '' },
@@ -13020,6 +13112,7 @@ function dqFmtRoomStat(count, avgMinutes) {
   return count + ' คิว · เฉลี่ย ' + avgMinutes + ' นาที/คน';
 }
 // รอบ 51: dqRoomDoctorGroups (ใช้ summary.byDoctor ของเซิร์ฟเวอร์) ถูกแทนด้วย dqRoomDoctorSplit — คำนวณจาก logs ในหน้าเว็บ
+// รอบ 96: รายการห้องที่ให้สีต้องตรงกับ dqRoomChoices (เพิ่ม/เปลี่ยนห้องที่หนึ่งต้องแก้อีกที่ด้วย)
 function dqRoomColorKey(room) {
   var r = String(room == null ? '' : room).trim();
   if (r === '1') return 'yellow';
@@ -14968,13 +15061,30 @@ function dqAddSetupRow(item) {
   var row = document.createElement('div');
   row.className = 'dq-setup-row';
   row.innerHTML =
-    '<input type="text" class="dq-su-room" placeholder="ห้อง" value="' + escHtml(item.room) + '">' +
+    '<select class="dq-su-room" aria-label="ห้อง"></select>' +
     '<div class="dq-su-doc-wrap"><input type="text" class="dq-su-doctor" placeholder="พิมพ์ค้นหาชื่อแพทย์" autocomplete="off" aria-label="ชื่อแพทย์">' +
     '<div class="dq-su-doc-msg" aria-live="polite"></div></div>' +
     '<input type="text" class="dq-su-start" placeholder="HH:MM" value="' + escHtml(item.start) + '">' +
     '<input type="text" class="dq-su-end" placeholder="HH:MM" value="' + escHtml(item.end) + '">' +
     '<button type="button" class="btn small secondary dq-su-remove">ลบห้องนี้</button>';
   row.querySelector('.dq-su-remove').addEventListener('click', function () { row.remove(); });
+  // รอบ 96: ช่องห้องเป็น select จาก dqRoomChoices · ค่าเดิมนอกรายการ (ผังเก่า) ⇒ option พิเศษท้ายรายการ แล้วเลือกไว้ให้เลือกใหม่ (สร้างด้วย DOM ไม่ผ่าน innerHTML)
+  var roomSel = row.querySelector('.dq-su-room');
+  var wantRoom = String(item.room == null ? '' : item.room);
+  var optBlank = document.createElement('option');
+  optBlank.value = ''; optBlank.textContent = 'เลือกห้อง';
+  roomSel.appendChild(optBlank);
+  dqRoomChoices.forEach(function (rm) {
+    var o = document.createElement('option');
+    o.value = rm; o.textContent = rm;
+    roomSel.appendChild(o);
+  });
+  if (wantRoom.trim() !== '' && dqRoomChoices.indexOf(wantRoom) < 0) {
+    var oOld = document.createElement('option');
+    oOld.value = wantRoom; oOld.textContent = wantRoom + ' (ไม่อยู่ในรายการ — เลือกใหม่)';
+    roomSel.appendChild(oOld);
+  }
+  roomSel.value = wantRoom.trim() === '' ? '' : wantRoom;
   var sel = row.querySelector('.dq-su-doctor');
   // รอบ 78: "แตะแล้ว" (data-touched) ตั้งเมื่อผู้ใช้พิมพ์/เลือกชื่อ — ห้องตั้งต้นจึงไม่ถูกเติมชื่อทับอีก
   doctorComboAttach_(sel, {
@@ -15073,7 +15183,14 @@ function dqOnSaveRoomsClick() {
   }
   var rows = dqCollectSetupRows();
   var trimmed = rows.map(function (r) { return (r.room || '').trim(); });
-  if (trimmed.some(function (r) { return r === ''; })) { dqShowSetupMsg('กรุณากรอกชื่อห้องให้ครบทุกแถว', true); return; }
+  if (trimmed.some(function (r) { return r === ''; })) { dqShowSetupMsg('กรุณาเลือกห้องให้ครบทุกแถว', true); return; }
+  // รอบ 96: ห้องต้องอยู่ใน dqRoomChoices (ผังเก่าที่มีห้องนอกรายการต้องเลือกใหม่) — ไม่ยิง request
+  for (var ri = 0; ri < trimmed.length; ri++) {
+    if (dqRoomChoices.indexOf(trimmed[ri]) < 0) {
+      dqShowSetupMsg('ห้อง "' + trimmed[ri] + '" ไม่อยู่ในรายการ — เลือกได้เฉพาะห้อง ' + dqRoomChoices.join(' / '), true);
+      return;
+    }
+  }
   var seen = {};
   for (var i = 0; i < trimmed.length; i++) {
     if (seen[trimmed[i]]) { dqShowSetupMsg('มีชื่อห้องซ้ำกันในผัง', true); return; }
@@ -15120,7 +15237,11 @@ function dqOnSaveRoomsClick() {
     if (btn) { btn.disabled = false; btn.textContent = 'บันทึกผัง'; }
     if (resp && resp.status === 'ok') {
       dqApplyDoctorsToday_(resp.doctorsToday);
-      if (resp.doctorsTodayWarning) showToast(resp.doctorsTodayWarning);
+      // รอบ 96: เซิร์ฟเวอร์เติมชื่อแพทย์ให้คิวของห้องที่ยังไม่มีชื่อ · showToast แทนข้อความเดิม ⇒ ต่อเป็นข้อความเดียวกับคำเตือนแพทย์ประจำวัน
+      var saveMsgs = [];
+      if (resp.doctorsTodayWarning) saveMsgs.push(resp.doctorsTodayWarning);
+      if (resp.doctorFilled > 0) saveMsgs.push('เติมชื่อแพทย์ให้ ' + resp.doctorFilled + ' คิวที่ยังไม่มีชื่อแพทย์');
+      if (saveMsgs.length) showToast(saveMsgs.join(' · '));
       dqShowView('board');
       if (resp.today) dqApplySnapshot(resp.today); // รอบ 86: เลิกเปิดแถบชื่อแพทย์ของคิวเองหลังบันทึกผัง (รอบ 80)
       else dqLoadToday();
@@ -15204,7 +15325,6 @@ function showScreen(name) {
   if (name === 'pending') { ensurePendingDateDefault(); loadPending(); } // รอบ 28 (W8)
   if (name === 'appt' && typeof apptOnShow_ === 'function') apptOnShow_(); // รอบ 87 (D10) · รอบ 88: + เลือกวัน + โหลดรายชื่อของวันที่เลือก
   if (name === 'spBoard') { // รอบ 9 (ก้อน A)
-    SP_BOARD_CAP_MODE = false;
     var spL1 = qs('spBoardLayer1'), spL2 = qs('spBoardLayer2');
     if (spL1) spL1.hidden = false;
     if (spL2) spL2.hidden = true;
@@ -16096,7 +16216,6 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('spBoardDate').addEventListener('change', loadSpBoard);
   qs('spBoardBackBtn').addEventListener('click', closeSpBoardCategory);
   qs('btnSpBoardBulkPrep').addEventListener('click', function () { bulkMarkPrep(SP_BOARD_ACTIVE_ID); });
-  qs('btnSpBoardCap').addEventListener('click', toggleSpBoardCapMode);
   // รอบ 82 (ก้อน B): ปุ่มเลื่อนจอหน้าบันทึก (จุดคีย์ order) — ⬆ = บนสุด · ⬇ = ล่างสุดของหน้า (smooth) · อัปเดตการซ่อน/วางตำแหน่งเมื่อเลื่อน/ปรับขนาด
   [['logScrollTop', false], ['logScrollBottom', true]].forEach(function (cfg) {
     var lb = qs(cfg[0]);
