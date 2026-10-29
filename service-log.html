@@ -1470,11 +1470,11 @@
       <button type="button" class="btn small secondary" id="paClose" aria-label="ปิด">✕</button>
     </div>
     <label class="field-label" for="paQueue">คิว *</label>
-    <input type="text" id="paQueue" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
+    <input type="text" id="paQueue" autocapitalize="characters" spellcheck="false" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
     <button type="button" class="btn small secondary" id="paQueueHint" hidden style="margin-top:4px;"></button>
     <div id="paQueueErr" class="pre-field-err"></div>
     <label class="field-label" for="paHn">HN *</label>
-    <input type="text" id="paHn" autocomplete="off" placeholder="เช่น AB1234">
+    <input type="text" id="paHn" autocapitalize="characters" spellcheck="false" autocomplete="off" placeholder="เช่น AB1234">
     <div id="paHnErr" class="pre-field-err"></div>
     <label class="field-label" for="paDelivery">ช่องทางรับผล *</label>
     <select id="paDelivery"></select>
@@ -1653,7 +1653,7 @@
                   <!-- รอบ 60 ข้อ 2: ระบบไม่เติมคิวให้เองอีกแล้ว — แนะนำที่ placeholder/hint แล้วให้เจ้าหน้าที่กด ▶ / ปุ่มลูกศรขวา / ปัดขวา เลือกเอง -->
                   <div class="queue-step-row">
                     <button type="button" class="btn secondary small" id="queuePrev" aria-label="คิวก่อนหน้า">◀</button>
-                    <input type="text" id="queueSelect" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
+                    <input type="text" id="queueSelect" autocapitalize="characters" spellcheck="false" list="queueOptions" autocomplete="off" placeholder="เช่น C1 (พิมพ์เองได้)">
                     <button type="button" class="btn secondary small" id="queueNext" aria-label="คิวถัดไป">▶</button>
                   </div>
                   <datalist id="queueOptions"></datalist>
@@ -1661,7 +1661,7 @@
                 </div>
 
                 <label class="field-label" for="patientHn" id="patientHnLabel">HN</label>
-                <input type="text" id="patientHn" autocomplete="off" placeholder="บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ">
+                <input type="text" id="patientHn" autocapitalize="characters" spellcheck="false" autocomplete="off" placeholder="บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ">
                 <div id="patientHnHint" class="field-hint-warn" hidden></div>
                 <!-- รอบ 87 (D1): HN ตรงคน "รอมา" วันนี้ — ฟอร์มมีข้อมูลอื่นอยู่ ⇒ แถบ [ใช้ข้อมูลนี้] / ตรงหลายคน ⇒ รายชื่อให้แตะเลือก (เฉพาะจุดคีย์ order) -->
                 <div id="hoHnSuggest" class="ho-suggest no-print" hidden></div>
@@ -2218,7 +2218,7 @@
         <div class="card">
           <label class="field-label" for="dqQueueInput" style="margin-top:0;">พิมพ์หรือเลือกเลขคิว แล้วแตะช่อง ＋ ของห้องที่จะเข้า</label>
           <div class="dq-queue-row">
-            <input type="text" id="dqQueueInput" autocomplete="off" maxlength="60" title="เข้าห้องพร้อมกันหลายคิว: พิมพ์คั่นด้วยเว้นวรรคหรือจุลภาค เช่น C5 C6 (หรือกด ＋ เข้าพร้อม ที่คิวที่กำลังตรวจ)" placeholder="พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1">
+            <input type="text" id="dqQueueInput" autocapitalize="characters" spellcheck="false" autocomplete="off" maxlength="60" title="เข้าห้องพร้อมกันหลายคิว: พิมพ์คั่นด้วยเว้นวรรคหรือจุลภาค เช่น C5 C6 (หรือกด ＋ เข้าพร้อม ที่คิวที่กำลังตรวจ)" placeholder="พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1">
             <button type="button" class="btn small secondary" id="dqBtnWalkIn">＋ คิวไม่นัด</button>
           </div>
           <div id="dqSuggest" class="dq-suggest" role="listbox" aria-label="คิววันนี้ที่ยังไม่พบแพทย์" hidden></div>
