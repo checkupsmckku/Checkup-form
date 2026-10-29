@@ -4777,9 +4777,12 @@ function validateForm(ctx) {
     // รอบ 98 (เจ้าของ 2026-10-28): ใบรับรองแพทย์ทั่วไป (5 โรค/ขับขี่ · ctx.nCert > 0) ต้องใส่ HN เหมือนมี Lab — ชื่อไม่บังคับ
     // ฝั่งเว็บเท่านั้น (แถวเก่าในชีตไม่มี HN) · มี Lab ไม่มี nCert ใช้ด่าน "ใบรับรองแพทย์มี lab ต้องกรอก HN" ด้านล่างตามเดิม
     msg = 'ใบรับรองแพทย์ต้องกรอก HN';
-  } else if (!preM && ctx.checkupOn && String(ctx.queue || '').trim() && !isCheckupQueueValue_(ctx.queue)) {
+  } else if (!preM && ctx.checkupOn && String(ctx.queue || '').trim() && !isCheckupQueueValue_(ctx.queue) &&
+             !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
     // รอบ 101 (เจ้าของ 2026-10-29): ตรวจสุขภาพต้องใช้คิว C หรือ "ไม่นัด N" — คู่กับด่านคิว M ของใบรับรองด้านบน
     // คิวว่างให้ checkupMissing ด้านล่างจับตามเดิม · บังคับฝั่งเว็บเท่านั้น (แถวเก่าในชีตแก้จากเซิร์ฟเวอร์ได้)
+    // โหมดแก้ไข/รวมเข้าแถววันนี้ (mergeDraftIntoTodayRecord) ที่คิวยังเป็นคิวเดิมของแถว ⇒ ไม่ตรวจ (แพตเทิร์นเดียวกับ queueDupInfoFor_)
+    //   ไม่งั้นแถวเดิมคิว V/A ที่เติมตรวจสุขภาพเข้าไป และแถวเก่าก่อนรอบ 101 จะบันทึกไม่ได้ · เปลี่ยนคิวเป็นค่าอื่น ⇒ ตรวจตามปกติ
     msg = 'ตรวจสุขภาพใช้คิว C เท่านั้น (เช่น C7) หรือ ไม่นัด N';
   } else if (ctx.checkupOn && !ctx.gender) {
     msg = 'เลือกโปรแกรมแล้วต้องเลือกเพศให้ครบก่อนบันทึก';
