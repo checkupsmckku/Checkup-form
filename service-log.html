@@ -8856,11 +8856,12 @@ function startPreArrive_(item, opts) {
   if (!item) return;
   opts = opts || {};
   var typedHn = (opts.mode === 'hn') ? (qs('patientHn').value || '') : '';
-  // รอบ 99 (เจ้าของแจ้ง): กรอกคิวก่อนแล้วค้น HN/ชื่อ ⇒ คิวต้องไม่หาย (resetLogForm ล้าง #queueSelect) · ปุ่ม ▶ (ไม่มี mode) คงเดิม
-  var searchPick = opts.mode === 'hn' || opts.mode === 'name';
-  var typedQueue = searchPick ? (qs('queueSelect').value || '').trim() : '';
+  // รอบ 99 (เจ้าของแจ้ง "อยากให้คิวที่กรอกไม่หาย"): กรอกคิวก่อนแล้วเลือกคนนัด (ค้น HN/ชื่อ หรือปุ่ม ▶) ⇒ คิวไม่นับเป็นร่าง
+  // และคืนให้หลัง resetLogForm (ซึ่งล้าง #queueSelect) · ปุ่ม ▶: ไม่นับคิว แต่ HN ที่พิมพ์ยังนับเป็นร่างเหมือนเดิม
+  var typedQueue = (qs('queueSelect').value || '').trim();
   var formEmpty = opts.mode === 'hn' ? isMainFormDraftEmptyExceptHn_(false, true)
-    : (opts.mode === 'name' ? isMainFormDraftEmptyExceptHn_(true, true) : isMainFormDraftEmpty_());
+    : (opts.mode === 'name' ? isMainFormDraftEmptyExceptHn_(true, true)
+      : (isMainFormDraftEmptyExceptHn_(false, true) && !(qs('patientHn').value || '').trim()));
   if (!formEmpty && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการนัดนี้หรือไม่?')) return;
   STATE.preEditId = '';
   STATE.preEditName = '';
@@ -16065,7 +16066,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (apptDaysEl) apptDaysEl.addEventListener('click', onApptClick_);
   if (apptErrEl) apptErrEl.addEventListener('click', onApptClick_);
   var hoArriveClearEl = qs('btnHoArriveClear');
-  if (hoArriveClearEl) hoArriveClearEl.addEventListener('click', function () { clearHoArrive_(); resetLogForm(); });
+  if (hoArriveClearEl) hoArriveClearEl.addEventListener('click', function () {
+    // รอบ 99 (เจ้าของแจ้ง): "ไม่ใช่คนนี้" = เลือกคนนัดผิด ⇒ ล้างข้อมูลคนนั้น แต่คิวเป็นของคนที่ยืนอยู่หน้าเคาน์เตอร์ ⇒ คงคิวไว้
+    var keepQueue = (qs('queueSelect').value || '').trim();
+    clearHoArrive_();
+    resetLogForm();
+    if (keepQueue) { qs('queueSelect').value = keepQueue; recalcTotals(); }
+  });
   qs('medCert5').addEventListener('input', onServiceFieldChange);
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
   qs('medCertLabAmount').addEventListener('input', onServiceFieldChange);
