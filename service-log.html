@@ -1264,6 +1264,14 @@
   #dqScreen .dq-sug.dq-sug-active { background: var(--primary); color: #fff; }
   #dqScreen .dq-sug.dq-sug-next { background: #FFF8D9; border-color: #C9A400; border-style: dashed; } /* รอบ 50: คิวที่เดา */
   #dqScreen .dq-sug.dq-sug-next.dq-sug-active { background: var(--primary); border-style: solid; color: #fff; }
+  /* รอบ 102: ป้ายที่เลือกแล้ว (✓) · แถว "เข้าพร้อมกัน:" · ปุ่ม ＋ อีกคิว (สูง ≥ 44px บนมือถือ ตามปุ่มข้าง ๆ) */
+  #dqScreen .dq-sug.dq-sug-picked { background: #E3F5E8; border-color: #2E7D32; border-style: solid; color: #1B5E20; font-weight: bold; }
+  #dqScreen .dq-sug.dq-sug-picked.dq-sug-active { background: var(--primary); color: #fff; }
+  #dqScreen .dq-multi-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 14px; }
+  #dqScreen .dq-multi-row[hidden] { display: none; }
+  #dqScreen .dq-multi-chip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid #2E7D32; background: #E3F5E8; color: #1B5E20; border-radius: 999px; padding: 2px 4px 2px 10px; font-weight: bold; }
+  #dqScreen .dq-multi-x { border: 0; background: transparent; color: #1B5E20; font-size: 16px; line-height: 1; min-width: 32px; min-height: 32px; cursor: pointer; font-family: inherit; }
+  @media (max-width: 700px) { #dqScreen #dqBtnAddQueue, #dqScreen #dqBtnWalkIn { min-height: 44px; } #dqScreen .dq-multi-x { min-width: 44px; min-height: 44px; } }
   .dq-break-badge { margin: 0 0 4px; font-size: 12px; font-weight: normal; color: #6B5600; text-align: center; overflow-wrap: anywhere; } /* รอบ 50/51 */
   .dq-break-btn { display: block; margin-top: 4px; max-width: 100%; box-sizing: border-box; padding: 3px 8px; font-size: 12px; font-family: inherit; line-height: 1.3; white-space: normal; cursor: pointer; border: 1px solid #C9A400; background: #FFF8D9; color: #6B5600; border-radius: 6px; } /* รอบ 50 */
   /* รอบ 51 — การ์ดห้อง 1 ใบ/ห้อง · จอ ≥ 700px = grid 2 คอลัมน์ (4 ห้อง = 2×2) · การ์ดสูงคงที่ รายการเลื่อนในการ์ด · ＋ / ป้ายพัก / สถิติ ตรึงล่างการ์ด */
@@ -2218,9 +2226,11 @@
         <div class="card">
           <label class="field-label" for="dqQueueInput" style="margin-top:0;">พิมพ์หรือเลือกเลขคิว แล้วแตะช่อง ＋ ของห้องที่จะเข้า</label>
           <div class="dq-queue-row">
-            <input type="text" id="dqQueueInput" autocapitalize="characters" autocorrect="off" spellcheck="false" autocomplete="off" maxlength="60" title="เข้าห้องพร้อมกันหลายคิว: พิมพ์คั่นด้วยเว้นวรรคหรือจุลภาค เช่น C5 C6 (หรือกด ＋ เข้าพร้อม ที่คิวที่กำลังตรวจ)" placeholder="พิมพ์เลขคิว เช่น C1, M5 หรือ ไม่นัด 1">
+            <input type="text" id="dqQueueInput" autocapitalize="characters" autocorrect="off" spellcheck="false" autocomplete="off" maxlength="60" title="เข้าห้องพร้อมกันหลายคิว: พิมพ์คั่นด้วยเว้นวรรคหรือจุลภาค เช่น C5 C6 (หรือกด ＋ เข้าพร้อม ที่คิวที่กำลังตรวจ)" placeholder="เช่น C1 · แตะได้หลายคิว">
             <button type="button" class="btn small secondary" id="dqBtnWalkIn">＋ คิวไม่นัด</button>
+            <button type="button" class="btn small secondary" id="dqBtnAddQueue">＋ อีกคิว</button>
           </div>
+          <div id="dqMultiRow" class="dq-multi-row" aria-label="คิวที่จะเข้าห้องพร้อมกัน" hidden></div>
           <div id="dqSuggest" class="dq-suggest" role="listbox" aria-label="คิววันนี้ที่ยังไม่พบแพทย์" hidden></div>
           <div id="dqQueueMsg" class="dq-queue-err" role="alert" hidden></div>
           <div class="muted" style="margin-top:8px;font-size:13px;">กด ＋ เมื่อคนก่อนหน้าออกจากห้องแล้ว (ส่งไปนั่งรอหน้าห้องยังไม่ต้องกด) · แพทย์พักเที่ยง/เลิกตรวจ กด ☕ ที่ห้องนั้น</div>
@@ -14112,6 +14122,7 @@ function dqRoomDoctorSplit(roomLogs) {
 // รอบ 51: ปุ่ม ＋ ของการ์ดทุกใบ — มีคิวที่จะลง ⇒ '＋ C12 เข้าห้อง <room>' · ไม่มี ⇒ '＋ เข้าห้องนี้' + dq-slot-idle (ยังคลิกได้ ⇒ toast เดิม)
 // ไม่วาดการ์ดใหม่ — แก้ข้อความปุ่มอย่างเดียว (เรียกตอนพิมพ์/เปลี่ยนไฮไลต์ได้)
 function dqUpdateSlotLabels() {
+  dqRenderMultiRow(); // รอบ 102: แถว "เข้าพร้อมกัน:" ตามช่องคิว (ทุกจุดที่แก้ป้ายปุ่ม ＋ เรียกคู่กันอยู่แล้ว)
   var container = qs('dqRoomCards');
   if (!container) return;
   var sq = dqSlotQueues();
@@ -14533,6 +14544,8 @@ function dqQueueTokens_(raw) { return String(raw == null ? '' : raw).match(/ไ�
 function dqInputInfo_(raw) {
   raw = String(raw == null ? '' : raw);
   var whole = dqNormQueue(raw.trim());
+  // รอบ 102: คิวเดียวที่ถูกต้อง + ตัวคั่นท้าย ('C5 ') = คิวจบแล้ว (มาจากป้าย/＋ อีกคิว) ⇒ ไม่กรองด้วยคำที่พิมพ์ · นับเป็นหลายคิวทางเดียวกับ 'C5 C6 ' · ไม่มีตัวคั่นท้าย ('C5') = ยังพิมพ์ค้าง เหมือนเดิมทุกอย่าง
+  if (whole && /[\s,]$/.test(raw)) return { multi: true, tokens: [whole], head: [whole], typed: '', whole: '', partialOpen: false };
   if (whole) return { multi: false, tokens: [whole], head: [], typed: dqSugNorm(raw), whole: whole, partialOpen: false };
   var tokens = dqQueueTokens_(raw);
   var multi = tokens.length >= 2 || (tokens.length >= 1 && /,\s*$/.test(raw));
@@ -14658,7 +14671,8 @@ function dqSugList() {
   var info = dqInputInfo_(input && input.value); // รอบ 82: พิมพ์หลายคิว ⇒ กรองด้วยคำสุดท้ายที่กำลังพิมพ์ และไม่แนะนำคิวที่พิมพ์ไว้แล้ว · คิวเดียว = เหมือนเดิม (typed = ทั้งช่อง)
   var typed = info.typed;
   var headKeys = {};
-  if (info.multi) info.head.forEach(function (h) { var hn = dqNormQueue(h); if (hn) headKeys[dqQueueKey(hn)] = true; });
+  // รอบ 102: ตัดป้ายที่พิมพ์ไว้แล้วออกเฉพาะตอนยังพิมพ์คำสุดท้ายค้าง (partialOpen) · คำจบแล้ว (ตัวคั่นท้าย) ⇒ แสดงทุกป้ายพร้อม ✓ ให้แตะซ้ำเพื่อเอาออกได้
+  if (info.multi && info.partialOpen) info.head.forEach(function (h) { var hn = dqNormQueue(h); if (hn) headKeys[dqQueueKey(hn)] = true; });
   return src.filter(function (p) {
     return p && p.queue && !headKeys[dqQueueKey(p.queue)] && (!typed || dqSugNorm(p.queue).indexOf(typed) === 0);
   });
@@ -14942,15 +14956,18 @@ function dqRenderSuggest() {
   if (list.length === 0) { box.hidden = true; return; }
   var idx = dqSugIndex(list);
   if (idx < 0) dqSugActive = '';
+  var pickedKeys = dqPickedKeys_(); // รอบ 102: คิวที่อยู่ในช่องแล้ว (คำจบแล้ว) ⇒ ป้าย ✓
   list.forEach(function (p, i) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'dq-sug' + (p.next ? ' dq-sug-next' : '') + (i === idx ? ' dq-sug-active' : '');
+    var picked = !!pickedKeys[dqQueueKey(p.queue)];
+    b.className = 'dq-sug' + (p.next ? ' dq-sug-next' : '') + (i === idx ? ' dq-sug-active' : '') + (picked ? ' dq-sug-picked' : '');
     b.setAttribute('role', 'option');
     b.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+    if (picked) b.setAttribute('aria-pressed', 'true');
     b.setAttribute('data-queue', p.queue);
     var label = p.next ? ('ถัดไป ' + p.queue) : p.queue; // รอบ 50: chip ที่เดา
-    b.textContent = p.name ? (label + ' · ' + p.name) : label; // textContent — ชื่อที่มี < > ไม่กลายเป็นแท็ก
+    b.textContent = (picked ? '✓ ' : '') + (p.name ? (label + ' · ' + p.name) : label); // textContent — ชื่อที่มี < > ไม่กลายเป็นแท็ก
     box.appendChild(b);
   });
   box.hidden = false;
@@ -14959,16 +14976,102 @@ function dqRenderSuggest() {
     if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 }
+// รอบ 102: ช่อง #dqQueueInput เป็นแหล่งความจริงเดียว — ฟังก์ชันชุดนี้อ่าน/เขียนข้อความในช่องแล้วให้ผู้เรียกวาดใหม่เอง
+// คีย์คิวที่อยู่ในช่องแล้ว (คำที่จบแล้วเท่านั้น — คำสุดท้ายที่ยังพิมพ์ค้างไม่นับ)
+function dqPickedKeys_() {
+  var input = qs('dqQueueInput');
+  var info = dqInputInfo_(input && input.value);
+  var keys = {};
+  if (info.multi) info.head.forEach(function (h) { var n = dqNormQueue(h); if (n) keys[dqQueueKey(n)] = true; });
+  return keys;
+}
+// เขียนช่องจากรายการคำที่จบแล้ว (+ คำที่ยังพิมพ์ค้าง ถ้ามี) · มีคำจบแล้ว ⇒ ปิดท้ายด้วย ' ' เสมอ
+function dqWriteQueueList_(head, openWord) {
+  var input = qs('dqQueueInput');
+  if (!input) return;
+  var v = head.join(' ');
+  if (openWord) v += (v ? ' ' : '') + openWord;
+  else if (head.length) v += ' ';
+  input.value = v;
+}
+function dqAfterQueueEdit_() {
+  var input = qs('dqQueueInput');
+  dqSugActive = '';
+  dqRenderSuggest();
+  dqUpdateSlotLabels(); // รอบ 51 (+ รอบ 102: แถวเข้าพร้อมกัน)
+  if (input) input.focus();
+}
+// เอาคิวออกจากช่อง (คงคิวอื่น + ตัวคั่นท้าย · คำที่ยังพิมพ์ค้างอยู่คงไว้) — ใช้ทั้งแตะป้าย ✓ ซ้ำ และปุ่ม ✕
+function dqRemoveQueueFromInput_(key) {
+  var input = qs('dqQueueInput');
+  if (!input) return;
+  var info = dqInputInfo_(input.value);
+  if (!info.multi) return;
+  var head = info.head.filter(function (h) { var n = dqNormQueue(h); return !(n && dqQueueKey(n) === key); });
+  dqWriteQueueList_(head, info.partialOpen ? info.tokens[info.tokens.length - 1] : '');
+}
 function dqSugPick(queue) {
   var input = qs('dqQueueInput');
   if (!input) return;
-  var pinfo = dqInputInfo_(input.value); // รอบ 82: พิมพ์หลายคิวอยู่ ⇒ แทนคำสุดท้ายด้วยชิป คงคิวก่อนหน้า
-  input.value = pinfo.multi ? (pinfo.head.join(' ') + (pinfo.head.length ? ' ' : '') + queue) : queue;
   dqShowQueueMsg_('');
-  dqSugActive = '';
-  dqRenderSuggest();
-  dqUpdateSlotLabels(); // รอบ 51
-  input.focus();
+  var nq = dqNormQueue(queue) || queue;
+  var key = dqQueueKey(nq);
+  var pinfo = dqInputInfo_(input.value);
+  // รอบ 102: แตะป้ายที่ ✓ อยู่ ⇒ เอาออก · คำสุดท้ายยังพิมพ์ค้าง/คิวเดียวที่พิมพ์ค้าง ⇒ แทนคำนั้น (รอบ 82 เดิม) · คิวในช่องจบแล้ว ⇒ เพิ่มท้าย · ทุกกรณีปิดท้าย ' '
+  if (pinfo.multi && pinfo.head.some(function (h) { var n = dqNormQueue(h); return n && dqQueueKey(n) === key; })) {
+    dqRemoveQueueFromInput_(key);
+  } else {
+    var head = pinfo.multi ? pinfo.head : [];
+    if (head.length + 1 > dqMaxEnterQueues) { dqShowQueueMsg_('เข้าพร้อมกันได้ไม่เกิน ' + dqMaxEnterQueues + ' คิว'); dqAfterQueueEdit_(); return; }
+    dqWriteQueueList_(head.concat([nq]), '');
+  }
+  dqAfterQueueEdit_();
+}
+// รอบ 102: ปุ่ม "＋ อีกคิว" — เก็บคำสุดท้ายที่พิมพ์ค้าง (normalize แล้ว) ปิดท้าย ' ' ให้พิมพ์คิวถัดไปต่อ
+function dqOnAddQueueClick() {
+  var input = qs('dqQueueInput');
+  if (!input) return;
+  var raw = input.value || '';
+  dqShowQueueMsg_('');
+  if (!raw.trim() || /[\s,]$/.test(raw)) { dqShowQueueMsg_('พิมพ์เลขคิวก่อน เช่น C5'); input.focus(); return; }
+  var info = dqInputInfo_(raw);
+  var head = info.multi ? info.head : [];
+  var last = info.multi ? info.tokens[info.tokens.length - 1] : raw.trim();
+  var nq = dqNormQueue(last);
+  if (!nq) { dqShowQueueMsg_('เลขคิวไม่ถูกต้อง: ' + last + ' — เช่น C1, M5 หรือ ไม่นัด 1'); input.focus(); return; }
+  var key = dqQueueKey(nq);
+  var dup = head.some(function (h) { var n = dqNormQueue(h); return n && dqQueueKey(n) === key; });
+  if (dup) { dqWriteQueueList_(head, ''); }
+  else if (head.length + 1 > dqMaxEnterQueues) { dqShowQueueMsg_('เข้าพร้อมกันได้ไม่เกิน ' + dqMaxEnterQueues + ' คิว'); input.focus(); return; }
+  else dqWriteQueueList_(head.concat([nq]), '');
+  dqAfterQueueEdit_();
+}
+// รอบ 102: แถว "เข้าพร้อมกัน:" — แสดงเมื่อ ≥ 2 คิว · ค่าเข้า DOM ด้วย textContent เท่านั้น
+function dqRenderMultiRow() {
+  var row = qs('dqMultiRow');
+  if (!row) return;
+  var sq = dqSlotQueues();
+  row.innerHTML = '';
+  if (sq.queues.length < 2) { row.hidden = true; return; }
+  var lab = document.createElement('span');
+  lab.textContent = 'เข้าพร้อมกัน:';
+  row.appendChild(lab);
+  sq.queues.forEach(function (q) {
+    var chip = document.createElement('span');
+    chip.className = 'dq-multi-chip';
+    var t = document.createElement('span');
+    t.textContent = q;
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'dq-multi-x';
+    x.setAttribute('data-queue', q);
+    x.setAttribute('aria-label', 'เอา ' + q + ' ออก');
+    x.textContent = '✕';
+    chip.appendChild(t);
+    chip.appendChild(x);
+    row.appendChild(chip);
+  });
+  row.hidden = false;
 }
 // ผูกกับ #dqQueueInput เท่านั้น — ไม่ใช่ document ⇒ ไม่แย่งคีย์ของหน้าบันทึกอื่น
 function dqOnQueueKeydown(e) {
@@ -15003,9 +15106,21 @@ function dqOnWalkInClick() {
     var m = /^ไม่นัด\s*([0-9]{1,3})$/.exec(String(log.queue == null ? '' : log.queue).trim());
     if (m) { var n = parseInt(m[1], 10); if (n > max) max = n; }
   });
-  var label = 'ไม่นัด ' + (max + 1);
   var input = qs('dqQueueInput');
-  if (input) { input.value = label; input.focus(); }
+  // รอบ 102: คิวที่จบแล้วในช่อง ⇒ เพิ่ม 'ไม่นัด N' ต่อท้าย (ไม่แทน) · ไม่นัด N ที่อยู่ในช่องแล้วนับ max ด้วย · ช่องว่าง/คิวเดียวที่พิมพ์ค้าง ⇒ แทนเหมือนเดิม
+  var winfo = dqInputInfo_(input && input.value);
+  var whead = winfo.multi ? winfo.head : [];
+  whead.forEach(function (h) {
+    var hm = /^ไม่นัด\s*([0-9]{1,3})$/.exec(String(h).trim());
+    if (hm) { var hn = parseInt(hm[1], 10); if (hn > max) max = hn; }
+  });
+  var label = 'ไม่นัด ' + (max + 1);
+  if (whead.length + 1 > dqMaxEnterQueues) { dqShowQueueMsg_('เข้าพร้อมกันได้ไม่เกิน ' + dqMaxEnterQueues + ' คิว'); if (input) input.focus(); return; }
+  if (input) {
+    if (whead.length) dqWriteQueueList_(whead.concat([label]), '');
+    else input.value = label;
+    input.focus();
+  }
   dqSugActive = '';
   dqRenderSuggest();
   dqUpdateSlotLabels(); // รอบ 51
@@ -15302,7 +15417,18 @@ function dqInit() {
   window.addEventListener('pageshow', listDatesCheckDayRollover);
   window.addEventListener('focus', listDatesCheckDayRollover);
   setInterval(listDatesCheckDayRollover, 60000);
-  var map = { dqBtnWalkIn: dqOnWalkInClick, dqBtnOpenSetup: dqOpenSetup, dqBtnAddRoom: function () { dqAddSetupRow(); }, dqBtnSaveRooms: dqOnSaveRoomsClick,
+  var mrow = qs('dqMultiRow'); // รอบ 102: ✕ ในแถวเข้าพร้อมกัน ⇒ เอาคิวนั้นออกจากช่อง
+  if (mrow) {
+    mrow.addEventListener('mousedown', function (e) { if (e.target && e.target.closest && e.target.closest('.dq-multi-x')) e.preventDefault(); });
+    mrow.addEventListener('click', function (e) {
+      var xb = e.target && e.target.closest ? e.target.closest('.dq-multi-x') : null;
+      if (!xb) return;
+      dqShowQueueMsg_('');
+      dqRemoveQueueFromInput_(dqQueueKey(xb.getAttribute('data-queue')));
+      dqAfterQueueEdit_();
+    });
+  }
+  var map = { dqBtnWalkIn: dqOnWalkInClick, dqBtnAddQueue: dqOnAddQueueClick, dqBtnOpenSetup: dqOpenSetup, dqBtnAddRoom: function () { dqAddSetupRow(); }, dqBtnSaveRooms: dqOnSaveRoomsClick,
     dqBtnCloseSetup: function () { dqShowView('board'); dqRerender(); }, dqAddDocBtn: dqOnAddDoctorClick };
   Object.keys(map).forEach(function (id) {
     var el = qs(id);
