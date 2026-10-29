@@ -1167,6 +1167,19 @@
     /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     table.cu-table tr.cu-cancelled-row td { color: #555; } /* รอบ 67: แถวคิวยกเลิกบนกระดาษ — เทาเข้มพอให้อ่านได้ */
+    /* รอบ 103: ใบพิมพ์แบบ B "รายชื่อเก็บข้อมูล" (.cu-table-data) 9 คอลัมน์ · ค่าสำรองเมื่อ JS ไม่ทำงาน รวม 100%:
+       คิว 5 · HN 8 · ชื่อ 24 · โปรแกรม 7 · มะเร็ง 9 · ราคา 7 · ช่องทาง 10 · แพทย์ 24 · Consult 6 (cuFitNamesForPrint ตั้งความกว้างจริงตามชื่อ/แพทย์)
+       ⚠ ไม่ใช้คลาส cu-col-amt กับคอลัมน์ราคา (เจ้าของสั่งให้ราคาพิมพ์ออกกระดาษในแบบนี้) · ชื่อ-สกุล + ชื่อแพทย์ nowrap เฉพาะ td */
+    table.cu-table.cu-table-data th:nth-child(1), table.cu-table.cu-table-data td:nth-child(1) { width: 5%; }
+    table.cu-table.cu-table-data th:nth-child(2), table.cu-table.cu-table-data td:nth-child(2) { width: 8%; }
+    table.cu-table.cu-table-data th:nth-child(3), table.cu-table.cu-table-data td:nth-child(3) { width: 24%; }
+    table.cu-table.cu-table-data th:nth-child(4), table.cu-table.cu-table-data td:nth-child(4) { width: 7%; }
+    table.cu-table.cu-table-data th:nth-child(5), table.cu-table.cu-table-data td:nth-child(5) { width: 9%; }
+    table.cu-table.cu-table-data th:nth-child(6), table.cu-table.cu-table-data td:nth-child(6) { width: 7%; }
+    table.cu-table.cu-table-data th:nth-child(7), table.cu-table.cu-table-data td:nth-child(7) { width: 10%; }
+    table.cu-table.cu-table-data th:nth-child(8), table.cu-table.cu-table-data td:nth-child(8) { width: 24%; }
+    table.cu-table.cu-table-data th:nth-child(9), table.cu-table.cu-table-data td:nth-child(9) { width: 6%; }
+    table.cu-table.cu-table-data td:nth-child(3), table.cu-table.cu-table-data td:nth-child(8) { white-space: nowrap; word-break: normal; }
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
        ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (reportDay/reportMonth/cuDate อยู่ใต้ .no-print
@@ -2104,7 +2117,9 @@
           <button type="button" class="btn secondary" id="btnCuViewTable">📋 แบบตาราง</button>
         </div>
         <div class="row" style="margin-top:6px;">
-          <button type="button" class="btn secondary small no-print" id="btnCuPrint">🖨 พิมพ์</button>
+          <button type="button" class="btn secondary small no-print" id="btnCuPrint">🖨 ใบเซ็นรับผลตรวจ</button>
+          <!-- รอบ 103: ปุ่มที่ 2 = พิมพ์แบบรายชื่อเก็บข้อมูล (#btnCuPrint คง id เดิม = ใบเซ็นรับผลตรวจ) -->
+          <button type="button" class="btn secondary small no-print" id="btnCuPrintData">🖨 รายชื่อเก็บข้อมูล</button>
         </div>
       </div>
       <h2 id="cuTableHeading" style="margin-top:14px;"></h2>
@@ -9670,6 +9685,18 @@ function programLabelForPrint(program) {
   return p;
 }
 
+/* รอบ 103: ป้ายโปรแกรมแบบย่อสำหรับใบพิมพ์ "รายชื่อเก็บข้อมูล" — '1'..'4' => P1..P4 · 1sun => P1 อาทิตย์ · 2sun => P2 อาทิตย์ · couple => คู่รัก · pea => การไฟฟ้า · อื่น ๆ => ค่าเดิม
+   ⚠ สเปกตั้งชื่อ programShortLabel_ แต่ชื่อนั้นมีอยู่แล้ว (ป้ายแผงสรุป/การ์ด รอบ 63 — 3 ผู้เรียก) ⇒ ใช้ชื่อ programDataLabel_ แทน ห้ามทับของเดิม */
+function programDataLabel_(program) {
+  var p = String(program == null ? '' : program);
+  if (p === '1' || p === '2' || p === '3' || p === '4') return 'P' + p;
+  if (p === '1sun') return 'P1 อาทิตย์';
+  if (p === '2sun') return 'P2 อาทิตย์';
+  if (p === 'couple') return 'คู่รัก';
+  if (p === 'pea') return 'การไฟฟ้า';
+  return p;
+}
+
 // รอบ 55 (เจ้าของ 2026-10-06 "รายชื่อของวันก่อนยังค้างอยู่เมื่อเปิดเว็บขึ้นมาใหม่"): ช่องวันที่ที่ระบบตั้งให้ "ตามวันนี้"
 // เดิมตั้งเฉพาะตอนช่องว่าง ⇒ เปิดแท็บค้างข้ามคืน ช่องยังเป็นเมื่อวาน แล้วหน้ารายชื่อโหลดรายชื่อเมื่อวานขึ้นมา
 // กติกา: ช่องว่าง หรือค่ายังเป็นค่าที่ระบบตั้งให้ล่าสุด ⇒ เลื่อนเป็นวันนี้ · ผู้ใช้เลือกวันอื่นเอง ⇒ คงไว้ (ค่าไม่ตรงกับที่ระบบตั้ง)
@@ -10580,6 +10607,7 @@ function cuWideFootHtml_(rows, cancelledCount) {
   return '<div class="cu-foot-block"><div class="cu-foot-head">' + escHtml(head) + '</div>' + (docs ? '<div class="cu-foot-docs">' + docs + '</div>' : '') + '</div>';
 }
 
+var CU_PRINT_MODE = ''; // รอบ 103: '' = จอ · 'sign' = ใบเซ็นรับผลตรวจ · 'data' = รายชื่อเก็บข้อมูล (ตั้งเฉพาะช่วงพิมพ์ด้วยปุ่ม — cuPrintAs_ / cuEndPrintMode_)
 function renderCheckupTable(records, dateStr) {
   var wrap = qs('cuTableWrap');
   if (!wrap) return;
@@ -10600,11 +10628,16 @@ function renderCheckupTable(records, dateStr) {
   // รอบ 97 (เจ้าของ 2026-10-28 "ช่วงที่ยังไม่มีคิวไหนมีชื่อแพทย์ ไม่ต้องแสดงชื่อแพทย์และ consult"): คอลัมน์ขึ้นตามข้อมูล
   // มีอย่างน้อย 1 แถวที่แสดง (ไม่ใช่ยกเลิก) ที่ doctorName ไม่ว่าง หรือ consult === true ⇒ 10 คอลัมน์ (+ชื่อแพทย์ +Consult ก่อนเซ็นรับ)
   // ไม่มีเลย ⇒ 8 คอลัมน์ · ทั้ง 2 โหมดพิมพ์ A4 แนวตั้ง (ข้อ 8) · ลำดับคอลัมน์ 10 ช่อง = ชุด % .cu-table-wide ใน @media print
-  var cuWide = shownRows.some(cuRowHasDoctorOrConsult_);
-  var cuCols = cuWide ? 10 : 8;
-  var html = '<div class="scroll-x"><table class="report-table cu-table' + (cuWide ? ' cu-table-wide' : '') + '"><thead><tr>' +
-    '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th class="cu-col-amt">ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
-    '<th>ช่องทางส่งผลตรวจสุขภาพ</th>' + (cuWide ? '<th>ชื่อแพทย์</th><th>Consult</th>' : '') + '<th>เซ็นรับ</th></tr></thead><tbody>';
+  // รอบ 103: CU_PRINT_MODE '' = จอ/ค่าตั้งต้น (ตามข้อมูลเหมือนเดิม) · 'sign' = ใบเซ็นรับผลตรวจ บังคับ 8 คอลัมน์ · 'data' = รายชื่อเก็บข้อมูล 9 คอลัมน์ (ไม่มีเซ็นรับ มีราคา แพทย์ Consult เสมอ)
+  var cuData = (CU_PRINT_MODE === 'data');
+  var cuWide = cuData ? false : (CU_PRINT_MODE === 'sign' ? false : shownRows.some(cuRowHasDoctorOrConsult_));
+  var cuCols = cuData ? 9 : (cuWide ? 10 : 8);
+  var cuHeadCells = cuData
+    ? '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ตรวจมะเร็งปากมดลูก</th><th>ราคา</th><th>ช่องทางส่งผลตรวจสุขภาพ</th><th>ชื่อแพทย์</th><th>Consult</th>'
+    : '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th class="cu-col-amt">ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
+      '<th>ช่องทางส่งผลตรวจสุขภาพ</th>' + (cuWide ? '<th>ชื่อแพทย์</th><th>Consult</th>' : '') + '<th>เซ็นรับ</th>';
+  var html = '<div class="scroll-x"><table class="report-table cu-table' + (cuData ? ' cu-table-data' : (cuWide ? ' cu-table-wide' : '')) + '"><thead><tr>' +
+    cuHeadCells + '</tr></thead><tbody>';
 
   // รอบ 67: คิวยกเลิก/ขาดหายของทั้งวัน (K ในแถวสรุปนับทั้งวันเสมอ แม้กำลังค้นหา) · SAVE_QUEUE นับเฉพาะเมื่อดูวันนี้ (payload ไม่มีวันที่ — บันทึกลงวันนี้เสมอ)
   var cancelledSlots = cuCancelledQueueSlots_(records, (dateStr === todayStr()) ? cuPendingSaveQueues_() : []);
@@ -10626,6 +10659,19 @@ function renderCheckupTable(records, dateStr) {
     var isWaitPickup = needsPickupSignature(rec);
     var sigCell = isWaitPickup ? '<span class="cu-sig-line"></span>' : '-';
     var pelvicTested = isPelvicChosen_(rec.pelvic);
+    if (cuData) {
+      html += '<tr>' +
+        '<td>' + escHtml(rec.queue || '—') + '</td>' +
+        '<td>' + escHtml(rec.patientHn || '') + '</td>' +
+        '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
+        '<td>' + escHtml(programDataLabel_(rec.program)) + '</td>' +
+        '<td>' + (pelvicTested ? escHtml(pelvicTypeLabel(rec)) : '-') + '</td>' +
+        '<td class="cu-price-cell">' + money(amt) + '</td>' +
+        '<td>' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</td>' +
+        '<td class="cu-doctor-cell">' + escHtml(cuDoctorCellText_(rec)) + '</td><td class="cu-consult-cell">' + escHtml(cuConsultCellText_(rec)) + '</td>' +
+        '</tr>';
+      return;
+    }
     html += '<tr>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
@@ -10640,7 +10686,7 @@ function renderCheckupTable(records, dateStr) {
   });
 
   // รอบ 28 (W7): แถวท้าย = "รวม N คน" อย่างเดียว ไม่มียอดเงิน (checkupFootText(rows) ไม่ส่ง totalMoney)
-  html += '<tr class="sp-total"><td colspan="' + cuCols + '">' + (cuWide ? cuWideFootHtml_(rows, cancelledSlots.length) : escHtml(checkupTableFootText_(rows, cancelledSlots.length))) + '</td></tr>'; // รอบ 67: + " · ยกเลิก K คิว"
+  html += '<tr class="sp-total"><td colspan="' + cuCols + '">' + ((cuWide || cuData) ? cuWideFootHtml_(rows, cancelledSlots.length) : escHtml(checkupTableFootText_(rows, cancelledSlots.length))) + '</td></tr>'; // รอบ 67: + " · ยกเลิก K คิว"
   html += '</tbody></table></div>';
   html += checkupExtraSummaryHtml(rows); // นอกตาราง (no-print) — ห้ามเอากลับไปต่อท้าย checkupFootText() ในแถว <tr> ข้างบน
   wrap.innerHTML = html;
@@ -10676,7 +10722,73 @@ function cuMeasureText_(text, fontFamily) {
   document.body.removeChild(sp);
   return w;
 }
+/* รอบ 103: คำนวณความกว้างของใบพิมพ์แบบ B (.cu-table-data) — ช่องชื่อ + ช่องชื่อแพทย์ แบ่งงบ (100 - 52)% ของความกว้างตาราง
+   ต้องการ = ข้อความยาวสุด (รวมหัว) + 6px + 2 mm · ชื่อต่ำสุด 25 mm · แพทย์ต่ำสุด 20 mm · เกินงบ ⇒ ลดตามสัดส่วน (ไม่ต่ำกว่าขั้นต่ำ) · เหลืองบ ⇒ คอลัมน์อื่นขยายตามสัดส่วน
+   ข้อความที่ยังเกินช่อง ⇒ ลดฟอนต์เฉพาะเซลล์ทีละ 0.25pt ไม่ต่ำกว่า 6.5pt · ไม่มีเซ็นรับ ⇒ ไม่ใช้ตัวกันเซ็นรับ 30 mm */
+var CU_DATA_OTHER_PCT = [5, 8, 7, 9, 7, 10, 6]; // คิว HN โปรแกรม มะเร็ง ราคา ช่องทาง Consult (รวม 52)
+var CU_DATA_NAME_MIN_MM = 25, CU_DATA_DOC_MIN_MM = 20;
+function cuFitDataForPrint_(table) {
+  var nameCells = table.querySelectorAll('tbody tr:not(.sp-total) td:nth-child(3)');
+  var docCells = table.querySelectorAll('tbody tr:not(.sp-total) td.cu-doctor-cell');
+  var headTh = table.querySelectorAll('thead th');
+  if (headTh.length !== 9) return;
+  var inPrint = false, i, k;
+  try { inPrint = !!(window.matchMedia && window.matchMedia('print').matches); } catch (e) { inPrint = false; }
+  var family = window.getComputedStyle(headTh[2]).fontFamily;
+  var mmPx = 96 / 25.4;
+  var nameNat = [], docNat = [], wName = cuMeasureText_(headTh[2].textContent, family), wDoc = cuMeasureText_(headTh[7].textContent, family), w;
+  for (i = 0; i < nameCells.length; i++) {
+    nameCells[i].style.fontSize = '';
+    w = nameCells[i].textContent ? cuMeasureText_(nameCells[i].textContent, family) : 0;
+    nameNat.push(w); if (w > wName) wName = w;
+  }
+  for (i = 0; i < docCells.length; i++) {
+    docCells[i].style.fontSize = '';
+    w = docCells[i].textContent ? cuMeasureText_(docCells[i].textContent, family) : 0;
+    docNat.push(w); if (w > wDoc) wDoc = w;
+  }
+  var tableW = inPrint ? table.getBoundingClientRect().width : 0;
+  if (!tableW) {
+    var padW = 24, wr = table.closest ? table.closest('.wrap') : null;
+    try { if (wr) { var wcs = window.getComputedStyle(wr); padW = (parseFloat(wcs.paddingLeft) || 0) + (parseFloat(wcs.paddingRight) || 0); } } catch (e) { padW = 24; }
+    tableW = CU_PRINT_PAGE_PX - padW;
+  }
+  var sumOther = 0;
+  for (k = 0; k < CU_DATA_OTHER_PCT.length; k++) sumOther += CU_DATA_OTHER_PCT[k];
+  var budget = tableW * (100 - sumOther) / 100;
+  var minN = CU_DATA_NAME_MIN_MM * mmPx, minD = CU_DATA_DOC_MIN_MM * mmPx;
+  var needN = Math.max(minN, wName + 6 + CU_NAME_PAD_MM * mmPx), needD = Math.max(minD, wDoc + 6 + CU_NAME_PAD_MM * mmPx);
+  var namePx = needN, docPx = needD;
+  if (needN + needD > budget) {
+    namePx = needN * budget / (needN + needD);
+    docPx = needD * budget / (needN + needD);
+    if (namePx < minN) { namePx = minN; docPx = budget - minN; }
+    if (docPx < minD) { docPx = minD; namePx = budget - minD; }
+    if (namePx < minN) namePx = minN;
+  }
+  var namePct = namePx / tableW * 100, docPct = docPx / tableW * 100, restPct = 100 - namePct - docPct, oi = 0;
+  for (k = 0; k < headTh.length; k++) {
+    headTh[k].style.width = (k === 2 ? namePct : (k === 7 ? docPct : restPct * CU_DATA_OTHER_PCT[oi++] / sumOther)).toFixed(3) + '%';
+  }
+  var fit = function (cells, nat, px) {
+    var j, td, avail, pt;
+    for (j = 0; j < cells.length; j++) {
+      td = cells[j];
+      if (!nat[j]) continue;
+      avail = inPrint ? (td.clientWidth - 6) : (px - 6);
+      if (nat[j] <= avail) continue;
+      pt = CU_PRINT_BASE_PT;
+      while (pt > CU_PRINT_MIN_PT && nat[j] * (pt / CU_PRINT_BASE_PT) > avail) pt -= 0.25;
+      if (pt < CU_PRINT_MIN_PT) pt = CU_PRINT_MIN_PT;
+      td.style.fontSize = pt + 'pt';
+    }
+  };
+  fit(nameCells, nameNat, namePx);
+  fit(docCells, docNat, docPx);
+}
 function cuFitNamesForPrint() {
+  var dataTable = document.querySelector('#cuTableWrap table.cu-table.cu-table-data'); // รอบ 103: แบบ B ใช้ตัวคำนวณของตัวเอง
+  if (dataTable) { cuFitDataForPrint_(dataTable); return; }
   var cells = cuNameCells_(), i, td, natural, avail, pt, inPrint = false;
   if (!cells.length) return;
   try { inPrint = !!(window.matchMedia && window.matchMedia('print').matches); } catch (e) { inPrint = false; }
@@ -10735,6 +10847,8 @@ function cuFitNamesForPrint() {
 function cuRestoreNamesAfterPrint() {
   var cells = cuNameCells_(), i;
   for (i = 0; i < cells.length; i++) cells[i].style.fontSize = '';
+  var docs = document.querySelectorAll('table.cu-table td.cu-doctor-cell'); // รอบ 103: คืนฟอนต์เซลล์แพทย์ (แบบ B)
+  for (i = 0; i < docs.length; i++) docs[i].style.fontSize = '';
   var ths = document.querySelectorAll('table.cu-table thead th');
   for (i = 0; i < ths.length; i++) ths[i].style.width = '';
 }
@@ -10746,6 +10860,42 @@ try {
   if (cuPrintMql_.addEventListener) cuPrintMql_.addEventListener('change', cuPrintMqlFn_);
   else if (cuPrintMql_.addListener) cuPrintMql_.addListener(cuPrintMqlFn_);
 } catch (e) { /* ไม่มี addEventListener/matchMedia (เช่น DOM จำลองในเทสต์) — ปุ่มพิมพ์ยังเรียก cuFitNamesForPrint เอง */ }
+
+/* รอบ 103: พิมพ์ตาราง 2 แบบ — mode 'sign' (ใบเซ็นรับผลตรวจ) | 'data' (รายชื่อเก็บข้อมูล)
+   วาดตารางใหม่ตามโหมด -> cuFitNamesForPrint -> window.print -> cuEndPrintMode_ (เรียกซ้ำได้ · afterprint เรียกด้วย) · Ctrl+P ตอน CU_PRINT_MODE === '' พิมพ์ตามจอเหมือนเดิม */
+var CU_PRINT_PREV_VIEW = '', CU_PRINT_PREV_HEAD = null;
+function cuPrintAs_(mode) {
+  var dateEl = qs('cuDate'), dateStr = (dateEl && dateEl.value) || todayStr();
+  if (!CU_CACHE || !CU_CACHE.records || !CU_LOADED_DATE || CU_LOADED_DATE !== dateStr) {
+    showCuView('table');
+    showToast('กำลังโหลดรายชื่อ — กดพิมพ์อีกครั้งเมื่อตารางขึ้น');
+    return;
+  }
+  var headEl = qs('cuTableHeading');
+  if (CU_PRINT_MODE === '') { CU_PRINT_PREV_VIEW = CU_VIEW; CU_PRINT_PREV_HEAD = headEl ? headEl.textContent : null; }
+  CU_PRINT_MODE = mode;
+  setCuView('table');
+  renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
+  if (headEl && CU_PRINT_PREV_HEAD !== null) headEl.textContent = CU_PRINT_PREV_HEAD + (mode === 'data' ? ' — รายชื่อเก็บข้อมูล' : ' — ใบเซ็นรับผลตรวจ');
+  try {
+    cuFitNamesForPrint();
+    window.print();
+  } finally {
+    cuEndPrintMode_();
+  }
+}
+function cuEndPrintMode_() {
+  if (CU_PRINT_MODE === '') return; // ไม่มีงานค้าง (เรียกซ้ำได้)
+  CU_PRINT_MODE = '';
+  try { cuRestoreNamesAfterPrint(); } catch (e) { /* ไม่มีอะไรต้องคืน */ }
+  if (CU_CACHE && CU_CACHE.records && CU_LOADED_DATE) renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
+  var headEl = qs('cuTableHeading');
+  if (headEl && CU_PRINT_PREV_HEAD !== null) headEl.textContent = CU_PRINT_PREV_HEAD;
+  setCuView(CU_PRINT_PREV_VIEW || 'table');
+  CU_PRINT_PREV_VIEW = '';
+  CU_PRINT_PREV_HEAD = null;
+}
+try { window.addEventListener('afterprint', cuEndPrintMode_); } catch (e) { /* DOM จำลอง */ }
 
 
 /* รอบ 60 ข้อ 6: มุมมอง "รายงานผลค้างส่งออก" (renderCheckupPendingReport) ถูกถอดออกจากหน้ารายชื่อตรวจสุขภาพรายวันแล้ว — ใช้หน้า #pendingScreen (📮 ค้างส่งออกผล) แทน
@@ -16327,7 +16477,8 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnCuLoad').addEventListener('click', function () { loadCheckupTable('list'); }); // รอบ 8 (B7)
   qs('btnCuViewTable').addEventListener('click', function () { showCuView('table'); });
   setCuView('table');
-  qs('btnCuPrint').addEventListener('click', function () { cuFitNamesForPrint(); window.print(); }); // รอบ 65: ลดฟอนต์ชื่อยาวก่อนพิมพ์ (afterprint คืนค่า)
+  qs('btnCuPrint').addEventListener('click', function () { cuPrintAs_('sign'); }); // รอบ 65: ลดฟอนต์ชื่อยาวก่อนพิมพ์ (afterprint คืนค่า) · รอบ 103: ใบเซ็นรับผลตรวจ
+  qs('btnCuPrintData').addEventListener('click', function () { cuPrintAs_('data'); }); // รอบ 103: รายชื่อเก็บข้อมูล
   // เจ้าของสั่ง 2026-09-15: ช่องค้นหาของหน้านี้ — re-render จาก LAST_CU_RECORDS ไม่ยิง API ใหม่
   // ⚠ วาดครบ 3 มุมมองเสมอ (เหมือน loadCheckupTable) เพื่อให้สลับมุมมองระหว่างมีคำค้นค้างอยู่ยังกรองอยู่
   // รอบ 31B: ดึงมาเป็น rerenderCuViews() เดียว ใช้ร่วมกับลิงก์ "ล้างการค้นหา" ของ hint ผลเดียว (ข้อ 3) ด้วย
