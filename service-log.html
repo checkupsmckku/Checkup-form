@@ -8708,10 +8708,11 @@ function hoItemButtonHtml_(it, extraAttr) {
     '<span class="muted"> · ' + escHtml(bits.join(' · ')) + '</span></button>';
 }
 // "ฟอร์มว่าง ยกเว้น HN" (D1) — ห้ามแก้ความหมาย isMainFormDraftEmpty_ เดิม · ignoreName = ช่องชื่อเป็นข้อความค้นอยู่ (D2) ไม่นับเป็นร่าง
-function isMainFormDraftEmptyExceptHn_(ignoreName) {
+// รอบ 99: ignoreQueue = คิวที่กรอกไว้ก่อนค้น HN/ชื่อเป็นของคนที่กำลังค้น ⇒ ไม่นับเป็นร่าง (startPreArrive_ เก็บคืนให้)
+function isMainFormDraftEmptyExceptHn_(ignoreName, ignoreQueue) {
   if (isCheckupOn() || isVaccineOn() || isMedOn() || isSpecialOn() || isMedLabSpecialOn()) return false;
   if (!ignoreName && (qs('patientName').value || '').trim()) return false;
-  if ((qs('queueSelect').value || '').trim()) return false;
+  if (!ignoreQueue && (qs('queueSelect').value || '').trim()) return false;
   // รอบ 87 (F2): ค่าอื่นที่เจ้าหน้าที่กรอก/เลือกไว้แล้วก็นับเป็นร่าง — เพศ · คำนำหน้า · ช่องทางรับผล · วันนัดรับ · ราคา (D1 เติมอัตโนมัติจะได้ไม่ทับ)
   if (document.querySelector('input[name="gender"]:checked')) return false;
   if ((qs('patientPrefix').value || '').trim()) return false;
@@ -8745,7 +8746,7 @@ function hoOnHnInput_() {
   var m = preSortItems_(hoWaitingToday_()).filter(function (it) { return it.patientHn && normDupHn_(it.patientHn) === key; });
   if (!m.length) { hoSuggestHide_('hoHnSuggest'); return; }
   // เติมเองเฉพาะตอนโฟกัสยังอยู่ช่อง HN — สแกนแบบ HN<Tab>… โฟกัสย้ายไปแล้ว ถ้าเติม+โฟกัสช่องคิว ตัวที่เหลือจะลงช่องคิว ⇒ แถบ "ใช้ข้อมูลนี้" แทน
-  if (m.length === 1 && isMainFormDraftEmptyExceptHn_(false) && document.activeElement === qs('patientHn')) {
+  if (m.length === 1 && isMainFormDraftEmptyExceptHn_(false, true) && document.activeElement === qs('patientHn')) {
     hoSuggestHide_('hoHnSuggest');
     startPreArrive_(m[0], { mode: 'hn' }); // เติมทันที (ฟอร์มว่าง · ไม่ confirm · คง HN ที่พิมพ์)
     return;
@@ -8855,8 +8856,11 @@ function startPreArrive_(item, opts) {
   if (!item) return;
   opts = opts || {};
   var typedHn = (opts.mode === 'hn') ? (qs('patientHn').value || '') : '';
-  var formEmpty = opts.mode === 'hn' ? isMainFormDraftEmptyExceptHn_(false)
-    : (opts.mode === 'name' ? isMainFormDraftEmptyExceptHn_(true) : isMainFormDraftEmpty_());
+  // รอบ 99 (เจ้าของแจ้ง): กรอกคิวก่อนแล้วค้น HN/ชื่อ ⇒ คิวต้องไม่หาย (resetLogForm ล้าง #queueSelect) · ปุ่ม ▶ (ไม่มี mode) คงเดิม
+  var searchPick = opts.mode === 'hn' || opts.mode === 'name';
+  var typedQueue = searchPick ? (qs('queueSelect').value || '').trim() : '';
+  var formEmpty = opts.mode === 'hn' ? isMainFormDraftEmptyExceptHn_(false, true)
+    : (opts.mode === 'name' ? isMainFormDraftEmptyExceptHn_(true, true) : isMainFormDraftEmpty_());
   if (!formEmpty && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยรายการนัดนี้หรือไม่?')) return;
   STATE.preEditId = '';
   STATE.preEditName = '';
@@ -8885,6 +8889,7 @@ function startPreArrive_(item, opts) {
     var itemHn = String(f.patientHn || item.patientHn || '').trim();
     qs('patientHn').value = (itemHn && normDupHn_(itemHn) === normDupHn_(typedHn)) ? itemHn : typedHn;
   }
+  if (typedQueue) qs('queueSelect').value = typedQueue; // รอบ 99: คืนคิวที่กรอกไว้ก่อนค้น (ก่อน recalcTotals ข้างล่าง)
   syncPrefixButtons();
   updateHnHint();
   STATE.arrivePreId = item.preId;
