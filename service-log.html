@@ -2790,8 +2790,24 @@ function showErrWithRetry_(errEl, text, onRetry) {
   errEl.hidden = false;
 }
 
+// รอบ 100 (W2): คิว/HN ที่ส่งเซิร์ฟเวอร์เป็นตัวพิมพ์ใหญ่เสมอ — ด่านที่ 2 ต่อจากการแปลงตอนพิมพ์ (ค่าที่ตั้งด้วยโค้ดไม่ยิง input)
+// ครอบ queue · patientHn · queues[] · rows[].patientHn (preImport) ทุก action ผ่าน apiCall ที่เดียว · คัดลอกก่อนแก้ ไม่แตะ payload ของผู้เรียก
+function upperId_(v) { return typeof v === 'string' ? v.toUpperCase() : v; }
+function upperIdsInPayload_(p) {
+  if (!p || typeof p !== 'object') return p;
+  if (typeof p.queue === 'string') p.queue = p.queue.toUpperCase();
+  if (typeof p.patientHn === 'string') p.patientHn = p.patientHn.toUpperCase();
+  if (Array.isArray(p.queues)) p.queues = p.queues.map(upperId_);
+  if (Array.isArray(p.rows)) {
+    p.rows = p.rows.map(function (r) {
+      if (!r || typeof r !== 'object' || typeof r.patientHn !== 'string') return r;
+      return Object.assign({}, r, { patientHn: r.patientHn.toUpperCase() });
+    });
+  }
+  return p;
+}
 function apiCall(action, payload, opts) {
-  var body = JSON.stringify(Object.assign({ action: action }, payload || {}));
+  var body = JSON.stringify(upperIdsInPayload_(Object.assign({ action: action }, payload || {})));
   var fetchOpts = {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
@@ -3207,7 +3223,8 @@ function draftQueuePrefix() {
 }
 
 var LAST_QUEUE_PREFIX = '';
-function queuePrefixOf(v) { return String(v || '').replace(/[0-9]+$/, ''); }
+// รอบ 100 (W3): prefix ไม่สนตัวพิมพ์ — คืนตัวใหญ่เสมอ ('m1' ⇒ 'M') · ภาษาไทย ('ไม่นัด ') ไม่เปลี่ยน
+function queuePrefixOf(v) { return String(v || '').replace(/[0-9]+$/, '').toUpperCase(); }
 /* รอบ 9 (ก้อน B, B7): เรียกจาก event change/input ของช่องที่กำหนดบริการเท่านั้น — radio program · checkbox วัคซีน ·
    medCert5/medCertDriver/medCertLabAmount · checkbox sp_reg_* — ห้ามเรียกจาก recalcTotals() และ
    ห้ามเรียกจาก event ของ patientName/patientHn (recalcTotals ถูกเรียกทุก keystroke ถ้าไปสร้างดรอปดาวน์ใหม่ที่นั่น
@@ -3766,7 +3783,7 @@ function applyHnScan() {
   var parsed = parseBarcode(raw);
   if (parsed.hn && parsed.name) {
     // บาร์โค้ดยิงมาทั้งก้อน (มี HN และชื่อแยกกันได้) — เติม HN ทับช่องตัวเอง + เติมชื่อเฉพาะตอนช่องชื่อยังว่าง (ห้ามทับที่พิมพ์เอง)
-    hnEl.value = parsed.hn;
+    hnEl.value = parsed.hn.toUpperCase(); // รอบ 100: ตัวใหญ่เฉพาะส่วน HN (ชื่ออังกฤษไม่แตะ)
     var nameEl = qs('patientName');
     if (nameEl && !(nameEl.value || '').trim()) {
       nameEl.value = parsed.name;
@@ -4996,8 +5013,8 @@ function recalcTotals() {
   if (preM) { specialOn = false; medLabSpecialOn = false; } // รอบ 81
 
   var patientName = (qs('patientName').value || '').trim();
-  var patientHn = (qs('patientHn').value || '').trim();
-  var queue = (qs('queueSelect') ? qs('queueSelect').value : '') || '';
+  var patientHn = (qs('patientHn').value || '').trim().toUpperCase(); // รอบ 100
+  var queue = ((qs('queueSelect') ? qs('queueSelect').value : '') || '').toUpperCase(); // รอบ 100
   var deliveryMethod = (qs('deliveryMethod') ? qs('deliveryMethod').value : '') || '';
   // รอบ 21 (2026-09-20): แสดง/ซ่อน+ล้างช่องวันนัดรับตามช่องทางล่าสุดเสมอ
   updatePickupDateVisibility(deliveryMethod);
@@ -6035,7 +6052,7 @@ function onSubmitLog(e) {
   var labFollowup = getLabFollowupNum_(); // รอบ 91
   // ⚠ patientName/patientHn ส่งเสมอ (รอบ 4) — เลิกผูกกับ checkupOn แล้ว เพราะ "ส่งตรวจพิเศษ" ก็ต้องใช้ 2 ช่องนี้ด้วย
   var patientName = (qs('patientName').value || '').trim();
-  var patientHn = (qs('patientHn').value || '').trim();
+  var patientHn = (qs('patientHn').value || '').trim().toUpperCase(); // รอบ 100
   var patientPrefix = (qs('patientPrefix').value || '').trim();
   var deliveryMethod = checkupOn ? (qs('deliveryMethod').value || '') : '';
   // รอบ 21 (2026-09-20): ส่งคีย์ pickupDate ทุกครั้ง — ค่าจริงเฉพาะตอนช่องทาง = 'นัดรับวันที่'
@@ -6049,7 +6066,7 @@ function onSubmitLog(e) {
   var specialBackIds = STATE.editSpecialBack || [];
   var specialPrepIds = STATE.editSpecialPrep || [];
   var specialRegIds = getSpecialRegIds(); // รอบ 8 (B4)
-  var queue = qs('queueSelect').value || '';
+  var queue = (qs('queueSelect').value || '').toUpperCase(); // รอบ 100
 
   var isEdit = !!STATE.editingId;
 
@@ -7408,7 +7425,7 @@ function onSubmitPre_() {
     date: serviceDateValue_(),
     patientPrefix: (qs('patientPrefix').value || '').trim(),
     patientName: (qs('patientName').value || '').trim(),
-    patientHn: (qs('patientHn').value || '').trim(),
+    patientHn: (qs('patientHn').value || '').trim().toUpperCase(), // รอบ 100
     program: getSelectedProgram(),
     gender: genderToThai(genderDom),
     pelvic: genderDom === 'female' ? getSelectedPelvic() : 'no',
@@ -7796,8 +7813,8 @@ function closePreActivate_() {
 function paRefresh_() {
   var item = PRE_ACTIVATE.item;
   if (!item) return { ok: false, missing: [] };
-  var queue = (qs('paQueue').value || '').trim();
-  var hn = (qs('paHn').value || '').trim();
+  var queue = (qs('paQueue').value || '').trim().toUpperCase(); // รอบ 100
+  var hn = (qs('paHn').value || '').trim().toUpperCase(); // รอบ 100
   var dm = qs('paDelivery').value || '';
   var isPick = dm === DELIVERY_PICKUP_APPOINTMENT;
   qs('paPickupWrap').hidden = !isPick;
@@ -7838,8 +7855,8 @@ function paSave_() {
     staffName: STATE.staffName,
     point: STATE.point,
     preId: item.preId,
-    queue: (qs('paQueue').value || '').trim(),
-    patientHn: (qs('paHn').value || '').trim(),
+    queue: (qs('paQueue').value || '').trim().toUpperCase(), // รอบ 100
+    patientHn: (qs('paHn').value || '').trim().toUpperCase(), // รอบ 100
     deliveryMethod: dm,
     pickupDate: dm === DELIVERY_PICKUP_APPOINTMENT ? (qs('paPickup').value || '') : '',
     clientReqId: PRE_ACTIVATE.reqId
@@ -15691,6 +15708,25 @@ document.addEventListener('click', function (ev) {
 // รอบ 78: ติดตามว่าปุ่มเมาส์/นิ้วกดอยู่ไหม (capture) — ช่องชื่อแพทย์ที่เสียโฟกัสตอนกดปุ่มอื่นจะเลื่อนการขึ้นข้อความใต้ช่องไปหลังปล่อยปุ่ม (ดู doctorComboJudge_)
 ['pointerdown', 'mousedown'].forEach(function (t) { document.addEventListener(t, function () { doctorComboPointer_(true); }, true); });
 ['pointerup', 'pointercancel', 'mouseup', 'dragend'].forEach(function (t) { document.addEventListener(t, function () { doctorComboPointer_(false); }, true); });
+/* ===== รอบ 100 (W1): ช่องกรอกคิว/HN เป็นตัวพิมพ์ใหญ่ทันทีที่พิมพ์ — listener input แบบ capture ตัวเดียวบน document (รันก่อนตัวฟังเดิมของช่อง)
+   ช่องค้นหา (#todayHnSearch · #cuHnSearch · #plSearch ฯลฯ) ไม่อยู่ในรายการ ⇒ ค่าในช่องคงเดิม · ข้ามตอนพิมพ์ไทยแบบ composition
+   ช่อง HN: ถ้าค่ามีตัวคั่นสแกน (| tab ^ ; หรือเว้นวรรค ≥ 2) ⇒ ยังไม่แปลง (กันชื่ออังกฤษใน HN|ชื่อ กลายเป็นตัวใหญ่) — applyHnScan แปลงเฉพาะส่วน HN หลังแยก
+   ไม่แตะตัวจับสแกนรอบ 93 (keydown) · ค่าที่ตั้งด้วยโค้ดไม่ยิง input ⇒ upperIdsInPayload_() ใน apiCall เป็นด่านที่ 2 */
+var UPPER_INPUT_SEL_ = '#queueSelect, #patientHn, #paQueue, #paHn, #dqQueueInput, .dq-editq-input, .dq-join-input';
+document.addEventListener('input', function (e) {
+  if (e.isComposing) return;
+  var t = e.target;
+  if (!t || t.nodeType !== 1 || typeof t.matches !== 'function' || !t.matches(UPPER_INPUT_SEL_)) return;
+  var v = t.value;
+  if (typeof v !== 'string' || v === v.toUpperCase()) return;
+  if (t.id === 'patientHn' && /[\t|^;]|\s{2,}/.test(v)) return;
+  var s = null, en = null;
+  try { s = t.selectionStart; en = t.selectionEnd; } catch (err) { s = null; }
+  t.value = v.toUpperCase();
+  if (s !== null && en !== null) {
+    try { t.setSelectionRange(v.slice(0, s).toUpperCase().length, v.slice(0, en).toUpperCase().length); } catch (err2) { /* ช่องชนิดที่ไม่รองรับ caret */ }
+  }
+}, true);
 /* ===== รอบ 93: สแกนบัตรคิว (Code128 จาก บาร์โค้ดบัตรคิว.html) แล้วเติม #queueSelect ทันที ไม่ต้องคลิกช่องก่อน =====
    เครื่องสแกนทำตัวเป็นคีย์บอร์ด: แยกจากคนพิมพ์ด้วยความเร็ว (ห่างปุ่มละ ≤ SCAN_GAP_MS) · อ่านจาก e.code (กันแป้นไทย)
    ไม่ใช่บัตรคิว (เช่น HN) ⇒ ปล่อยผ่านทุกอย่างตามเดิม · ห้ามเรียก recalcTotals/syncSvcBar เอง — ยิง input+change ให้ listener เดิมทำ */
