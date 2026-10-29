@@ -1309,6 +1309,28 @@
   .dq-card.dq-col-pink .dq-card-head { background: #F8BBD3; }
   .dq-card.dq-col-green .dq-card-head { background: #B5E3C1; }
   .dq-card.dq-col-blue .dq-card-head { background: #B9DAF5; }
+  /* รอบ 104: ชื่อแพทย์บนหัวการ์ดเป็นปุ่ม (แตะ ⇒ กล่อง "✏ แก้ชื่อแพทย์") · จอ ≤ 700px สูง ≥ 44px */
+  .dq-card-head .dq-doc-rename { display: inline-flex; align-items: center; justify-content: center; font: inherit; font-weight: bold; color: inherit; background: rgba(255,255,255,.55); border: 1px dashed currentColor; border-radius: 8px; padding: 2px 8px; margin: 0 2px; cursor: pointer; max-width: 100%; overflow-wrap: anywhere; text-align: center; }
+  .dq-card-head .dq-doc-rename:hover { background: rgba(255,255,255,.85); }
+  @media (max-width: 700px) { .dq-card-head .dq-doc-rename { min-height: 44px; min-width: 44px; padding: 4px 12px; } }
+  /* รอบ 104: กล่อง #dqRenameBox (class ขึ้นต้น dq- ตามกติกา #dqScreen) */
+  .dq-rename-modal { position: fixed; inset: 0; z-index: 2050; background: rgba(20,20,30,.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .dq-rename-modal[hidden] { display: none; }
+  .dq-rename-modal-box { background: var(--surface); border-radius: 12px; max-width: 560px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35); min-width: 0; }
+  .dq-rename-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .dq-rename-modal-title { font-size: 19px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+  #dqRenameBox .dq-rename-sub { font-size: 14px; color: var(--muted, #555); margin: 6px 0; overflow-wrap: anywhere; }
+  #dqRenameBox .dq-rename-count { font-weight: 700; margin: 8px 0 2px; overflow-wrap: anywhere; }
+  #dqRenameBox .dq-rename-hint { font-size: 14px; margin: 6px 0 10px; color: #8A4B00; overflow-wrap: anywhere; }
+  #dqRenameBox .dq-rename-err { color: var(--danger); font-size: 15px; margin: 8px 0; overflow-wrap: anywhere; }
+  #dqRenameBox .dq-rename-err:empty { display: none; }
+  #dqRenameBox select, #dqRenameBox input[type=text] { font-size: 16px; min-height: 44px; max-width: 100%; box-sizing: border-box; }
+  #dqRenameBox select { width: 100%; }
+  #dqRenameBox .dq-rename-typed { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+  #dqRenameBox .dq-rename-typed input[type=text] { flex: 1 1 130px; min-width: 0; width: auto; }
+  #dqRenameBox .dq-rename-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  #dqRenameBox .dq-rename-actions .btn { min-height: 44px; }
+  #dqRenameBox .dq-rename-confirm { font-size: 16px; font-weight: 700; margin: 10px 0; overflow-wrap: anywhere; }
   .dq-card-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 2px 0; }
   .dq-card.dq-col-yellow .dq-card-list { background: #FFF8D9; }
   .dq-card.dq-col-pink .dq-card-list { background: #FDECF3; }
@@ -2290,6 +2312,39 @@
         </div>
         <button type="button" class="btn block" id="dqBtnSaveRooms">บันทึกผัง</button>
         <div id="dqSetupMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- รอบ 104: กล่อง "✏ แก้ชื่อแพทย์" (แตะชื่อแพทย์บนหัวการ์ดห้องของกระดานคิวพบแพทย์) — แก้ชื่อคนเดิมทุกแท็บ ทุกวัน · ไม่มีชื่อ/HN ผู้รับบริการ -->
+<div class="dq-rename-modal" id="dqRenameBox" role="dialog" aria-modal="true" aria-labelledby="dqRenameTitle" hidden>
+  <div class="dq-rename-modal-box">
+    <div class="dq-rename-modal-head">
+      <div class="dq-rename-modal-title" id="dqRenameTitle">✏ แก้ชื่อแพทย์</div>
+      <button type="button" class="btn secondary small" id="dqRenameClose" aria-label="ปิด" style="min-height:44px;min-width:44px;">✕</button>
+    </div>
+    <div id="dqRenameHead"></div>
+    <p class="dq-rename-err" id="dqRenameErr" role="alert"></p>
+    <div id="dqRenameStep1" hidden>
+      <div class="dq-rename-sub">ชื่อใหม่ — เลือกจากรายชื่อ</div>
+      <select id="dqRenameSelect" aria-label="เลือกชื่อแพทย์ใหม่"></select>
+      <div class="dq-rename-sub">หรือพิมพ์ชื่อใหม่</div>
+      <div class="dq-rename-typed">
+        <span class="doc-prefix-group" id="dqRenamePrefixGroup" role="group" aria-label="คำนำหน้า"><input type="hidden" id="dqRenamePrefix" value=""><button type="button" class="opt-btn" data-doc-prefix="นพ." aria-pressed="false">นพ.</button><button type="button" class="opt-btn" data-doc-prefix="พญ." aria-pressed="false">พญ.</button></span>
+        <input type="text" id="dqRenameFirst" placeholder="ชื่อ" autocomplete="off">
+        <input type="text" id="dqRenameLast" placeholder="นามสกุล" autocomplete="off">
+      </div>
+      <div class="dq-rename-actions">
+        <button type="button" class="btn" id="dqRenameNext">ถัดไป</button>
+        <button type="button" class="btn secondary" id="dqRenameCancel">ยกเลิก</button>
+      </div>
+    </div>
+    <div id="dqRenameStep2" hidden>
+      <p class="dq-rename-confirm" id="dqRenameConfirmText"></p>
+      <div class="dq-rename-actions">
+        <button type="button" class="btn" id="dqRenameConfirm">ยืนยันแก้ชื่อ</button>
+        <button type="button" class="btn secondary" id="dqRenameBack">ย้อนกลับ</button>
       </div>
     </div>
   </div>
@@ -14382,9 +14437,23 @@ function dqRenderRoomCards() {
 
     var head = document.createElement('div');
     head.className = 'dq-card-head';
-    head.textContent = 'ห้อง ' + rm.room + (rm.doctor ? (' ' + rm.doctor) : '');
+    // รอบ 104: ห้องที่มีแพทย์ ⇒ ชื่อแพทย์เป็นปุ่ม (textContent เท่านั้น ห้าม innerHTML กับชื่อ) แตะแล้วเปิดกล่องแก้ชื่อแพทย์ทุกวัน
+    head.textContent = 'ห้อง ' + rm.room + (rm.doctor ? ' ' : '');
+    if (rm.doctor) {
+      var docBtn = document.createElement('button');
+      docBtn.type = 'button';
+      docBtn.className = 'dq-doc-rename';
+      docBtn.setAttribute('data-room', rm.room);
+      docBtn.setAttribute('data-doctor', rm.doctor);
+      docBtn.textContent = rm.doctor + ' ✏';
+      docBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        dqOpenRename_(this.getAttribute('data-room'), this.getAttribute('data-doctor'));
+      });
+      head.appendChild(docBtn);
+    }
     // รอบ 48/51: ห้องที่มีแพทย์หลายคนในวันนี้ — ระบุว่าชื่อที่หัวคือคนปัจจุบัน (นับจาก logs ในหน้าเว็บ)
-    if (rm.doctor && split) head.textContent += ' (ตอนนี้)';
+    if (rm.doctor && split) head.appendChild(document.createTextNode(' (ตอนนี้)'));
     var shiftText = (rm.start || rm.end) ? ((rm.start || '—') + '–' + (rm.end || '—')) : '';
     if (shiftText) head.title = 'เวลาตรวจ ' + shiftText;
     card.appendChild(head);
@@ -15459,6 +15528,200 @@ function dqOnAddDoctorClick() {
     dqRefillAllDoctorSelects_();
   });
 }
+/* ===== รอบ 104: กล่อง "✏ แก้ชื่อแพทย์" — แก้ชื่อคนเดิมทุกแท็บ ทุกวัน (action doctorRename) =====
+   เปิด ⇒ ยิง preview (oldName) เพื่อโชว์จำนวน · ถัดไป ⇒ preview พร้อมชื่อใหม่ (normalize + ตรวจชน) · ยืนยัน ⇒ ยิงจริง (ไม่มีคีย์ preview)
+   ข้อความทั้งหมดใส่ด้วย textContent · ปุ่ม disabled ระหว่างยิง · error ⇒ ข้อความแดงในกล่อง ไม่ปิด ค่าที่กรอกคงอยู่ */
+var dqRenameState = { open: false, room: '', oldName: '', busy: false, ready: false, payload: null, seq: 0 };
+function dqRenameShowErr_(msg) {
+  var el = qs('dqRenameErr');
+  if (el) el.textContent = msg || '';
+}
+function dqRenameSetBusy_(on) {
+  dqRenameState.busy = !!on;
+  ['dqRenameNext', 'dqRenameConfirm', 'dqRenameBack', 'dqRenameCancel'].forEach(function (id) {
+    var b = qs(id);
+    if (b) b.disabled = !!on;
+  });
+}
+function dqRenameShowStep_(n) {
+  var s1 = qs('dqRenameStep1'), s2 = qs('dqRenameStep2');
+  if (s1) s1.hidden = (n !== 1);
+  if (s2) s2.hidden = (n !== 2);
+}
+function dqRenameFillSelect_() {
+  var sel = qs('dqRenameSelect');
+  if (!sel) return;
+  var keep = sel.value;
+  var oldCore = doctorNameStrip_(dqRenameState.oldName).core.toLowerCase();
+  while (sel.firstChild) sel.removeChild(sel.firstChild);
+  var o0 = document.createElement('option');
+  o0.value = '';
+  o0.textContent = '— เลือกจากรายชื่อแพทย์ —';
+  sel.appendChild(o0);
+  (dqState.doctorNames || []).forEach(function (n) {
+    if (doctorNameStrip_(n).core.toLowerCase() === oldCore) return; // ไม่รวมชื่อเดิม
+    var o = document.createElement('option');
+    o.value = n;
+    o.textContent = n;
+    sel.appendChild(o);
+  });
+  sel.value = keep;
+  if (sel.value !== keep) sel.value = '';
+}
+function dqRenameRenderHead_(resp) {
+  var box = qs('dqRenameHead');
+  if (!box) return;
+  while (box.firstChild) box.removeChild(box.firstChild);
+  function add(cls, text) {
+    var d = document.createElement('div');
+    d.className = cls;
+    d.textContent = text;
+    box.appendChild(d);
+    return d;
+  }
+  add('dq-rename-sub', 'แก้ชื่อแพทย์คนเดิม (สะกดผิด / ไม่ครบ) — มีผลทุกวัน');
+  var cur = add('dq-rename-count', dqRenameState.oldName);
+  cur.id = 'dqRenameOld';
+  var c = (resp && resp.counts) || {};
+  var roomDays = (resp && typeof resp.roomDays === 'number') ? resp.roomDays : (c.rooms || 0);
+  add('dq-rename-count', 'คิวพบแพทย์ ' + (c.dqLogs || 0) + ' · บันทึกบริการ ' + (c.stats || 0) + ' · ผังห้อง ' + roomDays + ' วัน').id = 'dqRenameCounts';
+  var vs = (resp && resp.variants) || [];
+  if (vs.length) {
+    add('dq-rename-sub', vs.map(function (v) { return v.text + ' ' + v.count; }).join(' · ')).id = 'dqRenameVariants';
+  }
+  add('dq-rename-hint', 'ถ้าเป็นแพทย์คนอื่นมาแทน ให้แก้ที่ ⚙ ตั้งผัง');
+}
+function dqOpenRename_(room, doctor) {
+  if (!dqCanRecord()) return;
+  var doc = String(doctor == null ? '' : doctor).trim();
+  if (!doc) return;
+  var seq = ++dqRenameState.seq;
+  dqRenameState.open = true;
+  dqRenameState.room = room;
+  dqRenameState.oldName = doc;
+  dqRenameState.ready = false;
+  dqRenameState.payload = null;
+  var box = qs('dqRenameBox');
+  if (!box) return;
+  var f = qs('dqRenameFirst'), l = qs('dqRenameLast');
+  if (f) f.value = '';
+  if (l) l.value = '';
+  doctorSetPrefix_('dqRename', '');
+  dqRenameShowErr_('');
+  dqRenameRenderHead_(null);
+  dqRenameShowStep_(0);
+  dqRenameSetBusy_(false);
+  box.hidden = false;
+  var title = qs('dqRenameHead');
+  if (title) title.firstChild.textContent = 'กำลังโหลดจำนวนที่จะเปลี่ยน…';
+  if (!dqState.doctorsLoaded) dqLoadDoctorNames().then(function () { dqRenameFillSelect_(); });
+  dqRenameFillSelect_();
+  dqApi('doctorRename', { oldName: doc, preview: true }).then(function (resp) {
+    if (seq !== dqRenameState.seq || !dqRenameState.open) return;
+    if (resp && resp.status === 'ok') {
+      dqRenameRenderHead_(resp);
+      dqRenameState.ready = true;
+      dqRenameShowStep_(1);
+      var fi = qs('dqRenameFirst');
+      if (fi) { try { fi.focus({ preventScroll: true }); } catch (e) { fi.focus(); } }
+    } else {
+      dqRenameRenderHead_(null);
+      dqRenameShowErr_((resp && resp.message) ? resp.message : 'โหลดข้อมูลไม่สำเร็จ');
+    }
+  });
+}
+function dqCloseRename_() {
+  dqRenameState.open = false;
+  dqRenameState.seq++;
+  dqRenameState.payload = null;
+  var box = qs('dqRenameBox');
+  if (box) box.hidden = true;
+}
+// ชื่อใหม่จากช่องกรอก: เลือกจากรายการ หรือพิมพ์ (อย่างใดอย่างหนึ่ง) · ผิด ⇒ { error }
+function dqRenameCollectNew_() {
+  var sel = qs('dqRenameSelect');
+  var picked = sel ? String(sel.value || '').trim() : '';
+  if (picked) return { fields: { newName: picked } };
+  var pe = qs('dqRenamePrefix'), fe = qs('dqRenameFirst'), le = qs('dqRenameLast');
+  var v = doctorValidateNewParts_(pe ? pe.value : '', fe ? fe.value : '', le ? le.value : '', []);
+  if (!v.ok) return { error: v.message };
+  return { fields: { prefix: v.prefix, firstName: v.firstName, lastName: v.lastName } };
+}
+function dqRenameNext_() {
+  if (dqRenameState.busy || !dqRenameState.ready) return;
+  dqRenameShowErr_('');
+  var got = dqRenameCollectNew_();
+  if (got.error) { dqRenameShowErr_(got.error); return; }
+  var payload = Object.assign({ oldName: dqRenameState.oldName }, got.fields);
+  var seq = dqRenameState.seq;
+  dqRenameSetBusy_(true);
+  dqApi('doctorRename', Object.assign({ preview: true }, payload)).then(function (resp) {
+    if (seq !== dqRenameState.seq || !dqRenameState.open) return;
+    dqRenameSetBusy_(false);
+    if (resp && resp.status === 'ok') {
+      var c = resp.counts || {};
+      var nm = String(resp.newName || '');
+      dqRenameState.payload = payload;
+      var t = qs('dqRenameConfirmText');
+      if (t) t.textContent = 'เปลี่ยน "' + dqRenameState.oldName + '" เป็น "' + nm + '" ทุกวัน (คิวพบแพทย์ ' + (c.dqLogs || 0) + ' · บันทึกบริการ ' + (c.stats || 0) + ') ?';
+      dqRenameShowStep_(2);
+    } else {
+      dqRenameShowErr_((resp && resp.message) ? resp.message : 'ตรวจชื่อใหม่ไม่สำเร็จ');
+    }
+  });
+}
+function dqRenameConfirm_() {
+  if (dqRenameState.busy || !dqRenameState.payload) return;
+  dqRenameShowErr_('');
+  var seq = dqRenameState.seq;
+  dqRenameSetBusy_(true);
+  dqApi('doctorRename', dqRenameState.payload).then(function (resp) {
+    if (seq !== dqRenameState.seq || !dqRenameState.open) return;
+    dqRenameSetBusy_(false);
+    if (resp && resp.status === 'ok') {
+      var c = resp.counts || {};
+      if (Array.isArray(resp.doctors)) {
+        var names = doctorNamesFromResp_(resp);
+        dqState.doctorNames = names;
+        dqState.doctorsLoaded = true;
+        dqState.doctorsFailed = false;
+        CU_DOCTOR_NAMES = names.slice();
+        dqRefillAllDoctorSelects_();
+      }
+      dqCloseRename_();
+      showToast('แก้ชื่อแพทย์แล้ว: คิวพบแพทย์ ' + (c.dqLogs || 0) + ' · บันทึกบริการ ' + (c.stats || 0));
+      dqLoadToday();
+    } else {
+      dqRenameShowErr_((resp && resp.message) ? resp.message : 'แก้ชื่อแพทย์ไม่สำเร็จ');
+    }
+  });
+}
+function dqRenameInit_() {
+  var map = { dqRenameClose: dqCloseRename_, dqRenameCancel: dqCloseRename_, dqRenameNext: dqRenameNext_, dqRenameConfirm: dqRenameConfirm_,
+    dqRenameBack: function () { if (dqRenameState.busy) return; dqRenameShowErr_(''); dqRenameState.payload = null; dqRenameShowStep_(1); } };
+  Object.keys(map).forEach(function (id) {
+    var el = qs(id);
+    if (el) el.addEventListener('click', map[id]);
+  });
+  var sel = qs('dqRenameSelect');
+  if (sel) sel.addEventListener('change', function () { // เลือกจากรายการ ⇒ ล้างช่องพิมพ์
+    if (!sel.value) return;
+    var f = qs('dqRenameFirst'), l = qs('dqRenameLast');
+    if (f) f.value = '';
+    if (l) l.value = '';
+    doctorSetPrefix_('dqRename', '');
+  });
+  function clearSelect() { var s2 = qs('dqRenameSelect'); if (s2) s2.value = ''; } // พิมพ์/เลือกคำนำหน้า ⇒ ล้างรายการที่เลือก
+  ['dqRenameFirst', 'dqRenameLast'].forEach(function (id) {
+    var el = qs(id);
+    if (el) el.addEventListener('input', clearSelect);
+  });
+  var grp = qs('dqRenamePrefixGroup');
+  if (grp) grp.addEventListener('click', clearSelect);
+  document.addEventListener('keydown', function (e) {
+    if (dqRenameState.open && (e.key === 'Escape' || e.key === 'Esc')) { e.preventDefault(); dqCloseRename_(); }
+  });
+}
 // รอบ 43 (W1): กัปตันบันทึกผังแล้วเซิร์ฟเวอร์เติมแพทย์ประจำวันให้ — ถ้าหน้ารายชื่อโหลดวันเดียวกันค้างอยู่ อัปเดต CU_DOCTORS_TODAY + วาดแถบ/ปุ่มชื่อแพทย์ใหม่ (ตัว refresh เดิมของรอบ 31C)
 function dqApplyDoctorsToday_(dt) {
   if (!dt || typeof dt.date !== 'string' || !Array.isArray(dt.names)) return;
@@ -15584,6 +15847,7 @@ function dqInit() {
     var el = qs(id);
     if (el) el.addEventListener('click', map[id]);
   });
+  dqRenameInit_(); // รอบ 104: กล่องแก้ชื่อแพทย์
   // รอบ 52 (W1/15): Enter ในช่องชื่อ/นามสกุลของฟอร์มเพิ่มแพทย์ = กด "เพิ่มแพทย์"
   ['dqAddDocFirst', 'dqAddDocLast'].forEach(function (id) {
     var el = qs(id);
