@@ -77,6 +77,9 @@
   .btn.danger { background: var(--danger); }
   .btn.accent { background: var(--accent); }
   .btn.small { padding: 6px 10px; min-height: 32px; font-size: 14px; font-weight: 500; }
+  /* รอบ 108: ปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab) — สถานะกดไว้ */
+  #btnLabFree { min-height: 44px; }
+  #btnLabFree.is-active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 700; }
   .btn.block { display: block; width: 100%; text-align: center; }
   input[type=text], input[type=password], input[type=number], input[type=search], input[type=month], select {
     width: 100%;
@@ -628,6 +631,14 @@
     background: #FFF4E5; border: 1px solid #E6A23C; color: #8A5A00;
     border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; font-weight: 600;
   }
+
+  /* รอบ 108: แถบเตือน "พบแพทย์แล้ว ยังไม่บันทึก" (#qcAlertBar) — ไม่ล้นแนวนอนที่ 360px (ชิปขึ้นบรรทัดใหม่ได้) · ปุ่ม ≥ 44px · ไม่พิมพ์ */
+  #qcAlertBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; background: #FFF4E0; border: 1px solid #F0B429; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; font-weight: 600; max-width: 100%; box-sizing: border-box; }
+  #qcAlertBar[hidden] { display: none; }
+  #qcAlertBar .qca-label { flex: 1 1 100%; min-width: 0; word-break: break-word; }
+  #qcAlertBar .qca-chip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; box-sizing: border-box; }
+  #qcAlertBar .qca-chip b { background: #fff; border: 1px solid #F0B429; border-radius: 14px; padding: 4px 10px; font-weight: 800; }
+  #qcAlertBar .qca-chip .btn { min-height: 44px; }
 
   /* รอบ 91 (C): แผง "ปิดยอดคิว M" ในหน้า 📋 รายการรายวัน (#qcPanel) — ไม่ล้นแนวนอนที่ 360px · ปุ่มแตะ ≥ 44px · ไม่พิมพ์ */
   #qcPanel { margin-bottom: 12px; max-width: 100%; box-sizing: border-box; }
@@ -1647,6 +1658,8 @@
   <!-- ---------- หน้าบันทึกบริการ — แผงเดียวเห็นครบ (รอบ 9 ก้อน B, SPEC_รอบ9.md หัวข้อ 4) ---------- -->
   <div id="svcFormWrap" style="display:none;">
     <div class="wrap-log">
+      <!-- รอบ 108: แถบเตือน "พบแพทย์แล้ว ยังไม่บันทึก" (คิว M) — element เดียว: จุดคีย์ order อยู่บนสุดของหน้านี้ · จุดขายโปรแกรมย้ายไปบนสุดของ #todayScreen (qcaRender_) · ค่าใส่ด้วย textContent -->
+      <div id="qcAlertBar" class="no-print" role="status" hidden></div>
       <!-- รอบ 31A (A-W4): แถบหัวจุด — <ชื่อจุด> · <หัวข้อ 1> · <หัวข้อ 2> · ไม่ได้เลือกจุด = ซ่อน (updatePointBanner()) -->
       <div id="pointBanner" class="no-print" hidden></div>
 
@@ -1936,15 +1949,16 @@
                     <input type="number" id="labFollowup" min="0" step="1" value="0" inputmode="numeric">
                   </div>
                 </div>
+                <!-- รอบ 108: ฟังผล Lab ที่จ่ายครบแล้ววันก่อน — กดแล้วช่อง DF/ยอด Lab เป็น 0 + ล็อก · ยังต้องมีคิว M + HN · เซิร์ฟเวอร์บังคับ 0 เอง -->
+                <button type="button" class="btn secondary small" id="btnLabFree" aria-pressed="false" style="margin-top:8px;min-height:44px;">ไม่มีค่าใช้จ่าย</button>
                 <!-- รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายมาแผงนี้ (นับยอดอย่างเดียว) — บังคับแค่ HN · buildSpecialSendsUI() สร้างแถว -->
                 <p class="muted" style="margin-top:12px;">ตรวจเพิ่ม (นับยอด)</p>
                 <div id="medLabSpecialList"></div>
                 <!-- รอบ 87 (D16): "ส่งตรวจพิเศษ" = เงาของช่อง "ลงชื่อไว้" (sp_reg_<id>) ในแผงส่งตรวจพิเศษ — ติ๊กฝั่งไหนอีกฝั่งตาม (ค่าเดียว ลงชีตครั้งเดียว)
                      syncMedLabSpMirror_() สร้าง/ซิงก์จาก recalcTotals · เงาไม่ถูกส่งใน payload (อ่านจาก sp_reg_* เท่านั้น)
-                     มียอด Lab แล้วต้องติ๊กส่งตรวจพิเศษ/ตรวจเพิ่ม หรือกด "ไม่มีตรวจเพิ่ม" (STATE.medLabNoExtra · ไม่ลงชีต) -->
+                     รอบ 108: ถอดด่าน "ต้องติ๊กหรือกดไม่มีตรวจเพิ่ม" + ปุ่มนั้นออกแล้ว — เงานี้คงไว้ -->
                 <p class="muted" style="margin-top:12px;font-weight:700;">ส่งตรวจพิเศษ</p>
                 <div id="medLabSpMirror"></div>
-                <button type="button" class="btn secondary small" id="btnMedLabNoExtra" aria-pressed="false" style="margin-top:8px;">ไม่มีตรวจเพิ่ม</button>
               </section>
             </div>
           </section>
@@ -2787,7 +2801,7 @@ var STATE = {
   lastAutoCheckupAmount: null,
   // รอบ 31A (A-W2): { <จุด>: [คำหัวข้อหลัก...] } จาก config (ไม่มีคีย์นี้เลย = เซิร์ฟเวอร์รุ่นเก่า -> {} เสมอ ไม่ crash)
   pointTopics: {},
-  medLabNoExtra: false, // รอบ 87 (D16): กดปุ่ม "ไม่มีตรวจเพิ่ม" แล้ว (ผ่านด่านลืมติ๊ก · ไม่ลงชีต · ล้างเมื่อ resetLogForm/ติ๊กรายการใด)
+  labFollowupFree: false, // รอบ 108: กดปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab ที่จ่ายครบแล้ว) · ล้างเมื่อ resetLogForm
   // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
   // preModeApplied = applyPreMode_() ทำงานในโหมดล่วงหน้าอยู่ไหม (ตรวจจับ "เปลี่ยนสถานะ") · serviceDateDay = วันที่ที่ใช้ตั้งขอบเขต #serviceDate ล่าสุด (ตรวจข้ามวัน)
   preEditId: '',
@@ -3450,14 +3464,13 @@ function guardBothBreastCheck_(id) {
 function onSpecialRegChange(id) {
   guardSpecialRegUncheck(id); guardBothBreastCheck_(id);
   var regCbNow = qs('sp_reg_' + id);
-  if (regCbNow && regCbNow.checked) STATE.medLabNoExtra = false; // รอบ 87 (D16): ติ๊กรายการใด ⇒ ปลดปุ่ม "ไม่มีตรวจเพิ่ม" เอง
   syncMedLabSoloPrice_({ ticked: id }); onServiceFieldChange();
 }
 
 /* รอบ 87 (D16): แผง "ใบรับรองแพทย์มี Lab" — ส่งตรวจพิเศษ (เงาของ "ลงชื่อไว้") + ด่านลืมติ๊ก
    · เงา mirror_sp_<id> ทุกรายการใน SP_BOARD_ITEMS: ติ๊กเงา ⇒ ตั้ง sp_reg_<id> แล้วยิง change ของตัวจริง (เส้นเดียวกับติ๊กจริง: guard ต่าง ๆ / solo price / recalc)
-   · syncMedLabSpMirror_() เรียกจาก recalcTotals — ซิงก์ checked/disabled (ล็อกเพศ MMG/U/S ตามตัวจริง) + สถานะปุ่ม "ไม่มีตรวจเพิ่ม"
-   · ด่าน (validateForm): ยอด Lab > 0 ต้องมี getSpecialRegIds() อย่างน้อย 1 หรือกดปุ่ม "ไม่มีตรวจเพิ่ม" (STATE.medLabNoExtra · ไม่ลงชีต)
+   · syncMedLabSpMirror_() เรียกจาก recalcTotals — ซิงก์ checked/disabled (ล็อกเพศ MMG/U/S ตามตัวจริง)
+   · รอบ 108: ถอดปุ่ม "ไม่มีตรวจเพิ่ม" + ด่านลืมติ๊ก — พิมพ์ยอด Lab แล้วบันทึกได้เลย
    · เงาไม่ถูกส่งใน payload — payload อ่านจาก sp_reg_* เท่านั้น */
 function buildMedLabSpMirror_() {
   var wrap = qs('medLabSpMirror');
@@ -3478,15 +3491,6 @@ function buildMedLabSpMirror_() {
       real.dispatchEvent(new Event('change', { bubbles: true }));
     });
   });
-  var nb = qs('btnMedLabNoExtra');
-  // ปุ่มเป็น element คงที่ (ไม่ถูกสร้างใหม่) แต่ buildSpecialSendsUI() เรียกซ้ำได้ (enterAppScreen 2 ครั้ง) ⇒ ผูกครั้งเดียว ไม่งั้นกด 1 ทีสลับ 2 รอบ
-  if (nb && !nb.__medLabNoExtraBound) {
-    nb.__medLabNoExtraBound = true;
-    nb.addEventListener('click', function () {
-      STATE.medLabNoExtra = !STATE.medLabNoExtra;
-      onServiceFieldChange();
-    });
-  }
 }
 function syncMedLabSpMirror_() {
   if (typeof SP_BOARD_ITEMS === 'undefined') return;
@@ -3499,12 +3503,32 @@ function syncMedLabSpMirror_() {
     var row = qs('mirror_row_' + item.id);
     if (row && row.classList) row.classList.toggle('sp-row-locked', !!(real && real.disabled));
   });
-  var nb = qs('btnMedLabNoExtra');
-  if (nb && nb.setAttribute) { // guard: DOM จำลองของเทสต์เก่าอาจไม่มี setAttribute
-    var on = !!STATE.medLabNoExtra;
-    nb.setAttribute('aria-pressed', on ? 'true' : 'false');
-    if (nb.classList) { nb.classList.toggle('is-active', on); nb.classList.toggle('secondary', !on); }
+}
+
+/* รอบ 108: ปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab ที่จ่ายครบแล้ววันก่อน)
+   · เปิด ⇒ STATE.labFollowupFree = true · ช่อง #labFollowup และ #medCertLabAmount เป็น 0 + disabled · กดซ้ำ ⇒ ยกเลิก (ช่องปลดล็อก ค่า 0)
+   · syncLabFreeUi_() เรียกจาก recalcTotals ทุกครั้ง (กันค่าตั้งโดยโค้ดอื่น) · ยังนับเป็นบริการใบรับรองมี Lab ⇒ ต้องมีคิว M + HN */
+function syncLabFreeUi_() {
+  var on = !!STATE.labFollowupFree;
+  ['labFollowup', 'medCertLabAmount'].forEach(function (id) {
+    var el = qs(id);
+    if (!el) return;
+    if (on && String(el.value) !== '0') el.value = '0';
+    el.disabled = on;
+  });
+  var b = qs('btnLabFree');
+  if (b && b.setAttribute) {
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (b.classList) { b.classList.toggle('is-active', on); b.classList.toggle('secondary', !on); }
   }
+}
+function setLabFree_(on) {
+  STATE.labFollowupFree = !!on;
+  syncLabFreeUi_();
+}
+function onLabFreeClick_() {
+  setLabFree_(!STATE.labFollowupFree);
+  onServiceFieldChange();
 }
 
 /* รอบ 66 (เจ้าของสั่ง 2026-10-07, SPEC_รอบ66_MMGราคาตามคิว.md): ติ๊ก MMG / U/S Breast ที่แผงส่งตรวจพิเศษ ⇒ ระบบใส่ราคาเดี่ยวในยอด
@@ -3522,6 +3546,7 @@ function medLabSoloItem_(id) {
 function setMedLabAmount_(n) {
   var amtEl = qs('medCertLabAmount');
   if (!amtEl) return;
+  if (STATE.labFollowupFree) return; // รอบ 108: ไม่มีค่าใช้จ่าย ⇒ ช่องยอด Lab ล็อกเป็น 0
   amtEl.value = String(n);
   // dispatch ทั้ง input+change ให้ยอดรวม/สรุปแผง/คิว prefix ทำงานตามเส้นเดิม
   amtEl.dispatchEvent(new Event('input', { bubbles: true }));
@@ -3541,7 +3566,8 @@ function medLabAmountNow_() {
 }
 // ล้างสถานะทั้งหมด (ล้างร่าง/บันทึกเสร็จ) · STATE.medLabAutoAmount = ราคาที่ "ระบบใส่" (0 = ไม่มีธง) · STATE.medLabSeen = สถานะ solo/คิว ล่าสุดที่ sync เห็น
 function resetMedLabSoloState_() {
-  STATE.medLabNoExtra = false; // รอบ 87 (D16): "ไม่มีตรวจเพิ่ม" ล้างเมื่อ resetLogForm
+  STATE.labFollowupFree = false; // รอบ 108: "ไม่มีค่าใช้จ่าย" ล้างเมื่อ resetLogForm
+  if (typeof syncLabFreeUi_ === 'function') syncLabFreeUi_();
   STATE.medLabAutoAmount = 0;
   STATE.medLabSeen = { solo: '', q: false };
 }
@@ -4262,8 +4288,9 @@ function getMedCertNums() {
   return {
     n5: Math.max(0, parseInt(qs('medCert5').value, 10) || 0),
     nDriver: Math.max(0, parseInt(qs('medCertDriver').value, 10) || 0),
-    labAmount: Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0),
-    labFollowup: Math.max(0, parseInt((qs('labFollowup') || {}).value, 10) || 0) // รอบ 91 (ตรงกับ getLabFollowupNum_ · เขียนตรงนี้เพื่อไม่พึ่งฟังก์ชันอื่น — เทสต์เก่าดึงฟังก์ชันออกมาทีละตัว)
+    labAmount: STATE.labFollowupFree ? 0 : Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0), // รอบ 108: free ⇒ 0
+    labFollowup: STATE.labFollowupFree ? 0 : Math.max(0, parseInt((qs('labFollowup') || {}).value, 10) || 0), // รอบ 91
+    labFree: !!STATE.labFollowupFree // รอบ 108 (ตรงกับ getLabFollowupNum_ · เขียนตรงนี้เพื่อไม่พึ่งฟังก์ชันอื่น — เทสต์เก่าดึงฟังก์ชันออกมาทีละตัว)
   };
 }
 // รอบ 91 (G, แก้ 2026-10-21): DF พบแพทย์ฟังผล Lab = ยอดเงินบาทที่พิมพ์เอง (int >= 0 · ไม่ใช่ตัวเลข ⇒ 0) · ไม่มีราคาในแท็บราคาแล้ว
@@ -4273,7 +4300,7 @@ function getLabFollowupNum_() {
 }
 function isMedOn() {
   var m = getMedCertNums();
-  return m.n5 > 0 || m.nDriver > 0 || m.labAmount > 0 || m.labFollowup > 0;
+  return m.n5 > 0 || m.nDriver > 0 || m.labAmount > 0 || m.labFollowup > 0 || m.labFree;
 }
 // รอบ 31A (A-W3, ⚠ แผงที่มีข้อมูลในร่างห้ามถูกพับ): แยกเช็คทีละแผง — panelMedcertGen ใช้ n5/nDriver · panelMedcertLab ใช้ labAmount เท่านั้น
 function isMedGenOn() {
@@ -4282,7 +4309,7 @@ function isMedGenOn() {
 }
 // รอบ 70: แผง Lab มีข้อมูล = ยอด Lab > 0 หรือติ๊ก EKG/ตรวจสายตา/ตาบอดสี (ห้ามพับแผงที่มีข้อมูลในร่าง)
 function isMedLabOn() {
-  if (getMedCertNums().labFollowup > 0) return true; // รอบ 91: ฟังผล Lab มีค่า ⇒ ไม่พับแผง
+  if (getMedCertNums().labFollowup > 0 || STATE.labFollowupFree) return true; // รอบ 91: ฟังผล Lab มีค่า ⇒ ไม่พับแผง · รอบ 108: + ไม่มีค่าใช้จ่าย
   return getMedCertNums().labAmount > 0 || isMedLabSpecialOn();
 }
 // รอบ 8 (B1): specialReg (ลงชื่อไว้) ⊇ ทุกสถานะเสมอ (กติกาแม่บท) ⇒ ใช้ reg ตัวเดียวพอ ครอบคลุมของเดิมทั้งหมด
@@ -4819,7 +4846,7 @@ function validateForm(ctx) {
   setDateFieldError(qs('pickupDate'), pickupReasonForField);
 
   var hasAnything = ctx.checkupOn || ctx.vaccineOn || ctx.nCert > 0 ||
-                    ctx.labAmount > 0 || ctx.specialOn || ctx.medLabSpecialOn || ctx.labFollowup > 0; // รอบ 70: นับ EKG/ตรวจสายตา/ตาบอดสี ด้วย · รอบ 91: นับฟังผล Lab ด้วย
+                    ctx.labAmount > 0 || ctx.specialOn || ctx.medLabSpecialOn || ctx.labFollowup > 0 || ctx.labFree; // รอบ 108: + ไม่มีค่าใช้จ่าย · รอบ 70: นับ EKG/ตรวจสายตา/ตาบอดสี ด้วย · รอบ 91: นับฟังผล Lab ด้วย
 
   // รอบ 37 (W3, 2026-09-30): ห้ามคิวซ้ำในวันเดียวกัน — คำนวณไว้ก่อนเข้าเชนเงื่อนไขด้านล่าง (ต้องรู้ผลก่อนตัดสินใจ
   // ว่าจะขึ้นข้อความนี้หรือไม่) ดู queueDupInfoFor_ ด้านบน (เช็คเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถวในโหมดแก้ไข)
@@ -4889,14 +4916,12 @@ function validateForm(ctx) {
   // ctx.vaccineOn && !ctx.patientHn อยู่ตรงนี้ ตอนนี้ลบทิ้งแล้ว (ด่านรูปแบบ HN ด้านล่างยังทำงานเหมือนเดิมถ้ากรอกมาผิด)
   } else if (ctx.specialOn && (!ctx.patientName || !ctx.patientHn)) {
     msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
-  } else if ((ctx.labAmount > 0 || ctx.labFollowup > 0 || ctx.medLabSpecialOn) && !ctx.patientHn) {
+  } else if ((ctx.labAmount > 0 || ctx.labFollowup > 0 || ctx.labFree || ctx.medLabSpecialOn) && !ctx.patientHn) {
     // รอบ 91 (G): พบแพทย์ฟังผล Lab (ctx.labFollowup) บังคับ HN เหมือนยอด Lab · ด่านถัดไป ("มียอด Lab แล้วต้องติ๊กส่งตรวจพิเศษ") ใช้กับ labAmount เท่านั้น ไม่ใช้กับ labFollowup อย่างเดียว
     // รอบ 68 (2026-10-08, เจ้าของสั่ง): ใบรับรองแพทย์มี lab บังคับ HN (ชื่อไม่บังคับ) · ฝั่งเว็บเท่านั้น เหตุผลเดียวกับด่านตรวจสุขภาพ
     // รอบ 70 (เจ้าของสั่ง 2026-10-07): ติ๊ก EKG/ตรวจสายตา/ตาบอดสี (ctx.medLabSpecialOn) บังคับแค่ HN เหมือนกัน · ฝั่งเซิร์ฟเวอร์บังคับด้วยข้อความเดียวกัน
     msg = 'ใบรับรองแพทย์มี lab ต้องกรอก HN';
-  } else if (ctx.labAmount > 0 && getSpecialRegIds().length === 0 && !ctx.specialOn && !ctx.medLabSpecialOn && !STATE.medLabNoExtra) {
-    // รอบ 87 (D16 ข): พิมพ์ยอด Lab แล้วลืมติ๊กส่งตรวจพิเศษ (อยู่คนละแผง) ⇒ ต้องติ๊กรายการ หรือกด "ไม่มีตรวจเพิ่ม" · ใช้ทุกจุด รวมแก้ไขแถวเก่า · ฝั่งเว็บเท่านั้น
-    msg = 'ใบรับรองมี Lab: ติ๊กส่งตรวจพิเศษ/ตรวจเพิ่ม หรือกด "ไม่มีตรวจเพิ่ม"';
+  // รอบ 108: ถอดด่าน D16 ข (พิมพ์ยอด Lab แล้วต้องติ๊กส่งตรวจพิเศษ/กด "ไม่มีตรวจเพิ่ม") พร้อมปุ่มนั้น — พิมพ์ยอด Lab แล้วบันทึกได้เลย
   } else if (ctx.patientHn && !isValidHn(ctx.patientHn)) {
     msg = 'HN ต้องเป็นตัวอักษรภาษาอังกฤษ 2 ตัว ตามด้วยตัวเลข 4 หลัก (เช่น AB1234)';
   } else if (prefixNameLangMismatch_(qs('patientPrefix').value, qs('patientName').value)) {
@@ -5077,14 +5102,16 @@ function recalcTotals() {
   applyVaccineCheckupRateLock(checkupOn);
   var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
 
+  syncLabFreeUi_(); // รอบ 108: free ⇒ ช่อง DF/ยอด Lab เป็น 0 + disabled ก่อนอ่านค่า
   var medNums = getMedCertNums();
   var medOn = isMedOn();
   var nCert = medNums.n5 + medNums.nDriver;                  // เข้าสูตร 120/20 เท่านั้น
   var labAmount = medNums.labAmount;
   var labFollowup = medNums.labFollowup; // รอบ 91: นับ DF ฟังผล Lab แยกจากยอด Lab กรอกเอง
+  var labFree = !!medNums.labFree; // รอบ 108
   // รอบ 81 (W1): โหมดล่วงหน้า ⇒ ค่าในแผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ ไม่นับ (ไม่เข้ายอด/ด่าน/payload) — ค่าในช่องไม่ถูกล้าง กลับโหมดปกติแล้วยังอยู่
   var preM = (typeof isPreMode_ === 'function') && isPreMode_();
-  if (preM) { vaccineCodes = []; vaccineOn = false; medNums = { n5: 0, nDriver: 0, labAmount: 0, labFollowup: 0 }; medOn = false; nCert = 0; labAmount = 0; labFollowup = 0; }
+  if (preM) { vaccineCodes = []; vaccineOn = false; medNums = { n5: 0, nDriver: 0, labAmount: 0, labFollowup: 0, labFree: false }; medOn = false; nCert = 0; labAmount = 0; labFollowup = 0; labFree = false; }
 
   var medCertGenAmountEl = qs('medCertGenAmount');
   if (medCertGenAmountEl) medCertGenAmountEl.textContent = 'คิดเงินอัตโนมัติ: ' + money(calcMedCertTotal(nCert, STATE.prices)) + ' บาท';
@@ -5142,7 +5169,7 @@ function recalcTotals() {
   validateForm({
     checkupOn: checkupOn, program: program, gender: gender, checkupAmountNum: checkupAmountNum,
     vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert,
-    extraIds: extraIds, labAmount: labAmount, labFollowup: labFollowup,
+    extraIds: extraIds, labAmount: labAmount, labFollowup: labFollowup, labFree: labFree,
     specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn, medLabSpecialOn: medLabSpecialOn,
     patientName: patientName, patientHn: patientHn,
     queue: queue, deliveryMethod: deliveryMethod,
@@ -5178,6 +5205,7 @@ function updatePanelSummaries(ctx) {
     var medLabBits = [];
     if (ctx.medNums.labAmount > 0) medLabBits.push('lab ' + money(ctx.medNums.labAmount) + ' บาท');
     if (ctx.medNums.labFollowup > 0) medLabBits.push('ฟังผล Lab DF ' + money(ctx.medNums.labFollowup) + ' บาท'); // รอบ 91
+    if (ctx.medNums.labFree) medLabBits.push('ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
     getSpecialRegIds().forEach(function (id) {
       if (MEDLAB_SPECIAL_IDS.indexOf(id) !== -1) medLabBits.push(MEDLAB_SPECIAL_SHORT[id] || id);
     });
@@ -5298,6 +5326,7 @@ function captureFormDraft_() {
       data[key] = el.value;
     }
   });
+  data.__labFree = !!STATE.labFollowupFree; // รอบ 108: ปุ่ม 'ไม่มีค่าใช้จ่าย' เป็นสถานะใน STATE (ไม่ใช่ input) ต้องจำไปกับร่างด้วย
   data.__progSet = STATE.progSet; // ชุดโปรแกรม (week/sun) ต้องคืนก่อนค่า radio — setProgramSet() ปลดติ๊กปุ่มของชุดที่ซ่อน
   return data;
 }
@@ -5316,6 +5345,7 @@ function restoreFormDraft_(data) {
     }
   });
   // ค่าที่ยัดกลับตรง ๆ ไม่ยิง event ⇒ ต้อง sync ผลข้างเคียง (ปุ่มคำนำหน้า/ล็อกแผง/ยอดรวม) เอง
+  setLabFree_(!!data.__labFree); // รอบ 108: คืนสถานะปุ่ม 'ไม่มีค่าใช้จ่าย' (ช่อง DF/ยอด Lab ล็อกตาม)
   syncPrefixButtons();
   updateHnHint();
   applyVaccineFilter();
@@ -5576,6 +5606,7 @@ function enterEditMode(rec) {
   qs('medCertDriver').value = rec.medCertDriver || 0;
   qs('medCertLabAmount').value = labAmount;
   if (qs('labFollowup')) qs('labFollowup').value = rec.labFollowup || 0; // รอบ 91: โหลดค่าเดิมตอนแก้ไข
+  setLabFree_(!!rec.labFollowupFree); // รอบ 108: แถวไม่มีค่าใช้จ่าย ⇒ ปุ่มกดไว้ + ช่องล็อก (ค่า 0)
 
   applyVaccineFilter();
 
@@ -5634,7 +5665,7 @@ function mQueueNum_(v) {
 // (ctx จาก recalcTotals: ฟิลด์ nCert คือจำนวนใบ 5 โรค + ขับขี่ · พร้อม labAmount · labFollowup · medLabSpecialOn · checkupOn)
 function mGroupFormOn_(ctx) {
   if (ctx.checkupOn) return false; // มีตรวจสุขภาพ ⇒ ใช้กติกาคิว C เดิม
-  return ctx.nCert > 0 || ctx.labAmount > 0 || ctx.labFollowup > 0 || !!ctx.medLabSpecialOn;
+  return ctx.nCert > 0 || ctx.labAmount > 0 || ctx.labFollowup > 0 || !!ctx.labFree || !!ctx.medLabSpecialOn; // รอบ 108: + ไม่มีค่าใช้จ่าย
 }
 
 // หาแถว/รายการที่ใช้คิวเดียวกันแล้ววันนี้ จากทุกแหล่งที่เว็บมองเห็นในเครื่อง (เรียงตามที่ SPEC ระบุ):
@@ -5746,6 +5777,7 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   qs('medCertDriver').value = String((rec.medCertDriver || 0) + (draft.medCertDriver || 0));
   qs('medCertLabAmount').value = String((rec.medCertLabAmount || 0) + (draft.medCertLabAmount || 0));
   if (qs('labFollowup')) qs('labFollowup').value = String((rec.labFollowup || 0) + (draft.labFollowup || 0)); // รอบ 91
+  setLabFree_(!!(rec.labFollowupFree || draft.labFollowupFree)); // รอบ 108: OR ของสองฝั่ง
 
   // sp_reg_* (ลงชื่อไว้ รวม inbody): union
   (draft.specialRegIds || []).forEach(function (id) {
@@ -6135,8 +6167,9 @@ function onSubmitLog(e) {
   var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
   var medCert5 = Math.max(0, parseInt(qs('medCert5').value, 10) || 0);
   var medCertDriver = Math.max(0, parseInt(qs('medCertDriver').value, 10) || 0);
-  var medCertLabAmount = Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0);
-  var labFollowup = getLabFollowupNum_(); // รอบ 91
+  var labFollowupFree = !!STATE.labFollowupFree; // รอบ 108
+  var medCertLabAmount = labFollowupFree ? 0 : Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0);
+  var labFollowup = labFollowupFree ? 0 : getLabFollowupNum_(); // รอบ 91
   // ⚠ patientName/patientHn ส่งเสมอ (รอบ 4) — เลิกผูกกับ checkupOn แล้ว เพราะ "ส่งตรวจพิเศษ" ก็ต้องใช้ 2 ช่องนี้ด้วย
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim().toUpperCase(); // รอบ 100
@@ -6164,7 +6197,7 @@ function onSubmitLog(e) {
     program: program, genderDom: genderDom, pelvic: pelvic, checkupAmount: checkupAmount, deliveryMethod: deliveryMethod,
     pickupDate: pickupDate, // รอบ 21 (2026-09-20)
     vaccineCodes: vaccineCodes, medCert5: medCert5, medCertDriver: medCertDriver,
-    medCertLabAmount: medCertLabAmount, labFollowup: labFollowup,
+    medCertLabAmount: medCertLabAmount, labFollowup: labFollowup, labFollowupFree: labFollowupFree,
     specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix
   };
 
@@ -6226,6 +6259,7 @@ function onSubmitLog(e) {
     medCertDriver: medCertDriver,
     medCertLabAmount: medCertLabAmount,
     labFollowup: labFollowup, // รอบ 91
+    labFollowupFree: labFollowupFree, // รอบ 108: ส่งเสมอ true/false
     specialSent: specialSentIds,
     specialBack: specialBackIds,
     specialPrep: specialPrepIds,
@@ -6387,6 +6421,7 @@ function sendQueuedSave_(qid) {
         applySavedRecord(resp.record);
       } else {
         loadToday();
+        if (typeof qcaLoad_ === 'function') qcaLoad_(true); // รอบ 108
       }
       // รอบ 34 W1 (ข้อ 4): มุมมองรายชื่อตรวจสุขภาพ (ถ้าโหลดไว้แล้ว) ต้องวาดใหม่ด้วยเมื่อแก้ไขสำเร็จ — คำตอบมาช้าได้แล้ว
       // (ไม่รอ network) เจ้าหน้าที่อาจย้ายไปพิมพ์ช่องอื่นในตารางนี้ระหว่างรอ ⇒ ห้ามทับช่องที่กำลังพิมพ์ค้าง + ห้ามเลื่อน
@@ -6504,6 +6539,7 @@ function summarizeRecordParts(rec) {
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
   if (rec.medCertLabAmount) parts.push('ใบรับรองมี lab ' + money(rec.medCertLabAmount) + ' บาท');
   if (rec.labFollowup) parts.push('ฟังผล Lab DF ' + money(rec.labFollowup) + ' บาท'); // รอบ 91
+  if (rec.labFollowupFree) parts.push('ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
   if (rec.specialPrepItems) parts.push('คีย์ consult/ส่ง line: ' + rec.specialPrepItems);
   if (rec.specialSentItems) {
     var sentText = 'ส่งตรวจ: ' + rec.specialSentItems;
@@ -6648,6 +6684,7 @@ function isFocusInCuNote() {
    แทนที่จะยิง apiCall('today') ซ้ำอีกรอบ (onSubmitLog ผู้เรียกจะไม่เรียก loadToday() เลยเมื่อมี record) */
 function applySavedRecord(record) {
   var today = todayStr();
+  if (typeof qcaLoad_ === 'function') qcaLoad_(true); // รอบ 108: บันทึก/แก้ไขสำเร็จ ⇒ โหลดแถบเตือนคิว M ใหม่ทันที
 
   // "รายการวันนี้" ของจุดบริการตัวเอง — ต้องตรงทั้งวันที่และจุดบริการ ไม่ตรง ⇒ ลบตัวเดิมออก (ถ้าเคยมี)
   // รอบ 83: จุดที่รายการรายวันเห็นทุกจุด ⇒ แถวของจุดอื่นที่เพิ่งแก้ต้องอยู่ต่อ (ไม่ลบทิ้ง)
@@ -6708,9 +6745,12 @@ function computeTodayStats_(records) {
     var lfAmt = lfN; // รอบ 91 (แก้ข้อ G): ยอด DF ในแถวเป็นบาทตรง ๆ (ไม่ใช้ STATE.prices)
     if (lfN > 0) {
       st.cntLabFollowup++; st.sumLabFollowup += lfAmt;
+    }
+    // รอบ 108: แถว "ฟังผล Lab ไม่มีค่าใช้จ่าย" (labFollowupFree) นับเข้า cntLabFollowupExtra ด้วยเงื่อนไขเดียวกับ lfN > 0 · ไม่นับ cntLabFollowup/sumLabFollowup
+    if (lfN > 0 || rec.labFollowupFree) {
       if (!rec.program && !(labAmt > 0) && !((rec.vaccineCount || 0) > 0 && !rec.vaccineWithCheckup)) st.cntLabFollowupExtra++;
     }
-    if (labAmt > 0 || lfN > 0) st.cntMedLabAny++;
+    if (labAmt > 0 || lfN > 0 || rec.labFollowupFree) st.cntMedLabAny++;
     if (rec.program) { st.cntCheckup++; st.sumCheckup += numOf(t.checkup); }
     if ((rec.vaccineCount || 0) > 0) {
       if (rec.vaccineWithCheckup) { st.cntVaccineCu++; st.sumVaccineCu += numOf(t.vaccine); }
@@ -7154,6 +7194,8 @@ function qcCall_(action, extra, date, isWrite) {
   var payload = { staffKey: STATE.staffKey, staffName: STATE.staffName, date: date };
   Object.keys(extra || {}).forEach(function (k) { payload[k] = extra[k]; });
   return apiCall(action, payload).then(function (resp) { // ไม่ใส่ timeoutMs (กติการอบ 72: timeoutMs เฉพาะ today/pending/dqToday/preList/preDays — ล้มเน็ตได้ networkError เดิม)
+    // รอบ 108: void/unvoid ในแผงสำเร็จ ⇒ โหลดแถบเตือนใหม่ทันที (ก่อนเช็ค seq ของแผง — แถบมี seq ของตัวเอง)
+    if ((action === 'qcVoid' || action === 'qcUnvoid') && isQcResp_(resp) && typeof qcaLoad_ === 'function') qcaLoad_(true);
     if (seq !== QC_STATE.seq || !QC_STATE.open || QC_STATE.date !== date) return;
     if (isQcResp_(resp)) { QC_STATE.data = resp; qcRender_(); return; }
     var msg = badListRespMessage_(resp);
@@ -7223,6 +7265,11 @@ function qcRender_() {
 function qcStartRecord_(n) {
   if (!(n >= 1)) return;
   if (qcViewDate_() !== todayStr()) return; // ย้อนวันบันทึกไม่ได้
+  qcStartRecordToday_(n);
+}
+// รอบ 108: แกนร่วมของ "＋ บันทึก" (แผงปิดยอดคิว) และปุ่ม "บันทึก" บนแถบเตือน (#qcAlertBar · วันนี้เสมอ ไม่เช็ควันที่ดูของแผง)
+function qcStartRecordToday_(n) {
+  if (!(n >= 1)) return;
   if (!isMainFormDraftEmpty_() && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยฟอร์มว่างสำหรับ M' + n + ' หรือไม่?')) return;
   STATE.preEditId = '';
   STATE.preEditName = '';
@@ -7256,7 +7303,117 @@ function onQcSaveNext_() {
   qcCall_('qcSetNext', { next: n }, QC_STATE.date, true);
 }
 // เปลี่ยนวันที่ดู/ข้ามเที่ยงคืน/กลับเข้าหน้า 📋 ขณะแผงเปิดอยู่ ⇒ โหลดใหม่ตามวันที่ดูอยู่
-function qcOnViewChange_() { if (QC_STATE.open) qcLoad_(); }
+function qcOnViewChange_() {
+  if (QC_STATE.open) qcLoad_();
+  if (typeof qcaOnContextChange_ === 'function') qcaOnContextChange_(); // รอบ 108: เปลี่ยนวันที่ดูใน 📋 ⇒ แถบเตือนของจุดขายโปรแกรมแสดง/ซ่อนตามวัน
+}
+
+/* =========================================================================
+   รอบ 108 — แถบเตือน "พบแพทย์แล้ว ยังไม่บันทึก" (#qcAlertBar · คิว M)
+   เซิร์ฟเวอร์ action qcAlerts (อ่านอย่างเดียว · วันนี้เท่านั้น · คืนแค่เลขคิว ไม่มีชื่อ/HN) · ใช้นิยามเดียวกับแผงปิดยอดคิว (state missing)
+   · จุดคีย์ order: บนสุดของหน้าบันทึก · ต่อคิวมีปุ่ม "บันทึก" / "ไม่ต้องบันทึก" · จุดขายโปรแกรม: บนสุดของ 📋 (เฉพาะดูวันนี้) ไม่มีปุ่ม · จุดอื่น ไม่แสดง ไม่ยิง
+   · ยิงซ้อนไม่ได้ (in-flight ⇒ ข้าม · ยกเว้นสั่ง force หลังบันทึก/void) · คำตอบเก่าทิ้งด้วย seq · ยิงล้ม ⇒ คงแถบเดิม (ไม่ล้างเป็นว่าง · ไม่ toast)
+   ========================================================================= */
+var QCA_KEY_POINT_ = 'จุดคีย์ order';
+var QCA_SALES_POINT_ = 'จุดขายโปรแกรม';
+var QCA_ = { mode: '', queues: [], seq: 0, inflight: false };
+function qcaMode_() {
+  if (STATE.point === QCA_KEY_POINT_) return 'key';
+  if (STATE.point === QCA_SALES_POINT_) return 'sales';
+  return '';
+}
+function qcaPageOpen_(mode) {
+  if (mode === 'key') { var w = qs('svcFormWrap'); return !!(w && w.style.display === 'block'); }
+  if (mode === 'sales') return isTodayScreenVisible_() && isViewingToday_();
+  return false;
+}
+function qcaRender_() {
+  var bar = qs('qcAlertBar');
+  if (!bar) return;
+  var mode = qcaMode_();
+  var list = QCA_.queues || [];
+  if (!mode || !qcaPageOpen_(mode) || !list.length) { bar.hidden = true; return; }
+  var host = document.querySelector(mode === 'key' ? '#svcFormWrap > .wrap-log' : '#todayScreen > .wrap');
+  if (host && bar.parentNode !== host) host.insertBefore(bar, host.firstChild);
+  var sig = mode + '|' + list.join(',');
+  if (bar.getAttribute('data-sig') !== sig) {
+    bar.setAttribute('data-sig', sig);
+    bar.textContent = '';
+    var lab = document.createElement('span');
+    lab.className = 'qca-label';
+    lab.textContent = '⚠ พบแพทย์แล้ว ยังไม่บันทึก:';
+    bar.appendChild(lab);
+    list.forEach(function (q) {
+      var n = parseInt(String(q).slice(1), 10);
+      var chip = document.createElement('span');
+      chip.className = 'qca-chip';
+      var b = document.createElement('b');
+      b.textContent = q;
+      chip.appendChild(b);
+      if (mode === 'key') {
+        var rec = document.createElement('button');
+        rec.type = 'button'; rec.className = 'btn small'; rec.setAttribute('data-qca-act', 'record'); rec.setAttribute('data-qca-n', String(n));
+        rec.textContent = 'บันทึก';
+        var vd = document.createElement('button');
+        vd.type = 'button'; vd.className = 'btn secondary small'; vd.setAttribute('data-qca-act', 'void'); vd.setAttribute('data-qca-n', String(n));
+        vd.textContent = 'ไม่ต้องบันทึก';
+        chip.appendChild(rec); chip.appendChild(vd);
+      }
+      bar.appendChild(chip);
+    });
+  }
+  bar.hidden = false;
+}
+// force = true (หลังบันทึก/void): ทิ้งคำขอที่ค้างอยู่แล้วยิงใหม่ · ไม่ force + มีคำขอค้าง ⇒ ข้าม
+function qcaLoad_(force) {
+  var mode = qcaMode_();
+  if (!mode || !STATE.staffKey || !qcaPageOpen_(mode)) { qcaRender_(); return; }
+  if (QCA_.inflight && !force) return;
+  var seq = ++QCA_.seq;
+  QCA_.inflight = true;
+  apiCall('qcAlerts', { staffKey: STATE.staffKey, staffName: STATE.staffName }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== QCA_.seq) return; // คำตอบเก่า/เปลี่ยนจุดไปแล้ว ⇒ ทิ้ง
+    QCA_.inflight = false;
+    if (resp && resp.status === 'ok' && Array.isArray(resp.queues)) {
+      QCA_.queues = resp.queues.filter(function (q) { return /^M[1-9][0-9]{0,2}$/.test(String(q)); }).map(String);
+    } // ยิงล้ม/คำตอบเสีย ⇒ คงแถบเดิม ไม่ล้าง ไม่ toast
+    qcaRender_();
+  }, function () {
+    if (seq === QCA_.seq) QCA_.inflight = false;
+  });
+}
+// เปลี่ยนหน้า/จุดบริการ/วันที่ดู ⇒ จุดเปลี่ยน = ล้างของจุดเก่าทิ้ง · ซิงก์แถบ แล้วโหลด
+function qcaOnContextChange_() {
+  var mode = qcaMode_();
+  if (mode !== QCA_.mode) { QCA_.mode = mode; QCA_.queues = []; QCA_.seq++; QCA_.inflight = false; }
+  qcaRender_();
+  qcaLoad_(false);
+}
+// ตัวจับเวลา 60 วิ — เรียกตรงจากเทสต์ได้ (ห้ามรอ 60 วิจริง)
+function qcaTick_() {
+  if (document.visibilityState !== 'visible') return;
+  qcaLoad_(false);
+}
+function onQcaClick_(e) {
+  var t = e.target;
+  while (t && t !== e.currentTarget && !(t.getAttribute && t.getAttribute('data-qca-act'))) t = t.parentNode;
+  if (!t || !t.getAttribute) return;
+  var act = t.getAttribute('data-qca-act');
+  var n = parseInt(t.getAttribute('data-qca-n'), 10);
+  if (!act || !(n >= 1)) return;
+  if (act === 'record') { qcStartRecordToday_(n); return; }
+  if (act === 'void') {
+    if (!window.confirm('ยืนยัน: M' + n + ' พบแพทย์แล้ว แต่ไม่ต้องบันทึก?')) return;
+    apiCall('qcVoid', { staffKey: STATE.staffKey, staffName: STATE.staffName, date: todayStr(), queue: 'M' + n }).then(function (resp) {
+      if (isQcResp_(resp)) {
+        qcaLoad_(true);
+        if (QC_STATE.open && qcViewDate_() === todayStr()) qcLoad_();
+      } else {
+        showToast('❌ ทำรายการไม่สำเร็จ: ' + badListRespMessage_(resp));
+      }
+    });
+  }
+}
 
 function loadTodayRun_(isRetry) {
   // รอบ 72: ยังไม่เลือกจุดบริการ ⇒ ไม่ยิง today (เดิมยิง point ว่างแล้วได้ "ไม่มีบันทึก") · ทิ้ง prefetch ที่ค้าง (ถ้ามี) ด้วย
@@ -9516,6 +9673,7 @@ function spBoardHasOtherServices(rec, id) {
   if ((rec.medCertCount || 0) > 0) return true;
   if ((rec.medCertLabAmount || 0) > 0) return true;
   if ((rec.labFollowup || 0) > 0) return true; // รอบ 91
+  if (rec.labFollowupFree) return true; // รอบ 108
   if ((rec.extraCount || 0) > 0) return true;
   var reg = rec.specialReg || [];
   for (var i = 0; i < reg.length; i++) { if (reg[i] !== id) return true; }
@@ -15909,6 +16067,7 @@ function showScreen(name) {
   // ⇒ ต้องคำนวณตำแหน่งแผงคิวบันทึกใหม่เสมอ ไม่พึ่ง event scroll จาก window.scrollTo() ข้างบนอย่างเดียว (ไม่ยิงถ้า
   // ตำแหน่งเดิมอยู่ที่ 0 อยู่แล้ว)
   if (typeof syncSaveQueuePanelPos_ === 'function') syncSaveQueuePanelPos_();
+  if (typeof qcaOnContextChange_ === 'function') qcaOnContextChange_(); // รอบ 108: แถบเตือนคิว M ตามหน้า/จุดที่เปิดอยู่
 }
 
 /* =========================================================================
@@ -16391,6 +16550,7 @@ document.addEventListener('DOMContentLoaded', function () {
       loadTodayViewRun_(false);
     }
     recalcTotals();
+    if (typeof qcaOnContextChange_ === 'function') qcaOnContextChange_(); // รอบ 108: เปลี่ยนจุด ⇒ แถบเตือนคิว M ซ่อน/โหลดตามจุดใหม่
     if (typeof syncLogScrollNav_ === 'function') syncLogScrollNav_(); // รอบ 82 (ก้อน B): เปลี่ยนจุด ⇒ ปุ่มเลื่อนจอขึ้น/ซ่อนตามจุด
     // รอบ 31A (A-W3/A-W5): เปลี่ยนเป็นจุดนี้ -> จัดแผงตามหัวข้อหลักใหม่ + ถ้าจุดนี้มี 'รายชื่อ' เปิดหน้ารายชื่อให้เลย
     // (เปลี่ยนไปจุดที่ไม่มี 'รายชื่อ' จะไม่ถูกบังคับย้ายหน้า — maybeAutoOpenListForPoint() เช็คเองแล้ว)
@@ -16660,6 +16820,11 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('medCertDriver').addEventListener('input', onServiceFieldChange);
   qs('medCertLabAmount').addEventListener('input', onServiceFieldChange);
   // รอบ 91 (C): แผงปิดยอดคิว M
+  var qcaBarEl = qs('qcAlertBar'); // รอบ 108: แถบเตือนคิว M — คลิกปุ่มในแถบ + ตัวจับเวลา 60 วิ (เฉพาะแท็บที่มองเห็น) + กลับมาที่แท็บ/โฟกัส
+  if (qcaBarEl) qcaBarEl.addEventListener('click', onQcaClick_);
+  setInterval(qcaTick_, 60000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') qcaLoad_(false); });
+  window.addEventListener('focus', function () { qcaLoad_(false); });
   var qcOpenEl = qs('btnQcOpen'), qcCloseEl = qs('btnQcClose'), qcSaveEl = qs('btnQcSaveNext'), qcListEl = qs('qcList'), qcHideEl = qs('qcHideOk');
   if (qcOpenEl) qcOpenEl.addEventListener('click', qcOpen_);
   if (qcCloseEl) qcCloseEl.addEventListener('click', qcClose_);
@@ -16668,6 +16833,8 @@ document.addEventListener('DOMContentLoaded', function () {
   if (qcHideEl) qcHideEl.addEventListener('change', qcRender_);
   var labFollowupElInit = qs('labFollowup');
   if (labFollowupElInit) labFollowupElInit.addEventListener('input', onServiceFieldChange); // รอบ 91
+  var labFreeBtnInit = qs('btnLabFree');
+  if (labFreeBtnInit) labFreeBtnInit.addEventListener('click', onLabFreeClick_); // รอบ 108
   qs('vaccineSearch').addEventListener('input', applyVaccineFilter);
   qs('logForm').addEventListener('submit', onSubmitLog);
   qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); showScreen('log'); });
