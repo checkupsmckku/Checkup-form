@@ -1190,6 +1190,7 @@
     table.cu-table.cu-table-data th:nth-child(7), table.cu-table.cu-table-data td:nth-child(7) { width: 10%; }
     table.cu-table.cu-table-data th:nth-child(8), table.cu-table.cu-table-data td:nth-child(8) { width: 24%; }
     table.cu-table.cu-table-data th:nth-child(9), table.cu-table.cu-table-data td:nth-child(9) { width: 6%; }
+    table.cu-table.cu-table-data th:nth-child(9) { white-space: nowrap; word-break: normal; } /* รอบ 112: หัว "Consult" ห้ามตัดกลางคำ (ความกว้างจริง cuFitDataForPrint_ ตั้งให้พอ) */
     table.cu-table.cu-table-data td:nth-child(3), table.cu-table.cu-table-data td:nth-child(8) { white-space: nowrap; word-break: normal; }
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
@@ -1314,7 +1315,10 @@
     .dq-side { position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto; overflow-x: hidden; min-width: 0; }
     .dq-main { min-width: 0; }
     .dq-card { height: max(220px, calc((100vh - 16px - 12px) / 2)); }
+    .dq-cards-1row .dq-card { height: max(220px, calc(100vh - 16px)); } /* รอบ 112: ≤ 2 ห้อง ⇒ แถวเดียว สูงเต็มจอ */
   }
+  /* รอบ 112: จอ 700–1099px · ≤ 2 ห้อง (แถวเดียว) ⇒ สูงเป็น 2 เท่าของเดิม (เพดาน 920px) */
+  @media (min-width: 700px) and (max-width: 1099.98px) { .dq-cards-1row .dq-card { height: clamp(240px, calc(100vh - 140px), 920px); } }
   .dq-card-head { flex: 0 0 auto; padding: 6px 10px; font-weight: bold; font-size: 15px; text-align: center; color: var(--primary-dark); background: #E4E7FB; overflow-wrap: anywhere; }
   .dq-card.dq-col-yellow .dq-card-head { background: #FFE27A; }
   .dq-card.dq-col-pink .dq-card-head { background: #F8BBD3; }
@@ -1938,19 +1942,20 @@
                 <!-- รอบ 66: เอาปุ่ม MMG/U/S เดี่ยว (#medLabSoloButtons) ออก — ติ๊กที่แผงส่งตรวจพิเศษ ระบบใส่ยอด Lab ให้ตามคิว (syncMedLabSoloPrice_) -->
                 <div class="row">
                   <div>
-                    <label class="field-label" for="medCertLabAmount">ใบรับรองแพทย์มี Lab — ยอดเงิน (กรอกเอง)</label>
+                    <!-- รอบ 112 (เจ้าของสั่ง 2026-11-01): เพิ่มบรรทัดอธิบายใต้ป้าย -->
+                    <label class="field-label" for="medCertLabAmount">ใบรับรองแพทย์มี Lab — ยอดเงิน (กรอกเอง)<span id="medCertLabAmountHint" class="muted" style="display:block;font-weight:400;font-size:0.9em;">รวม Lab และ DF (กรณีพบแพทย์และฟังผลในวันเดียวกัน)</span></label>
                     <input type="number" id="medCertLabAmount" min="0" step="1" value="0">
                   </div>
                 </div>
                 <!-- รอบ 91 (G, แก้ 2026-10-21): DF พบแพทย์ฟังผล Lab = ยอดเงินบาทที่เจ้าหน้าที่พิมพ์เอง (ไม่คูณราคา · ไม่มีค่าในแท็บราคา) — เข้ายอดใบรับรอง/ยอดรวม · บังคับ HN เหมือนยอด Lab -->
                 <div class="row" style="margin-top:10px;">
                   <div>
-                    <label class="field-label" for="labFollowup" id="labFollowupLabel">DF พบแพทย์ฟังผล Lab (บาท)</label>
+                    <label class="field-label" for="labFollowup" id="labFollowupLabel">ค่า DF พบแพทย์ (กรณีชำระค่า DF อย่างเดียว)</label><!-- รอบ 112: เดิม "DF พบแพทย์ฟังผล Lab (บาท)" -->
                     <input type="number" id="labFollowup" min="0" step="1" value="0" inputmode="numeric">
                   </div>
                 </div>
                 <!-- รอบ 108: ฟังผล Lab ที่จ่ายครบแล้ววันก่อน — กดแล้วช่อง DF/ยอด Lab เป็น 0 + ล็อก · ยังต้องมีคิว M + HN · เซิร์ฟเวอร์บังคับ 0 เอง -->
-                <button type="button" class="btn secondary small" id="btnLabFree" aria-pressed="false" style="margin-top:8px;min-height:44px;">ไม่มีค่าใช้จ่าย</button>
+                <button type="button" class="btn secondary small" id="btnLabFree" aria-pressed="false" style="margin-top:8px;min-height:44px;white-space:normal;">ไม่มีค่าใช้จ่าย (กรณี ชำระเงินครบแล้วนัดฟังผล)</button><!-- รอบ 112 (เจ้าของสั่ง 2026-11-01): เติมวงเล็บอธิบาย (รอบ 108 เดิมไม่มีวงเล็บ) -->
                 <!-- รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายมาแผงนี้ (นับยอดอย่างเดียว) — บังคับแค่ HN · buildSpecialSendsUI() สร้างแถว -->
                 <p class="muted" style="margin-top:12px;">ตรวจเพิ่ม (นับยอด)</p>
                 <div id="medLabSpecialList"></div>
@@ -6171,6 +6176,8 @@ function isFocusInCheckupTableInput_() {
   return tag === 'input' || tag === 'select' || tag === 'textarea';
 }
 
+// รอบ 112: ข้อความกล่องเตือนตอนกรอกทั้งยอด Lab และค่า DF ในแถวเดียว (เจ้าของยืนยันข้อความ 2026-11-01)
+var LAB_BOTH_CONFIRM_MSG = 'กรอกทั้งยอด Lab และค่า DF\nถ้าพบแพทย์ในวันเดียวกัน ให้รวมยอดไว้ช่องยอด Lab ช่องเดียว\nบันทึกต่อไหม?';
 function onSubmitLog(e) {
   e.preventDefault();
   // รอบ 34 (2026-09-30): เดิมเช็ค STATE.saving ที่นี่เพื่อกันคลิกรัวระหว่างรอ apiCall ตอบ — ตอนนี้ฟอร์มถูกล้าง+ปุ่ม
@@ -6216,6 +6223,9 @@ function onSubmitLog(e) {
   var labFollowupFree = !!STATE.labFollowupFree; // รอบ 108
   var medCertLabAmount = labFollowupFree ? 0 : Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0);
   var labFollowup = labFollowupFree ? 0 : getLabFollowupNum_(); // รอบ 91
+  // รอบ 112 (เจ้าของตัดสิน 2026-11-01): กรอกทั้งยอด Lab และค่า DF ⇒ เตือนแต่บันทึกต่อได้ (พบแพทย์วันเดียวกันต้องรวมก้อนเดียวในช่องยอด Lab)
+  // ถามก่อนด่านซ้ำ/คิว · ยกเลิก ⇒ ไม่ยิง API ไม่ล้างฟอร์ม · ใช้ทั้งบันทึกใหม่และบันทึกแก้ไข
+  if (medCertLabAmount > 0 && labFollowup > 0 && !window.confirm(LAB_BOTH_CONFIRM_MSG)) return;
   // ⚠ patientName/patientHn ส่งเสมอ (รอบ 4) — เลิกผูกกับ checkupOn แล้ว เพราะ "ส่งตรวจพิเศษ" ก็ต้องใช้ 2 ช่องนี้ด้วย
   var patientName = (qs('patientName').value || '').trim();
   var patientHn = (qs('patientHn').value || '').trim().toUpperCase(); // รอบ 100
@@ -11027,8 +11037,20 @@ function cuFitDataForPrint_(table) {
     if (namePx < minN) namePx = minN;
   }
   var namePct = namePx / tableW * 100, docPct = docPx / tableW * 100, restPct = 100 - namePct - docPct, oi = 0;
+  // รอบ 112 (เจ้าของแจ้ง 2026-11-01): หัว "Consult" ตัว t ตกบรรทัด (ช่องได้แค่ ~11 mm) ⇒ ช่อง Consult ต้องกว้างพอให้หัวอยู่บรรทัดเดียว
+  // (วัดแบบตัวปกติ + เผื่อ 20% สำหรับตัวหนาของหัวตาราง) · ส่วนที่ขาดเอามาจากช่อง คิว + ราคา (ข้อความสั้น มีที่เหลือ) ตามสัดส่วน
+  // ไม่แตะช่องชื่อ/แพทย์ และไม่แตะหัวไทยยาว (โปรแกรม/มะเร็ง/ช่องทาง — ลองเอาจากทุกช่องแล้วหัว "ตรวจมะเร็งปากมดลูก" กลายเป็น 3 บรรทัด)
+  var cIdx = CU_DATA_OTHER_PCT.length - 1, donors = [0, 4]; // ดัชนีใน CU_DATA_OTHER_PCT: 0 = คิว · 4 = ราคา
+  var sharePct = CU_DATA_OTHER_PCT.map(function (p) { return restPct * p / sumOther; });
+  var needCPct = (cuMeasureText_(headTh[8].textContent, family) * 1.2 + 6 + CU_NAME_PAD_MM * mmPx) / tableW * 100;
+  var gap = needCPct - sharePct[cIdx];
+  var donorPct = sharePct[donors[0]] + sharePct[donors[1]];
+  if (gap > 0 && gap < donorPct / 2) {
+    donors.forEach(function (j) { sharePct[j] -= gap * sharePct[j] / donorPct; });
+    sharePct[cIdx] = needCPct;
+  }
   for (k = 0; k < headTh.length; k++) {
-    headTh[k].style.width = (k === 2 ? namePct : (k === 7 ? docPct : restPct * CU_DATA_OTHER_PCT[oi++] / sumOther)).toFixed(3) + '%';
+    headTh[k].style.width = (k === 2 ? namePct : (k === 7 ? docPct : sharePct[oi++])).toFixed(3) + '%';
   }
   var fit = function (cells, nat, px) {
     var j, td, avail, pt;
@@ -12488,6 +12510,13 @@ function onDtbSaveClick() {
 // รอบ 72 (เจ้าของสั่ง 2026-10-07): คำตอบเสีย ⇒ ห้ามเขียน CU_CACHE/CU_LOADED_DATE/วาดตารางจาก [] — มีแคช = คงเดิม + ป้าย ⚠ ·
 // ไม่มีแคช = กล่อง "โหลดรายชื่อไม่สำเร็จ" + ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง (ไม่วนซ้ำ) · loadCheckupTable(view) คงลายเซ็นเดิม (มีผู้เรียกส่งค่าเก่า/ค่าอื่น)
 var CU_LOAD_SEQ = 0;
+// รอบ 112: "วันอาทิตย์ที่ 1 พ.ย. 69" · วันที่ผิดรูป ⇒ "วันที่ " + สตริงดิบ (เหมือนเดิม)
+function cuHeadingDate_(ymd) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!m) return 'วันที่ ' + formatThaiDateShort(ymd);
+  var wd = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay();
+  return 'วัน' + THAI_WEEKDAY_FULL[wd] + 'ที่ ' + formatThaiDateShort(ymd);
+}
 function loadCheckupTable(view) { loadCheckupTableRun_(view, false); }
 function loadCheckupTableRun_(view, isRetry) {
   var seq = ++CU_LOAD_SEQ;
@@ -12496,7 +12525,8 @@ function loadCheckupTableRun_(view, isRetry) {
   var headEl = qs('cuTableHeading');
   // เจ้าของสั่งตัดคำว่า "รวมทุกจุดบริการ" ออกจากหัวใบพิมพ์ 2026-09-03 (ยังยิง allPoints:true เหมือนเดิม แค่ไม่พิมพ์ข้อความนี้)
   // รอบ 26 (2026-09-22): หัวใบต้องตรงกับที่เจ้าของกำหนดในภาพมอคอัพเป๊ะ — ตัวคั่นเป็น "-" ไม่ใช่ "·"
-  if (headEl) headEl.textContent = 'รายชื่อผู้รับบริการตรวจสุขภาพ - วันที่ ' + formatThaiDate(dateStr);
+  // รอบ 112 (เจ้าของสั่ง 2026-11-01): ใส่ชื่อวันทุกวัน รูปแบบ "วันอาทิตย์ที่ 1 พ.ย. 69"
+  if (headEl) headEl.textContent = 'รายชื่อผู้รับบริการตรวจสุขภาพ - ' + cuHeadingDate_(dateStr);
   var wrap = qs('cuTableWrap');
   var listWrap = qs('cuListWrap');
 
@@ -14623,7 +14653,8 @@ function dqRenderRoomCards() {
   });
 
   var grid = document.createElement('div');
-  grid.className = 'dq-cards';
+  // รอบ 112 (เจ้าของขอ 2026-11-01): แพทย์ออก ≤ 2 ห้อง = การ์ดแถวเดียว ⇒ ยืดการ์ดสูงลงมาเต็มจอ (CSS .dq-cards-1row)
+  grid.className = 'dq-cards' + (rooms.length <= 2 ? ' dq-cards-1row' : '');
   rooms.forEach(function (rm) {
     var roomLogs = allLogs.filter(function (log) { return log.room === rm.room; });
     // ต่อห้อง: เก่าสุดอยู่บน ใหม่สุดอยู่ล่าง + เลขลำดับเฉพาะที่ไม่ถูกยกเลิก
