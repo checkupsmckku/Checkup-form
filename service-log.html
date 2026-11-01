@@ -2477,7 +2477,9 @@ var SPECIAL_SENDS = [
   // spBoard ไม่เข้าด่านเพศ) ต่อท้ายสุดเท่านั้น ห้ามแก้/เรียงใหม่ของเดิม 8 ตัว · ต้องตรงกับ สถิติบริการ.js เป๊ะ
   { id: 'ekg', name: 'EKG (คลื่นไฟฟ้าหัวใจ)', group: 'medcert', prepLabel: null },
   { id: 'eye_test', name: 'ตรวจสายตา', group: 'medcert', prepLabel: null },
-  { id: 'color_blind', name: 'ตาบอดสี', group: 'medcert', prepLabel: null }
+  { id: 'color_blind', name: 'ตาบอดสี', group: 'medcert', prepLabel: null },
+  // รอบ 111 (2026-11-01): U/S ช่องท้อง — นับยอดอย่างเดียวเหมือน EKG (ต่อท้ายสุด ห้ามเรียงใหม่ของเดิม 11 ตัว) · ต้องตรงกับ สถิติบริการ.js เป๊ะ
+  { id: 'us_abdomen', name: 'U/S ช่องท้อง', group: 'medcert', prepLabel: null }
 ];
 
 // รอบ 7 (B7) — สร้างตัวช่วยค้นหาแบบเดียวกับฝั่งเซิร์ฟเวอร์ (SPECIAL_SEND_BY_ID ใน สถิติบริการ.js)
@@ -2508,6 +2510,8 @@ SPECIAL_ICONS.us_breast = SPECIAL_ICONS.mmg;
 SPECIAL_ICONS.ekg = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="40" height="32" rx="4" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><path d="M8 26 L16 26 L19 16 L24 34 L28 20 L31 26 L40 26" fill="none" stroke="#2C7BC4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 SPECIAL_ICONS.eye_test = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M4 24 C11 12 37 12 44 24 C37 36 11 36 4 24 Z" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="24" r="7" fill="#2C7BC4" stroke="#1A1E40" stroke-width="2"/><circle cx="24" cy="24" r="2.5" fill="#1A1E40"/></svg>';
 SPECIAL_ICONS.color_blind = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="18" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><circle cx="17" cy="19" r="4" fill="#2C7BC4"/><circle cx="30" cy="18" r="3" fill="#1A1E40"/><circle cx="20" cy="30" r="3.5" fill="#1A1E40"/><circle cx="31" cy="30" r="4.5" fill="#2C7BC4"/></svg>';
+// รอบ 111: U/S ช่องท้อง — หัวตรวจ (probe) + คลื่น สไตล์เดียวกับ ekg
+SPECIAL_ICONS.us_abdomen = '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="8" width="40" height="32" rx="4" fill="#D5E9FB" stroke="#1A1E40" stroke-width="2"/><path d="M10 12 L38 12 L24 36 Z" fill="#fff" stroke="#2C7BC4" stroke-width="2.5" stroke-linejoin="round"/><circle cx="24" cy="26" r="3" fill="#2C7BC4"/></svg>';
 
 // ===================== รอบ 35 (2026-09-30) — CA breast: MMG กับ U/S Breast เลือกได้อย่างเดียว =====================
 // "เลือก mmg ขึ้นแค่ DF XSMC check up 363 จะไม่มีการเลือก mmg + u/s เพราะ mmg มี u/s อยู่แล้ว" (เจ้าของสั่งเอง)
@@ -3932,8 +3936,8 @@ function buildSpecialRow(item) {
 // เคยแยกเป็น checkbox static ในแผงตรวจสุขภาพ (sp_reg_inbody) ตอนนี้ย้ายมาอยู่ในแผงนี้ท้ายรายการติดตาม 5 ตัว
 // รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายไปแผง "ใบรับรองแพทย์มี Lab" (#medLabSpecialList) — ข้อมูลยังเป็น specialReg id เดิม
 // ต้องตรงกับ MEDLAB_SPECIAL_IDS_ ใน สถิติบริการ.js · เหลือ inbody/ct_lowdose ในรายการ "นับยอดอย่างเดียว" ของแผงส่งตรวจพิเศษ
-var MEDLAB_SPECIAL_IDS = ['ekg', 'eye_test', 'color_blind'];
-var MEDLAB_SPECIAL_SHORT = { ekg: 'EKG', eye_test: 'ตรวจสายตา', color_blind: 'ตาบอดสี' }; // ป้ายสั้นบนหัวแผง Lab
+var MEDLAB_SPECIAL_IDS = ['ekg', 'eye_test', 'color_blind', 'us_abdomen']; // รอบ 111: + us_abdomen
+var MEDLAB_SPECIAL_SHORT = { ekg: 'EKG', eye_test: 'ตรวจสายตา', color_blind: 'ตาบอดสี', us_abdomen: 'U/S ช่องท้อง' }; // ป้ายสั้นบนหัวแผง Lab
 var SP_COUNT_ONLY_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel == null && MEDLAB_SPECIAL_IDS.indexOf(s.id) === -1; });
 
 function buildSpecialSendsUI() {
@@ -6813,7 +6817,7 @@ function computeSupOpd_(records, dateStr) {
   var st = computeTodayStats_(records);
   // รอบ 91: + แถวฟังผล Lab ที่ยังไม่ถูกนับจากตรวจสุขภาพ/มี Lab/วัคซีนเดี่ยว (เจ้าของยืนยัน 2026-10-20: สูตรเดิมถูกแล้ว เพิ่มเฉพาะส่วนนี้)
   var r = { withProc: st.cntCheckup + st.cntMedLab + st.cntVaccine + st.cntLabFollowupExtra, noProc: st.cntMedGen,
-    vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, isSunday: false, total: 0 };
+    vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, usAbdomen: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, isSunday: false, total: 0 };
   var m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(String(dateStr || ''));
   if (m) r.isSunday = (new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0);
   var tstRows = 0;
@@ -6831,13 +6835,14 @@ function computeSupOpd_(records, dateStr) {
     if (has('vision3d')) r.vision++;
     var prog = String(rec.program == null ? '' : rec.program);
     if (prog === '2' || prog === '3' || prog === '4' || has('ekg')) r.ekg++; // คนเดียวนับครั้งเดียว
+    if (CU_US_PROGRAMS.indexOf(prog) !== -1 || has('us_abdomen')) r.usAbdomen++; // รอบ 111: คนเดียวนับครั้งเดียว (CU_US_PROGRAMS อ่านอย่างเดียว)
     if (has('inbody')) r.inbody++;
     if (has('eye_test') || has('color_blind')) r.eyeTest++; // คนเดียวนับครั้งเดียว
     if (rec.pelvic === 'pap' || rec.pelvic === 'thinprep' || rec.pelvic === 'thinprep_hpv') r.pap++;
   });
   r.vaccineShots -= tstRows;
   if (!r.isSunday) r.pap = 0;
-  r.total = r.vaccineShots + r.bmd + r.mmgUs + r.ent + r.entAudio + r.vision + r.ekg + r.inbody + r.eyeTest + r.ppd + r.pap;
+  r.total = r.vaccineShots + r.bmd + r.mmgUs + r.ent + r.entAudio + r.vision + r.ekg + r.usAbdomen + r.inbody + r.eyeTest + r.ppd + r.pap;
   return r;
 }
 
@@ -6850,7 +6855,7 @@ function renderSupOpdSummary(records, dateStr) {
   var rows = [
     ['มีหัตถการ', r.withProc, 'คน', 1], ['ไม่มีหัตถการ', r.noProc, 'คน', 1], ['ยอดรวมหัตถการ', r.total, 'คน', 1], null,
     ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'คน'], ['MMG + U/S Breast', r.mmgUs, 'คน'], ['ENT', r.ent, 'คน'],
-    ['ENT + Audio', r.entAudio, 'คน'], ['ห้องตรวจตา', r.vision, 'คน'], ['EKG', r.ekg, 'คน'], ['Inbody', r.inbody, 'คน'],
+    ['ENT + Audio', r.entAudio, 'คน'], ['ห้องตรวจตา', r.vision, 'คน'], ['EKG', r.ekg, 'คน'], ['U/S ช่องท้อง', r.usAbdomen, 'คน'], ['Inbody', r.inbody, 'คน'],
     ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'คน'], ['PPD test', r.ppd, 'คน']
   ];
   if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'คน']);
