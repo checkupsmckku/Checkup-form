@@ -2776,6 +2776,7 @@ var STATE = {
   vaccines: VACCINES_DEFAULT,
   tests: TESTS_DEFAULT,
   editingId: '', // recordId ที่กำลังแก้ไขอยู่ ('' = โหมดบันทึกรายใหม่ปกติ)
+  editingDate: '', // รอบ 110: วันที่ (YYYY-MM-DD) ของแถวที่กำลังแก้ไข — ใช้ตัดสินกติกาวันอาทิตย์ (ยึดวันของแถว ไม่ใช่วันนี้)
   // แก้เพิ่ม (0.2.3): ถอดหมวด "ตรวจเพิ่ม" ออกจาก UI ทั้งหมดแล้ว บันทึกใหม่ไม่มีตรวจเพิ่มอีกต่อไป (ส่ง tests: [] เสมอ)
   // แต่แถวเก่าที่เคยมีตรวจเพิ่มต้องไม่หายตอนแก้ไข — enterEditMode() เก็บ id ไว้ที่นี่แล้ว onSubmitLog() ส่งค่านี้กลับไปแทน
   editExtraIds: [],
@@ -3659,6 +3660,12 @@ function looksLikeHnQueryLoose_(q) {
 function recordMatchesQuery(rec, rawQ) {
   var q = String(rawQ == null ? '' : rawQ).trim();
   if (!q) return true;
+  // รอบ 109 (เจ้าของสั่ง 2026-11-01): พิมพ์ตัวเลขล้วน ⇒ หาเลขนี้ในตัวเลขของคิวและ HN (ไม่ต้องพิมพ์ตัวอักษรนำ)
+  // เช่น '12' ⇒ C12 · ไม่นัด 12 · NN1245 · MM1512 · คิว/HN ที่มีตัวอักษรนำ (c12 / AB1234) ยังใช้กติกาเดิมด้านล่าง
+  if (/^[0-9]+$/.test(q)) {
+    var digitsOf = function (v) { return String(v == null ? '' : v).replace(/[^0-9]/g, ''); };
+    return digitsOf(rec && rec.queue).indexOf(q) !== -1 || digitsOf(rec && rec.patientHn).indexOf(q) !== -1;
+  }
   if (looksLikeQueueQuery_(q)) {
     return normQueueSearchQuery_(rec && rec.queue) === normQueueSearchQuery_(q);
   }
@@ -3997,6 +4004,38 @@ function applyMmgGenderLock(gender) {
   var blocked = (gender === 'male');
   applyGenderLockFor_('mmg', 'MMG (แมมโมแกรม)', blocked);
   applyGenderLockFor_('us_breast', 'U/S Breast', blocked);
+}
+
+/* รอบ 110 (เจ้าของตัดสิน 2026-11-01): วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG / U/S Breast ⇒ ซ่อนแถว (ตัวจริง + เงาในแผง Lab)
+   · วันที่ของฟอร์ม = โหมดแก้ไขแถว ⇒ วันของแถวนั้น (STATE.editingDate) · ไม่ใช่ ⇒ serviceDateValue_() · คิดวันอาทิตย์จากสตริง UTC (ไม่พึ่ง timezone เครื่อง)
+   · ไม่ใช่โหมดแก้ไข + ติ๊กค้าง ⇒ ปลดติ๊ก (+ prep/sent/back) + toast · โหมดแก้ไข: id ที่แถวเดิมติ๊กไว้ ⇒ ไม่ซ่อน ไม่ปลด (ข้อมูลเก่าห้ามหายเงียบ ๆ)
+   · ไม่ใช่อาทิตย์ ⇒ แสดงกลับ · ใช้ hidden (ไม่ชนล็อกเพศ ซึ่งใช้ disabled/คลาส) · อ่าน SUNDAY_CLOSED_SENDS ทุกครั้งที่เรียก (เทสต์เดิมปิดด้วย SUNDAY_CLOSED_SENDS = []) */
+var SUNDAY_CLOSED_SENDS = ['bmd', 'mmg', 'us_breast'];
+function isSundayYmd_(ymd) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!m) return false;
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0;
+}
+function applySundayClosedSends_() {
+  var ids = (typeof SUNDAY_CLOSED_SENDS !== 'undefined' && SUNDAY_CLOSED_SENDS) ? SUNDAY_CLOSED_SENDS : [];
+  var editing = !!STATE.editingId;
+  var day = editing ? (STATE.editingDate || serviceDateValue_()) : serviceDateValue_();
+  var sunday = isSundayYmd_(day);
+  var saved = (editing && typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.originalRec && EDIT_MODAL.originalRec.specialReg) || [];
+  var unticked = false;
+  ids.forEach(function (id) {
+    var cb = qs('sp_reg_' + id), row = qs('sp_row_' + id), mrow = qs('mirror_row_' + id);
+    var hide = sunday;
+    if (sunday && editing && saved.indexOf(id) !== -1) hide = false; // แถวเดิมมี id นี้ ⇒ คงไว้
+    if (sunday && !editing && cb && cb.checked) {
+      cb.checked = false;
+      ['sp_prep_', 'sp_sent_', 'sp_back_'].forEach(function (pf) { var x = qs(pf + id); if (x) x.checked = false; });
+      unticked = true;
+    }
+    if (row) row.hidden = hide;
+    if (mrow) mrow.hidden = hide;
+  });
+  if (unticked) showToast('วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG / U/S Breast — ระบบยกเลิกช่องนี้ให้แล้ว');
 }
 
 // รอบ 8 (B1) — อ่าน "ลงชื่อไว้" จาก DOM ทั้ง 6 รายการ (5 แบบไดนามิกในแผงส่งตรวจพิเศษ + inbody แบบ static ในแผงตรวจสุขภาพ)
@@ -5079,6 +5118,7 @@ function recalcTotals() {
   //   (ซึ่งอ่าน getSelectedGender() ดิบ) บล็อกปุ่มบันทึกอยู่ดี ⇒ ผู้ใช้ติดตายโดยไม่รู้สาเหตุ
   //   แผงส่งตรวจพิเศษไม่ได้ผูกกับ "มาตรวจสุขภาพหรือเปล่า" อยู่แล้ว จึงต้องใช้เพศดิบ (t: A3/A4/A6 ของ test_card_mmg_center.js)
   // เจ้าของสั่ง 2026-09-17: ไม่ใช่แค่วิทยุเพศแล้ว — isMaleForMmg() เดาจากคำนำหน้าด้วยเมื่อยังไม่เลือกวิทยุเพศ
+  applySundayClosedSends_(); // รอบ 110: วันอาทิตย์ไม่มี BMD/MMG/U/S Breast — ก่อนล็อกเพศ/solo price/เงา เพื่อให้ปลดติ๊กแล้วทุกตัวในรอบนี้เห็นค่าใหม่
   applyMmgGenderLock(isMaleForMmg() ? 'male' : '');
   // รอบ 66: ต้องรันก่อนอ่านยอด Lab (getMedCertNums) ด้านล่าง — ถ้าตั้งยอดทีหลัง ยอดรวม/validate ของรอบนี้จะค้างค่าเก่า
   // (ต่อจาก applyMmgGenderLock เพราะล็อกเพศชายอาจปลดติ๊ก MMG ⇒ ต้องเห็นเป็น "ปลดติ๊ก" ใน sync นี้) · ทำงานจริงเฉพาะตอนสถานะ solo/คิวเปลี่ยน
@@ -5285,6 +5325,7 @@ function resetLogForm() {
    ========================================================================= */
 function exitEditMode() {
   STATE.editingId = '';
+  STATE.editingDate = ''; // รอบ 110
   // รอบ 35 (2026-09-30): ล้าง originalRec ด้วย กัน validateForm() เผลอเอาแถวที่แก้ไขค้างจากรอบก่อนมา "grandfather"
   // ให้บันทึกรายใหม่ที่ไม่เกี่ยวข้องกันเลย (เช็คคู่กับ STATE.editingId อยู่แล้วก็จริง แต่ล้างทิ้งไปด้วยชัดเจนกว่า)
   if (typeof EDIT_MODAL !== 'undefined') EDIT_MODAL.originalRec = null;
@@ -5520,6 +5561,7 @@ function scrollAndHighlightRecord_(recordId) {
 
 function enterEditMode(rec) {
   STATE.editingId = rec.recordId;
+  STATE.editingDate = rec.date || ''; // รอบ 110: วันของแถว (ยึดวันนี้ตัดสินกติกาวันอาทิตย์ ไม่ได้)
   if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): เข้าโหมดแก้ไขแถว ⇒ ล้างการผูกคนนัด
   // รอบ 34 (2026-09-30) W2: เก็บ record ต้นทางที่กำลังแก้ไว้ — ใช้ตอนกด "แก้แล้วบันทึกใหม่" ของรายการที่บันทึกไม่สำเร็จ
   // (onSaveQueueRetry_() เรียก openEditModalForRecord(editCtx.rec) ซ้ำ) ไม่ต้องไปค้น LAST_TODAY_RECORDS/LAST_CU_RECORDS
