@@ -2069,7 +2069,7 @@
       <div id="todayListBlock">
       <h2 style="margin-top:18px;"><span id="todayListTitle">รายการวันนี้</span><span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
       <div class="today-search no-print">
-        <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา HN">
+        <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา ชื่อ / HN / คิว">
         <button type="button" class="btn secondary small" id="todayHnClear">ล้าง</button>
       </div>
       <div class="today-search-hint" id="todayHnHint" hidden></div>
@@ -6882,6 +6882,7 @@ function renderSupOpdSummary(records, dateStr) {
 function normHnQuery(s) {
   return String(s == null ? '' : s).replace(/[^0-9a-zA-Z\u0E00-\u0E7F]/g, '').toLowerCase();
 }
+function rawTodayQ_() { var el = qs('todayHnSearch'); return el ? String(el.value || '').trim() : ''; } // รอบ 114: คำค้นดิบ (ชื่อ/HN/คิว)
 function todayHnQuery() {
   var el = qs('todayHnSearch');
   return el ? normHnQuery(el.value) : '';
@@ -6982,10 +6983,12 @@ function drawTodayList_(records, dateStr) {
   }
   // รอบ 60 ข้อ 5.1: นับ 5 หมวด + ยอดเงินย้ายไป computeTodayStats_() (ตรรกะเดิม — ดูคอมเมนต์ของแต่ละหมวดที่นั่น) แถบสรุปวาดที่ต้นฟังก์ชันแล้ว
   var q = todayHnQuery();
+  var rawQ0 = rawTodayQ_();
   var shown = 0;
   records.forEach(function (rec) {
     var cancelled = rec.status === 'ยกเลิก';
-    if (!recordMatchesHn(rec, q)) return;
+    // รอบ 114 (เจ้าของสั่ง 2026-11-02): ค้นได้ทั้ง ชื่อ / HN / คิว (recordMatchesQuery ตัวเดียวกับหน้ารายชื่อตรวจสุขภาพ) · คง HN บางส่วนแบบเดิมไว้ด้วย
+    if (!recordMatchesQuery(rec, rawQ0) && !(q && recordMatchesHn(rec, q))) return;
     shown++;
 
     var div = document.createElement('div');
@@ -7004,14 +7007,14 @@ function drawTodayList_(records, dateStr) {
   var hint = qs('todayHnHint');
   if (hint) {
     var rawQ = (qs('todayHnSearch') ? qs('todayHnSearch').value : '').trim();
-    if (!q) {
+    if (!rawQ0) {
       hint.hidden = true; hint.textContent = '';
     } else if (shown === 0) {
       hint.hidden = false;
-      hint.textContent = 'ไม่พบ HN "' + rawQ + '" ในรายการ (ทั้งวันมี ' + records.length + ' รายการ)';
+      hint.textContent = 'ไม่พบ "' + rawQ + '" ในรายการ (ทั้งวันมี ' + records.length + ' รายการ)';
     } else {
       hint.hidden = false;
-      hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shown + ' จาก ' + records.length + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
+      hint.textContent = 'กำลังกรองด้วย "' + rawQ + '" — แสดง ' + shown + ' จาก ' + records.length + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
     }
   }
 }
