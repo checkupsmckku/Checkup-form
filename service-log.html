@@ -1,7 +1,9 @@
 <!DOCTYPE html>
+<!-- © 2569 พัฒนาโดย ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล หน่วยคลินิกตรวจสุขภาพ SMC ศูนย์บริการทางการแพทย์ชั้นเลิศ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น -->
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="author" content="ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล หน่วยคลินิกตรวจสุขภาพ SMC ศูนย์บริการทางการแพทย์ชั้นเลิศ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>กระดานบันทึกบริการคลินิกตรวจสุขภาพ SMC | Checkup SMC KKU</title>
 <style>
@@ -639,6 +641,7 @@
   #qcAlertBar .qca-chip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; box-sizing: border-box; }
   #qcAlertBar .qca-chip b { background: #fff; border: 1px solid #F0B429; border-radius: 14px; padding: 4px 10px; font-weight: 800; }
   #qcAlertBar .qca-chip .btn { min-height: 44px; }
+  #qcAlertBar .qca-more { flex: 1 1 100%; min-width: 0; font-weight: 600; color: var(--text-muted); }
 
   /* รอบ 91 (C): แผง "ปิดยอดคิว M" ในหน้า 📋 รายการรายวัน (#qcPanel) — ไม่ล้นแนวนอนที่ 360px · ปุ่มแตะ ≥ 44px · ไม่พิมพ์ */
   #qcPanel { margin-bottom: 12px; max-width: 100%; box-sizing: border-box; }
@@ -1353,10 +1356,20 @@
   .dq-card.dq-col-blue .dq-card-list { background: #E9F3FC; }
   .dq-card-row { padding: 4px 10px; font-size: 14px; border-bottom: 1px solid rgba(0, 0, 0, 0.06); overflow-wrap: anywhere; }
   .dq-card-empty { margin: 8px 10px; }
+  /* รอบ 115 R13: แถว "▸ ช่วงเช้า N คิว" บนสุดของรายการในการ์ด */
+  .dq-fold-row { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 4px 10px; text-align: left; font: inherit; font-weight: bold; font-size: 15px; color: var(--primary-dark); background: #EEF1FF; border: none; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .dq-fold-row:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
   /* รอบ 86: ส่วนล่างการ์ดเตี้ยลง — สถิติเหลือเห็น 1 บรรทัด (เลื่อนดูที่เหลือในกล่อง) · ปุ่ม ＋ เตี้ยลง ⇒ รายการคิวได้ที่เพิ่ม */
   .dq-card-foot { flex: 0 0 auto; padding: 4px 8px 4px; border-top: 1px solid var(--primary); background: #fff; }
-  .dq-card-stats { margin-top: 3px; line-height: 1.45; max-height: 1.45em; overflow-y: auto; font-size: 13px; text-align: center; color: var(--text-muted); }
+  .dq-card-stats { margin-top: 3px; line-height: 1.45; font-size: 13px; text-align: center; color: var(--text-muted); }
+  /* รอบ 115 (W8): ห้องที่มีแพทย์ ≥ 2 คนในวัน ⇒ ปลดเพดาน 1 บรรทัด ให้เห็นทุกคน (ไม่ต้องเลื่อน) */
+  /* รอบ 115 W8/R11: ห้อง ≥ 2 แพทย์ = 1 บรรทัดต่อแพทย์ รวมทุกประเภทคิว · ไม่มีเพดานความสูง (เห็นทุกแพทย์ไม่ต้องเลื่อน) */
   .dq-stat-line { overflow-wrap: anywhere; }
+  /* รอบ 115 R8: ชื่อแพทย์ในกล่องสถิติ (ห้อง ≥ 2 แพทย์) = ปุ่มลักษณะข้อความ + ✏ · พื้นที่แตะสูง 28px โดยใช้ margin ลบกันบรรทัดสูงขึ้น */
+  .dq-stat-doc-btn { display: inline-block; position: relative; margin: 0; padding: 0 2px; font: inherit; line-height: inherit; font-weight: bold; color: var(--primary-dark); background: none; border: none; text-decoration: underline; cursor: pointer; overflow-wrap: anywhere; vertical-align: baseline; max-width: 100%; box-sizing: border-box; }
+  .dq-stat-doc-btn::before { content: ''; position: absolute; left: -2px; right: -2px; top: -5px; bottom: -5px; } /* พื้นที่แตะสูง ≥ 28px โดยไม่ดันบรรทัดให้สูงขึ้น */
+  .dq-stat-doc-btn::after { content: ' ✏'; font-weight: normal; }
+  .dq-stat-doc-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; border-radius: 3px; }
   .dq-card-doc { font-weight: bold; overflow-wrap: anywhere; color: var(--primary-dark); }
   /* รอบ 86: ชื่อแพทย์ + สถิติบรรทัดแรกของแพทย์คนนั้นอยู่บรรทัดเดียวกัน (CSS ล้วน — textContent ของ DOM เดิม) */
   .dq-card-doc, .dq-card-doc + .dq-stat-line { display: inline; }
@@ -1432,6 +1445,8 @@
   /* รอบ 69 — คิวอยู่ในห้องแพทย์ ≥ dqLongExamMin นาที: ตัวเลข/ข้อความ/ขอบการ์ดแดง + ป้าย · สีโปรแกรมของห้อง (.dq-col-*) เปลี่ยนแค่พื้นหัว/รายการ ไม่แตะ border จึงไม่ชนกัน */
   .dq-open.dq-long, .dq-open.dq-long .dq-timer { color: var(--danger); font-weight: bold; }
   .dq-card.dq-card-long { border-color: var(--danger); box-shadow: 0 0 0 2px var(--danger); }
+  /* รอบ 115: ป้ายแพทย์หมดเวลาตรวจที่หัวการ์ดห้อง (โทนเดียวกับ .dq-long-badge) */
+  .dq-expired-badge { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; background: #FDECEA; border: 1px solid var(--danger); color: var(--danger); font-size: 13px; font-weight: bold; }
   .dq-long-badge { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; background: #FDECEA; border: 1px solid var(--danger); color: var(--danger); font-size: 13px; font-weight: bold; }
   .dq-auto-note { display: block; font-size: 12px; color: var(--text-muted); }
   .dq-pending { opacity: 0.7; color: var(--text-muted); font-size: 12px; font-weight: normal; }
@@ -1464,9 +1479,19 @@
   .dq-ds-ctotal-row button { flex: 0 0 auto; min-height: 44px; padding: 0 14px; font-size: 15px; }
   .dq-ds-norec { margin-top: 6px; font-size: 14px; font-weight: 600; color: #7A5A00; overflow-wrap: anywhere; }
   @media (max-width: 480px) { .dq-ds-grid { gap: 6px; } .dq-ds-cell { padding: 6px 4px; } .dq-ds-label { font-size: 12px; } .dq-ds-num { font-size: 20px; } }
+  #dqTodayDetails > summary { min-height: 44px; display: flex; align-items: center; font-size: 17px; font-weight: bold; cursor: pointer; padding: 0 4px; } /* รอบ 115 R10 */
+  #dqTodayDetails > summary:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+  #dqTodayDetails[open] > summary { margin-bottom: 8px; }
   .dq-today-item { border-bottom: 1px solid var(--border); padding: 8px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .dq-today-item.dq-cancelled-row { opacity: 0.55; text-decoration: line-through; }
-  .dq-setup-row { display: grid; grid-template-columns: 1fr 1fr 90px 90px auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .dq-setup-row { display: grid; grid-template-columns: 1fr 1fr 90px 90px 108px 92px; gap: 8px; margin-bottom: 8px; align-items: center; } /* รอบ 115: +คอลัมน์ "ตรวจทั้งวัน" */
+  .dq-su-allday { display: flex; align-items: center; gap: 6px; min-height: 44px; white-space: nowrap; cursor: pointer; font-size: 15px; }
+  .dq-su-allday input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; }
+  .dq-setup-row input.dq-su-end:disabled { background: #EEE; }
+  /* รอบ 115: กล่อง #dqExpireBox (ใช้ลุคเดียวกับ .dq-rename-modal) */
+  #dqExpireBox .dq-expire-hint { font-size: 15px; margin: 10px 0; overflow-wrap: anywhere; color: #8A4B00; }
+  #dqExpireBox .dq-expire-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  #dqExpireBox .dq-expire-actions .btn { min-height: 44px; flex: 1 1 140px; white-space: normal; overflow-wrap: anywhere; box-sizing: border-box; }
   .dq-setup-row-head { font-weight: bold; color: var(--text-muted); }
   .dq-setup-row input, .dq-setup-row select { min-width: 0; }
   .dq-setup-row select { width: 100%; }
@@ -1483,11 +1508,14 @@
   .dq-adddoc-row input[type=text] { width: auto; flex: 1 1 110px; min-width: 0; }
   .dq-adddoc-row .btn { flex: 0 0 auto; }
   .dq-adddoc-msg { margin: 6px 0 0; overflow-wrap: anywhere; }
-  @media (max-width: 600px) {
+  @media (max-width: 800px) {
     .dq-setup-row { grid-template-columns: 1fr 1fr; }
     .dq-setup-row-head { display: none; }
+    .dq-su-allday { white-space: normal; }
   }
 
+  /* รอบ 115 R5: เครดิตผู้พัฒนา — ข้อความคงที่ ท้ายหน้า ทุกหน้าจอเห็น (อยู่นอกทุก screen) · ไม่พิมพ์ */
+  #dqCreditFooter { margin: 18px 12px 84px; padding: 0 4px; text-align: center; font-size: 12px; line-height: 1.5; color: var(--text-muted); overflow-wrap: anywhere; word-break: break-word; }
 </style>
 </head>
 <body>
@@ -2301,10 +2329,11 @@
         </main>
         </div>
 
-        <div class="card" style="margin-top:14px;">
-          <h3 style="margin-top:0;">รายการวันนี้</h3>
+        <!-- รอบ 115 R10: รายการวันนี้พับเก็บเป็นค่าตั้งต้น (details ล้วน ไม่เก็บสถานะ) · ปิดทุกครั้งที่เปิดหน้า · หัวสรุปบอกจำนวนแถว -->
+        <details class="card dq-today-details" id="dqTodayDetails" style="margin-top:14px;">
+          <summary id="dqTodaySummary">รายการวันนี้ (0 คิว)</summary>
           <div id="dqTodayList"></div>
-        </div>
+        </details>
       </div>
 
       <div id="dqSetupView" hidden>
@@ -2314,7 +2343,7 @@
         </div>
         <p id="dqDoctorHint" class="warning-box" hidden></p>
         <div class="card">
-          <div class="dq-setup-row dq-setup-row-head"><div>ห้อง</div><div>ชื่อแพทย์</div><div>เริ่มตรวจ</div><div>สิ้นสุดตรวจ</div><div></div></div>
+          <div class="dq-setup-row dq-setup-row-head"><div>ห้อง</div><div>ชื่อแพทย์</div><div>เริ่มตรวจ</div><div>สิ้นสุดตรวจ</div><div></div><div></div></div>
           <div id="dqSetupRooms"></div>
           <button type="button" class="btn secondary small" id="dqBtnAddRoom" style="margin-top:8px;">➕ เพิ่มห้อง</button>
         </div>
@@ -2365,6 +2394,21 @@
         <button type="button" class="btn" id="dqRenameConfirm">ยืนยันแก้ชื่อ</button>
         <button type="button" class="btn secondary" id="dqRenameBack">ย้อนกลับ</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- รอบ 115: กล่องถามก่อนส่งคิวเข้าห้องที่แพทย์หมดเวลาตรวจ — ไม่มีชื่อ/HN/เลขคิวผู้รับบริการ · ข้อความใส่ด้วย textContent -->
+<div class="dq-rename-modal" id="dqExpireBox" role="dialog" aria-modal="true" aria-labelledby="dqExpireTitle" hidden>
+  <div class="dq-rename-modal-box">
+    <div class="dq-rename-modal-head">
+      <div class="dq-rename-modal-title" id="dqExpireTitle"></div>
+      <button type="button" class="btn secondary small" id="dqExpireClose" aria-label="ปิด" style="min-height:44px;min-width:44px;">✕</button>
+    </div>
+    <p class="dq-expire-hint" id="dqExpireHint">ถ้าเปลี่ยนแพทย์แล้ว ให้แก้ผังก่อนส่งคิว — คิวจะติดชื่อแพทย์ของห้อง</p>
+    <div class="dq-expire-actions">
+      <button type="button" class="btn" id="dqExpireSetup">ไปตั้งผัง</button>
+      <button type="button" class="btn secondary" id="dqExpireContinue"></button>
     </div>
   </div>
 </div>
@@ -4019,7 +4063,7 @@ function applyMmgGenderLock(gender) {
    · วันที่ของฟอร์ม = โหมดแก้ไขแถว ⇒ วันของแถวนั้น (STATE.editingDate) · ไม่ใช่ ⇒ serviceDateValue_() · คิดวันอาทิตย์จากสตริง UTC (ไม่พึ่ง timezone เครื่อง)
    · ไม่ใช่โหมดแก้ไข + ติ๊กค้าง ⇒ ปลดติ๊ก (+ prep/sent/back) + toast · โหมดแก้ไข: id ที่แถวเดิมติ๊กไว้ ⇒ ไม่ซ่อน ไม่ปลด (ข้อมูลเก่าห้ามหายเงียบ ๆ)
    · ไม่ใช่อาทิตย์ ⇒ แสดงกลับ · ใช้ hidden (ไม่ชนล็อกเพศ ซึ่งใช้ disabled/คลาส) · อ่าน SUNDAY_CLOSED_SENDS ทุกครั้งที่เรียก (เทสต์เดิมปิดด้วย SUNDAY_CLOSED_SENDS = []) */
-var SUNDAY_CLOSED_SENDS = ['bmd', 'mmg', 'us_breast'];
+var SUNDAY_CLOSED_SENDS = ['bmd', 'mmg', 'us_breast', 'vision3d', 'ent', 'ent_hearing']; // รอบ 115 R4: วันอาทิตย์ปิด ENT / ห้องตรวจตา เหมือน BMD
 function isSundayYmd_(ymd) {
   var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
   if (!m) return false;
@@ -4044,7 +4088,7 @@ function applySundayClosedSends_() {
     if (row) row.hidden = hide;
     if (mrow) mrow.hidden = hide;
   });
-  if (unticked) showToast('วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG / U/S Breast — ระบบยกเลิกช่องนี้ให้แล้ว');
+  if (unticked) showToast('วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG / U/S Breast / ENT / ห้องตรวจตา — ระบบยกเลิกช่องนี้ให้แล้ว');
 }
 
 // รอบ 8 (B1) — อ่าน "ลงชื่อไว้" จาก DOM ทั้ง 6 รายการ (5 แบบไดนามิกในแผงส่งตรวจพิเศษ + inbody แบบ static ในแผงตรวจสุขภาพ)
@@ -6869,6 +6913,11 @@ function renderSupOpdSummary(records, dateStr) {
     ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'คน'], ['PPD test', r.ppd, 'คน']
   ];
   if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'คน']);
+  // รอบ 115 R4: วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG+U/S Breast / ENT / ENT+Audio / ห้องตรวจตา ⇒ ซ่อนแถวเมื่อจำนวน 0 (ไม่ใช่ 0 ⇒ ยังแสดง · ยอดรวมไม่เปลี่ยน)
+  if (r.isSunday) {
+    var sundayHide = ['BMD', 'MMG + U/S Breast', 'ENT', 'ENT + Audio', 'ห้องตรวจตา'];
+    rows = rows.filter(function (x) { return !(x && sundayHide.indexOf(x[0]) !== -1 && !x[1]); });
+  }
   body.innerHTML = '<div class="sum-grid sup-opd-grid">' + rows.map(function (x) {
     if (!x) return '<span class="sum-sep"></span>';
     var cls = x[3] ? ' sum-strong' : '';
@@ -7376,7 +7425,7 @@ function qcOnViewChange_() {
    ========================================================================= */
 var QCA_KEY_POINT_ = 'จุดคีย์ order';
 var QCA_SALES_POINT_ = 'จุดขายโปรแกรม';
-var QCA_ = { mode: '', queues: [], seq: 0, inflight: false };
+var QCA_ = { mode: '', queues: [], unrecorded: [], seq: 0, inflight: false }; // รอบ 115b: unrecorded = M ที่ข้ามไปกลางกลุ่ม (ไม่มีบันทึก/ไม่ได้พบแพทย์)
 function qcaMode_() {
   if (STATE.point === QCA_KEY_POINT_) return 'key';
   if (STATE.point === QCA_SALES_POINT_) return 'sales';
@@ -7392,18 +7441,23 @@ function qcaRender_() {
   if (!bar) return;
   var mode = qcaMode_();
   var list = QCA_.queues || [];
-  if (!mode || !qcaPageOpen_(mode) || !list.length) { bar.hidden = true; return; }
+  var unrec = QCA_.unrecorded || [];
+  if (!mode || !qcaPageOpen_(mode) || !(list.length || unrec.length)) { bar.hidden = true; return; }
   var host = document.querySelector(mode === 'key' ? '#svcFormWrap > .wrap-log' : '#todayScreen > .wrap');
   if (host && bar.parentNode !== host) host.insertBefore(bar, host.firstChild);
-  var sig = mode + '|' + list.join(',');
+  var sig = mode + '|' + list.join(',') + '|' + unrec.join(',');
   if (bar.getAttribute('data-sig') !== sig) {
     bar.setAttribute('data-sig', sig);
     bar.textContent = '';
+    var addGroup = function (labelText, queues, cap, grp) {
+    if (!queues.length) return;
+    var extra = (cap && queues.length > cap) ? queues.length - cap : 0; // รอบ 115 R1: กลุ่มที่ 2 แสดงชิปไม่เกิน cap ที่เหลือเป็นข้อความ
+    if (extra) queues = queues.slice(0, cap);
     var lab = document.createElement('span');
     lab.className = 'qca-label';
-    lab.textContent = '⚠ พบแพทย์แล้ว ยังไม่บันทึก:';
+    lab.textContent = labelText;
     bar.appendChild(lab);
-    list.forEach(function (q) {
+    queues.forEach(function (q) {
       var n = parseInt(String(q).slice(1), 10);
       var chip = document.createElement('span');
       chip.className = 'qca-chip';
@@ -7415,12 +7469,21 @@ function qcaRender_() {
         rec.type = 'button'; rec.className = 'btn small'; rec.setAttribute('data-qca-act', 'record'); rec.setAttribute('data-qca-n', String(n));
         rec.textContent = 'บันทึก';
         var vd = document.createElement('button');
-        vd.type = 'button'; vd.className = 'btn secondary small'; vd.setAttribute('data-qca-act', 'void'); vd.setAttribute('data-qca-n', String(n));
+        vd.type = 'button'; vd.className = 'btn secondary small'; vd.setAttribute('data-qca-act', 'void'); vd.setAttribute('data-qca-n', String(n)); if (grp) vd.setAttribute('data-qca-grp', grp);
         vd.textContent = 'ไม่ต้องบันทึก';
         chip.appendChild(rec); chip.appendChild(vd);
       }
       bar.appendChild(chip);
     });
+    if (extra) {
+      var more = document.createElement('span');
+      more.className = 'qca-more';
+      more.textContent = 'และอีก ' + extra + ' คิว';
+      bar.appendChild(more);
+    }
+    };
+    addGroup('⚠ พบแพทย์แล้ว ยังไม่บันทึก:', list);
+    addGroup('⚠ ยังไม่มีบันทึก (ข้ามเลข — อาจยังรออยู่):', unrec, 10, 'unrec'); // รอบ 115b: กลุ่มที่ 2 ปุ่มชุดเดียวกัน (บันทึก/ไม่ต้องบันทึก ที่จุดคีย์ order)
   }
   bar.hidden = false;
 }
@@ -7436,6 +7499,8 @@ function qcaLoad_(force) {
     QCA_.inflight = false;
     if (resp && resp.status === 'ok' && Array.isArray(resp.queues)) {
       QCA_.queues = resp.queues.filter(function (q) { return /^M[1-9][0-9]{0,2}$/.test(String(q)); }).map(String);
+      // รอบ 115b: เซิร์ฟเวอร์เก่าไม่มี unrecorded ⇒ []
+      QCA_.unrecorded = Array.isArray(resp.unrecorded) ? resp.unrecorded.filter(function (q) { return /^M[1-9][0-9]{0,2}$/.test(String(q)); }).map(String) : [];
     } // ยิงล้ม/คำตอบเสีย ⇒ คงแถบเดิม ไม่ล้าง ไม่ toast
     qcaRender_();
   }, function () {
@@ -7445,7 +7510,7 @@ function qcaLoad_(force) {
 // เปลี่ยนหน้า/จุดบริการ/วันที่ดู ⇒ จุดเปลี่ยน = ล้างของจุดเก่าทิ้ง · ซิงก์แถบ แล้วโหลด
 function qcaOnContextChange_() {
   var mode = qcaMode_();
-  if (mode !== QCA_.mode) { QCA_.mode = mode; QCA_.queues = []; QCA_.seq++; QCA_.inflight = false; }
+  if (mode !== QCA_.mode) { QCA_.mode = mode; QCA_.queues = []; QCA_.unrecorded = []; QCA_.seq++; QCA_.inflight = false; }
   qcaRender_();
   qcaLoad_(false);
 }
@@ -7463,7 +7528,9 @@ function onQcaClick_(e) {
   if (!act || !(n >= 1)) return;
   if (act === 'record') { qcStartRecordToday_(n); return; }
   if (act === 'void') {
-    if (!window.confirm('ยืนยัน: M' + n + ' พบแพทย์แล้ว แต่ไม่ต้องบันทึก?')) return;
+    // รอบ 115 R6: กลุ่ม unrecorded (ข้ามเลข ยังไม่เห็นเข้าห้องแพทย์) ใช้ข้อความยืนยันเดียวกับแผงปิดยอดคิว · กลุ่มเดิมคงข้อความเดิม
+    var confirmMsg = (t.getAttribute('data-qca-grp') === 'unrec') ? ('ยืนยัน: M' + n + ' ไม่มีคนใช้คิวนี้?') : ('ยืนยัน: M' + n + ' พบแพทย์แล้ว แต่ไม่ต้องบันทึก?');
+    if (!window.confirm(confirmMsg)) return;
     apiCall('qcVoid', { staffKey: STATE.staffKey, staffName: STATE.staffName, date: todayStr(), queue: 'M' + n }).then(function (resp) {
       if (isQcResp_(resp)) {
         qcaLoad_(true);
@@ -10646,15 +10713,22 @@ function doctorNamesWith_(names, name) {
 }
 
 // ตรวจฟอร์มเพิ่มแพทย์ในเครื่อง — ข้อความเดียวกับ handleAddDoctor_ · names = รายชื่อ active ที่รู้ (ซ้ำ core ⇒ มีชื่อนี้แล้ว)
+// รอบ 115 R9/R12: ชื่อ/นามสกุลแพทย์ที่พิมพ์ใหม่ห้ามมีคำนำหน้าแพทย์ (ที่ใดก็ได้ในข้อความ) หรือตัวเลข — คำนำหน้ามาจากปุ่มคำนำหน้าเท่านั้น (แทนกติการอบ 76 ที่ให้ชื่อที่พิมพ์ชนะปุ่ม)
+// ตรวจคำนำหน้าก่อน แล้วค่อยตัวเลข · ใช้ร่วม handleAddDoctor_ + handleDoctorRename_ (พิมพ์เอง) · ชื่อเดิมในแท็บ/ชื่อที่เลือกจากรายการไม่ถูกตรวจ
+var DOCTOR_TITLE_ANYWHERE_RE_ = /นพ[.]|พญ[.]|น[.]\s*พ[.]|พ[.]\s*ญ[.]|นายแพทย์|แพทย์หญิง/;
+var DOCTOR_DIGIT_RE_ = /[0-9\u0E50-\u0E59]/;
+var DOCTOR_NAME_TITLE_MSG_ = 'ไม่ต้องพิมพ์ นพ./พญ. ในช่องชื่อ — เลือกที่ปุ่มคำนำหน้า';
+var DOCTOR_NAME_DIGIT_MSG_ = 'ชื่อแพทย์ห้ามมีตัวเลข';
 function doctorValidateNewParts_(prefix, first, last, names) {
   prefix = String(prefix == null ? '' : prefix).trim();
   first = String(first == null ? '' : first).trim().replace(/\s+/g, ' ');
   last = String(last == null ? '' : last).trim().replace(/\s+/g, ' ');
-  var typedTitle = doctorTypedTitleOf_(first); // รอบ 76: คำนำหน้าที่พิมพ์ในช่องชื่อชนะ dropdown — เหมือน handleAddDoctor_
-  if (typedTitle) prefix = typedTitle;
-  first = doctorStripTypedTitle_(first); // รอบ 76: ตัดคำนำหน้าที่พิมพ์ซ้ำในช่องชื่อ ('น.พ. X' → 'X')
+  // รอบ 115 R12: ตรวจ นพ./พญ. ที่พิมพ์ในช่องชื่อ/นามสกุลก่อนเสมอ (แม้ยังไม่ได้เลือกปุ่มคำนำหน้า)
+  if (DOCTOR_TITLE_ANYWHERE_RE_.test(first) || DOCTOR_TITLE_ANYWHERE_RE_.test(last)) return { ok: false, message: DOCTOR_NAME_TITLE_MSG_ };
   if (!prefix) return { ok: false, message: 'กรุณาเลือกคำนำหน้า' }; // รอบ 77: ปุ่มคำนำหน้าเริ่มต้น "ไม่เลือก" — ต้องเลือกเองหรือพิมพ์ 'น.พ.' นำหน้าชื่อ
   if (!first || !last) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
+  // รอบ 115 R12/R9: ช่องชื่อ/นามสกุลห้ามมี นพ./พญ. หรือตัวเลข — เหมือน normalizeNewDoctorName_ ฝั่งเซิร์ฟเวอร์ (ข้อความเดียวกัน · ตรวจคำนำหน้าก่อนตัวเลข)
+  if (DOCTOR_DIGIT_RE_.test(first) || DOCTOR_DIGIT_RE_.test(last)) return { ok: false, message: DOCTOR_NAME_DIGIT_MSG_ };
   if (prefix !== 'นพ.' && prefix !== 'พญ.') return { ok: false, message: 'คำนำหน้าต้องเป็น นพ. หรือ พญ.' };
   if (first.length < 2 || last.length < 2) return { ok: false, message: 'กรุณากรอกคำนำหน้า ชื่อ และนามสกุลให้ครบ' };
   var full = prefix + first + ' ' + last;
@@ -12923,7 +12997,12 @@ function renderReport(summary, period) {
       }
     });
   }
-  html += '</tbody></table></div><div class="line" style="margin-top:8px;">ยอดค่าบริการรวมทั้งหมด: ' + money(numOr0(vaccine.money)) + ' บาท</div></div>';
+  // รอบ 115 (S5): บรรทัดจำนวนผู้รับวัคซีนรวม (นับคน/แถว ไม่ใช่เข็ม) — เซิร์ฟเวอร์รุ่นเก่าไม่มี people ⇒ ไม่แสดง (ไม่โชว์ 0 ปลอม)
+  var vaccinePeople = (vaccine.people && typeof vaccine.people === 'object') ? vaccine.people : null;
+  var vaccinePeopleLine = vaccinePeople
+    ? '<div class="line">จำนวนผู้รับวัคซีนรวม: <b>' + escHtml(String(numOr0(vaccinePeople.total))) + '</b> คน (ฉีดพร้อมตรวจสุขภาพ ' + escHtml(String(numOr0(vaccinePeople.withCheckup))) + ' · ฉีดวัคซีนอย่างเดียว ' + escHtml(String(numOr0(vaccinePeople.alone))) + ')</div>'
+    : '';
+  html += '</tbody></table></div>' + vaccinePeopleLine + '<div class="line" style="margin-top:8px;">ยอดค่าบริการรวมทั้งหมด: ' + money(numOr0(vaccine.money)) + ' บาท</div></div>';
 
   // 4 ใบรับรองแพทย์ — summary.medcert (ตัวเล็กหมด) — รอบ 29 (S6) W6: 3 บรรทัดพอดี ไม่มีจำนวนใบของ lab (W1) ·
   // ไม่แยก 5 โรค/ใบขับขี่แล้ว (รวมเป็นก้อนเดียว "ใบรับรองแพทย์ทั่วไป") · medcert.money รวม lab อยู่แล้ว
@@ -13553,6 +13632,7 @@ var dqState = {
   doctorNotice: null,    // รอบ 80: { room, text, warns:[], shown } สรุปผลบันทึกในการ์ด — หายเมื่อวาดรอบถัดไปหรือครบ 10 วิ
   cTotalDraft: null,   // รอบ 94: ข้อความที่พิมพ์ค้างในช่องยอดตรวจสุขภาพ (null = ไม่มี · ล้างเมื่อบันทึกสำเร็จ)
   cTotalSaving: false, // รอบ 94: กำลังรอคำตอบ dqSetCTotal (กันกดซ้ำ)
+  foldOpen: {},      // รอบ 115 R13: ห้อง → true เมื่อกางแถว "ช่วงเช้า" (อยู่ในหน้าอย่างเดียว หายเมื่อ reload)
   rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
@@ -13674,6 +13754,8 @@ function dqAlignBoard() {
 
 // เรียกจาก showScreen('dq') ทุกครั้งที่เปิดหน้า
 function dqOnShow() {
+  var tdDet = qs('dqTodayDetails'); // รอบ 115 R10: เปิดหน้าทุกครั้ง ⇒ รายการวันนี้พับอยู่
+  if (tdDet) tdDet.open = false;
   dqShowView('board');
   var dt = qs('dqDateText');
   if (dt) dt.textContent = dqThaiDateText();
@@ -13999,6 +14081,44 @@ function dqLogIsZeroClosed_(l) {
   return !isNaN(a) && !isNaN(b) && a === b;
 }
 // entries = [{log, seq}] เรียงเก่า→ใหม่ · คืน [{ group: [entry…] } | { single: entry }] ตามตำแหน่งของสมาชิกแรก
+// ===== รอบ 115 R13: พับคิวช่วงเช้าในการ์ดห้อง =====
+// แถว "ช่วงเช้า" = เวลาเข้า (เขตเวลากรุงเทพ) ก่อน dqAfternoonHour (13:00) และเสร็จแล้ว (มี timeOut) หรือยกเลิก · แถวกำลังตรวจ/รอบันทึกไม่พับเด็ดขาด
+// กลุ่มเข้าพร้อมกันพับเมื่อทุกแถวในกลุ่มเข้าเงื่อนไข · พับเฉพาะเมื่อเวลาเครื่อง ≥ 13:00 (วันนี้) หรือดูวันที่ผ่านมาแล้ว · ไม่แตะข้อมูล/สถิติ
+function dqLogIsMorningDone_(l) {
+  if (!l || !l.timeIn) return false;
+  var t = dqBkkHM(l.timeIn);
+  if (!t || !(t.h < dqAfternoonHour)) return false;
+  return l.status === 'ยกเลิก' || !!l.timeOut;
+}
+function dqFoldActive_() {
+  var d = dqState.today && dqState.today.date;
+  var td = todayStr();
+  if (!d) return false;
+  if (d < td) return true;
+  if (d > td) return false;
+  return dqNowHHMM_() >= (dqPad2(dqAfternoonHour) + ':00');
+}
+// คืน { hide: [true/false ต่อบล็อก], count: จำนวนคิวไม่ยกเลิกที่พับ, any: มีบล็อกที่พับไหม, open: กางอยู่ไหม }
+function dqFoldPlan_(blocks, room) {
+  var plan = { hide: [], count: 0, any: false, open: false };
+  if (!dqFoldActive_()) return plan;
+  var barIds = [dqState.moveOpenId, dqState.editQueueOpenId, dqState.joinOpenId].filter(Boolean).map(String);
+  var barInFolded = false;
+  blocks.forEach(function (b, i) {
+    var logs = b.group ? b.group.map(function (m) { return m.log; }) : [b.single.log];
+    var fold = logs.every(dqLogIsMorningDone_);
+    plan.hide[i] = fold;
+    if (!fold) return;
+    plan.any = true;
+    logs.forEach(function (l) {
+      if (l.status !== 'ยกเลิก') plan.count++;
+      if (barIds.indexOf(String(l.id)) !== -1) barInFolded = true;
+    });
+  });
+  if (barInFolded) dqState.foldOpen[room] = true; // มีแถบเปิดอยู่ที่แถวที่พับ ⇒ กางห้องนั้นให้เอง
+  plan.open = !!dqState.foldOpen[room];
+  return plan;
+}
 function dqBuildBlocks_(entries) {
   var byKey = {}, keyOf = function (it) {
     var l = it.log;
@@ -14088,9 +14208,12 @@ function dqOnMoveClick(id, room) {
   logs.forEach(function (l) { if (!log && String(l.id) === String(id)) log = l; });
   if (!log || log.status !== 'บันทึกแล้ว' || log.room === room) { dqState.moveOpenId = ''; dqRenderRoomCards(); return; }
   var q = log.queue;
-  dqState.moveOpenId = '';
-  dqEnqueueJob({ type: 'dqMove', id: id, room: room, at: new Date().toISOString() });
-  showToast('ย้าย ' + q + ' ไปห้อง ' + room + ' แล้ว');
+  // รอบ 115: ห้องปลายทางแพทย์หมดเวลา ⇒ ถามก่อน
+  dqExpiryGate_(room, function () {
+    dqState.moveOpenId = '';
+    dqEnqueueJob({ type: 'dqMove', id: id, room: room, at: new Date().toISOString() });
+    showToast('ย้าย ' + q + ' ไปห้อง ' + room + ' แล้ว');
+  });
 }
 // ===== รอบ 79: แก้เลขคิวที่ลงผิด (เวลาเดิม) — แพทเทิร์นเดียวกับ dqMove (แถบใต้แถว · state เปิดทีละแถว) · ไม่ใช้ confirm/alert/prompt =====
 function dqCloseEditQueue_() {
@@ -14245,9 +14368,12 @@ function dqOnJoinSave() {
     return;
   }
   var from = log.queue;
-  dqCloseJoin_();
-  dqEnqueueJob({ type: 'dqJoin', id: id, queue: q, at: new Date().toISOString(), pendingId: 'dq-pending-' + (++dqPendingSeq) });
-  showToast('เข้าพร้อม ' + from + ' + ' + q + ' แล้ว');
+  // รอบ 115: ห้อง = ห้องของคิวเดิม · ไปตั้งผัง/ยกเลิก ⇒ ไม่ส่ง
+  dqExpiryGate_(log.room, function () {
+    dqCloseJoin_();
+    dqEnqueueJob({ type: 'dqJoin', id: id, queue: q, at: new Date().toISOString(), pendingId: 'dq-pending-' + (++dqPendingSeq) });
+    showToast('เข้าพร้อม ' + from + ' + ' + q + ' แล้ว');
+  });
 }
 // ===== รอบ 80: ชื่อแพทย์ของคิว — แถบในการ์ดห้อง (checkbox ต่อคิว + ช่องแพทย์ combobox รอบ 78) · ตั้ง/แก้ชื่อแพทย์ของคิวที่ลงแล้ววันนี้ =====
 // คิวที่ใช้ได้ของห้อง: 'บันทึกแล้ว' (ไม่ยกเลิก) ไม่ pending · เรียงเวลาเข้าเก่า→ใหม่ (logs ใหม่สุดก่อน ⇒ เวลาเท่ากันให้ index มากกว่าขึ้นก่อน)
@@ -14542,6 +14668,19 @@ function dqComputeTypeStats(logs) {
     return { label: g.label, count: g.count, avg: g.n > 0 ? Math.round((g.sum / g.n) * 10) / 10 : 0 };
   });
 }
+// รอบ 115 (W8): รวมทุกประเภทคิวของ logs ชุดเดียว — count/avg ตรรกะเดียวกับ dqComputeTypeStats (นับ 'บันทึกแล้ว' · avg เฉพาะแถวที่มี minutes)
+function dqComputeTotalStats(logs) {
+  var count = 0, sum = 0, n = 0;
+  (logs || []).forEach(function (l) {
+    if (!l || l.status !== 'บันทึกแล้ว') return;
+    count++;
+    if (l.minutes !== '' && l.minutes !== null && l.minutes !== undefined) {
+      var mv = Number(l.minutes);
+      if (isFinite(mv)) { sum += mv; n++; }
+    }
+  });
+  return { count: count, avg: n > 0 ? Math.round((sum / n) * 10) / 10 : 0 };
+}
 // รอบ 51: ห้องที่มีแพทย์ ≥ 2 คน (ชื่อใน log.doctor ต่างกัน, ว่างนับเป็นค่าหนึ่ง) ⇒ [{ doctor, logs }] เรียงตาม timeIn แรกของแพทย์ · ไม่ใช่ ⇒ null
 // roomLogs = logs ของห้องนั้น (ใหม่สุดก่อน) · นับเฉพาะ 'บันทึกแล้ว' · ไม่แก้ array เดิม
 function dqRoomDoctorSplit(roomLogs) {
@@ -14694,7 +14833,10 @@ function dqRenderRoomCards() {
     // รอบ 48/51: ห้องที่มีแพทย์หลายคนในวันนี้ — ระบุว่าชื่อที่หัวคือคนปัจจุบัน (นับจาก logs ในหน้าเว็บ)
     if (rm.doctor && split) head.appendChild(document.createTextNode(' (ตอนนี้)'));
     var shiftText = (rm.start || rm.end) ? ((rm.start || '—') + '–' + (rm.end || '—')) : '';
+    if (rm.end === dqAllDay_) shiftText = rm.start ? ('ตั้งแต่ ' + rm.start + ' (ทั้งวัน)') : 'ทั้งวัน'; // รอบ 115
     if (shiftText) head.title = 'เวลาตรวจ ' + shiftText;
+    var expNow = dqRoomExpiry_(rm.room); // รอบ 115: แพทย์ของห้องหมดเวลาตรวจ ⇒ ป้ายบนหัวการ์ด
+    if (expNow) head.appendChild(dqMakeExpiredBadge_(expNow.end));
     card.appendChild(head);
 
     // รอบ 80: ข้อความสรุปหลังบันทึก · แถบชื่อแพทย์ของคิว
@@ -14731,7 +14873,24 @@ function dqRenderRoomCards() {
       emp.textContent = 'ยังไม่มีคิว';
       list.appendChild(emp);
     } else {
-      dqBuildBlocks_(entries).forEach(function (block) {
+      var blocksAll = dqBuildBlocks_(entries);
+      var foldPlan = dqFoldPlan_(blocksAll, rm.room); // รอบ 115 R13
+      if (foldPlan.any) {
+        var foldBtn = document.createElement('button');
+        foldBtn.type = 'button';
+        foldBtn.className = 'dq-fold-row';
+        foldBtn.setAttribute('data-room', rm.room);
+        foldBtn.setAttribute('aria-expanded', foldPlan.open ? 'true' : 'false');
+        foldBtn.textContent = (foldPlan.open ? '▾' : '▸') + ' ช่วงเช้า ' + foldPlan.count + ' คิว';
+        foldBtn.addEventListener('click', function () {
+          var r = this.getAttribute('data-room');
+          dqState.foldOpen[r] = !dqState.foldOpen[r];
+          dqRenderRoomCards();
+        });
+        list.appendChild(foldBtn);
+      }
+      blocksAll.forEach(function (block, blockIdx) {
+        if (foldPlan.hide[blockIdx] && !foldPlan.open) return; // พับอยู่
         var row = document.createElement('div');
         row.className = 'dq-card-row';
         if (block.group) { // รอบ 82: คิวเข้าพร้อมกัน = บล็อกเดียว (นาฬิกา/ป้ายเกิน 15 นาทีอันเดียว) · แถบ ⇄/✎ เปิดใต้สมาชิกที่เลือก
@@ -14786,12 +14945,39 @@ function dqRenderRoomCards() {
       });
     };
     if (split) {
-      split.forEach(function (g) {
-        var dh = document.createElement('div');
-        dh.className = 'dq-card-doc';
-        dh.textContent = g.doctor ? g.doctor : 'ไม่มีชื่อแพทย์';
-        stats.appendChild(dh);
-        addLines(g.logs);
+      stats.classList.add('dq-card-stats-split'); // รอบ 115 (W8): เห็นทุกแพทย์ ไม่จำกัด 1 บรรทัด
+      // รอบ 115 (W8): แพทย์ที่อยู่ในห้องตอนนี้ (core ตรงกับ rm.doctor) ขึ้นก่อน · ที่เหลือคงลำดับตามเวลาเดิม · ไม่ตรงกลุ่มใด ⇒ ลำดับเดิม
+      var curCore = rm.doctor ? doctorNameStrip_(String(rm.doctor)).core.toLowerCase() : '';
+      var ordered = split.slice();
+      if (curCore) {
+        var curIdx = -1;
+        ordered.forEach(function (g, gi) { if (curIdx < 0 && g.doctor && doctorNameStrip_(g.doctor).core.toLowerCase() === curCore) curIdx = gi; });
+        if (curIdx > 0) ordered.unshift(ordered.splice(curIdx, 1)[0]);
+      }
+      ordered.forEach(function (g) {
+        // รอบ 115 (W8, เจ้าของเลือกข้อ ข): 1 บรรทัดต่อแพทย์ รวมทุกประเภทคิว · ชื่อ · N คิว · เฉลี่ย X นาที/คน
+        var tot = dqComputeTotalStats(g.logs);
+        var dl = document.createElement('div');
+        dl.className = 'dq-stat-line dq-stat-doc-line';
+        var statText = ' · ' + dqFmtRoomStat(tot.count, tot.avg);
+        if (g.doctor) {
+          // รอบ 115 R8: ชื่อแพทย์ในกล่องสถิติเป็นปุ่ม ⇒ เปิดกล่องแก้ชื่อแพทย์ของรอบ 104 (textContent เท่านั้น · ✏ มาจาก CSS) · กลุ่ม "ไม่มีชื่อแพทย์" ไม่มีปุ่ม
+          var nb = document.createElement('button');
+          nb.type = 'button';
+          nb.className = 'dq-stat-doc-btn';
+          nb.setAttribute('data-room', rm.room);
+          nb.setAttribute('data-doctor', g.doctor);
+          nb.textContent = g.doctor;
+          nb.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            dqOpenRename_(this.getAttribute('data-room'), this.getAttribute('data-doctor'));
+          });
+          dl.appendChild(nb);
+          dl.appendChild(document.createTextNode(statText));
+        } else {
+          dl.textContent = 'ไม่มีชื่อแพทย์' + statText;
+        }
+        stats.appendChild(dl);
       });
     } else if (dqComputeTypeStats(roomLogs).length === 0) {
       var zero = document.createElement('div');
@@ -14916,6 +15102,7 @@ function dqRenderRoomCards() {
   });
 
   if (!dqIsScreenOpen()) return; // หน้าไม่ได้เปิดอยู่ (งานค้างส่งตอบกลับมาหลังออกจากหน้า) — ไม่ต้องเดินนาฬิกา
+  dqState.timers.push(setInterval(dqUpdateExpiryBadges_, 30000)); // รอบ 115: เพิ่ม/ลบป้ายหมดเวลาในที่ เมื่อข้ามเวลา end (ไม่ re-render การ์ด)
   container.querySelectorAll('.dq-timer').forEach(function (timerEl) {
     var startTime = openTimeByRoom[timerEl.getAttribute('data-room')];
     if (!startTime) return;
@@ -14950,6 +15137,8 @@ function dqRenderTodayList() {
   var container = qs('dqTodayList');
   if (!container) return;
   var logs = (dqState.today && dqState.today.logs) || [];
+  var sumEl = qs('dqTodaySummary'); // รอบ 115 R10: จำนวนคิวไม่ยกเลิก (เจ้าของเลือก — นับแบบเดียวกับ "ช่วงเช้า N คิว") · เรนเดอร์ตลอดแม้พับอยู่
+  if (sumEl) sumEl.textContent = 'รายการวันนี้ (' + logs.filter(function (l) { return l && l.status !== 'ยกเลิก'; }).length + ' คิว)';
   if (logs.length === 0) {
     container.innerHTML = '<p class="muted">ยังไม่มีรายการวันนี้</p>';
     return;
@@ -15059,13 +15248,16 @@ function dqOnSlotClick(room) {
       if (d) dupMsgs.push(mq + ' เข้าห้อง ' + d.room + ' ไปแล้วตอน ' + dqFmtDot(d.timeIn));
     });
     if (dupMsgs.length) { dqShowQueueMsg_(dupMsgs.join(' · ') + ' — ถ้าผิดห้องให้ยกเลิกรายการเดิมก่อน'); return; }
-    if (input) { input.value = ''; input.focus(); }
-    if (sq.queues.length === 1) { // ซ้ำกันเองในช่องจนเหลือคิวเดียว ⇒ เส้นทางคิวเดียวเดิม
-      dqEnqueueJob({ type: 'dqEnter', queue: sq.queues[0], room: room, at: new Date().toISOString(), pendingId: 'dq-pending-' + (++dqPendingSeq) });
-      return;
-    }
-    var pIds = sq.queues.map(function () { return 'dq-pending-' + (++dqPendingSeq); });
-    dqEnqueueJob({ type: 'dqEnter', queue: sq.queues[0], queues: sq.queues, room: room, at: new Date().toISOString(), pendingId: pIds[0], pendingIds: pIds });
+    // รอบ 115: ด่านแพทย์หมดเวลา — หลังตรวจเดิมทั้งหมด ก่อนล้างช่อง/enqueue
+    dqExpiryGate_(room, function () {
+      if (input) { input.value = ''; input.focus(); }
+      if (sq.queues.length === 1) { // ซ้ำกันเองในช่องจนเหลือคิวเดียว ⇒ เส้นทางคิวเดียวเดิม
+        dqEnqueueJob({ type: 'dqEnter', queue: sq.queues[0], room: room, at: new Date().toISOString(), pendingId: 'dq-pending-' + (++dqPendingSeq) });
+        return;
+      }
+      var pIds = sq.queues.map(function () { return 'dq-pending-' + (++dqPendingSeq); });
+      dqEnqueueJob({ type: 'dqEnter', queue: sq.queues[0], queues: sq.queues, room: room, at: new Date().toISOString(), pendingId: pIds[0], pendingIds: pIds });
+    });
     return;
   }
   // รอบ 50 (เจ้าของสั่ง): เลือกคิวด้วย ← → (ไฮไลต์) แล้วแตะ ＋ ได้เลย ⇒ ใช้คิวที่ไฮไลต์ (พิมพ์ใหม่จะล้างไฮไลต์อยู่แล้ว)
@@ -15085,8 +15277,11 @@ function dqOnSlotClick(room) {
     return;
   }
   // ไม่บล็อกหน้าจอ: ใส่คิวทันที (optimistic) แล้วส่งตามลำดับหลังบ้าน
-  if (input) { input.value = ''; input.focus(); }
-  dqEnqueueJob({ type: 'dqEnter', queue: q, room: room, at: new Date().toISOString(), pendingId: 'dq-pending-' + (++dqPendingSeq) });
+  // รอบ 115: ด่านแพทย์หมดเวลา ก่อนล้างช่อง/enqueue
+  dqExpiryGate_(room, function () {
+    if (input) { input.value = ''; input.focus(); }
+    dqEnqueueJob({ type: 'dqEnter', queue: q, room: room, at: new Date().toISOString(), pendingId: 'dq-pending-' + (++dqPendingSeq) });
+  });
 }
 function dqOnCancelClick(id) {
   if (String(id).indexOf('dq-pending-') === 0) return; // ยังไม่ยืนยัน — ยกเลิกไม่ได้
@@ -15585,6 +15780,102 @@ function dqOnWalkInClick() {
   showToast('เติม ' + label + ' แล้ว — แตะช่อง ＋ ของห้อง');
 }
 
+/* ---- รอบ 115: เตือนเมื่อแพทย์ของห้องหมดเวลาตรวจ (ตัดสินจาก end ในผังห้อง · 'ทั้งวัน' = ไม่เตือน) ---- */
+var dqAllDay_ = 'ทั้งวัน';
+var dqExpireSnoozeMs_ = 30 * 60 * 1000;
+var dqExpireSnooze_ = {}; // คีย์ วันที่|ห้อง|core แพทย์ ⇒ เวลา (ms) ที่งดถามถึง · ตัวแปรในหน้า เฉพาะเครื่องนี้ (reload แล้วถามใหม่)
+var dqExpireBoxState_ = { open: false, proceed: null, exp: null };
+function dqNowHHMM_() {
+  var d = new Date();
+  return dqPad2(d.getHours()) + ':' + dqPad2(d.getMinutes());
+}
+// 'H:MM' / 'HH:MM' ⇒ 'HH:MM' · อย่างอื่น ⇒ ''
+function dqNormHHMM_(v) {
+  var m = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/.exec(String(v == null ? '' : v).trim());
+  return m ? (dqPad2(Number(m[1])) + ':' + m[2]) : '';
+}
+// ห้องของวันนี้ที่แพทย์หมดเวลา ⇒ { room, doctor, end } · ไม่เข้าเงื่อนไข ⇒ null
+function dqRoomExpiry_(roomName) {
+  var t = dqState.today;
+  if (!t || t.date !== todayStr()) return null;
+  var rm = null;
+  (t.rooms || []).forEach(function (r) { if (!rm && String(r.room) === String(roomName)) rm = r; });
+  if (!rm) return null;
+  var doc = String(rm.doctor == null ? '' : rm.doctor).trim();
+  if (!doc) return null;
+  var end = dqNormHHMM_(rm.end);
+  if (!end) return null;
+  if (dqNowHHMM_() < end) return null;
+  return { room: rm.room, doctor: doc, end: end };
+}
+function dqMakeExpiredBadge_(end) {
+  var b = document.createElement('span');
+  b.className = 'dq-expired-badge';
+  b.textContent = '⚠ หมดเวลา ' + end;
+  return b;
+}
+// อัปเดตป้ายในที่ (ไม่ re-render การ์ด) — เรียกจาก timer 30 วิ
+function dqUpdateExpiryBadges_() {
+  var c = qs('dqRoomCards');
+  if (!c) return;
+  c.querySelectorAll('.dq-card').forEach(function (card) {
+    var head = card.querySelector('.dq-card-head');
+    if (!head) return;
+    var exp = dqRoomExpiry_(card.getAttribute('data-room'));
+    var b = head.querySelector('.dq-expired-badge');
+    if (exp) {
+      var text = '⚠ หมดเวลา ' + exp.end;
+      if (!b) head.appendChild(dqMakeExpiredBadge_(exp.end));
+      else if (b.textContent !== text) b.textContent = text;
+    } else if (b) {
+      b.remove();
+    }
+  });
+}
+function dqExpireKey_(exp) {
+  return String(dqState.today && dqState.today.date) + '|' + exp.room + '|' + doctorNameStrip_(exp.doctor).core.toLowerCase();
+}
+// ด่านก่อนส่งคิวเข้าห้อง: ไม่หมดเวลา/อยู่ในช่วงงด ⇒ proceed() ทันที · หมดเวลา ⇒ เปิดกล่องถาม
+function dqExpiryGate_(roomName, proceed) {
+  var exp = dqRoomExpiry_(roomName);
+  if (!exp) { proceed(); return; }
+  var until = dqExpireSnooze_[dqExpireKey_(exp)];
+  if (until && Date.now() < until) { proceed(); return; }
+  dqOpenExpireBox_(exp, proceed);
+}
+function dqOpenExpireBox_(exp, proceed) {
+  var box = qs('dqExpireBox');
+  if (!box) { proceed(); return; }
+  dqExpireBoxState_ = { open: true, proceed: proceed, exp: exp };
+  qs('dqExpireTitle').textContent = 'ห้อง ' + exp.room + ' · ' + exp.doctor + ' หมดเวลาตรวจ ' + exp.end;
+  qs('dqExpireContinue').textContent = exp.doctor + ' ยังตรวจต่อ — ส่งเลย';
+  box.hidden = false;
+  var b = qs('dqExpireSetup');
+  if (b) { try { b.focus({ preventScroll: true }); } catch (e) { b.focus(); } }
+}
+function dqCloseExpireBox_() {
+  dqExpireBoxState_ = { open: false, proceed: null, exp: null };
+  var box = qs('dqExpireBox');
+  if (box) box.hidden = true;
+}
+function dqExpireContinue_() {
+  var st = dqExpireBoxState_;
+  if (!st.open) return;
+  if (st.exp) dqExpireSnooze_[dqExpireKey_(st.exp)] = Date.now() + dqExpireSnoozeMs_;
+  dqCloseExpireBox_();
+  if (typeof st.proceed === 'function') st.proceed();
+}
+function dqExpireInit_() {
+  var map = { dqExpireClose: dqCloseExpireBox_, dqExpireSetup: function () { dqCloseExpireBox_(); dqOpenSetup(); }, dqExpireContinue: dqExpireContinue_ };
+  Object.keys(map).forEach(function (id) {
+    var el = qs(id);
+    if (el) el.addEventListener('click', map[id]);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (dqExpireBoxState_.open && (e.key === 'Escape' || e.key === 'Esc')) { e.preventDefault(); e.stopPropagation(); dqCloseExpireBox_(); }
+  }, true);
+}
+
 /* ---- W2: หน้าตั้งห้อง ---- */
 function dqOpenSetup() {
   dqShowView('setup');
@@ -15668,9 +15959,19 @@ function dqAddSetupRow(item) {
     '<div class="dq-su-doc-wrap"><input type="text" class="dq-su-doctor" placeholder="พิมพ์ค้นหาชื่อแพทย์" autocomplete="off" aria-label="ชื่อแพทย์">' +
     '<div class="dq-su-doc-msg" aria-live="polite"></div></div>' +
     '<input type="text" class="dq-su-start" placeholder="HH:MM" value="' + escHtml(item.start) + '">' +
-    '<input type="text" class="dq-su-end" placeholder="HH:MM" value="' + escHtml(item.end) + '">' +
+    '<input type="text" class="dq-su-end" placeholder="HH:MM" value="' + escHtml(item.end === dqAllDay_ ? '' : item.end) + '">' +
+    '<label class="dq-su-allday"><input type="checkbox" class="dq-su-allday-cb"> ตรวจทั้งวัน</label>' +
     '<button type="button" class="btn small secondary dq-su-remove">ลบห้องนี้</button>';
   row.querySelector('.dq-su-remove').addEventListener('click', function () { row.remove(); });
+  // รอบ 115: ติ๊กตรวจทั้งวัน ⇒ ช่องสิ้นสุด disabled + ว่าง · เอาออก ⇒ เปิดช่อง
+  var adCb = row.querySelector('.dq-su-allday-cb');
+  var endInp = row.querySelector('.dq-su-end');
+  adCb.addEventListener('change', function () {
+    endInp.disabled = adCb.checked;
+    if (adCb.checked) { endInp.value = ''; endInp.classList.remove('dq-su-bad'); }
+  });
+  endInp.addEventListener('input', function () { endInp.classList.remove('dq-su-bad'); });
+  if (item.end === dqAllDay_) { adCb.checked = true; endInp.disabled = true; endInp.value = ''; }
   // รอบ 96: ช่องห้องเป็น select จาก dqRoomChoices · ค่าเดิมนอกรายการ (ผังเก่า) ⇒ option พิเศษท้ายรายการ แล้วเลือกไว้ให้เลือกใหม่ (สร้างด้วย DOM ไม่ผ่าน innerHTML)
   var roomSel = row.querySelector('.dq-su-room');
   var wantRoom = String(item.room == null ? '' : item.room);
@@ -15713,7 +16014,7 @@ function dqCollectSetupRows() {
       room: row.querySelector('.dq-su-room').value,
       doctor: row.querySelector('.dq-su-doctor').value,
       start: row.querySelector('.dq-su-start').value,
-      end: row.querySelector('.dq-su-end').value
+      end: row.querySelector('.dq-su-allday-cb').checked ? dqAllDay_ : row.querySelector('.dq-su-end').value
     });
   });
   return out;
@@ -16026,6 +16327,27 @@ function dqOnSaveRoomsClick() {
     }
     docRoomIdx[dcore] = dj;
   }
+  // รอบ 115 (W2): ห้องที่มีแพทย์ต้องมีเวลาสิ้นสุด HH:MM หรือติ๊ก "ตรวจทั้งวัน" · เวลาสิ้นสุดต้องหลังเวลาเริ่ม · ไม่ยิง request
+  for (var ei = 0; ei < rows.length; ei++) suRows[ei].querySelector('.dq-su-end').classList.remove('dq-su-bad');
+  for (var ek = 0; ek < rows.length; ek++) {
+    if (!rows[ek].doctor || rows[ek].end === dqAllDay_) continue;
+    var endRaw = String(rows[ek].end || '').trim();
+    var endHm = dqNormHHMM_(endRaw);
+    var endMsg = '';
+    if (endRaw === '') endMsg = 'ใส่เวลาสิ้นสุดของแพทย์ หรือติ๊ก "ตรวจทั้งวัน"';
+    else if (!endHm) endMsg = 'เวลาสิ้นสุดไม่ถูกต้อง (เช่น 12:00)';
+    else {
+      var stHm = dqNormHHMM_(rows[ek].start);
+      if (stHm && endHm <= stHm) endMsg = 'เวลาสิ้นสุดต้องหลังเวลาเริ่ม';
+    }
+    if (endMsg) {
+      var endEl = suRows[ek].querySelector('.dq-su-end');
+      endEl.classList.add('dq-su-bad');
+      dqShowSetupMsg('ห้อง ' + trimmed[ek] + ': ' + endMsg, true);
+      endEl.focus();
+      return;
+    }
+  }
   dqShowSetupMsg('');
   var btn = qs('dqBtnSaveRooms');
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก…'; }
@@ -16087,6 +16409,7 @@ function dqInit() {
     if (el) el.addEventListener('click', map[id]);
   });
   dqRenameInit_(); // รอบ 104: กล่องแก้ชื่อแพทย์
+  dqExpireInit_(); // รอบ 115: กล่องเตือนแพทย์หมดเวลา
   // รอบ 52 (W1/15): Enter ในช่องชื่อ/นามสกุลของฟอร์มเพิ่มแพทย์ = กด "เพิ่มแพทย์"
   ['dqAddDocFirst', 'dqAddDocLast'].forEach(function (id) {
     var el = qs(id);
@@ -17105,6 +17428,8 @@ document.addEventListener('DOMContentLoaded', function () {
   thdWatchDynamic();
 });
 </script>
+
+<footer id="dqCreditFooter" class="no-print">© 2569 พัฒนาโดย ร.ต.ท.หญิงจารุภา มูลเสนา พยาบาล หน่วยคลินิกตรวจสุขภาพ SMC ศูนย์บริการทางการแพทย์ชั้นเลิศ คณะแพทยศาสตร์ มหาวิทยาลัยขอนแก่น</footer>
 
 </body>
 </html>
