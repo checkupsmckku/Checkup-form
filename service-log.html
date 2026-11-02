@@ -16517,7 +16517,7 @@ document.addEventListener('input', function (e) {
 var SCAN_GAP_MS = 40;
 // รอบ 93 แก้: ชุดสแกนต้องเริ่มหลังเงียบ ≥ SCAN_IDLE_MS (กันพิมพ์ไทยเร็วกลางคำ เช่น "ไต"+Enter ถูกอ่านเป็น W9)
 var SCAN_IDLE_MS = 100;
-var SCAN_ = { buf: '', last: 0, startEl: null, startVal: '', anyLast: 0, idleOk: false };
+var SCAN_ = { buf: '', last: 0, startEl: null, startVal: '', anyLast: 0, idleOk: false, raw: '' };
 function scanToQueue_(str) {
   var s = String(str || '');
   var m = /^([MCV])([1-9][0-9]{0,2})$/.exec(s);
@@ -16546,7 +16546,7 @@ function scanBlocked_() {
   if (typeof THD_POP !== 'undefined' && THD_POP && THD_POP.style.display !== 'none') return true;
   return false;
 }
-function scanReset_() { SCAN_.buf = ''; SCAN_.last = 0; SCAN_.startEl = null; SCAN_.startVal = ''; SCAN_.idleOk = false; }
+function scanReset_() { SCAN_.buf = ''; SCAN_.last = 0; SCAN_.startEl = null; SCAN_.startVal = ''; SCAN_.idleOk = false; SCAN_.raw = ''; }
 function scanKeydown_(e) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   if (scanBlocked_()) { scanReset_(); return; }
@@ -16557,23 +16557,30 @@ function scanKeydown_(e) {
   var isEnd = (e.key === 'Enter' || e.key === 'Tab');
   if (isEnd) {
     var buf = SCAN_.buf, fast = (now - SCAN_.last) <= SCAN_GAP_MS, idleOk = SCAN_.idleOk;
-    var startEl = SCAN_.startEl, startVal = SCAN_.startVal;
+    var startEl = SCAN_.startEl, startVal = SCAN_.startVal, raw = SCAN_.raw;
     scanReset_();
     if (buf.length < 2 || !fast || !idleOk) return;
     var q = scanToQueue_(buf);
-    if (!q) return; // ไม่ใช่บัตรคิว (เช่น HN) ⇒ ปล่อยผ่านตามเดิม
+    // รอบ 113: สแกน HN (AB1234) ตอนโฟกัสไม่ได้อยู่ช่อง HN ⇒ เติม #patientHn เอง (โฟกัสอยู่ช่อง HN = ทางเดิม applyHnScan)
+    var hnEl = qs('patientHn');
+    var isHn = !q && !!hnEl && HN_PATTERN.test(buf) && document.activeElement !== hnEl;
+    if (!q && !isHn) return; // ไม่ใช่บัตรคิว/HN ⇒ ปล่อยผ่านตามเดิม
     e.preventDefault(); e.stopPropagation();
-    var qEl = qs('queueSelect');
+    var tEl = isHn ? hnEl : qs('queueSelect');
     // ตัวอักษรที่หลุดลงช่องพิมพ์อื่นที่โฟกัสอยู่ ⇒ คืนค่าเดิม แล้วยิง input ให้ตัวฟังของช่องนั้นคำนวณใหม่
     var ae = document.activeElement;
-    if (ae && ae === startEl && ae !== qEl && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && ae.value !== startVal) {
+    if (ae && ae === startEl && ae !== tEl && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA') && ae.value !== startVal) {
       ae.value = startVal;
       ae.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    qEl.value = q;
-    qEl.dispatchEvent(new Event('input', { bubbles: true }));
-    qEl.dispatchEvent(new Event('change', { bubbles: true }));
-    showToast('คิว ' + q + ' จากบาร์โค้ด');
+    // เจ้าของสั่ง (รอบ 113): HN สแกนตอนแป้นยังเป็นภาษาไทย ⇒ ไม่แปลงให้ ใส่ตัวที่พิมพ์จริงลงช่อง HN ให้คำเตือนเดิมของ updateHnHint ขึ้น
+    var hnThai = isHn && raw.toUpperCase() !== buf;
+    tEl.value = isHn ? (hnThai ? raw : buf) : q;
+    // change ⇒ applyHnScan + hoOnHnImmediate_ (ตัวฟังเดิมของช่อง HN) · ห้ามเรียกเอง
+    tEl.dispatchEvent(new Event('input', { bubbles: true }));
+    tEl.dispatchEvent(new Event('change', { bubbles: true }));
+    showToast(hnThai ? 'แป้นพิมพ์ยังเป็นภาษาไทย — กด Alt+Shift แล้วสแกน HN ใหม่'
+      : isHn ? 'HN ' + buf + ' จากบาร์โค้ด' : 'คิว ' + q + ' จากบาร์โค้ด');
     return;
   }
   var ch = scanChar_(e);
@@ -16585,7 +16592,7 @@ function scanKeydown_(e) {
     SCAN_.startEl = a;
     SCAN_.startVal = (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) ? a.value : '';
   }
-  SCAN_.buf += ch;
+  SCAN_.buf += ch; SCAN_.raw += (e.key && e.key.length === 1) ? e.key : ch; // รอบ 113: ตัวที่แป้นพิมพ์พิมพ์จริง (แป้นไทย = อักษรไทย)
   SCAN_.last = now;
 }
 
