@@ -16573,6 +16573,14 @@ function scanKeydown_(e) {
       ae.value = startVal;
       ae.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    // เจ้าของตัดสิน (รอบ 113 แก้หลังรีวิว): ช่อง HN มี HN ถูกรูปแบบของคนอื่นอยู่แล้ว ⇒ ไม่ทับ (กันชื่อ/นัดคน A + HN คน B) · เตือนแทน
+    var hnOld = isHn ? (hnEl.value || '').trim() : '';
+    if (isHn && hnOld && isValidHn(hnOld) && normDupHn_(hnOld) !== buf) {
+      showToast('ช่อง HN มี ' + hnOld + ' อยู่แล้ว — บันทึกหรือล้างร่างก่อนสแกนคนใหม่');
+      return;
+    }
+    // เจ้าของตัดสิน: คนมีนัดวันนี้ต้องเติมนัดเองเหมือนสแกนในช่อง HN ⇒ โฟกัสช่อง HN ก่อนยิง change (เฉพาะจบด้วย Enter — Tab อาจมีข้อมูลต่อท้าย)
+    if (isHn && e.key === 'Enter') hnEl.focus();
     // เจ้าของสั่ง (รอบ 113): HN สแกนตอนแป้นยังเป็นภาษาไทย ⇒ ไม่แปลงให้ ใส่ตัวที่พิมพ์จริงลงช่อง HN ให้คำเตือนเดิมของ updateHnHint ขึ้น
     var hnThai = isHn && raw.toUpperCase() !== buf;
     tEl.value = isHn ? (hnThai ? raw : buf) : q;
