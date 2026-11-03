@@ -2089,7 +2089,7 @@
       <div class="card" id="specialTodaySummaryCard">
         <h2>สรุป SUP OPD</h2>
         <p class="muted" style="margin:0 0 2px;font-weight:700;">Nursing productivity</p>
-        <p class="muted" id="todaySupNote">นับจากรายการของจุดนี้ วันนี้ (ไม่นับที่ยกเลิก)</p>
+        <p class="muted" id="todaySupNote">นับจากรายการทุกจุด วันนี้ (ไม่นับที่ยกเลิก)</p>
         <div id="specialTodaySummaryBody"></div>
       </div>
 
@@ -7021,7 +7021,7 @@ function drawTodayList_(records, dateStr) {
   var titleEl = qs('todayListTitle');
   if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'รายการวันนี้' : ('รายการวันที่ ' + formatThaiDateShort(dateStr));
   var noteEl = qs('todaySupNote');
-  if (noteEl) noteEl.textContent = 'นับจากรายการของจุดนี้ ' + dayWord + ' (ไม่นับที่ยกเลิก)';
+  if (noteEl) noteEl.textContent = 'นับจากรายการทุกจุด ' + dayWord + ' (ไม่นับที่ยกเลิก)';
   renderSupOpdSummary(records, dateStr);
   // รอบ 60 ข้อ 5.1: วาดแถบสรุปก่อน return (เดิมไม่มีรายการ ⇒ return ก่อนถึงโค้ดแถบ ⇒ แถบค้างค่าเก่า/ข้อความตั้งต้น) — ไม่มีรายการ ⇒ 0 ทุกหมวด
   renderTodaySummaryBar_(computeTodayStats_(records));
@@ -7136,7 +7136,7 @@ function resetTodayDisplayLoading_(dateStr) {
   var titleEl = qs('todayListTitle');
   if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'รายการวันนี้' : ('รายการวันที่ ' + formatThaiDateShort(dateStr));
   var noteEl = qs('todaySupNote');
-  if (noteEl) noteEl.textContent = 'นับจากรายการของจุดนี้ ' + ((dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr))) + ' (ไม่นับที่ยกเลิก)';
+  if (noteEl) noteEl.textContent = 'นับจากรายการทุกจุด ' + ((dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr))) + ' (ไม่นับที่ยกเลิก)';
   var sumBar = qs('todaySummaryBar');
   if (sumBar) sumBar.textContent = 'วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท';
   var supBody = qs('specialTodaySummaryBody');
@@ -9384,7 +9384,9 @@ function apptOnShow_() {
 // รอบ 88 (E1/E8): ปุ่ม 📅 เห็นเฉพาะจุดคีย์ order + จุดทำนัดหมาย · ปุ่มนำเข้า 📥 เห็นเฉพาะจุดทำนัดหมาย (เรียกจาก applyPointLayout)
 function syncApptNavBtn_() {
   var nav = qs('apptNavBtn');
-  if (nav) nav.hidden = !(STATE.point === HO_ARRIVE_POINT_ || STATE.point === HO_IMPORT_POINT_);
+  // รอบ 116 (เจ้าของ 2026-11-03 "ไม่ว่าอยู่จุดไหนก็กดได้"): ปุ่มเมนูใต้ช่องจุดบริการ/ผู้บันทึกเห็นทุกจุด — 📅 ด้วย (เดิมเฉพาะ 2 จุด)
+  //   ปุ่ม ▶/🔗 ในหน้า 📅 ยังเฉพาะจุดคีย์ order (รอบ 88 E5) · ช่องวันที่ล่วงหน้าในฟอร์มยังเฉพาะ 2 จุด (applyPreMode_)
+  if (nav) nav.hidden = false;
   var imp = qs('hoImportRow');
   if (imp) imp.hidden = (STATE.point !== HO_IMPORT_POINT_);
 }
