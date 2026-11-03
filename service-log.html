@@ -2774,8 +2774,10 @@ function calcVaccineTotal(vaccineCodes, checkupChecked, vaccinesData, priceConst
   var pe = (priceConsts && typeof priceConsts.PE === 'number') ? priceConsts.PE : PRICE_DEFAULTS.PE;
   var markup = (priceConsts && typeof priceConsts.MARKUP_PERCENT === 'number') ? priceConsts.MARKUP_PERCENT : PRICE_DEFAULTS.MARKUP_PERCENT;
   var base = df + pe + sumBareNeedle;
-  return base + Math.round(base * markup / 100) + alwaysTotal;
+  // รอบ 116 (เจ้าของ 2026-11-03): ค่าบริการ 10% (service121) ของวัคซีนที่ไม่ได้ตรวจสุขภาพ เกิน 800 ⇒ คิด 800 · ต้องตรงกับ สถิติบริการ.js
+  return base + Math.min(VACCINE_MARKUP_CAP, Math.round(base * markup / 100)) + alwaysTotal;
 }
+var VACCINE_MARKUP_CAP = 800;
 
 /* pelvic: 'no' | 'pap' | 'thinprep' | 'thinprep_hpv' — ราคาต้องอ่านจาก priceConsts (STATE.prices) เสมอ ห้ามใช้เลขตายตัว
    gender ที่นี่ยังเป็นค่าโดเมนของ DOM ('male'/'female') ไม่ใช่ภาษาไทย — แปลงเป็นไทยเฉพาะตอนสร้าง payload ส่งเซิร์ฟเวอร์เท่านั้น */
@@ -4887,9 +4889,10 @@ function pointHasMainScreen_(topics) {
 }
 // รอบ 83 (เจ้าของสั่ง 2026-10-15): จุดที่หน้าหลักเป็น "รายการวันนี้" (จุดขายโปรแกรม — ไม่ได้บันทึกเอง · รอบ 87: จุดเปิดสิทธิ์ถูกยกเลิกแล้ว) ⇒ รายการรายวันเห็นทุกจุด (allPoints)
 // จุดอื่นเห็นเฉพาะของจุดตัวเองเหมือนเดิม · ยังไม่ได้ config (pointTopics ว่าง) ⇒ false
+// รอบ 116 (เจ้าของ 2026-11-03 "เลือกจุดบริการเป็นอะไรก็ได้ … อยากให้ขึ้นข้อมูล"): รายการรายวันเห็นทุกจุดเสมอ ไม่ว่าเลือกจุดไหน
+//   (เดิมเฉพาะจุดที่หน้าหลักเป็น "รายการวันนี้" ⇒ จุดจำหน่าย/จุดกัปตันเปิดแล้วว่าง) · ยอดรวมบนหน้า = ยอดรวมทุกจุด (เจ้าของรับ)
 function todayAllPointsFor_(point) {
-  var t = (STATE.pointTopics && point && STATE.pointTopics[point]) || [];
-  return pointMainScreenFor_(t) === 'today';
+  return true;
 }
 function maybeAutoOpenListForPoint() {
   // รอบ 41 (W1): จุดกัปตัน — 'คิวพบแพทย์' เปิดกระดานคิวให้เลยด้วยกลไกเดียวกัน · รอบ 60: เพิ่ม 'ค้างส่งออก' (⇒ #pendingScreen) / 'รายการวันนี้' (⇒ #todayScreen)
