@@ -1828,6 +1828,7 @@
                     <label class="opt-btn prog-btn prog-couple" data-progset="week"><input type="radio" name="program" value="couple"><span class="prog-check"></span> โปรแกรมคู่รัก <span class="opt-price" data-prog="couple"></span></label>
                     <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="1sun"><span class="prog-check"></span> โปรแกรม 1 วันอาทิตย์ <span class="opt-price" data-prog="1sun"></span></label>
                     <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="2sun"><span class="prog-check"></span> โปรแกรม 2 วันอาทิตย์ <span class="opt-price" data-prog="2sun"></span></label>
+                    <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="pelvicsun"><span class="prog-check"></span> ตรวจภายในอย่างเดียว <span class="opt-price" data-prog="pelvicsun"></span></label>
                   </div>
 
                   <div id="pelvicSection" style="margin-top:10px;" hidden>
@@ -1847,6 +1848,7 @@
                   <label class="field-label" for="checkupAmount">ราคาตรวจสุขภาพ (เติมราคามาตรฐานให้ แก้ได้)</label>
                   <input type="number" id="checkupAmount" min="0" step="1" inputmode="numeric" placeholder="กรอกยอดเงินที่เก็บจริง">
                   <p class="muted no-print" id="checkupStandardPriceHint" style="margin-top:2px;" hidden></p>
+                  <p class="warning-box no-print" id="checkupEditPriceWarn" style="margin-top:4px;" hidden role="alert"></p>
 
                   <!-- รอบ 81: #deliveryRow ห่อป้าย+ช่องทางรับผล เพื่อซ่อนทั้งก้อนในโหมดล่วงหน้า (CSS #svcFormWrap.pre-mode) -->
                   <div id="deliveryRow">
@@ -2431,7 +2433,10 @@ var PRICE_DEFAULTS = {
   PROG1SUN_M: 2398, PROG1SUN_F: 2398, PROG2SUN_M: 5414, PROG2SUN_F: 5114,
   // รอบ 63: โปรแกรมคู่รัก (ชุดจันทร์-ศุกร์) — ตรงกับ FALLBACK_PROGRAMS ฝั่งเซิร์ฟเวอร์
   PROGCOUPLE_M: 2756, PROGCOUPLE_F: 2986,
-  PAP_SUN: 500, PAP_THINPREP_SUN: 1000, PAP_THINPREP_HPV_SUN: 2320
+  PAP_SUN: 500, PAP_THINPREP_SUN: 1000, PAP_THINPREP_HPV_SUN: 2320,
+  // รอบ 117 (เจ้าของ 2026-11-08): โปรแกรม 'ตรวจภายในอย่างเดียว' — ตรงกับ FALLBACK_CONSTANTS ฝั่งเซิร์ฟเวอร์ · สูตรอยู่ที่ pelvicOnlyPrice_() ที่เดียว
+  // ⚠ ยังไม่มี PELVICONLY_LAB_THINPREP / PELVICONLY_LAB_HPV (เจ้าของจะส่งทีหลัง) — ห้ามเดาตัวเลข ห้ามใส่ 0
+  PELVICONLY_PE: 300, PELVICONLY_DF: 300, PELVICONLY_EXAM: 120, PELVICONLY_LAB_PAP: 120
 };
 
 var PROGRAMS_DEFAULT = {
@@ -3044,7 +3049,10 @@ function buildProgramsFromPrices(prices) {
 }
 
 // รอบ 22 (2026-09-21) — คู่ขนานกับ isSundayProgram_ ฝั่งเซิร์ฟเวอร์ (สถิติบริการ.js) ห้ามแก้ให้ต่างกัน
-var SUNDAY_PROGRAMS = ['1sun', '2sun'];
+// รอบ 117: 'pelvicsun' = ตรวจภายในอย่างเดียว (วันอาทิตย์) — ได้ชุดวันอาทิตย์ (ปุ่มโผล่ใน data-progset="sun") · คู่ขนานกับ PELVIC_ONLY_PROGRAM_ ฝั่งเซิร์ฟเวอร์
+var PELVIC_ONLY_PROGRAM = 'pelvicsun';
+function isPelvicOnlyProgram_(p) { return String(p || '') === PELVIC_ONLY_PROGRAM; }
+var SUNDAY_PROGRAMS = ['1sun', '2sun', PELVIC_ONLY_PROGRAM];
 function isSundayProgram_(p) { return SUNDAY_PROGRAMS.indexOf(String(p || '')) !== -1; }
 
 // pelvicCode: 'no'|'pap'|'thinprep'|'thinprep_hpv' ; isSunday: boolean — คู่ขนานกับฝั่งเซิร์ฟเวอร์
@@ -3058,8 +3066,24 @@ function pelvicPriceCode_(pelvicCode, isSunday) {
 // (ไม่รวมตรวจเพิ่ม/วัคซีน) — ใช้ pelvicPriceCode_(code, isSundayProgram_(program)) เพื่อให้รู้จักราคาชุดวันอาทิตย์
 // ⚠ calcCheckupTotal() เดิม (บรรทัดบน) ไม่รู้จักชุดวันอาทิตย์เลย (ใช้ PAP/PAP_THINPREP/PAP_THINPREP_HPV ตรง ๆ เสมอ)
 // ห้ามใช้ตรง ๆ แทนฟังก์ชันนี้ · คืน null ถ้ายังไม่เลือกโปรแกรม/เพศ หรือโปรแกรมไม่มีราคา (เช่น การไฟฟ้าเรียกเก็บ 'pea')
+// รอบ 117 — ราคาอ้างอิง 'ตรวจภายในอย่างเดียว' = PELVICONLY_PE + PELVICONLY_DF + PELVICONLY_EXAM + ค่าตรวจตามชนิด (สูตรที่เดียว)
+// คืน number หรือ null · รหัสใดไม่ใช่ตัวเลข (เช่น LAB_THINPREP/LAB_HPV ที่ยังไม่มี) ⇒ null ห้ามเดา ห้ามนับเป็น 0
+function pelvicOnlyPrice_(pelvicCode) {
+  var labCode = (pelvicCode === 'pap') ? 'PELVICONLY_LAB_PAP' : (pelvicCode === 'thinprep') ? 'PELVICONLY_LAB_THINPREP' : (pelvicCode === 'thinprep_hpv') ? 'PELVICONLY_LAB_HPV' : null;
+  if (!labCode) return null;
+  var codes = ['PELVICONLY_PE', 'PELVICONLY_DF', 'PELVICONLY_EXAM', labCode];
+  var sum = 0;
+  for (var i = 0; i < codes.length; i++) {
+    var v = (STATE.prices && typeof STATE.prices[codes[i]] === 'number') ? STATE.prices[codes[i]] : PRICE_DEFAULTS[codes[i]];
+    if (typeof v !== 'number' || !isFinite(v)) return null;
+    sum += v;
+  }
+  return sum;
+}
+
 function standardCheckupPrice() {
   var program = getSelectedProgram();
+  if (isPelvicOnlyProgram_(program)) return pelvicOnlyPrice_(getSelectedPelvic()); // รอบ 117: ก่อนอ่าน STATE.programs (โปรแกรมนี้ไม่อยู่ในตาราง) · ยังไม่เลือกชนิด ⇒ null
   var gender = getSelectedGender();
   if (!program || !gender) return null;
   var genderKey = (gender === 'male') ? 'male' : 'female';
@@ -3365,6 +3389,7 @@ function updatePersonCardLabels() {
    รอบ 9 (ก้อน B, B7): ไม่มี "หน้าบริการที่เปิดอยู่" อีกแล้ว (ทุกแผงแสดงพร้อมกันตลอด) ⇒ fallback เดิมที่อิง
    QUEUE_PREFIX[STATE.currentSvcScreen] ไม่มีความหมายอีกต่อไป เหลือ fallback ตายตัวเป็น 'C' */
 function draftQueuePrefix() {
+  if (isPelvicOnlyProgram_(getSelectedProgram())) return 'M'; // รอบ 117 (D4): ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น — ก่อน isCheckupOn()
   if (isCheckupOn()) return 'C';
   if (isMedOn()) return 'M';
   if (isMedLabSpecialOn()) return 'M'; // รอบ 91: ติ๊ก EKG/ตรวจสายตา/ตาบอดสี อย่างเดียวก็เป็นแถวกลุ่มคิว M (บังคับคิว M) — ไม่ให้ syncQueuePrefix ล้างคิว M ที่ใส่ไว้ก่อนติ๊ก
@@ -4243,6 +4268,36 @@ function updatePelvicSection(checkupOn, gender) {
   if (!show) {
     document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = false; });
   }
+  // รอบ 117: ตรวจภายในอย่างเดียว ⇒ ซ่อนตัวเลือก 'ไม่ตรวจ' จริง + ยกเลิกติ๊ก · โปรแกรมอื่น ⇒ แสดงคืน
+  var pelvicOnly = isPelvicOnlyProgram_(getSelectedProgram());
+  var noRadio = document.querySelector('input[name="pelvic"][value="no"]');
+  if (noRadio) {
+    if (pelvicOnly) noRadio.checked = false;
+    noRadio.disabled = pelvicOnly;
+    if (noRadio.parentElement) noRadio.parentElement.hidden = pelvicOnly;
+  }
+}
+
+/* รอบ 117 — ล็อกฟอร์มตามโปรแกรม 'ตรวจภายในอย่างเดียว': ติ๊กหญิง + disable ปุ่มชาย · ซ่อน/disable 'นัดรับวันที่' ของช่องทาง + ล้างค่าถ้าเลือกอยู่
+   ออกจากโปรแกรมนี้ ⇒ ปลดทั้งสองอย่าง · เรียกต้นฟังก์ชัน recalcTotals() ก่อนอ่านเพศ/ช่องทางรับผล ·
+   คำนำหน้าชายไม่ฝืนปุ่มเพศ (ไม่ทับคำนำหน้า) ⇒ ด่านใน validateForm จับ */
+function applyPelvicOnlyLock_() {
+  var on = isPelvicOnlyProgram_(getSelectedProgram());
+  var male = document.querySelector('input[name="gender"][value="male"]');
+  var female = document.querySelector('input[name="gender"][value="female"]');
+  if (on) {
+    if (female) female.checked = true;
+    if (male) { male.checked = false; male.disabled = true; }
+  } else if (male) {
+    male.disabled = false;
+  }
+  var sel = qs('deliveryMethod');
+  if (sel && sel.options) {
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === DELIVERY_PICKUP_APPOINTMENT) { sel.options[i].hidden = on; sel.options[i].disabled = on; }
+    }
+    if (on && sel.value === DELIVERY_PICKUP_APPOINTMENT) sel.value = '';
+  }
 }
 
 /* รอบ 21 (2026-09-20, เจ้าของสั่ง "ช่องทางการรับผล เพิ่ม นัดรับวันที่"):
@@ -4266,6 +4321,7 @@ function isPelvicExportPending(rec) {
 
 // สถานะผลตรวจสุขภาพของแถว — ผู้เรียกต้องกรองเอง "มี program และไม่ยกเลิก" ก่อนเรียกฟังก์ชันนี้ (ฟังก์ชันนี้ไม่เช็คซ้ำ)
 function checkupResultStatus(rec) {
+  if (rec && isPelvicOnlyProgram_(rec.program)) return null; // รอบ 117: ตรวจภายในอย่างเดียวไม่มีผลตรวจสุขภาพ (คู่ขนานกับ checkupResultStatus_ ฝั่งเซิร์ฟเวอร์)
   var method = (rec && rec.deliveryMethod) || '';
   if (SEND_OUT_METHODS.indexOf(method) !== -1) {
     return (rec && rec.sentDate) ? 'delivered' : 'pendingExport';
@@ -4336,9 +4392,15 @@ function setDateFieldError(input, message) {
    รอบ 22 (2026-09-21): ราคาตรวจภายในต้องเปลี่ยนตามชุดโปรแกรมที่เลือกอยู่ (week/sun) ผ่าน pelvicPriceCode_() ตัวเดียว */
 function updatePelvicPriceLabels() {
   var isSunday = isSundayProgram_(getSelectedProgram());
+  var pelvicOnly = isPelvicOnlyProgram_(getSelectedProgram()); // รอบ 117
   ['pap', 'thinprep', 'thinprep_hpv'].forEach(function (code) {
     var el = document.querySelector('.opt-price[data-pelvic="' + code + '"]');
     if (!el) return;
+    if (pelvicOnly) { // รอบ 117: ยอดรวม (ไม่มี +) · ราคาไม่ครบ ⇒ พิมพ์ยอดเอง
+      var pp = pelvicOnlyPrice_(code);
+      el.textContent = (pp === null) ? 'พิมพ์ยอดเอง' : ('อ้างอิง ' + money(pp) + ' บ.');
+      return;
+    }
     var priceCode = pelvicPriceCode_(code, isSunday);
     var price = (STATE.prices && typeof STATE.prices[priceCode] === 'number') ? STATE.prices[priceCode] : PRICE_DEFAULTS[priceCode];
     el.textContent = 'อ้างอิง +' + money(price) + ' บ.';
@@ -4979,7 +5041,12 @@ function validateForm(ctx) {
     // รอบ 98 (เจ้าของ 2026-10-28): ใบรับรองแพทย์ทั่วไป (5 โรค/ขับขี่ · ctx.nCert > 0) ต้องใส่ HN เหมือนมี Lab — ชื่อไม่บังคับ
     // ฝั่งเว็บเท่านั้น (แถวเก่าในชีตไม่มี HN) · มี Lab ไม่มี nCert ใช้ด่าน "ใบรับรองแพทย์มี lab ต้องกรอก HN" ด้านล่างตามเดิม
     msg = 'ใบรับรองแพทย์ต้องกรอก HN';
-  } else if (!preM && ctx.checkupOn && String(ctx.queue || '').trim() && !isCheckupQueueValue_(ctx.queue) &&
+  } else if (!preM && isPelvicOnlyProgram_(ctx.program) && String(ctx.queue || '').trim() && !mQueueNum_(ctx.queue) &&
+             !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
+    // รอบ 117 (เจ้าของ 2026-11-08): ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น — ยกเว้นกติการอบ 101 (คิว C) เฉพาะโปรแกรมนี้ · คิวว่างให้ checkupMissing จับตามเดิม
+    // ข้อยกเว้นคิวเดิมของแถวที่กำลังแก้/รวม แบบเดียวกับรอบ 101
+    msg = 'ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น (เช่น M7)';
+  } else if (!preM && ctx.checkupOn && !isPelvicOnlyProgram_(ctx.program) && String(ctx.queue || '').trim() && !isCheckupQueueValue_(ctx.queue) &&
              !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
     // รอบ 101 (เจ้าของ 2026-10-29): ตรวจสุขภาพต้องใช้คิว C หรือ "ไม่นัด N" — คู่กับด่านคิว M ของใบรับรองด้านบน
     // คิวว่างให้ checkupMissing ด้านล่างจับตามเดิม · บังคับฝั่งเว็บเท่านั้น (แถวเก่าในชีตแก้จากเซิร์ฟเวอร์ได้)
@@ -4991,6 +5058,11 @@ function validateForm(ctx) {
   } else if (ctx.checkupOn && !String(qs('patientPrefix').value || '').trim()) {
     // รอบ 81 (W2): คำนำหน้าบังคับทุกการบันทึกที่มีตรวจสุขภาพ (ปกติ/ล่วงหน้า/แก้ไขแถวเก่า/แก้ไขรายการรอมา) — ข้อความแยกจาก checkupMissing · บังคับฝั่งเว็บ
     msg = 'กรุณาเลือกคำนำหน้า';
+  } else if (isPelvicOnlyProgram_(ctx.program) && (getSelectedGender() === 'male' || isMalePrefix(qs('patientPrefix').value))) {
+    // รอบ 117: ปุ่มเพศชายถูก disable แล้ว — คำนำหน้าชายเท่านั้นที่หลุดมาถึงด่านนี้ (ไม่ทับคำนำหน้า)
+    msg = 'ตรวจภายในอย่างเดียวใช้ได้เฉพาะผู้หญิง — ตรวจคำนำหน้า';
+  } else if (isPelvicOnlyProgram_(ctx.program) && !isPelvicChosen_(ctx.pelvic)) {
+    msg = 'เลือก Pap smear / Thinprep / Thinprep + HPV';
   } else if (ctx.checkupOn && checkupMissing.length) {
     msg = 'ตรวจสุขภาพต้องกรอกให้ครบ: ' + checkupMissing.join(', ');
   } else if (ctx.checkupOn && ctx.gender === 'female' && !ctx.pelvic) {
@@ -5163,6 +5235,7 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
 
 function recalcTotals() {
   if (typeof applyPreMode_ === 'function') applyPreMode_(); // รอบ 81 (W1): ซิงก์หน้าตาโหมดล่วงหน้าก่อนอ่านค่า (idempotent)
+  applyPelvicOnlyLock_(); // รอบ 117: ต้องก่อนอ่านเพศ/ช่องทางรับผลด้านล่าง
   var checkupOn = isCheckupOn();
   var program = checkupOn ? getSelectedProgram() : '';
   var gender = checkupOn ? getSelectedGender() : '';
@@ -5276,8 +5349,30 @@ function recalcTotals() {
   // รอบ 29: เรียกหลัง validateForm() เสมอ เพราะ #formWarning/#formError (ซึ่งอาจโผล่/หายไปในนั้น) เปลี่ยนความสูง
   // จริงของ #panelTotals — ต้องวัดหลังจากค่านั้นนิ่งแล้วเท่านั้นถึงจะได้ offsetHeight ที่ถูกต้อง
   syncWrapLogBottomSpace_();
+  updateEditProgramPriceWarn_(); // รอบ 117 D10: เตือนอย่างเดียว ไม่แตะยอด/ปุ่มบันทึก
 
   return { checkupTotal: checkupTotal, extraTotal: extraTotal, vaccineTotal: vaccineTotal, medCertTotal: medCertTotal, grand: grand };
+}
+
+/* รอบ 117 D10 — โหมดแก้ไข: เปลี่ยนโปรแกรมแล้วยอดในช่องไม่ตรงราคาอ้างอิงของโปรแกรมใหม่ ⇒ เตือน (ไม่เติม/ไม่แก้ยอดให้ · ไม่เกี่ยว validateForm/ปุ่มบันทึก)
+   แสดงเมื่อ: กำลังแก้แถวเดิม · เลือกโปรแกรมอยู่และต่างจากโปรแกรมเดิมของแถว · มียอดในช่อง และยอด ≠ standardCheckupPrice() */
+function updateEditProgramPriceWarn_() {
+  var el = qs('checkupEditPriceWarn');
+  if (!el) return;
+  var msg = '';
+  var program = getSelectedProgram();
+  var orig = (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL) ? EDIT_MODAL.originalRec : null;
+  if (STATE.editingId && orig && program && String(orig.program || '') !== program) {
+    var amount = getCheckupAmountNum();
+    var standard = standardCheckupPrice();
+    if (amount !== null && amount !== standard) {
+      msg = (standard === null)
+        ? 'เปลี่ยนโปรแกรมแล้ว ยังไม่มีราคาอ้างอิง — ตรวจยอดในช่องก่อนบันทึก'
+        : ('เปลี่ยนโปรแกรมแล้ว ราคาอ้างอิง ' + money(standard) + ' บาท แต่ยอดในช่อง ' + money(amount) + ' บาท — ตรวจยอดก่อนบันทึก');
+    }
+  }
+  el.textContent = msg;
+  el.hidden = !msg;
 }
 
 /* รอบ 9 (ก้อน B, B3) — ป้ายสรุปสดบนหัวกล่องพับของจอแคบ ใช้ค่าจากตรรกะที่มีอยู่แล้วล้วน ๆ (ห้ามเขียนตัวนับใหม่ซ้อน):
@@ -5354,6 +5449,8 @@ function resetLogForm() {
   resetMedLabSoloState_(); // รอบ 66: ล้างร่าง/บันทึกเสร็จ ⇒ ล้างธง "ระบบใส่ราคา MMG/U/S เดี่ยว"
   var checkupStdHintResetEl = qs('checkupStandardPriceHint');
   if (checkupStdHintResetEl) { checkupStdHintResetEl.hidden = true; checkupStdHintResetEl.textContent = ''; }
+  var checkupEditWarnResetEl = qs('checkupEditPriceWarn'); // รอบ 117 D10
+  if (checkupEditWarnResetEl) { checkupEditWarnResetEl.hidden = true; checkupEditWarnResetEl.textContent = ''; }
   qs('deliveryMethod').value = '';
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
   var vwcResetEl = qs('vaccineWithCheckup');
@@ -5617,6 +5714,7 @@ function scrollAndHighlightRecord_(recordId) {
 
 function enterEditMode(rec) {
   STATE.editingId = rec.recordId;
+  STATE.lastAutoCheckupAmount = null; // รอบ 117 D10: ร่างบันทึกใหม่ที่ระบบเติมยอดให้ไว้ ต้องไม่ทำให้ยอดของแถวที่แก้ดูเหมือน "เติมอัตโนมัติ" (ไม่งั้นเปลี่ยนโปรแกรมแล้วยอดถูกเขียนทับเงียบ ๆ)
   STATE.editingDate = rec.date || ''; // รอบ 110: วันของแถว (ยึดวันนี้ตัดสินกติกาวันอาทิตย์ ไม่ได้)
   if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): เข้าโหมดแก้ไขแถว ⇒ ล้างการผูกคนนัด
   // รอบ 34 (2026-09-30) W2: เก็บ record ต้นทางที่กำลังแก้ไว้ — ใช้ตอนกด "แก้แล้วบันทึกใหม่" ของรายการที่บันทึกไม่สำเร็จ
@@ -5664,7 +5762,7 @@ function enterEditMode(rec) {
   qs('patientPrefix').value = rec.patientPrefix || '';
   syncPrefixButtons(); // เปิดแถวเก่ามาแก้ไข -- ปุ่มคำนำหน้าต้อง sync ตามค่าจริงของแถวนั้น
   updateHnHint();
-  qs('deliveryMethod').value = rec.deliveryMethod || '';
+  qs('deliveryMethod').value = isPelvicOnlyProgram_(rec.program) ? (rec.pelvicMethod || '') : (rec.deliveryMethod || ''); // รอบ 117: โปรแกรมนี้ใช้ช่องเดียวกันเก็บช่องทางส่งผลตรวจภายใน
 
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กกลับอีกแล้ว — เก็บ id ไว้เฉย ๆ แล้วส่งกลับตอนบันทึกแก้ไข (onSubmitLog)
   // ไม่งั้นเจ้าหน้าที่กดแก้ไขแถวเก่าทีเดียว รายการตรวจเพิ่ม + ยอดเงินของแถวนั้นหายถาวร
@@ -6354,7 +6452,7 @@ function onSubmitLog(e) {
     patientName: patientName,
     patientHn: patientHn,
     patientPrefix: patientPrefix,
-    deliveryMethod: deliveryMethod,
+    deliveryMethod: isPelvicOnlyProgram_(program) ? '' : deliveryMethod, // รอบ 117: ตรวจภายในอย่างเดียวไม่มีช่องทางรับผลตรวจสุขภาพ
     tests: extraIds,
     vaccines: vaccineCodes,
     vaccineWithCheckup: withCheckupRate,
@@ -6368,6 +6466,8 @@ function onSubmitLog(e) {
     specialPrep: specialPrepIds,
     specialReg: specialRegIds // รอบ 8 (B4)
   };
+  // รอบ 117: ช่องทางจากฟอร์มของโปรแกรมนี้ = ช่องทางส่งผลตรวจภายใน · โปรแกรมอื่นต้องไม่มีคีย์ pelvicMethod เหมือนเดิม (รอบ 24)
+  if (isPelvicOnlyProgram_(program)) payload.pelvicMethod = deliveryMethod;
   if (isEdit) payload.recordId = STATE.editingId;
   if (!isEdit && e && e.preId) payload.preId = e.preId; // รอบ 81 (W6): "ใช่ คนนี้"
   else if (!isEdit && STATE.arrivePreId) payload.preId = STATE.arrivePreId; // รอบ 84 (W4): คนนัดที่เลือกจากช่อง 🔎 (resetLogForm ท้ายฟังก์ชันล้างให้เอง)
@@ -6626,7 +6726,8 @@ function todayStr() {
 function summarizeRecordParts(rec) {
   var parts = [];
   if (rec.queue) parts.push('คิว ' + rec.queue); // รอบ 6: โชว์เลขคิวหน้าชื่อ
-  if (rec.program) parts.push('ตรวจสุขภาพ ' + programShortLabel_(rec.program) + (rec.gender ? ' (' + rec.gender + ')' : ''));
+  if (isPelvicOnlyProgram_(rec.program)) parts.push('ตรวจภายในอย่างเดียว' + (rec.gender ? ' (' + rec.gender + ')' : '')); // รอบ 117: ไม่ขึ้นต้น "ตรวจสุขภาพ"
+  else if (rec.program) parts.push('ตรวจสุขภาพ ' + programShortLabel_(rec.program) + (rec.gender ? ' (' + rec.gender + ')' : ''));
   // รอบ 26 (2026-09-22): แสดงแค่ "ชนิด" ผ่าน pelvicTypeLabel() แทน rec.pelvicLabel ดิบ (เดิมมีคำว่า "ตรวจภายใน (...)")
   if (rec.pelvicLabel) parts.push('ตรวจมะเร็งปากมดลูก : ' + pelvicTypeLabel(rec));
   // รอบ 19 (2026-09-18): "ส่งออกผลภายในวันที่" — โผล่ต่อจากป้ายตรวจมะเร็งปากมดลูกทันที (มีเฉพาะแถวที่ pelvic ≠ 'no')
@@ -6635,6 +6736,7 @@ function summarizeRecordParts(rec) {
   // หรือในใบรายชื่อผู้รับบริการตรวจสุขภาพ) — ใช้คำเดียวกับป้ายในฟอร์มคือ "ช่องทางรับผล"
   // ค่านี้มีเฉพาะแถวที่มีโปรแกรมตรวจสุขภาพ (เซิร์ฟเวอร์เก็บ '' เมื่อไม่มีโปรแกรม) จึงไม่ต้องเช็ค program ซ้ำ
   if (rec.deliveryMethod) parts.push('ช่องทางรับผล : ' + rec.deliveryMethod);
+  else if (isPelvicOnlyProgram_(rec.program) && rec.pelvicMethod) parts.push('ช่องทางส่งผล : ' + rec.pelvicMethod); // รอบ 117
   // รอบ 21 (2026-09-20): วันที่นัดรับ — ต่อท้ายช่องทางทันที (มีเฉพาะแถวที่ช่องทาง = 'นัดรับวันที่')
   if (rec.pickupDate) parts.push('นัดรับวันที่ ' + formatThaiDate(rec.pickupDate));
   if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
@@ -8157,7 +8259,9 @@ function openPreActivate_(item) {
   var dsel = qs('paDelivery');
   dsel.innerHTML = '';
   var src = qs('deliveryMethod');
+  var paPelvicOnly = isPelvicOnlyProgram_(item.program); // รอบ 117: ตรวจภายในอย่างเดียว — ไม่มีนัดรับวันที่ · ใช้คิว M
   Array.prototype.forEach.call(src ? src.options : [], function (o) {
+    if (paPelvicOnly && o.value === DELIVERY_PICKUP_APPOINTMENT) return;
     var op = document.createElement('option');
     op.value = o.value;
     op.textContent = o.textContent;
@@ -8167,7 +8271,8 @@ function openPreActivate_(item) {
   qs('paQueue').value = '';
   qs('paHn').value = item.patientHn || ''; // เติมค่าที่ลงไว้ — แก้ได้
   qs('paPickup').value = '';
-  var sug = preSuggestQueue_();
+  qs('paQueue').placeholder = paPelvicOnly ? 'เช่น M7' : 'เช่น C1 (พิมพ์เองได้)';
+  var sug = paPelvicOnly ? '' : preSuggestQueue_(); // รอบ 117: คิวแนะนำเป็นคิวตรวจสุขภาพ (C) ไม่ใช้กับโปรแกรมนี้
   var hint = qs('paQueueHint');
   hint.textContent = sug ? ('แนะนำ ' + sug + ' — แตะเพื่อใช้') : '';
   hint.setAttribute('data-sug', sug);
@@ -8199,7 +8304,9 @@ function paRefresh_() {
   var missing = [];
   var qErr = '', hErr = '';
   if (!queue) missing.push('คิว');
-  else {
+  else if (isPelvicOnlyProgram_(item.program) && !mQueueNum_(queue)) {
+    qErr = 'ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น (เช่น M7)'; missing.push('คิว'); // รอบ 117 (D4)
+  } else {
     var dup = findQueueDupInBrowser_(queueDupKey_(queue), '', hn, item.patientName);
     if (dup) { qErr = queueDupMessage_(dup); missing.push('คิว'); }
   }
@@ -10002,6 +10109,11 @@ function formatThaiDateShort(dateStr) {
 
 // รอบ 26 (2026-09-22, เจ้าของสั่ง): "ช่องทางแบบสั้น" — ใช้ทั้งรายงานผลค้างส่งออก (renderCheckupPendingReport) และแบบตาราง
 // (renderCheckupTable) ที่เดียว ห้ามเขียนตรรกะแปลงช่องทางซ้ำที่อื่น
+// รอบ 117: ช่องทางของแถวสำหรับตาราง/การ์ด A4 — ตรวจภายในอย่างเดียวแสดงช่องทางส่งผลตรวจภายใน (rec.pelvicMethod) · แถวอื่นเหมือนเดิม
+function cuChannelLabel_(rec) {
+  if (rec && isPelvicOnlyProgram_(rec.program)) return shortDeliveryLabel(rec.pelvicMethod || '');
+  return shortDeliveryLabel(rec && rec.deliveryMethod, rec && rec.pickupDate);
+}
 function shortDeliveryLabel(method, pickupDate) {
   if (!method) return '—';
   if (method === 'รอรับด้วยตนเอง') return 'รอรับ';
@@ -10018,6 +10130,7 @@ function shortDeliveryLabel(method, pickupDate) {
 // ค่าอื่นคงรูปแบบเดิมทุกตัวอักษร ('โปรแกรม ' + ค่าดิบ) กันพฤติกรรมเดิมเปลี่ยนโดยไม่ตั้งใจ
 function programShortLabel_(program) {
   var p = String(program == null ? '' : program);
+  if (p === PELVIC_ONLY_PROGRAM) return 'ตรวจภายในอย่างเดียว'; // รอบ 117
   return p === 'couple' ? 'โปรแกรมคู่รัก' : ('โปรแกรม ' + p);
 }
 
@@ -10028,6 +10141,7 @@ function programLabelForPrint(program) {
   if (p === '1' || p === '2' || p === '3' || p === '4') return 'โปรแกรม ' + p;
   if (p === '1sun') return 'โปรแกรม 1 วันอาทิตย์'; // รอบ 22 (2026-09-21)
   if (p === '2sun') return 'โปรแกรม 2 วันอาทิตย์';
+  if (p === PELVIC_ONLY_PROGRAM) return 'ตรวจภายในอย่างเดียว'; // รอบ 117
   return p;
 }
 
@@ -10038,6 +10152,7 @@ function programDataLabel_(program) {
   if (p === '1' || p === '2' || p === '3' || p === '4') return 'P' + p;
   if (p === '1sun') return 'P1 อาทิตย์';
   if (p === '2sun') return 'P2 อาทิตย์';
+  if (p === PELVIC_ONLY_PROGRAM) return 'ตรวจภายใน'; // รอบ 117
   if (p === 'couple') return 'คู่รัก';
   if (p === 'pea') return 'การไฟฟ้า';
   return p;
@@ -10171,7 +10286,8 @@ function cuHnQuery() {
 // SEND_OUT (ไปรษณีย์/E-mail/Whatsapp) จะติดตัวกรองนี้เสมอไม่ว่าจะส่งออกไปแล้วหรือยัง เพราะ receivedDate ไม่เคยถูกตั้ง
 // ค่าให้ (ปุ่ม "รับผลแล้ว" เป็นของช่องทาง PICKUP เท่านั้น) — ตอนนี้ถือว่า "รับแล้ว" เมื่อสถานะเป็น 'delivered'
 function recordHasPendingResults(rec) {
-  return checkupResultStatus(rec) !== 'delivered';
+  var st = checkupResultStatus(rec);
+  return st !== null && st !== 'delivered'; // รอบ 117: null (ตรวจภายในอย่างเดียว) ไม่ถือว่าค้างผลตรวจสุขภาพ
 }
 function cuUnreceivedOnly() {
   var el = qs('cuUnreceivedOnly');
@@ -10928,6 +11044,7 @@ function checkupExtraSummaryHtml(rows) {
    เจ้าของสั่ง 2026-09-22: "นัดรับวันที่" ก็มารับเอง ⇒ เว้นเส้นเซ็นเหมือน "รอรับด้วยตนเอง"
    ไปรษณีย์/E-mail/ไม่ระบุ ยังเป็น — เหมือนเดิม */
 function needsPickupSignature(rec) {
+  if (isPelvicOnlyProgram_(rec.program)) return rec.pelvicMethod === 'รอรับด้วยตนเอง'; // รอบ 117 (D6): ช่องทางของโปรแกรมนี้อยู่ที่ pelvicMethod
   return rec.deliveryMethod === 'รอรับด้วยตนเอง' || rec.deliveryMethod === DELIVERY_PICKUP_APPOINTMENT;
 }
 
@@ -11020,7 +11137,7 @@ function renderCheckupTable(records, dateStr) {
         '<td>' + escHtml(programDataLabel_(rec.program)) + '</td>' +
         '<td>' + (pelvicTested ? escHtml(pelvicTypeLabel(rec)) : '-') + '</td>' +
         '<td class="cu-price-cell">' + money(amt) + '</td>' +
-        '<td>' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</td>' +
+        '<td>' + escHtml(cuChannelLabel_(rec)) + '</td>' +
         '<td class="cu-doctor-cell">' + escHtml(cuDoctorCellText_(rec)) + '</td><td class="cu-consult-cell">' + escHtml(cuConsultCellText_(rec)) + '</td>' +
         '</tr>';
       return;
@@ -11032,7 +11149,7 @@ function renderCheckupTable(records, dateStr) {
       '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
       '<td class="cu-col-amt">' + money(amt) + '</td>' +
       '<td>' + (pelvicTested ? escHtml(pelvicTypeLabel(rec)) : '-') + '</td>' +
-      '<td>' + escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate)) + '</td>' +
+      '<td>' + escHtml(cuChannelLabel_(rec)) + '</td>' +
       (cuWide ? ('<td class="cu-doctor-cell">' + escHtml(cuDoctorCellText_(rec)) + '</td><td class="cu-consult-cell">' + escHtml(cuConsultCellText_(rec)) + '</td>') : '') +
       '<td class="cu-sig-cell">' + sigCell + '</td>' +
       '</tr>';
@@ -11525,12 +11642,13 @@ function cuNoteHtml(rec) {
     '</div>' +
     '</div>' +
 
+    (isPelvicOnlyProgram_(rec && rec.program) ? '' : ( // รอบ 117: ตรวจภายในอย่างเดียวไม่มีกล่อง "ผลตรวจสุขภาพ" ใน DOM เลย (ไม่ใช่แค่ซ่อน)
     '<div class="cu-note-box">' +
     '<div class="cu-note-box-head">ผลตรวจสุขภาพ · ' + checkupSubHtml + '</div>' +
     '<div class="cu-note-grid">' +
     checkupResultBodyHtml +
     '</div>' +
-    '</div>' +
+    '</div>')) +
 
     pelvicBlockHtml +
     '<span class="cu-note-state" data-note-state="' + recId + '"></span>' +
@@ -12938,11 +13056,13 @@ function renderReport(summary, period) {
   // (คนละบริการกันโดยสิ้นเชิง บังเอิญเลขซ้ำกันเฉย ๆ)
   var sun1Row = programs['1sun'] || {};
   var sun2Row = programs['2sun'] || {};
+  var sunPelvicRow = programs[PELVIC_ONLY_PROGRAM] || {};
   html += '<div class="line" style="font-weight:700;margin-top:10px;">วันอาทิตย์</div>' +
     '<div class="scroll-x"><table class="report-table"><thead><tr>' +
     '<th>โปรแกรม</th><th>ชาย</th><th>หญิง</th></tr></thead><tbody>' +
     '<tr><td>โปรแกรม 1 วันอาทิตย์</td><td>' + numOr0(sun1Row['ชาย']) + '</td><td>' + numOr0(sun1Row['หญิง']) + '</td></tr>' +
     '<tr><td>โปรแกรม 2 วันอาทิตย์</td><td>' + numOr0(sun2Row['ชาย']) + '</td><td>' + numOr0(sun2Row['หญิง']) + '</td></tr>' +
+    '<tr><td>ตรวจภายในอย่างเดียว</td><td>' + numOr0(sunPelvicRow['ชาย']) + '</td><td>' + numOr0(sunPelvicRow['หญิง']) + '</td></tr>' + // รอบ 117: backend เก่าไม่มีคีย์ ⇒ 0
     '</tbody></table></div>';
 
   // รอบ 22: สรุปยอด "จันทร์-ศุกร์" กับ "วันอาทิตย์" แยกกัน — ถ้า backend ยังไม่มี bySet (ยังไม่ deploy) ต้องไม่ crash/ไม่โชว์เลข 0 ปลอม ๆ
@@ -14062,8 +14182,9 @@ function dqEntryCellHtml(item) {
   // รอบ 58: ปุ่ม ⇄ ย้าย — เฉพาะแถว 'บันทึกแล้ว' ที่ไม่ pending (ทั้งแถวปิดแล้วและกำลังตรวจ) · วางต่อท้ายบรรทัด .dq-entry (พี่น้องกัน ไม่ซ้อนใน .dq-entry)
   var moveBtn = (!log.pending && String(log.id).indexOf('dq-pending-') !== 0)
     ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(log.id) + '">⇄ ย้าย</button>' : '';
-  // รอบ 79: ปุ่ม ✎ แก้คิว — เงื่อนไขแสดงเดียวกับปุ่มย้ายเป๊ะ · วางต่อจากปุ่มย้าย
-  if (moveBtn) moveBtn += '<button type="button" class="dq-editq-btn" data-id="' + escHtml(log.id) + '">✎ แก้คิว</button>';
+  // รอบ 79: ปุ่ม ✎ แก้ไข (เลขคิว) — เงื่อนไขแสดงเดียวกับปุ่มย้ายเป๊ะ · วางต่อจากปุ่มย้าย · รอบ 117: + ✕ ยกเลิก (คลาสเดียวกับปุ่มยกเลิกในกลุ่มรอบ 82 ⇒ ใช้ dqOnCancelClick เดิม)
+  if (moveBtn) moveBtn += '<button type="button" class="dq-editq-btn" data-id="' + escHtml(log.id) + '">✎ แก้ไข</button>' +
+    '<button type="button" class="dq-grp-cancel" data-id="' + escHtml(log.id) + '">✕ ยกเลิก</button>';
   if (moveBtn && !log.timeOut) moveBtn += dqJoinBtnHtml_(log); // รอบ 82: แถวที่กำลังตรวจ + ＋ เข้าพร้อม (ไม่อยู่ใน .dq-open — เทสต์รอบ 50 ล็อก .dq-open ให้มีปุ่ม ☕ ปุ่มเดียว)
   if (log.timeOut) {
     return '<div class="dq-entry-line"><div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' +
@@ -14178,7 +14299,7 @@ function dqGroupCellHtml_(members) {
     var confirmed = (!l.pending && String(l.id).indexOf('dq-pending-') !== 0);
     html += '<div class="dq-group-member" data-id="' + escHtml(l.id) + '"><span class="dq-gm-q">' + escHtml(l.queue) + '</span>' + (l.pending ? '<span class="dq-pending"> ⏳</span>' : '') +
       (confirmed ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(l.id) + '">⇄ ย้าย</button>' +
-        '<button type="button" class="dq-editq-btn" data-id="' + escHtml(l.id) + '">✎ แก้คิว</button>' +
+        '<button type="button" class="dq-editq-btn" data-id="' + escHtml(l.id) + '">✎ แก้ไข</button>' +
         '<button type="button" class="dq-grp-cancel" data-id="' + escHtml(l.id) + '">✕ ยกเลิก</button>' : '') + '</div>';
   });
   html += '</div></div>';
