@@ -438,6 +438,7 @@
   .sup-opd-grid { max-width: 420px; }
   .sup-opd-grid .sum-n { min-width: 3ch; }
   @media print { .sum-breakdown { border-top-color: #999; } }
+  #todaySummaryBar { font-size: 16px; } /* รอบ 118 (เจ้าของ 2026-11-09 "ตัวเล็กดูยาก"): แถบสรุปรายการรายวันเท่าการ์ด SUP OPD · .summary-bar ใบอื่นคง 14px */
 
   .summary-bar {
     display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
@@ -495,8 +496,8 @@
   .cu-person-head.prog-c2, .cu-person-alt .cu-person-head.prog-c2 { background: #FFFFFF; border-bottom-color: #B9BDD6; }
   .cu-person-head.prog-c3, .cu-person-alt .cu-person-head.prog-c3 { background: #D7F5DF; border-bottom-color: #2E9E5B; }
   .cu-person-head.prog-c4, .cu-person-alt .cu-person-head.prog-c4 { background: #FDD9E8; border-bottom-color: #D6427F; }
-  /* เจ้าของสั่ง 2026-10-25: ชุดวันอาทิตย์ — โปรแกรม 1 สีขาว · โปรแกรม 2 สีฟ้า (เฉพาะกล่องรายชื่อตรวจสุขภาพ) */
-  .cu-person-head.prog-sun1, .cu-person-alt .cu-person-head.prog-sun1 { background: #FFFFFF; border-bottom-color: #B9BDD6; }
+  /* เจ้าของสั่ง 2026-10-25: ชุดวันอาทิตย์ — โปรแกรม 2 สีฟ้า (เฉพาะกล่องรายชื่อตรวจสุขภาพ) · รอบ 118 (เจ้าของสั่ง 2026-11-09): โปรแกรม 1 เปลี่ยนจากขาวเป็นเหลือง (แทนกติกา 2026-10-25 เฉพาะ 1sun) */
+  .cu-person-head.prog-sun1, .cu-person-alt .cu-person-head.prog-sun1 { background: #FFF4C9; border-bottom-color: #E0B400; }
   .cu-person-head.prog-sun2, .cu-person-alt .cu-person-head.prog-sun2 { background: #DCEBFF; border-bottom-color: #3B7DD8; }
   .cu-person-queue { font-size: 22px; font-weight: 800; color: var(--primary-dark); }
   .cu-person-hn { font-weight: 700; color: var(--text); }
@@ -876,6 +877,11 @@
   .opt-btn.prog-c4:has(input:checked) { background: #FDD9E8; }
   .opt-btn.prog-pea:has(input:checked) { background: #D5E9FB; }
   .opt-btn.prog-couple:has(input:checked) { background: #FFE033; } /* รอบ 63: ย้ำสีตอนถูกเลือก (บทเรียนรอบ 8.1 — .opt-btn:has(input:checked) specificity สูงกว่า) */
+  /* รอบ 118 (เจ้าของ 2026-11-09): ปุ่มโปรแกรม 1/2 วันอาทิตย์มีสีประจำโปรแกรม (1sun เหลืองเท่า P1 · 2sun ฟ้าเท่าหัวการ์ด 2sun) — ใช้คลาสแยก ห้ามใช้ prog-c1 ซ้ำ (เทสต์ใช้ #progButtons .prog-c1 หาปุ่ม P1) · ไม่แตะหัวการ์ดในรายชื่อ */
+  .opt-btn.prog-btn-sun1 { background: #FFF4C9; border-color: #E0B400; color: #1A1E40; }
+  .opt-btn.prog-btn-sun2 { background: #DCEBFF; border-color: #3B7DD8; color: #1A1E40; }
+  .opt-btn.prog-btn-sun1:has(input:checked) { background: #FFF4C9; border-width: 3px; font-weight: 800; }
+  .opt-btn.prog-btn-sun2:has(input:checked) { background: #DCEBFF; border-width: 3px; font-weight: 800; }
 
   /* เจ้าของสั่ง 2026-09-03 "ปรับแยกกันให้ดูง่ายกว่านี้" — หน้าตรวจสุขภาพ:
      แยกหัวข้อด้วยเส้นคั่น + จัดปุ่มตัวเลือกเป็นตารางความกว้างเท่ากัน แทน flex ที่ตกบรรทัดไม่เท่ากัน
@@ -1182,19 +1188,20 @@
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     table.cu-table tr.cu-cancelled-row td { color: #555; } /* รอบ 67: แถวคิวยกเลิกบนกระดาษ — เทาเข้มพอให้อ่านได้ */
     /* รอบ 103: ใบพิมพ์แบบ B "รายชื่อเก็บข้อมูล" (.cu-table-data) 9 คอลัมน์ · ค่าสำรองเมื่อ JS ไม่ทำงาน รวม 100%:
-       คิว 5 · HN 8 · ชื่อ 24 · โปรแกรม 7 · มะเร็ง 9 · ราคา 7 · ช่องทาง 10 · แพทย์ 24 · Consult 6 (cuFitNamesForPrint ตั้งความกว้างจริงตามชื่อ/แพทย์)
-       ⚠ ไม่ใช้คลาส cu-col-amt กับคอลัมน์ราคา (เจ้าของสั่งให้ราคาพิมพ์ออกกระดาษในแบบนี้) · ชื่อ-สกุล + ชื่อแพทย์ nowrap เฉพาะ td */
+       รอบ 118 (เจ้าของ 2026-11-09): ถอดคอลัมน์ชื่อแพทย์ + เพิ่ม "ช่องทางการส่ง" ถัดจากมะเร็งปากมดลูก
+       คิว 5 · HN 8 · ชื่อ 29 · โปรแกรม 7 · มะเร็ง 11 · ช่องทางการส่ง 11 · ราคา 8 · ช่องทางสุขภาพ 14 · Consult 7 (cuFitNamesForPrint ตั้งความกว้างจริงตามชื่อ)
+       ⚠ ไม่ใช้คลาส cu-col-amt กับคอลัมน์ราคา (เจ้าของสั่งให้ราคาพิมพ์ออกกระดาษในแบบนี้) · ชื่อ-สกุล nowrap เฉพาะ td */
     table.cu-table.cu-table-data th:nth-child(1), table.cu-table.cu-table-data td:nth-child(1) { width: 5%; }
     table.cu-table.cu-table-data th:nth-child(2), table.cu-table.cu-table-data td:nth-child(2) { width: 8%; }
-    table.cu-table.cu-table-data th:nth-child(3), table.cu-table.cu-table-data td:nth-child(3) { width: 24%; }
+    table.cu-table.cu-table-data th:nth-child(3), table.cu-table.cu-table-data td:nth-child(3) { width: 29%; }
     table.cu-table.cu-table-data th:nth-child(4), table.cu-table.cu-table-data td:nth-child(4) { width: 7%; }
-    table.cu-table.cu-table-data th:nth-child(5), table.cu-table.cu-table-data td:nth-child(5) { width: 9%; }
-    table.cu-table.cu-table-data th:nth-child(6), table.cu-table.cu-table-data td:nth-child(6) { width: 7%; }
-    table.cu-table.cu-table-data th:nth-child(7), table.cu-table.cu-table-data td:nth-child(7) { width: 10%; }
-    table.cu-table.cu-table-data th:nth-child(8), table.cu-table.cu-table-data td:nth-child(8) { width: 24%; }
-    table.cu-table.cu-table-data th:nth-child(9), table.cu-table.cu-table-data td:nth-child(9) { width: 6%; }
+    table.cu-table.cu-table-data th:nth-child(5), table.cu-table.cu-table-data td:nth-child(5) { width: 11%; }
+    table.cu-table.cu-table-data th:nth-child(6), table.cu-table.cu-table-data td:nth-child(6) { width: 11%; }
+    table.cu-table.cu-table-data th:nth-child(7), table.cu-table.cu-table-data td:nth-child(7) { width: 8%; }
+    table.cu-table.cu-table-data th:nth-child(8), table.cu-table.cu-table-data td:nth-child(8) { width: 14%; }
+    table.cu-table.cu-table-data th:nth-child(9), table.cu-table.cu-table-data td:nth-child(9) { width: 7%; }
     table.cu-table.cu-table-data th:nth-child(9) { white-space: nowrap; word-break: normal; } /* รอบ 112: หัว "Consult" ห้ามตัดกลางคำ (ความกว้างจริง cuFitDataForPrint_ ตั้งให้พอ) */
-    table.cu-table.cu-table-data td:nth-child(3), table.cu-table.cu-table-data td:nth-child(8) { white-space: nowrap; word-break: normal; }
+    table.cu-table.cu-table-data td:nth-child(3) { white-space: nowrap; word-break: normal; }
     #cuTableHeading { font-size: 12pt; margin: 0 0 3mm; }
     /* รอบ 20 (2026-09-19): ปุ่ม/ป็อปอัปวันที่ไทยห้ามติดไปกับกระดาษ — ทุกช่องที่มันแทนที่ input[type=date] เดิม
        ถูกซ่อนด้วยกฎ no-print ของ ancestor อยู่แล้วจริง ๆ (reportDay/reportMonth/cuDate อยู่ใต้ .no-print
@@ -1826,8 +1833,8 @@
                     <label class="opt-btn prog-btn prog-c4" data-progset="week"><input type="radio" name="program" value="4"><span class="prog-check"></span> โปรแกรม 4 <span class="opt-price" data-prog="4"></span></label>
                     <label class="opt-btn prog-btn prog-pea" data-progset="week"><input type="radio" name="program" value="pea"><span class="prog-check"></span> การไฟฟ้าเรียกเก็บ <span class="opt-price" data-prog="pea"></span></label>
                     <label class="opt-btn prog-btn prog-couple" data-progset="week"><input type="radio" name="program" value="couple"><span class="prog-check"></span> โปรแกรมคู่รัก <span class="opt-price" data-prog="couple"></span></label>
-                    <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="1sun"><span class="prog-check"></span> โปรแกรม 1 วันอาทิตย์ <span class="opt-price" data-prog="1sun"></span></label>
-                    <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="2sun"><span class="prog-check"></span> โปรแกรม 2 วันอาทิตย์ <span class="opt-price" data-prog="2sun"></span></label>
+                    <label class="opt-btn prog-btn prog-btn-sun1" data-progset="sun"><input type="radio" name="program" value="1sun"><span class="prog-check"></span> โปรแกรม 1 วันอาทิตย์ <span class="opt-price" data-prog="1sun"></span></label>
+                    <label class="opt-btn prog-btn prog-btn-sun2" data-progset="sun"><input type="radio" name="program" value="2sun"><span class="prog-check"></span> โปรแกรม 2 วันอาทิตย์ <span class="opt-price" data-prog="2sun"></span></label>
                     <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="pelvicsun"><span class="prog-check"></span> ตรวจภายในอย่างเดียว <span class="opt-price" data-prog="pelvicsun"></span></label>
                   </div>
 
@@ -2435,8 +2442,9 @@ var PRICE_DEFAULTS = {
   PROGCOUPLE_M: 2756, PROGCOUPLE_F: 2986,
   PAP_SUN: 500, PAP_THINPREP_SUN: 1000, PAP_THINPREP_HPV_SUN: 2320,
   // รอบ 117 (เจ้าของ 2026-11-08): โปรแกรม 'ตรวจภายในอย่างเดียว' — ตรงกับ FALLBACK_CONSTANTS ฝั่งเซิร์ฟเวอร์ · สูตรอยู่ที่ pelvicOnlyPrice_() ที่เดียว
-  // ⚠ ยังไม่มี PELVICONLY_LAB_THINPREP / PELVICONLY_LAB_HPV (เจ้าของจะส่งทีหลัง) — ห้ามเดาตัวเลข ห้ามใส่ 0
-  PELVICONLY_PE: 300, PELVICONLY_DF: 300, PELVICONLY_EXAM: 120, PELVICONLY_LAB_PAP: 120
+  // รอบ 118 (เจ้าของ 2026-11-09): ราคารวม Thinprep 1,320 · Thinprep+HPV 2,640 ⇒ ค่าตรวจ = ราคารวม − 720
+  PELVICONLY_PE: 300, PELVICONLY_DF: 300, PELVICONLY_EXAM: 120, PELVICONLY_LAB_PAP: 120,
+  PELVICONLY_LAB_THINPREP: 600, PELVICONLY_LAB_HPV: 1920
 };
 
 var PROGRAMS_DEFAULT = {
@@ -2961,7 +2969,19 @@ function upperIdsInPayload_(p) {
   }
   return p;
 }
+// รอบ 118 (เจ้าของ 2026-11-09 "ปุ่มอื่นด้วย ต้องเลือกจุดและชื่อก่อน"): action ที่ "เขียน" ชีตต้องมีจุดบริการ + ชื่อผู้บันทึกก่อน — กันที่ apiCall จุดเดียว ไม่ต้องใส่ด่านทีละปุ่ม
+// ⚠ เพิ่ม action เขียนใหม่ต้องเติมที่แผนที่นี้ · ห้ามใส่ log/edit (SAVE_QUEUE ส่งซ้ำเบื้องหลังตอนเน็ตหลุด ถ้าผู้ใช้ล้างจุดระหว่างนั้นรายการต้องไม่หาย · validateForm กันไว้แล้ว) · ห้ามใส่ action อ่านอย่างเดียว
+var NEED_POINT_STAFF_MSG_ = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
+var WRITE_ACTIONS_NEED_SIGNIN_ = {
+  specialStatus: 1, noteUpdate: 1, setDoctorsToday: 1, addDoctor: 1, doctorRename: 1, bulkSentDate: 1, dqSetCTotal: 1, dqSaveRooms: 1,
+  dqEnter: 1, dqEnd: 1, dqCancel: 1, dqMove: 1, dqJoin: 1, dqEditQueue: 1, dqSetDoctor: 1, preLog: 1, preEdit: 1, preCancel: 1,
+  preActivate: 1, preLink: 1, preImport: 1, qcSetNext: 1, qcVoid: 1, qcUnvoid: 1, cancel: 1
+};
 function apiCall(action, payload, opts) {
+  if (Object.prototype.hasOwnProperty.call(WRITE_ACTIONS_NEED_SIGNIN_, action) && (!STATE.point || !STATE.staffName)) {
+    showToast(NEED_POINT_STAFF_MSG_);
+    return Promise.resolve({ status: 'error', message: NEED_POINT_STAFF_MSG_ });
+  }
   var body = JSON.stringify(upperIdsInPayload_(Object.assign({ action: action }, payload || {})));
   var fetchOpts = {
     method: 'POST',
@@ -3710,7 +3730,7 @@ function isValidHn(v) {
 
 /* รอบ 31B ข้อ 1: สีประจำโปรแกรม — ใช้คลาส .opt-btn.prog-c1..c4 ของรอบ 6 ซ้ำ (ห้ามตั้งสีใหม่) เฉพาะโปรแกรม
    1-4 (ชุดจันทร์-ศุกร์) เท่านั้นที่มีสีกำหนดไว้ · pea ไม่มีสี ⇒ คืนค่าว่าง (พื้นหลังปริยายของ .cu-person-head)
-   เจ้าของสั่ง 2026-10-25: 1sun = ขาว (prog-sun1) · 2sun = ฟ้า (prog-sun2) — กฎ CSS มีเฉพาะ .cu-person-head */
+   เจ้าของสั่ง 2026-10-25: 2sun = ฟ้า (prog-sun2) · 1sun = prog-sun1 (เดิมขาว → รอบ 118 เจ้าของสั่ง 2026-11-09 เปลี่ยนเป็นเหลือง) — กฎ CSS มีเฉพาะ .cu-person-head */
 function programColorClass(program) {
   var p = String(program == null ? '' : program).trim();
   if (p === '1sun') return 'prog-sun1';
@@ -5029,6 +5049,10 @@ function validateForm(ctx) {
     msg = queueDupMessage_(queueDupInfo);
   } else if (!STATE.point || !STATE.staffName) {
     msg = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
+  } else if (STATE.point === VACCINE_HIDDEN_POINT_ && /^v/i.test(String(ctx.queue || '').trim()) &&
+             !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
+    // รอบ 118 (เจ้าของ 2026-11-09): จุดคีย์ order บันทึกใหม่ด้วยคิว V ไม่ได้ — วัคซีนบันทึกที่จุดนับ vaccine · แถวเก่าที่คิวคงเดิมแก้ได้ (แพตเทิร์นเดียวกับรอบ 101)
+    msg = 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
   } else if (!hasAnything) {
     msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
   } else if (!preM && mGroupFormOn_(ctx) && !String(ctx.queue || '').trim()) {
@@ -5041,6 +5065,9 @@ function validateForm(ctx) {
     // รอบ 98 (เจ้าของ 2026-10-28): ใบรับรองแพทย์ทั่วไป (5 โรค/ขับขี่ · ctx.nCert > 0) ต้องใส่ HN เหมือนมี Lab — ชื่อไม่บังคับ
     // ฝั่งเว็บเท่านั้น (แถวเก่าในชีตไม่มี HN) · มี Lab ไม่มี nCert ใช้ด่าน "ใบรับรองแพทย์มี lab ต้องกรอก HN" ด้านล่างตามเดิม
     msg = 'ใบรับรองแพทย์ต้องกรอก HN';
+  } else if (!preM && mGroupFormOn_(ctx) && ctx.nCert > 0 && !ctx.patientName) {
+    // รอบ 118 (เจ้าของ 2026-11-09): ใบรับรองแพทย์ทั่วไปต้องมี คิว + HN + ชื่อ-สกุล — แทนข้อ "ชื่อไม่บังคับ" ของรอบ 98 · ฝั่งเว็บเท่านั้น เหตุผลเดียวกับด่าน HN
+    msg = 'ใบรับรองแพทย์ต้องกรอกชื่อ-สกุล';
   } else if (!preM && isPelvicOnlyProgram_(ctx.program) && String(ctx.queue || '').trim() && !mQueueNum_(ctx.queue) &&
              !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
     // รอบ 117 (เจ้าของ 2026-11-08): ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น — ยกเว้นกติการอบ 101 (คิว C) เฉพาะโปรแกรมนี้ · คิวว่างให้ checkupMissing จับตามเดิม
@@ -7174,6 +7201,7 @@ function drawTodayList_(records, dateStr) {
 }
 
 function onEditRecordClick(recordId, src) {
+  if (!dqCanRecord()) return; // รอบ 118: ดูรายการได้โดยไม่เลือกจุด แต่แก้ไขต้องเลือกจุด+ชื่อผู้บันทึกก่อน
   // รอบ 34 (2026-09-30) W3 (ข้อ 2): รายการนี้กำลังมีการแก้ไข (pending/failed) ค้างอยู่ในคิวบันทึกเบื้องหลังอยู่แล้ว
   // ⇒ ห้ามเปิดโมดัลแก้ไขซ้อนอีกชุด (จะสร้างคำขอ edit 2 ชุดชนกัน) — แทนที่ด่านเดิม `if (STATE.saving)` ที่กันทุกแถว
   // แบบเหมาทั้งบอร์ด (ไม่จำเพาะแถว) ด้วยด่านที่เจาะจงแค่ recordId นี้ (ปุ่ม "แก้แล้วบันทึกใหม่" ของรายการเดียวกันเอง
@@ -7273,13 +7301,7 @@ function loadTodayViewRun_(isRetry) {
     setRefreshHint('todayRefreshHint', 'none');
     return;
   }
-  if (!STATE.point) {
-    TODAY_VIEW_SEQ++;
-    var wrapNp = qs('todayList');
-    if (wrapNp) wrapNp.innerHTML = '<p class="muted">เลือกจุดบริการก่อน</p>';
-    setRefreshHint('todayRefreshHint', 'none');
-    return;
-  }
+  // รอบ 118 (เจ้าของ 2026-11-09): เลิกด่าน "เลือกจุดบริการก่อน" — รายการรายวันเห็นทุกจุด (allPoints=true) ดูได้โดยไม่ต้องเลือกจุด · แก้ไข/ยกเลิกยังต้องเลือกจุด+ชื่อ (dqCanRecord)
   var dateStr = TODAY_VIEW_DATE;
   var key = STATE.point + '|' + dateStr;
   // คำขอคีย์เดียวกันกำลังรอคำตอบอยู่ (เช่น เปลี่ยนจุด + เปิดหน้าพร้อมกัน) ⇒ ไม่ยิงซ้อน — คำตอบของตัวเดิมจะมาวาดเอง
@@ -7648,17 +7670,7 @@ function onQcaClick_(e) {
 }
 
 function loadTodayRun_(isRetry) {
-  // รอบ 72: ยังไม่เลือกจุดบริการ ⇒ ไม่ยิง today (เดิมยิง point ว่างแล้วได้ "ไม่มีบันทึก") · ทิ้ง prefetch ที่ค้าง (ถ้ามี) ด้วย
-  if (!STATE.point) {
-    TODAY_PREFETCH = null;
-    TODAY_LOAD_SEQ++;
-    if (isViewingToday_()) { // รอบ 74: ดูวันอื่นอยู่ ⇒ จอเป็นของ loadTodayViewRun_
-      var wrapNp = qs('todayList');
-      if (wrapNp) wrapNp.innerHTML = '<p class="muted">เลือกจุดบริการก่อน</p>';
-      setRefreshHint('todayRefreshHint', 'none');
-    }
-    return;
-  }
+  // รอบ 118 (แทนรอบ 72): เลิกด่าน "ยังไม่เลือกจุด ⇒ ไม่ยิง today" เพราะ todayAllPointsFor_() คืน true ทุกจุด (allPoints=true) — เซิร์ฟเวอร์ไม่ใช้ point
   var seq = ++TODAY_LOAD_SEQ;
   var dateStr = todayStr();
   var key = STATE.point + '|' + dateStr;
@@ -7710,6 +7722,7 @@ function loadTodayRun_(isRetry) {
 }
 
 function onCancelRecord(recordId, btnEl) {
+  if (!dqCanRecord()) return; // รอบ 118: รายการโผล่ได้โดยไม่เลือกจุด ⇒ ยกเลิกต้องเลือกจุด+ชื่อผู้บันทึกก่อน (ไม่ให้แถวถูกยกเลิกโดยไม่มีชื่อผู้กด)
   // รอบ 34 (2026-09-30) W3 (ข้อ 2): แถวนี้มีการแก้ไข (pending/failed) ค้างอยู่ในคิวบันทึกเบื้องหลัง — ห้ามยกเลิกซ้อน
   // (ถ้ายิง cancel ไปพร้อมกับ edit ที่ยังไม่รู้ผล เซิร์ฟเวอร์อาจแก้แถวที่ถูกยกเลิกไปแล้วเงียบ ๆ — ของใหม่ ไม่เคยกันมาก่อน)
   if (saveQueueEditPendingFor_(recordId)) { showToast('รายการนี้กำลังบันทึกการแก้ไขอยู่'); return; }
@@ -9506,7 +9519,7 @@ function preRegCardHtml_(pr) {
   return '<div class="card" id="reportPreRegCard"><h2>7 ลงล่วงหน้า</h2>' +
     '<div class="line">ลงไว้ <b>' + numOr0(pr.total) + '</b> · มาจริง <b>' + numOr0(pr.arrived) + '</b> · ไม่มา <b>' + numOr0(pr.noShow) + '</b> · ยังรอ <b>' + numOr0(pr.waiting) + '</b></div>' +
     '<div class="line">มาจริง <b>' + escHtml(rate) + '</b></div>' +
-    '<div class="line">เฉลี่ยต่อวัน: ลงไว้ <b>' + numOr0(avg.registered).toFixed(1) + '</b> คน · มาจริง <b>' + numOr0(avg.arrived).toFixed(1) + '</b> คน</div>' +
+    '<div class="line">เฉลี่ยต่อวัน: ลงไว้ <b>' + numOr0(avg.registered).toFixed(1) + '</b> ราย · มาจริง <b>' + numOr0(avg.arrived).toFixed(1) + '</b> ราย</div>' +
     '</div>';
 }
 
@@ -9900,7 +9913,8 @@ function onSpBoardStatusClick(rec, stage) {
       renderSpBoardCards();
       renderSpBoardSwitchBar();
       renderSpPeopleCards(tabId);
-      showToast('❌ บันทึกไม่สำเร็จ: ' + (rec.patientName || 'ผู้รับบริการ') + ' — กดใหม่อีกครั้ง');
+      // รอบ 118: ถูกด่านเลือกจุด/ชื่อกัน ⇒ แสดงเหตุผลนั้น ไม่ทับด้วยข้อความทั่วไป
+      showToast((resp && resp.message === NEED_POINT_STAFF_MSG_) ? NEED_POINT_STAFF_MSG_ : ('❌ บันทึกไม่สำเร็จ: ' + (rec.patientName || 'ผู้รับบริการ') + ' — กดใหม่อีกครั้ง'));
     }
   });
 }
@@ -9977,7 +9991,8 @@ function onSpBoardDeleteClick(rec) {
         renderSpBoardCards();
         renderSpBoardSwitchBar();
         renderSpPeopleCards(tabId);
-        showToast('❌ ลบไม่สำเร็จ: ' + rec.patientName + ' — กดใหม่อีกครั้ง');
+        // รอบ 118: ถูกด่านเลือกจุด/ชื่อกัน ⇒ แสดงเหตุผลนั้น ไม่ทับด้วยข้อความทั่วไป
+        showToast((resp && resp.message === NEED_POINT_STAFF_MSG_) ? NEED_POINT_STAFF_MSG_ : ('❌ ลบไม่สำเร็จ: ' + rec.patientName + ' — กดใหม่อีกครั้ง'));
       }
     });
     return;
@@ -10113,6 +10128,12 @@ function formatThaiDateShort(dateStr) {
 function cuChannelLabel_(rec) {
   if (rec && isPelvicOnlyProgram_(rec.program)) return shortDeliveryLabel(rec.pelvicMethod || '');
   return shortDeliveryLabel(rec && rec.deliveryMethod, rec && rec.pickupDate);
+}
+// รอบ 118 (เจ้าของ 2026-11-09): เฉพาะใบพิมพ์ "รายชื่อเก็บข้อมูล" (โหมด data) — เคสช่องทาง "รอรับ" ที่กดรับผลแล้ว แสดง "รอรับ(รับผลแล้ว)" · โหมดจอ/ใบเซ็นรับใช้ cuChannelLabel_ ตามเดิม
+function cuPrintChannelLabel_(rec) {
+  var method = (rec && isPelvicOnlyProgram_(rec.program)) ? rec.pelvicMethod : (rec && rec.deliveryMethod);
+  if (rec && rec.receivedDate && method === 'รอรับด้วยตนเอง') return 'รอรับ(รับผลแล้ว)';
+  return cuChannelLabel_(rec);
 }
 function shortDeliveryLabel(method, pickupDate) {
   if (!method) return '—';
@@ -11103,7 +11124,7 @@ function renderCheckupTable(records, dateStr) {
   var cuWide = cuData ? false : (CU_PRINT_MODE === 'sign' ? false : shownRows.some(cuRowHasDoctorOrConsult_));
   var cuCols = cuData ? 9 : (cuWide ? 10 : 8);
   var cuHeadCells = cuData
-    ? '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ตรวจมะเร็งปากมดลูก</th><th>ราคา</th><th>ช่องทางส่งผลตรวจสุขภาพ</th><th>ชื่อแพทย์</th><th>Consult</th>'
+    ? '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th>ตรวจมะเร็งปากมดลูก</th><th>ช่องทางการส่ง</th><th>ราคา</th><th>ช่องทางส่งผลตรวจสุขภาพ</th><th>Consult</th>'
     : '<th>คิว</th><th>HN</th><th>ชื่อ-สกุล</th><th>โปรแกรม</th><th class="cu-col-amt">ค่าบริการ</th><th>ตรวจมะเร็งปากมดลูก</th>' +
       '<th>ช่องทางส่งผลตรวจสุขภาพ</th>' + (cuWide ? '<th>ชื่อแพทย์</th><th>Consult</th>' : '') + '<th>เซ็นรับ</th>';
   var html = '<div class="scroll-x"><table class="report-table cu-table' + (cuData ? ' cu-table-data' : (cuWide ? ' cu-table-wide' : '')) + '"><thead><tr>' +
@@ -11136,9 +11157,11 @@ function renderCheckupTable(records, dateStr) {
         '<td>' + escHtml((rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '')) + '</td>' +
         '<td>' + escHtml(programDataLabel_(rec.program)) + '</td>' +
         '<td>' + (pelvicTested ? escHtml(pelvicTypeLabel(rec)) : '-') + '</td>' +
+        // รอบ 118 (เจ้าของ 2026-11-09): คอลัมน์ "ช่องทางการส่ง" = ช่องทางส่งผลตรวจภายใน (ตรวจแล้วยังไม่กรอก = '—' · ไม่ได้ตรวจ = '-') · ไม่มีคอลัมน์ชื่อแพทย์ในโหมดนี้ · Consult ว่าง = '-'
+        '<td>' + (pelvicTested ? escHtml(rec.pelvicMethod === DELIVERY_PICKUP_APPOINTMENT ? 'นัดรับ' : shortDeliveryLabel(rec.pelvicMethod || '')) : '-') + '</td>' +
         '<td class="cu-price-cell">' + money(amt) + '</td>' +
-        '<td>' + escHtml(cuChannelLabel_(rec)) + '</td>' +
-        '<td class="cu-doctor-cell">' + escHtml(cuDoctorCellText_(rec)) + '</td><td class="cu-consult-cell">' + escHtml(cuConsultCellText_(rec)) + '</td>' +
+        '<td>' + escHtml(cuPrintChannelLabel_(rec)) + '</td>' +
+        '<td class="cu-consult-cell">' + escHtml(cuConsultCellText_(rec) || '-') + '</td>' +
         '</tr>';
       return;
     }
@@ -11192,30 +11215,24 @@ function cuMeasureText_(text, fontFamily) {
   document.body.removeChild(sp);
   return w;
 }
-/* รอบ 103: คำนวณความกว้างของใบพิมพ์แบบ B (.cu-table-data) — ช่องชื่อ + ช่องชื่อแพทย์ แบ่งงบ (100 - 52)% ของความกว้างตาราง
-   ต้องการ = ข้อความยาวสุด (รวมหัว) + 6px + 2 mm · ชื่อต่ำสุด 25 mm · แพทย์ต่ำสุด 20 mm · เกินงบ ⇒ ลดตามสัดส่วน (ไม่ต่ำกว่าขั้นต่ำ) · เหลืองบ ⇒ คอลัมน์อื่นขยายตามสัดส่วน
+/* รอบ 103: คำนวณความกว้างของใบพิมพ์แบบ B (.cu-table-data) — รอบ 118 เหลือคำนวณช่องชื่อคอลัมน์เดียว งบ = (100 - 71)% ของความกว้างตาราง
+   ต้องการ = ข้อความยาวสุด (รวมหัว) + 6px + 2 mm · ชื่อต่ำสุด 25 mm · เกินงบ ⇒ ใช้งบเต็ม แล้วลดฟอนต์เฉพาะเซลล์ · เหลืองบ ⇒ คอลัมน์อื่นขยายตามสัดส่วน
    ข้อความที่ยังเกินช่อง ⇒ ลดฟอนต์เฉพาะเซลล์ทีละ 0.25pt ไม่ต่ำกว่า 6.5pt · ไม่มีเซ็นรับ ⇒ ไม่ใช้ตัวกันเซ็นรับ 30 mm */
-var CU_DATA_OTHER_PCT = [5, 8, 7, 9, 7, 10, 6]; // คิว HN โปรแกรม มะเร็ง ราคา ช่องทาง Consult (รวม 52)
-var CU_DATA_NAME_MIN_MM = 25, CU_DATA_DOC_MIN_MM = 20;
+var CU_DATA_OTHER_PCT = [5, 8, 7, 11, 11, 8, 14, 7]; // คิว HN โปรแกรม มะเร็ง ช่องทางการส่ง ราคา ช่องทางสุขภาพ Consult (รวม 71)
+var CU_DATA_NAME_MIN_MM = 25;
 function cuFitDataForPrint_(table) {
   var nameCells = table.querySelectorAll('tbody tr:not(.sp-total) td:nth-child(3)');
-  var docCells = table.querySelectorAll('tbody tr:not(.sp-total) td.cu-doctor-cell');
   var headTh = table.querySelectorAll('thead th');
   if (headTh.length !== 9) return;
   var inPrint = false, i, k;
   try { inPrint = !!(window.matchMedia && window.matchMedia('print').matches); } catch (e) { inPrint = false; }
   var family = window.getComputedStyle(headTh[2]).fontFamily;
   var mmPx = 96 / 25.4;
-  var nameNat = [], docNat = [], wName = cuMeasureText_(headTh[2].textContent, family), wDoc = cuMeasureText_(headTh[7].textContent, family), w;
+  var nameNat = [], wName = cuMeasureText_(headTh[2].textContent, family), w;
   for (i = 0; i < nameCells.length; i++) {
     nameCells[i].style.fontSize = '';
     w = nameCells[i].textContent ? cuMeasureText_(nameCells[i].textContent, family) : 0;
     nameNat.push(w); if (w > wName) wName = w;
-  }
-  for (i = 0; i < docCells.length; i++) {
-    docCells[i].style.fontSize = '';
-    w = docCells[i].textContent ? cuMeasureText_(docCells[i].textContent, family) : 0;
-    docNat.push(w); if (w > wDoc) wDoc = w;
   }
   var tableW = inPrint ? table.getBoundingClientRect().width : 0;
   if (!tableW) {
@@ -11226,21 +11243,14 @@ function cuFitDataForPrint_(table) {
   var sumOther = 0;
   for (k = 0; k < CU_DATA_OTHER_PCT.length; k++) sumOther += CU_DATA_OTHER_PCT[k];
   var budget = tableW * (100 - sumOther) / 100;
-  var minN = CU_DATA_NAME_MIN_MM * mmPx, minD = CU_DATA_DOC_MIN_MM * mmPx;
-  var needN = Math.max(minN, wName + 6 + CU_NAME_PAD_MM * mmPx), needD = Math.max(minD, wDoc + 6 + CU_NAME_PAD_MM * mmPx);
-  var namePx = needN, docPx = needD;
-  if (needN + needD > budget) {
-    namePx = needN * budget / (needN + needD);
-    docPx = needD * budget / (needN + needD);
-    if (namePx < minN) { namePx = minN; docPx = budget - minN; }
-    if (docPx < minD) { docPx = minD; namePx = budget - minD; }
-    if (namePx < minN) namePx = minN;
-  }
-  var namePct = namePx / tableW * 100, docPct = docPx / tableW * 100, restPct = 100 - namePct - docPct, oi = 0;
-  // รอบ 112 (เจ้าของแจ้ง 2026-11-01): หัว "Consult" ตัว t ตกบรรทัด (ช่องได้แค่ ~11 mm) ⇒ ช่อง Consult ต้องกว้างพอให้หัวอยู่บรรทัดเดียว
-  // (วัดแบบตัวปกติ + เผื่อ 20% สำหรับตัวหนาของหัวตาราง) · ส่วนที่ขาดเอามาจากช่อง คิว + ราคา (ข้อความสั้น มีที่เหลือ) ตามสัดส่วน
-  // ไม่แตะช่องชื่อ/แพทย์ และไม่แตะหัวไทยยาว (โปรแกรม/มะเร็ง/ช่องทาง — ลองเอาจากทุกช่องแล้วหัว "ตรวจมะเร็งปากมดลูก" กลายเป็น 3 บรรทัด)
-  var cIdx = CU_DATA_OTHER_PCT.length - 1, donors = [0, 4]; // ดัชนีใน CU_DATA_OTHER_PCT: 0 = คิว · 4 = ราคา
+  var minN = CU_DATA_NAME_MIN_MM * mmPx;
+  var needN = Math.max(minN, wName + 6 + CU_NAME_PAD_MM * mmPx);
+  var namePx = needN;
+  if (needN > budget) namePx = Math.max(budget, minN);
+  var namePct = namePx / tableW * 100, restPct = 100 - namePct, oi = 0;
+  // รอบ 112 (เจ้าของแจ้ง 2026-11-01): หัว "Consult" ต้องอยู่บรรทัดเดียว ⇒ ช่อง Consult กว้างพอ (วัดแบบตัวปกติ + เผื่อ 20% สำหรับตัวหนาของหัวตาราง)
+  // ส่วนที่ขาดเอามาจากช่อง คิว + ราคา (ข้อความสั้น) ตามสัดส่วน · ไม่แตะช่องชื่อและหัวไทยยาว · รอบ 118: หัว Consult = headTh[8] · ดัชนีใน CU_DATA_OTHER_PCT: 0 = คิว · 5 = ราคา · 7 = Consult
+  var cIdx = CU_DATA_OTHER_PCT.length - 1, donors = [0, 5];
   var sharePct = CU_DATA_OTHER_PCT.map(function (p) { return restPct * p / sumOther; });
   var needCPct = (cuMeasureText_(headTh[8].textContent, family) * 1.2 + 6 + CU_NAME_PAD_MM * mmPx) / tableW * 100;
   var gap = needCPct - sharePct[cIdx];
@@ -11250,23 +11260,19 @@ function cuFitDataForPrint_(table) {
     sharePct[cIdx] = needCPct;
   }
   for (k = 0; k < headTh.length; k++) {
-    headTh[k].style.width = (k === 2 ? namePct : (k === 7 ? docPct : sharePct[oi++])).toFixed(3) + '%';
+    headTh[k].style.width = (k === 2 ? namePct : sharePct[oi++]).toFixed(3) + '%';
   }
-  var fit = function (cells, nat, px) {
-    var j, td, avail, pt;
-    for (j = 0; j < cells.length; j++) {
-      td = cells[j];
-      if (!nat[j]) continue;
-      avail = inPrint ? (td.clientWidth - 6) : (px - 6);
-      if (nat[j] <= avail) continue;
-      pt = CU_PRINT_BASE_PT;
-      while (pt > CU_PRINT_MIN_PT && nat[j] * (pt / CU_PRINT_BASE_PT) > avail) pt -= 0.25;
-      if (pt < CU_PRINT_MIN_PT) pt = CU_PRINT_MIN_PT;
-      td.style.fontSize = pt + 'pt';
-    }
-  };
-  fit(nameCells, nameNat, namePx);
-  fit(docCells, docNat, docPx);
+  var j, td, avail, pt;
+  for (j = 0; j < nameCells.length; j++) {
+    td = nameCells[j];
+    if (!nameNat[j]) continue;
+    avail = inPrint ? (td.clientWidth - 6) : (namePx - 6);
+    if (nameNat[j] <= avail) continue;
+    pt = CU_PRINT_BASE_PT;
+    while (pt > CU_PRINT_MIN_PT && nameNat[j] * (pt / CU_PRINT_BASE_PT) > avail) pt -= 0.25;
+    if (pt < CU_PRINT_MIN_PT) pt = CU_PRINT_MIN_PT;
+    td.style.fontSize = pt + 'pt';
+  }
 }
 function cuFitNamesForPrint() {
   var dataTable = document.querySelector('#cuTableWrap table.cu-table.cu-table-data'); // รอบ 103: แบบ B ใช้ตัวคำนวณของตัวเอง
@@ -12259,7 +12265,8 @@ function bindCuNoteEvents(container) {
       });
     }
     if (receivedBtn) {
-      receivedBtn.addEventListener('click', function () { toggleReceivedBtn(receivedBtn, receivedPrint, 'รับผลตรวจสุขภาพแล้ว', trySave); });
+      // รอบ 118: ยังไม่เลือกจุด/ชื่อ ⇒ ไม่สลับปุ่ม (ไม่งั้นปุ่มค้าง ✓ ทั้งที่ apiCall ถูกด่านกัน)
+      receivedBtn.addEventListener('click', function () { if (!dqCanRecord()) return; toggleReceivedBtn(receivedBtn, receivedPrint, 'รับผลตรวจสุขภาพแล้ว', trySave); });
     }
     if (pelvicMethodSelect) {
       pelvicMethodSelect.addEventListener('change', trySave);
@@ -12328,7 +12335,7 @@ function renderCheckupList(records, dateStr) {
   // — หน้าตาอย่างเดียว เนื้อหาข้างใน (recordItemHtml + cuNoteHtml) เหมือนเดิมทุกประการ · เรียงตาม compareByQueue แล้ว (checkupTableRows)
   shownRows.forEach(function (rec, idx) {
     var progLabel = rec.program ? escHtml(programShortLabel_(rec.program)) : '';
-    // รอบ 31B ข้อ 1: แถบหัวกล่องใช้สีประจำโปรแกรมของรอบ 6 (programColorClass — ว่างสำหรับ pea · 1sun ขาว · 2sun ฟ้า)
+    // รอบ 31B ข้อ 1: แถบหัวกล่องใช้สีประจำโปรแกรมของรอบ 6 (programColorClass — ว่างสำหรับ pea · 1sun เหลือง (2026-11-09) · 2sun ฟ้า)
     var headClass = 'cu-person-head' + (programColorClass(rec.program) ? (' ' + programColorClass(rec.program)) : '');
     // รอบ 36 (W2, เจ้าของสั่งตามภาพหน้าจอ): ชื่อในแถบหัว = คำนำหน้า + ชื่อ (เว้นวรรค 1 ช่อง ไม่มีคำนำหน้า ⇒ ชื่อเฉย ๆ)
     // แพตเทิร์นเดียวกับที่ใช้อยู่แล้วในตาราง/ใบพิมพ์ (renderCheckupTable/printCheckupTable) — ผ่าน escHtml เสมอ
@@ -13030,7 +13037,7 @@ function renderReport(summary, period) {
     html += '<div class="line">' + periodLine + '</div>';
   }
   // รอบ 30 (W1): ป้ายยอดรวมเป็น "ยอดค่าบริการรวมทั้งหมด" ทุกโหมด (ตามภาพเจ้าของ แทน "ยอดเงินรวมทั้งเดือน/วัน" เดิม)
-  html += '<div class="line">จำนวนผู้รับบริการรวม: <b>' + escHtml(numOr0(summary.totalPeople)) + '</b> คน</div>' +
+  html += '<div class="line">จำนวนผู้รับบริการรวม: <b>' + escHtml(numOr0(summary.totalPeople)) + '</b> ราย</div>' +
     '<div class="line">ยอดค่าบริการรวมทั้งหมด: <b>' + escHtml(money(numOr0(summary.grandTotal))) + '</b> บาท</div>' +
     '</div>';
 
@@ -13067,8 +13074,8 @@ function renderReport(summary, period) {
 
   // รอบ 22: สรุปยอด "จันทร์-ศุกร์" กับ "วันอาทิตย์" แยกกัน — ถ้า backend ยังไม่มี bySet (ยังไม่ deploy) ต้องไม่ crash/ไม่โชว์เลข 0 ปลอม ๆ
   if (checkup.bySet && checkup.bySet.week && checkup.bySet.sun) {
-    html += '<div class="line" style="margin-top:8px;">จันทร์–ศุกร์: ' + numOr0(checkup.bySet.week.people) + ' คน · ' + money(numOr0(checkup.bySet.week.money)) + ' บาท</div>' +
-      '<div class="line">วันอาทิตย์: ' + numOr0(checkup.bySet.sun.people) + ' คน · ' + money(numOr0(checkup.bySet.sun.money)) + ' บาท</div>';
+    html += '<div class="line" style="margin-top:8px;">จันทร์–ศุกร์: ' + numOr0(checkup.bySet.week.people) + ' ราย · ' + money(numOr0(checkup.bySet.week.money)) + ' บาท</div>' +
+      '<div class="line">วันอาทิตย์: ' + numOr0(checkup.bySet.sun.people) + ' ราย · ' + money(numOr0(checkup.bySet.sun.money)) + ' บาท</div>';
   }
 
   // รอบ 26 (2026-09-22): "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก" ในข้อความที่ผู้ใช้เห็น — แยกตามชนิด
@@ -13126,7 +13133,7 @@ function renderReport(summary, period) {
   // รอบ 115 (S5): บรรทัดจำนวนผู้รับวัคซีนรวม (นับคน/แถว ไม่ใช่เข็ม) — เซิร์ฟเวอร์รุ่นเก่าไม่มี people ⇒ ไม่แสดง (ไม่โชว์ 0 ปลอม)
   var vaccinePeople = (vaccine.people && typeof vaccine.people === 'object') ? vaccine.people : null;
   var vaccinePeopleLine = vaccinePeople
-    ? '<div class="line">จำนวนผู้รับวัคซีนรวม: <b>' + escHtml(String(numOr0(vaccinePeople.total))) + '</b> คน (ฉีดพร้อมตรวจสุขภาพ ' + escHtml(String(numOr0(vaccinePeople.withCheckup))) + ' · ฉีดวัคซีนอย่างเดียว ' + escHtml(String(numOr0(vaccinePeople.alone))) + ')</div>'
+    ? '<div class="line">จำนวนผู้รับวัคซีนรวม: <b>' + escHtml(String(numOr0(vaccinePeople.total))) + '</b> ราย (ฉีดพร้อมตรวจสุขภาพ ' + escHtml(String(numOr0(vaccinePeople.withCheckup))) + ' · ฉีดวัคซีนอย่างเดียว ' + escHtml(String(numOr0(vaccinePeople.alone))) + ')</div>'
     : '';
   html += '</tbody></table></div>' + vaccinePeopleLine + '<div class="line" style="margin-top:8px;">ยอดค่าบริการรวมทั้งหมด: ' + money(numOr0(vaccine.money)) + ' บาท</div></div>';
 
@@ -13139,9 +13146,9 @@ function renderReport(summary, period) {
   // รอบ 91 (เจ้าของตัดสิน ก): ยอด DF พบแพทย์ฟังผล Lab (medcert.labFollowupMoney) นับในบรรทัด "มี Lab" ไม่ใช่ "ทั่วไป" (เหมือนแถบสรุปรายวัน) · เซิร์ฟเวอร์รุ่นเก่าไม่มีคีย์ ⇒ numOr0 = 0 พฤติกรรมเดิม
   var medcertGenMoney = numOr0(medcert.money) - numOr0(medcert.labMoney) - numOr0(medcert.labFollowupMoney);
   html += '<div class="card"><h2>4 ใบรับรองแพทย์</h2>' +
-    '<div class="line">ใบรับรองแพทย์ทั่วไป: ' + medcertGenCount + ' ใบ</div>' +
-    '<div class="line">ค่าบริการใบรับรองแพทย์ทั่วไป: ' + money(medcertGenMoney) + ' บาท</div>' +
-    '<div class="line">ค่าบริการใบรับรองแพทย์มี Lab: ' + money(numOr0(medcert.labMoney) + numOr0(medcert.labFollowupMoney)) + ' บาท</div>' +
+    // รอบ 118 (เจ้าของ 2026-11-09): รวมเป็นหมวดละบรรทัด + จำนวนราย (genPeople/labPeople จากเซิร์ฟเวอร์)
+    '<div class="line">ใบรับรองแพทย์ทั่วไป : ' + medcertGenCount + ' ใบ , ' + numOr0(medcert.genPeople) + ' ราย , ค่าบริการใบรับรองแพทย์ทั่วไป ' + money(medcertGenMoney) + ' บาท</div>' +
+    '<div class="line">ใบรับรองแพทย์มี Lab : ' + numOr0(medcert.labPeople) + ' ราย , ค่าบริการใบรับรองแพทย์มี Lab ' + money(numOr0(medcert.labMoney) + numOr0(medcert.labFollowupMoney)) + ' บาท</div>' +
     '</div>';
 
   // 5 ส่งตรวจพิเศษ — summary.special.items (object map {id: {reg, prep, sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
@@ -13178,7 +13185,7 @@ function renderReport(summary, period) {
       methodRowsHtml += '<tr><td>' + escHtml(m) + '</td><td>' + bTotal + '</td><td>' + bDelivered + '</td><td>' + bPending + '</td></tr>';
     });
     html += '<div class="scroll-x"><table class="report-table"><thead><tr>' +
-      '<th>ช่องทาง</th><th>จำนวน (คน)</th><th>ส่งออก/รับแล้ว</th><th>ค้าง</th></tr></thead><tbody>' + methodRowsHtml +
+      '<th>ช่องทาง</th><th>จำนวน (ราย)</th><th>ส่งออก/รับแล้ว</th><th>ค้าง</th></tr></thead><tbody>' + methodRowsHtml +
       '<tr><td><strong>รวม</strong></td><td><strong>' + sumTotal + '</strong></td><td><strong>' + sumDelivered +
       '</strong></td><td><strong>' + sumPending + '</strong></td></tr></tbody></table></div>';
   }
@@ -13839,7 +13846,7 @@ function dqThaiDateText() {
 // ด่านเดิมของหน้า: ยังไม่เลือกจุดบริการ/ชื่อผู้บันทึก = บันทึกไม่ได้ (เหมือน validateForm())
 function dqCanRecord() {
   if (!STATE.point || !STATE.staffName) {
-    showToast('เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน');
+    showToast(NEED_POINT_STAFF_MSG_);
     return false;
   }
   return true;
