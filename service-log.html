@@ -1214,13 +1214,16 @@
   /* แถวเดียวกะทัดรัด (ไม่ใช่การ์ด): ดันฟอร์มลงน้อยที่สุด — แผงคิวบันทึกลอยล่างจอ (รอบ 34) ต้องไม่ทับช่อง HN บนมือถือ (test_round34_web 11a) */
   #serviceDateRow { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
   #serviceDateRow label.field-label { margin: 0; flex: 0 0 auto; white-space: nowrap; }
-  #serviceDateRow .thd-btn { flex: 1 1 auto; width: auto; min-width: 0; padding: 3px 10px; min-height: 34px; }
-  #serviceDateRow .btn { flex: 0 0 auto; min-height: 34px; padding: 3px 12px; }
+  #serviceDateRow .thd-btn { flex: 1 1 auto; width: auto; min-width: 0; padding: 3px 10px; min-height: 44px; } /* รอบ 119: ย้อนหลังได้ทุกจุด ⇒ แตะง่ายขึ้น ≥ 44px */
+  #serviceDateRow .btn { flex: 0 0 auto; min-height: 44px; padding: 3px 12px; }
   .pre-mode-bar {
     display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px;
     background: #FFF3E0; border: 2px solid #F57C00; color: #8A4B00; border-radius: 10px; padding: 10px 14px; font-weight: 700;
   }
   .pre-mode-bar[hidden] { display: none; }
+  /* รอบ 119: โหมดบันทึกย้อนหลัง — สีต่างจากล่วงหน้า (ส้ม) ให้มองออกทันทีว่าไม่ใช่วันนี้ */
+  .rec-backdate-tag { display: inline-block; margin: 0 6px; padding: 2px 8px; border-radius: 999px; background: #FDECEC; color: #8E1B1B; border: 1px solid #C62828; font-size: 13px; font-weight: 700; }
+  .pre-mode-bar.backdate { background: #FDECEC; border-color: #C62828; color: #8E1B1B; }
   /* โหมดล่วงหน้า: ซ่อนคิว (+ปุ่มแนะนำ ◀ ▶) · ช่องทางรับผล · นัดรับวันที่ — ค่าในช่องไม่ถูกแตะ แค่ไม่เข้า payload */
   #svcFormWrap.pre-mode #queueRow, #svcFormWrap.pre-mode #deliveryRow, #svcFormWrap.pre-mode #pickupDateWrap { display: none !important; }
   /* แผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ: จางลง + inert (กดไม่ได้ โฟกัสไม่ได้) แต่ไม่ซ่อน */
@@ -1608,7 +1611,7 @@
     <div class="pre-modal-head">
       <div id="pwTitle" class="pre-modal-title">อาจเป็นคนที่ลงล่วงหน้าไว้</div>
     </div>
-    <p class="muted" style="margin:6px 0;">มีรายการลงล่วงหน้าของวันนี้ที่ HN / ชื่อ / สกุล ตรงกับฟอร์มนี้ — ถ้าเป็นคนเดียวกันกด "ใช่ คนนี้" ระบบจะบันทึกตามปกติและผูกเป็น "มาแล้ว"</p>
+    <p class="muted" style="margin:6px 0;">มีรายการลงล่วงหน้าของ<span id="pwDay">วันนี้</span>ที่ HN / ชื่อ / สกุล ตรงกับฟอร์มนี้ — ถ้าเป็นคนเดียวกันกด "ใช่ คนนี้" ระบบจะบันทึกตามปกติและผูกเป็น "มาแล้ว"</p>
     <div id="pwList" class="pre-cand-list"></div>
     <div class="row" style="margin-top:12px;">
       <button type="button" class="btn secondary" id="pwNew">ไม่ใช่ — บันทึกใหม่</button>
@@ -1712,7 +1715,7 @@
            วันที่ > วันนี้ ⇒ โหมดล่วงหน้า (ดู isPreMode_/applyPreMode_) · อยู่นอก #logForm โดยตั้งใจ: reset()/ร่างที่เก็บ-คืนค่าฟอร์ม/หน้าต่างแก้ไข ไม่แตะช่องนี้ -->
       <div class="no-print" id="serviceDateRow">
         <label class="field-label" for="serviceDate">วันที่รับบริการ</label>
-        <input type="date" id="serviceDate">
+        <input type="date" id="serviceDate" data-closed-days="backdate">
         <button type="button" class="btn secondary small" id="btnServiceDateToday">วันนี้</button>
       </div>
       <div id="preModeBar" class="pre-mode-bar no-print" hidden role="status">
@@ -3459,15 +3462,17 @@ function maybeSuggestNextCheckupQueue() {
     // (บันทึกไม่รอ network แล้ว ⇒ ตอนแนะนำคิวถัดไป แถวที่เพิ่งกดบันทึกไปอาจยังไม่มาถึง LAST_TODAY_RECORDS)
     // ไม่งั้นจะเสนอเลขคิวซ้ำกับคนที่เพิ่งกดบันทึกไปเมื่อครู่ — suggestNextCheckupQueue() เองยังเป็น pure function เดิม
     // (ไม่แตะ ไม่งั้น test_round29_web.js ที่เรียกมันตรง ๆ ด้วย records ธรรมดาจะพัง) แค่ประกอบ records ที่ส่งเข้าไปให้ครบ
-    var combined = LAST_TODAY_RECORDS.slice();
+    // รอบ 119: formDayRecords_()/formDayStr_() = รายการ/วันของ "วันที่ฟอร์มจะลง" (ปกติ = วันนี้ เหมือนเดิม · ย้อนหลัง = วันที่เลือก)
+    var combined = formDayRecords_().slice();
     // รอบ 37 (W5, 2026-09-30): นับคิวจาก CU_CACHE.records ของวันนี้ด้วยถ้ามี (กันแนะนำคิวที่จุดอื่นใช้ไปแล้ว) —
     // ไม่แตะ suggestNextCheckupQueue() เอง (ยังเป็น pure function เดิม) แค่ประกอบ records ที่ส่งเข้าไปให้ครบขึ้นอีกแหล่ง
-    if (typeof CU_CACHE !== 'undefined' && CU_CACHE.records && CU_CACHE.key === todayStr()) {
+    if (typeof CU_CACHE !== 'undefined' && CU_CACHE.records && CU_CACHE.key === formDayStr_()) {
       combined = combined.concat(CU_CACHE.records);
     }
     (typeof SAVE_QUEUE !== 'undefined' ? SAVE_QUEUE : []).forEach(function (it) {
       // รอบ 38: 'checking' (เน็ตหลุดแล้วกำลังตรวจว่าลงชีตหรือยัง) ถือเป็นรายการค้างเหมือน pending ทุกที่
-      if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue) {
+      if (it.kind === 'log' && (it.status === 'pending' || it.status === 'checking' || it.status === 'failed') && it.payload && it.payload.queue &&
+          saveQueuePayloadDay_(it.payload) === formDayStr_()) {
         combined.push({ queue: it.payload.queue, status: '' });
       }
     });
@@ -5455,7 +5460,8 @@ function applyLogLocks() {
 
 function resetLogForm() {
   qs('logForm').reset();
-  setProgramSet(defaultProgramSet_(), { silent: true }); // รอบ 22 (2026-09-21): ล้างร่างแล้วกลับไปชุดโปรแกรมตามวันที่จริง
+  // รอบ 22 (2026-09-21): ล้างร่างแล้วกลับไปชุดโปรแกรมตามวันที่จริง · รอบ 119: ช่องวันที่ย้อนหลังค้างอยู่ ⇒ ตามวันนั้น (B6)
+  setProgramSet((!STATE.preEditId && serviceDateValue_() < todayStr()) ? programSetForDay_(serviceDateValue_()) : defaultProgramSet_(), { silent: true });
   // ก้อน C (2026-09-21, เจ้าของสั่ง): ล้างร่างแล้วต้องไม่มีตัวไหนถูกเลือกเลย (ห้ามมีค่าตั้งต้นเป็น 'no' อีกต่อไป)
   // logForm.reset() ข้างบนพอแล้วจริง ๆ (ไม่มี attribute checked ค้างในไฟล์ HTML แล้วหลังก้อน C1) แต่เขียนชัด ๆ ไว้กันพลาด
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = false; });
@@ -5549,11 +5555,28 @@ function captureFormDraft_() {
   });
   data.__labFree = !!STATE.labFollowupFree; // รอบ 108: ปุ่ม 'ไม่มีค่าใช้จ่าย' เป็นสถานะใน STATE (ไม่ใช่ input) ต้องจำไปกับร่างด้วย
   data.__progSet = STATE.progSet; // ชุดโปรแกรม (week/sun) ต้องคืนก่อนค่า radio — setProgramSet() ปลดติ๊กปุ่มของชุดที่ซ่อน
+  // รอบ 119: ช่อง #serviceDate อยู่นอก #logForm ⇒ ร่างต้องจำวันย้อนหลังเอง ('' = ไม่ใช่โหมดย้อนหลัง) — "แก้แล้วบันทึกใหม่" จากรายการล้มเหลวได้วันเดิมกลับมา
+  data.__backdate = isBackdateMode_() ? serviceDateValue_() : '';
   return data;
 }
 function restoreFormDraft_(data) {
   var form = qs('logForm');
   if (!form || !data) return;
+  // รอบ 119: คืนวันย้อนหลังก่อนชุดโปรแกรม/radio โปรแกรม · วันยังอยู่ในกติกา ⇒ ตั้งกลับ · นอกกติกาหรือร่างไม่ใช่ย้อนหลัง แต่ตอนนี้เป็นย้อนหลัง ⇒ วันนี้
+  if (Object.prototype.hasOwnProperty.call(data, '__backdate') && !STATE.preEditId) {
+    var bdEl = qs('serviceDate');
+    if (bdEl) {
+      var bdWant = null;
+      if (data.__backdate && backdateAllowed_(data.__backdate)) bdWant = data.__backdate;
+      else if (isBackdateMode_()) bdWant = todayStr();
+      if (bdWant !== null && bdEl.value !== bdWant) {
+        bdEl.value = bdWant;
+        STATE.svcDayPrev = bdWant;
+        if (typeof loadBackdateDay_ === 'function') loadBackdateDay_();
+        if (typeof hoFutureEnsure_ === 'function') hoFutureEnsure_();
+      }
+    }
+  }
   // ⚠ คืนชุดโปรแกรมก่อน ไม่งั้น radio โปรแกรมของร่างถูกติ๊กทั้งที่ปุ่มถูกซ่อน (ค่าที่มองไม่เห็นหลุดไปกับ payload)
   if (data.__progSet) setProgramSet(data.__progSet, { silent: true });
   var els = form.querySelectorAll('input, select, textarea');
@@ -5861,9 +5884,11 @@ function normDupName_(v) { return String(v || '').trim().replace(/\s+/g, ' '); }
 
 // ข้อความ confirm รวมแถวซ้ำ — ใช้ร่วมกันทั้ง 2 จุด: (1) เช็คในเครื่องจาก LAST_TODAY_RECORDS (จุดบริการตัวเอง)
 // (2) เซิร์ฟเวอร์ตอบ code:'duplicate' (ซ้ำกับจุดอื่นที่ LAST_TODAY_RECORDS มองไม่เห็น — ใส่ชื่อจุดต่อท้ายให้ชัดเจนขึ้น)
+// รอบ 119: ข้อความซ้ำต้องบอกวันที่ฟอร์มจะลงจริง (ย้อนหลังเทียบกับวันที่เลือก ไม่ใช่วันนี้)
+function formDayWord_() { return isBackdateMode_() ? ('วันที่ ' + formatThaiDate(serviceDateValue_())) : 'วันนี้'; }
 function dupMergeConfirmMsg_(label, point, time) {
   var where = point ? (' (' + point + ' เวลา ' + (time || '') + ')') : ('เวลา ' + (time || ''));
-  return label + ' บันทึกไว้แล้ววันนี้' + where + ' — บันทึกเป็นแถวใหม่ไม่ได้\n\n' +
+  return label + ' บันทึกไว้แล้ว' + formDayWord_() + where + ' — บันทึกเป็นแถวใหม่ไม่ได้\n\n' +
     'ตกลง = รวมเข้าแถวเดิม แล้วกด "บันทึกการแก้ไข"\nยกเลิก = กลับไปแก้ฟอร์ม';
 }
 
@@ -5924,8 +5949,8 @@ function findQueueDupInBrowser_(queueKey, excludeId, selfHn, selfName) {
     return hnMatch || nameMatch;
   }
 
-  var records = LAST_TODAY_RECORDS.slice();
-  if (CU_CACHE.records && CU_CACHE.key === todayStr()) {
+  var records = formDayRecords_().slice(); // รอบ 119: ปกติ = LAST_TODAY_RECORDS เดิม · ย้อนหลัง = รายการของวันที่เลือก
+  if (CU_CACHE.records && CU_CACHE.key === formDayStr_()) {
     records = records.concat(CU_CACHE.records);
   }
   for (var i = 0; i < records.length; i++) {
@@ -5942,6 +5967,7 @@ function findQueueDupInBrowser_(queueKey, excludeId, selfHn, selfName) {
     if (it.kind !== 'log') continue;
     if (it.status !== 'pending' && it.status !== 'checking' && it.status !== 'failed') continue; // รอบ 38: checking = ค้างเหมือน pending
     var p = it.payload || {};
+    if (saveQueuePayloadDay_(p) !== formDayStr_()) continue; // รอบ 119: นับเฉพาะรายการที่ลงวันเดียวกับฟอร์ม
     if (queueDupKey_(p.queue) !== queueKey) continue;
     if (isSamePerson(p.patientName, p.patientHn)) continue;
     return { queueText: p.queue, point: '', time: '', who: queueDupPersonLabel_(p.patientName, p.patientHn), pending: true };
@@ -5951,7 +5977,7 @@ function findQueueDupInBrowser_(queueKey, excludeId, selfHn, selfName) {
 // ข้อความบล็อกคิวซ้ำ — รายการที่ยังไม่มีเวลา (กำลังบันทึกอยู่ในคิวเบื้องหลัง) ⇒ "กำลังบันทึก" แทนจุด/เวลา (SPEC ข้อ 3)
 function queueDupMessage_(dup) {
   var whereText = dup.pending ? 'กำลังบันทึก' : (dup.point + ' เวลา ' + dup.time);
-  return 'คิว ' + dup.queueText + ' ใช้ไปแล้ววันนี้ (' + whereText + ' · ' + dup.who + ') — เลือกคิวอื่น';
+  return 'คิว ' + dup.queueText + ' ใช้ไปแล้ว' + formDayWord_() + ' (' + whereText + ' · ' + dup.who + ') — เลือกคิวอื่น';
 }
 // โหมดแก้ไข: ตรวจเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถว (EDIT_MODAL.originalRec.queue) — กันแถวเก่าที่คิวซ้ำอยู่แล้ว
 // ก่อนรอบนี้กลายเป็นแถวที่แก้ไขไม่ได้ (แพตเทิร์นเดียวกับ HN/ชื่อฝั่งเซิร์ฟเวอร์)
@@ -6063,6 +6089,7 @@ function saveQueueFindLogDup_(normHn, normName) {
     if (it.kind !== 'log') continue;
     if (it.status !== 'pending' && it.status !== 'checking' && it.status !== 'failed') continue; // รอบ 38: checking = ค้างเหมือน pending
     var p = it.payload || {};
+    if (saveQueuePayloadDay_(p) !== formDayStr_()) continue; // รอบ 119: นับเฉพาะรายการที่ลงวันเดียวกับฟอร์ม
     var hnMatch = !!normHn && normDupHn_(p.patientHn) === normHn;
     var nameMatch = !!normName && normDupName_(p.patientName) === normName;
     if (hnMatch || nameMatch) return it;
@@ -6365,7 +6392,8 @@ function onSubmitLog(e) {
   // รอบ 84 (W4): มี STATE.arrivePreId (แตะเลือกจากช่อง 🔎) ⇒ ข้ามหน้าต่างเตือนนี้ — แนบ preId ตรง ๆ ด้านล่าง
   if (!STATE.editingId && !STATE.arrivePreId && !(e && e.preDecided) && typeof preCandidatesForForm_ === 'function' && isCheckupOn()) {
     var preCands = preCandidatesForForm_();
-    if (preCands.length) {
+    // รอบ 119 (L1): HN/ชื่อตรงครบเพียงรายเดียว ⇒ ข้ามกล่องถาม — เซิร์ฟเวอร์ผูกนัดอัตโนมัติให้ตอนบันทึก (แทนกล่องรอบ 81 เฉพาะกรณีตรงครบ)
+    if (preCands.length && !preAutoMatch_(preListForForm_(), formDayStr_(), (qs('patientHn').value || '').trim(), (qs('patientName').value || '').trim())) {
       openPreWarn_(preCands, function (chosenPreId) {
         onSubmitLog({ preventDefault: function () {}, preDecided: true, preId: chosenPreId || '' });
       });
@@ -6439,8 +6467,9 @@ function onSubmitLog(e) {
     var normPatientName = normDupName_(patientName);
     var existingTodayRec = null;
     var matchedByHn = false;
-    for (var mi = 0; mi < LAST_TODAY_RECORDS.length; mi++) {
-      var mrec = LAST_TODAY_RECORDS[mi];
+    var dayRecs = formDayRecords_(); // รอบ 119: ย้อนหลัง = รายการของวันที่เลือก (คนซ้ำเทียบกับวันที่จะลง)
+    for (var mi = 0; mi < dayRecs.length; mi++) {
+      var mrec = dayRecs[mi];
       if (mrec.status === 'ยกเลิก') continue;
       var hnMatch = !!normPatientHn && normDupHn_(mrec.patientHn) === normPatientHn;
       var nameMatch = !!normPatientName && normDupName_(mrec.patientName) === normPatientName;
@@ -6463,6 +6492,10 @@ function onSubmitLog(e) {
       return;
     }
   }
+
+  // รอบ 119 (B3/B4): บันทึกย้อนหลัง ⇒ ยืนยันก่อนสร้าง payload — ยกเลิก = ไม่ยิง ไม่ล้างฟอร์ม · ข้ามเดือน ⇒ เตือนว่ายอดเดือนนั้นจะเปลี่ยน
+  var backdateDay = (!isEdit && isBackdateMode_()) ? serviceDateValue_() : '';
+  if (backdateDay && !window.confirm(backdateConfirmMsg_(backdateDay))) return;
 
   var payload = {
     staffKey: STATE.staffKey,
@@ -6498,6 +6531,8 @@ function onSubmitLog(e) {
   if (isEdit) payload.recordId = STATE.editingId;
   if (!isEdit && e && e.preId) payload.preId = e.preId; // รอบ 81 (W6): "ใช่ คนนี้"
   else if (!isEdit && STATE.arrivePreId) payload.preId = STATE.arrivePreId; // รอบ 84 (W4): คนนัดที่เลือกจากช่อง 🔎 (resetLogForm ท้ายฟังก์ชันล้างให้เอง)
+  if (!isEdit && e && e.preDecided && !e.preId) payload.noAutoLink = true; // รอบ 119: ตอบ "ไม่ใช่คนนี้" ในกล่องเตือน ⇒ เซิร์ฟเวอร์ไม่ผูกอัตโนมัติ
+  if (backdateDay) payload.serviceDate = backdateDay; // รอบ 119: เฉพาะ !isEdit && ย้อนหลัง · เซิร์ฟเวอร์ตรวจช่วง/วันเสาร์เองอีกชั้น
   // รอบ 38 (2026-10-01) W2: log ทุกรายการแนบ clientReqId (สร้างตอนขึ้นคิว ไม่ใช่ตอนยิง ⇒ "ส่งอีกครั้ง" ใช้รหัสเดิม) เซิร์ฟเวอร์ใช้กัน
   // บันทึกซ้ำเมื่อเน็ตหลุดแต่แถวลงชีตไปแล้ว + ตอบ logStatus · edit ไม่ต้องส่ง (เขียนทับตาม payload อยู่แล้ว ส่งซ้ำไม่เกิดแถวใหม่)
   if (!isEdit) payload.clientReqId = newClientReqId_();
@@ -6538,6 +6573,7 @@ function onSubmitLog(e) {
   // closeEditModal_() แตะ EDIT_MODAL (เหมือนเดิม แค่ย้ายมาทำทันทีแทนรอ resp ตอบ)
   var wasModalEdit = isEdit && EDIT_MODAL.open;
   resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
+  backdateAfterSave_(); // รอบ 119: บันทึกย้อนหลังแล้วช่องวันที่กลับเป็นวันนี้ (ปลอดภัยกว่าค้างวันเก่า) · payload ในคิวคงวันที่เลือกไว้
   if (wasModalEdit) {
     // savedRecord: null — ยังไม่รู้ผลจากเซิร์ฟเวอร์ ⇒ closeEditModal_() จะไม่โชว์ "✓ บันทึกให้..."/เลื่อนจอ/ไฮไลต์
     // ตอนนี้ (ของจริงเกิดทีหลังใน .then() ข้างล่างเมื่อรู้ผลแล้ว — ไม่ใช่ที่นี่)
@@ -6588,6 +6624,7 @@ function saveQueueMarkFailed_(queued, msg, canResend) {
 function saveQueueFinishFound_(qid, resp) {
   if (saveQueueFind_(qid)) { saveQueueRemove_(qid); renderSaveQueuePanel_(); }
   showToast('✔ บันทึกสำเร็จ (ตรวจแล้วว่าลงชีตแล้ว)');
+  refreshBackdateDay_(); // รอบ 119: เน็ตหลุดแต่ลงชีตแล้ว ⇒ รายการของวันที่เลือกต้องเห็นแถวนี้
   if (resp.record) applySavedRecord(resp.record); else loadToday();
 }
 
@@ -6660,7 +6697,9 @@ function sendQueuedSave_(qid) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
         renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
-      if (!isEdit && payload.preId && typeof reloadPreAfterAction_ === 'function') reloadPreAfterAction_(); // รอบ 81 (W6): log+preId สำเร็จ ⇒ แถวรอมาถูกผูกเป็น 'มาแล้ว' — โหลด PRE_TODAY/การ์ดใหม่
+      if (!isEdit && payload.serviceDate && typeof invalidateBackdateDay_ === 'function') invalidateBackdateDay_(); // รอบ 119: เพิ่มแถวในวันนั้นแล้ว ⇒ แคชรายการของวันที่เลือกเก่า
+      // รอบ 81 (W6): log+preId สำเร็จ ⇒ แถวรอมาถูกผูกเป็น 'มาแล้ว' — โหลด PRE_TODAY/การ์ดใหม่ · รอบ 119: เซิร์ฟเวอร์ผูกอัตโนมัติ (resp.pre) ก็โหลดใหม่เช่นกัน
+      if (!isEdit && (payload.preId || resp.pre) && typeof reloadPreAfterAction_ === 'function') reloadPreAfterAction_();
       if (isEdit) refreshPendingAfterEdit_(); // รอบ 75: แก้ไขสำเร็จ (เช่น เปลี่ยนช่องทางรับผล) ⇒ ถ้าอยู่หน้า "ติดตามผล" โหลด pending ใหม่
     } else if (resp && resp.networkError && queued && !isEdit && payload.clientReqId) {
       // รอบ 38 W3: log + เน็ตหลุด ⇒ สถานะ 'checking' แล้วถาม logStatus เองสูงสุด 3 ครั้ง (ไม่ loadToday() ตอนนี้ — เน็ตหลุดอยู่
@@ -7076,6 +7115,11 @@ function recordMatchesHn(rec, q) {
 // เจ้าของสั่ง 2026-09-13: แยกมาร์กอัปการ์ด .record-item ออกมาเป็นฟังก์ชันกลาง เพื่อให้มุมมองที่ 3
 // "แบบรายการ (แก้ไขได้)" ของหน้ารายชื่อตรวจสุขภาพ (renderCheckupList) ใช้ร่วมกับหน้า "รายการวันนี้" ได้
 // ⚠ ห้ามเปลี่ยนชื่อคลาส/attribute ในนี้ — renderTodayList และ renderCheckupList พึ่ง data-edit-id/data-record-id เดียวกัน
+// รอบ 119 (B7): วันของ "เวลาที่บันทึก" ≠ วันรับบริการ (ทั้งคู่มีค่า) ⇒ ป้าย 📝 บันทึกย้อนหลัง
+function recIsBackdated_(rec) {
+  var t = String((rec && rec.time) || '').slice(0, 10), d = String((rec && rec.date) || '');
+  return !!t && !!d && t !== d;
+}
 function recordItemHtml(rec, cancelled) {
   var detailParts = summarizeRecordParts(rec);
   var detailHtml = '';
@@ -7091,6 +7135,7 @@ function recordItemHtml(rec, cancelled) {
     '<div class="rec-body">' +
     '<div class="rec-head">' +
     '<span class="rec-time">' + escHtml(rec.time || '') + '</span>' +
+    (recIsBackdated_(rec) ? '<span class="rec-backdate-tag">📝 บันทึกย้อนหลัง</span>' : '') +
     '<span class="rec-total">' + escHtml(money(recordGrandTotal(rec))) + ' บาท</span>' +
     '</div>' +
     detailHtml +
@@ -7475,8 +7520,8 @@ function qcRender_() {
   rows.forEach(function (r) {
     var q = escHtml(r.queue || ('M' + r.n));
     var attrs = ' data-qc-n="' + escHtml(String(r.n)) + '" data-qc-state="' + escHtml(String(r.state)) + '"';
-    var recBtn = isToday
-      ? '<button type="button" class="btn small" data-qc-act="record" data-qc-n="' + escHtml(String(r.n)) + '">＋ บันทึก</button>'
+    var recBtn = (isToday || backdateAllowed_(d.date)) // รอบ 119 (Q1): ย้อนหลังภายใน 7 วัน ไม่ใช่เสาร์ ⇒ ปุ่ม ＋ บันทึกด้วย
+      ?'<button type="button" class="btn small" data-qc-act="record" data-qc-n="' + escHtml(String(r.n)) + '">＋ บันทึก</button>'
       : '<span class="muted">ย้อนวัน: แก้ในชีตหรือแจ้งผู้ดูแล</span>';
     if (r.state === 'ok') {
       if (hideOk) return;
@@ -7500,8 +7545,27 @@ function qcRender_() {
 // ＋ บันทึก: ไปหน้าบันทึก ฟอร์มว่าง ใส่คิว M<n> ให้ (เป็นการกดของคน — ไม่ขัดกติการอบ 60) · มีร่างค้าง ⇒ ถามก่อน
 function qcStartRecord_(n) {
   if (!(n >= 1)) return;
-  if (qcViewDate_() !== todayStr()) return; // ย้อนวันบันทึกไม่ได้
-  qcStartRecordToday_(n);
+  // รอบ 119 (Q1): วันนี้ ⇒ แกนเดิม · วันที่ผ่านมาภายใน 7 วันและไม่ใช่เสาร์ ⇒ เปิดฟอร์มพร้อมวันนั้น + คิว M นั้น · นอกนั้นไม่ทำอะไร
+  var day = qcViewDate_();
+  if (day === todayStr()) { qcStartRecordToday_(n); return; }
+  if (!backdateAllowed_(day)) return;
+  qcStartRecordOnDay_(n, day);
+}
+// รอบ 119 (Q1): ＋ บันทึก ของวันที่ผ่านมา — รีเซ็ตฟอร์ม → หน้าบันทึก → ตั้งวัน (ผลข้างเคียงผ่าน syncAfterServiceDateSet_) → คิว M<n>
+function qcStartRecordOnDay_(n, day) {
+  if (!(n >= 1)) return;
+  if (!isMainFormDraftEmpty_() && !window.confirm('ฟอร์มมีข้อมูลที่กรอกค้างอยู่ จะแทนที่ด้วยฟอร์มว่างสำหรับ M' + n + ' ของ' + formatThaiDateFull_(day) + ' หรือไม่?')) return;
+  STATE.preEditId = '';
+  STATE.preEditName = '';
+  resetServiceDate_();
+  resetLogForm();
+  showScreen('log');
+  var el = qs('serviceDate');
+  if (el) { syncServiceDateBounds_(); el.value = day; }
+  syncAfterServiceDateSet_();
+  buildQueueOptions('M', 'M' + n);
+  LAST_QUEUE_PREFIX = 'M';
+  recalcTotals();
 }
 // รอบ 108: แกนร่วมของ "＋ บันทึก" (แผงปิดยอดคิว) และปุ่ม "บันทึก" บนแถบเตือน (#qcAlertBar · วันนี้เสมอ ไม่เช็ควันที่ดูของแผง)
 function qcStartRecordToday_(n) {
@@ -7731,6 +7795,8 @@ function onCancelRecord(recordId, btnEl) {
   apiCall('cancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: recordId }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       showToast('ยกเลิกบันทึกแล้ว');
+      refreshBackdateDay_(); // รอบ 119
+      if (resp.preReverted === true && typeof reloadPreAfterAction_ === 'function') reloadPreAfterAction_(); // รอบ 119 (L3): นัดที่ผูกกลับเป็นรอมา ⇒ โหลดนัดใหม่
       var cuScreen = qs('checkupTableScreen');
       if (cuScreen && cuScreen.style.display !== 'none') {
         loadCheckupTable(CU_VIEW); // รีโหลดแล้วคงมุมมองที่เปิดอยู่ ไม่บังคับกลับไป list เสมอ
@@ -7796,13 +7862,115 @@ function isPreMode_() {
   if (STATE.preEditId) return true;
   return serviceDateValue_() > todayStr();
 }
+/* ---------- รอบ 119: บันทึกย้อนหลัง (วันที่รับบริการ < วันนี้) ---------- */
+var BACKDATE_MAX_DAYS = 7; // ต้องตรงกับ BACKDATE_MAX_DAYS_ ฝั่งเซิร์ฟเวอร์ (เซิร์ฟเวอร์ตรวจช่วงเอง ไม่เชื่อเว็บ)
+function backdateMinDate_() { return addDaysYmd_(todayStr(), -BACKDATE_MAX_DAYS); }
+function isSaturdayYmd_(ymd) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!m) return false;
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 6;
+}
+// ย้อนหลังได้: ก่อนวันนี้ · ไม่เกิน 7 วัน · ไม่ใช่วันเสาร์ (ไม่รวมวันนี้)
+function backdateAllowed_(ymd) {
+  var v = String(ymd || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  return v < todayStr() && v >= backdateMinDate_() && !isSaturdayYmd_(v);
+}
+// ไม่แก้ไขแถว · ไม่แก้รายการรอมา · วันที่รับบริการ < วันนี้ (isPreMode_ คงเดิม: วันอดีตไม่ใช่โหมดล่วงหน้า)
+function isBackdateMode_() {
+  return !STATE.editingId && !STATE.preEditId && serviceDateValue_() < todayStr();
+}
+// ข้อความยืนยันก่อนบันทึกย้อนหลัง (B3) + เตือนข้ามเดือน (B4) — ไม่มีข้อมูลผู้ป่วย
+function backdateConfirmMsg_(ymd) {
+  var msg = 'บันทึกย้อนหลังเป็นของ ' + formatThaiDateFull_(ymd) + ' ไม่ใช่วันนี้\nยอดและรายงานจะนับเข้าวันที่นี้';
+  if (String(ymd).slice(0, 7) !== todayStr().slice(0, 7)) {
+    var p = thdParseDate(ymd);
+    var monthLabel = p ? (THAI_MONTH_NAMES_CU[p.m - 1] + ' ' + (p.y + 543)) : String(ymd).slice(0, 7);
+    msg += '\n\n⚠ เป็นยอดของเดือน ' + monthLabel + ' — ถ้าสรุปเดือนนั้นไปแล้ว ตัวเลขจะเปลี่ยน';
+  }
+  return msg + '\n\nตกลง = บันทึก · ยกเลิก = กลับไปแก้';
+}
+// จุดที่เลือกวันล่วงหน้าได้ (ชุดเดียวกับ applyPreMode_)
+function serviceDateFuturePoint_() {
+  return STATE.point === HO_ARRIVE_POINT_ || STATE.point === HO_IMPORT_POINT_;
+}
+// ตั้ง min/max ของช่องวันที่ตามจุด/โหมดปัจจุบัน (ไม่แตะ STATE.serviceDateDay — เรียกซ้ำได้จาก applyPreMode_ ทุก recalcTotals เพราะจุดเปลี่ยนได้ตลอด)
+function applyServiceDateAttrs_() {
+  var el = qs('serviceDate');
+  if (!el || typeof el.setAttribute !== 'function') return; // เทสต์ DOM จำลองขั้นต่ำ (test_special_sends ฯลฯ) ไม่มี setAttribute
+  var today = todayStr();
+  // ปกติ min = วันนี้−7 · ระหว่างแก้รายการรอมา min = วันนี้ (นัดห้ามย้ายไปอดีต) · max = +7 เฉพาะจุดคีย์ order/จุดทำนัดหมาย หรือกำลังแก้รายการรอมา · จุดอื่น max = วันนี้
+  el.setAttribute('min', STATE.preEditId ? today : backdateMinDate_());
+  el.setAttribute('max', (STATE.preEditId || serviceDateFuturePoint_()) ? preMaxDate_() : today);
+  el.setAttribute('data-closed-days', 'backdate');
+}
 function syncServiceDateBounds_() {
   var el = qs('serviceDate');
   if (!el) return;
-  el.setAttribute('min', todayStr());
-  el.setAttribute('max', preMaxDate_());
+  applyServiceDateAttrs_();
   STATE.serviceDateDay = todayStr();
 }
+// รอบ 119: ชุดโปรแกรม (week/sun) ตามวันของวันที่เลือก (B6) — วันอดีตใช้ชุดของวันนั้น
+function programSetForDay_(ymd) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!m) return defaultProgramSet_();
+  return defaultProgramSet_(new Date(+m[1], +m[2] - 1, +m[3]));
+}
+// ผลข้างเคียงทุกครั้งที่ตั้งวันที่รับบริการ (เลือกในปฏิทิน/พิมพ์/ปุ่มวันนี้/หลังบันทึก/ปุ่ม ＋ บันทึกของแผงปิดยอดคิว)
+function syncAfterServiceDateSet_() {
+  var day = serviceDateValue_(), today = todayStr();
+  var prev = STATE.svcDayPrev || today;
+  // ชุดโปรแกรม: วันใหม่หรือวันเดิมเป็นอดีต ⇒ ตามวันของวันใหม่ (silent — recalcTotals ด้านล่างเรียกให้) · อนาคตล้วน ⇒ คงเดิม
+  if (day < today || prev < today) setProgramSet(programSetForDay_(day), { silent: true });
+  STATE.svcDayPrev = day;
+  if (day < today && STATE.arrivePreId && typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 119: นัดที่ผูกเป็นของวันนี้ ⇒ ใช้กับวันย้อนหลังไม่ได้ (เซิร์ฟเวอร์จะปฏิเสธ)
+  if (typeof hoSuggestHide_ === 'function') { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
+  applySundayClosedSends_();
+  if (typeof loadBackdateDay_ === 'function') loadBackdateDay_();
+  recalcTotals();
+  if (typeof hoFutureEnsure_ === 'function') hoFutureEnsure_();
+}
+/* ---------- รอบ 119: ข้อมูลของ "วันที่เลือก" ตอนบันทึกย้อนหลัง (เช็คคิวซ้ำ/คนซ้ำ/แนะนำคิว ต้องเทียบวันเดียวกับที่จะลงชีต) ---------- */
+var BACKDATE_DAY_ = { date: '', records: [], seq: 0 };
+// วันที่ของฟอร์ม: ย้อนหลัง = วันที่เลือก · นอกนั้น = วันนี้ (เดิม)
+function formDayStr_() { return isBackdateMode_() ? serviceDateValue_() : todayStr(); }
+// ตัวเข้าถึงเดียวของ "รายการของวันที่ฟอร์มจะลง": ย้อนหลัง = ของวันนั้น (ยังโหลดไม่เสร็จ/ล้ม = ว่าง · เซิร์ฟเวอร์ยังกันซ้ำเอง) · ปกติ = LAST_TODAY_RECORDS
+function formDayRecords_() {
+  if (isBackdateMode_()) return BACKDATE_DAY_.date === serviceDateValue_() ? BACKDATE_DAY_.records : [];
+  return LAST_TODAY_RECORDS;
+}
+// รายการในคิวบันทึกเบื้องหลังนับเฉพาะที่ลงวันเดียวกับฟอร์ม (payload.serviceDate ว่าง = วันนี้)
+function saveQueuePayloadDay_(p) { return (p && p.serviceDate) ? String(p.serviceDate) : todayStr(); }
+function loadBackdateDay_() {
+  if (!STATE.staffKey || !isBackdateMode_()) return;
+  var day = serviceDateValue_();
+  if (BACKDATE_DAY_.date === day) return;
+  var seq = ++BACKDATE_DAY_.seq;
+  BACKDATE_DAY_.date = '';
+  BACKDATE_DAY_.records = [];
+  apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: day, allPoints: true }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== BACKDATE_DAY_.seq) return; // มีคำขอใหม่/ล้างแคชแล้ว ⇒ ทิ้งคำตอบเก่า
+    if (!isListResp_(resp)) return; // โหลดไม่สำเร็จ ⇒ เงียบ (เซิร์ฟเวอร์ยังกันซ้ำ)
+    if (!isBackdateMode_() || serviceDateValue_() !== day) return;
+    BACKDATE_DAY_.date = day;
+    BACKDATE_DAY_.records = resp.records || [];
+    maybeSuggestNextCheckupQueue();
+    recalcTotals();
+  });
+}
+function invalidateBackdateDay_() { BACKDATE_DAY_.date = ''; BACKDATE_DAY_.records = []; BACKDATE_DAY_.seq++; }
+// ล้างแล้วโหลดใหม่ (ไม่ได้อยู่โหมดย้อนหลัง ⇒ loadBackdateDay_ ไม่ยิง) — ใช้หลังยกเลิกแถว: ทางแก้ลงผิดคือยกเลิกแล้วลงใหม่ ต้องไม่เห็นแถวที่ยกเลิกแล้วเป็นของซ้ำ
+function refreshBackdateDay_() { invalidateBackdateDay_(); loadBackdateDay_(); }
+// หลังกดบันทึก (ถัดจาก resetLogForm): ช่องวันที่เป็นอดีตและไม่ได้แก้รายการรอมา ⇒ กลับวันนี้ + ซิงก์ + ล้างแคชนัดล่วงหน้า (เป็นของวันเก่า)
+function backdateAfterSave_() {
+  var el = qs('serviceDate');
+  if (!el || STATE.preEditId) return;
+  if (serviceDateValue_() >= todayStr()) return;
+  el.value = todayStr();
+  PRE_FUTURE_.date = ''; PRE_FUTURE_.items = []; PRE_FUTURE_.busy = false; PRE_FUTURE_.busyDate = ''; PRE_FUTURE_SEQ_++;
+  syncAfterServiceDateSet_();
+}
+
 // ตั้งกลับเป็นวันนี้ (ไม่ยิง event — ผู้เรียกเรียก recalcTotals() เอง)
 function resetServiceDate_() {
   var el = qs('serviceDate');
@@ -7813,9 +7981,11 @@ function resetServiceDate_() {
 // เปลี่ยนจุดบริการ: ออกจากโหมดแก้รายการรอมา (ล้างฟอร์มที่เติมไว้) + วันที่กลับเป็นวันนี้
 function resetServiceDateAndPreEdit_() {
   var had = !!STATE.preEditId;
+  var wasBack = isBackdateMode_(); // รอบ 119: ย้อนหลังอยู่ ⇒ วันกลับเป็นวันนี้ ต้องซิงก์ชุดโปรแกรม/รายการปิดวันอาทิตย์ด้วย
   STATE.preEditId = '';
   STATE.preEditName = '';
   resetServiceDate_();
+  if (wasBack) syncAfterServiceDateSet_();
   if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): เปลี่ยนจุด ⇒ ล้างการผูกคนนัด
   if (had) resetLogForm();
 }
@@ -7825,16 +7995,23 @@ function onServiceDateChange_() {
   syncServiceDateBounds_();
   var today = todayStr();
   var v = String(el.value || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < today) v = today;
-  else if (v > preMaxDate_()) {
+  var min = String(el.getAttribute('min') || today), max = String(el.getAttribute('max') || preMaxDate_());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) v = today; // ว่าง/อ่านไม่ออก (เช่นกดล้างในปฏิทิน) ⇒ วันนี้ เงียบ ๆ
+  else if (v < min) {
     v = today;
-    showToast('ลงล่วงหน้าได้ไม่เกิน ' + PRE_MAX_DAYS_AHEAD + ' วัน (ถึง ' + formatThaiDate(preMaxDate_()) + ')');
+    showToast(STATE.preEditId ? 'ย้ายนัดไปวันที่ผ่านมาแล้วไม่ได้' : ('บันทึกย้อนหลังได้ไม่เกิน ' + BACKDATE_MAX_DAYS + ' วัน (ตั้งแต่ ' + formatThaiDate(min) + ')'));
+  } else if (v < today && isSaturdayYmd_(v)) {
+    v = today;
+    showToast('วันเสาร์ไม่มีให้บริการ');
+  } else if (v > max) {
+    v = today;
+    showToast(max === preMaxDate_() ? ('ลงล่วงหน้าได้ไม่เกิน ' + PRE_MAX_DAYS_AHEAD + ' วัน (ถึง ' + formatThaiDate(preMaxDate_()) + ')')
+      : 'จุดนี้ลงวันล่วงหน้าไม่ได้ (ลงล่วงหน้าที่จุดคีย์ order หรือจุดทำนัดหมาย)');
   }
   if (el.value !== v) el.value = v;
   // รอบ 89 (F1): เปลี่ยนวัน ⇒ รายการแนะนำเดิมเป็นของวันอื่น ซ่อนก่อน แล้วโหลดรายชื่อนัดของวันใหม่ (ถ้าเปิดค้นล่วงหน้าอยู่)
-  if (typeof hoSuggestHide_ === 'function') { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
-  recalcTotals();
-  if (typeof hoFutureEnsure_ === 'function') hoFutureEnsure_();
+  // รอบ 119: ผลข้างเคียงทั้งหมดรวมใน syncAfterServiceDateSet_ (ชุดโปรแกรม · วันอาทิตย์ · โหลดรายการของวันนั้น · recalcTotals · hoFutureEnsure_)
+  syncAfterServiceDateSet_();
 }
 // ข้ามวัน: ช่องวันที่ที่ค้างจากเมื่อวาน ⇒ กลับเป็นวันนี้ (ผู้ใช้เปิดแท็บค้างข้ามคืน) · กำลังแก้รายการรอมาอยู่ ⇒ คงรายการไว้ แค่ดันวันที่ที่ผ่านไปแล้วเป็นวันนี้
 function preServiceDateRollover_() {
@@ -7864,19 +8041,25 @@ function applyPreMode_() {
   var editing = !!STATE.editingId;
   // m1 หลังรอบ 88 (เจ้าของตัดสิน 2026-10-19): ช่องวันที่เห็นเฉพาะจุดที่มีหน้า 📅 (ชุดเดียวกับ syncApptNavBtn_) · จุดอื่นบังคับวันนี้ กันค่าค้างพาเข้าโหมดล่วงหน้า
   var apptPoint = (STATE.point === HO_ARRIVE_POINT_ || STATE.point === HO_IMPORT_POINT_);
+  applyServiceDateAttrs_(); // รอบ 119: min/max ตามจุดที่เลือกอยู่ตอนนี้ (เปลี่ยนจุด ⇒ ขอบเขตวันเปลี่ยน)
+  // รอบ 119: จุดอื่นเลือกวันอดีตได้แล้ว (ย้อนหลัง) — บังคับกลับวันนี้เฉพาะค่า > วันนี้ (จุดอื่นลงล่วงหน้าไม่ได้)
   if (!apptPoint && !STATE.preEditId) {
     var sd = qs('serviceDate');
-    if (sd && sd.value !== todayStr()) sd.value = todayStr();
+    if (sd && sd.value > todayStr()) sd.value = todayStr();
   }
   var pre = isPreMode_();
   var edit = isPreEditMode_();
-  if (row) row.hidden = editing || !apptPoint; // โหมดแก้ไขแถวปกติ (หน้าต่างแก้ไข) / จุดที่ไม่มีหน้า 📅 ⇒ ซ่อนแถววันที่
+  var back = isBackdateMode_();
+  if (row) row.hidden = editing; // รอบ 119: เห็นทุกจุด (ย้อนหลังได้ทุกจุด · ✎ แก้ไขนัดทุกจุด) · ซ่อนเฉพาะโหมดแก้ไขแถวปกติ (หน้าต่างแก้ไข)
   if (wrap && wrap.classList) wrap.classList.toggle('pre-mode', pre);
   if (bar) {
-    bar.hidden = !pre;
+    bar.hidden = !(pre || back);
+    if (bar.classList) bar.classList.toggle('backdate', back);
     if (pre && txt) {
       txt.textContent = edit ? ('✎ แก้ไขรายการลงล่วงหน้า — ' + (STATE.preEditName || ''))
         : ('⏳ ลงล่วงหน้า ' + formatThaiDateFull_(serviceDateValue_()));
+    } else if (back && txt) {
+      txt.textContent = '📝 บันทึกย้อนหลัง ' + formatThaiDateFull_(serviceDateValue_());
     }
     if (cancelBtn) cancelBtn.hidden = !edit;
   }
@@ -8050,6 +8233,7 @@ function reloadPreAfterAction_() {
   PRE_FUTURE_.date = ''; PRE_FUTURE_.items = []; PRE_FUTURE_.busy = false; PRE_FUTURE_.busyDate = ''; PRE_FUTURE_SEQ_++; // รอบ 89 (F1): บันทึก/แก้/ยกเลิกนัดสำเร็จ ⇒ ล้างแคชค้นล่วงหน้า (คำตอบที่ยังค้างอยู่ถูกทิ้ง) โหลดใหม่ตอนพิมพ์ครั้งถัดไป
   if (typeof apptReloadIfVisible_ === 'function') apptReloadIfVisible_(); // รอบ 87 (D10): ตัวเลขรายวันบนหน้ารายชื่อนัดเปลี่ยนหลังนำเข้า/ยกเลิก
   loadPreToday_();
+  if (isBackdateMode_()) hoFutureEnsure_(); // รอบ 119 (เฉพาะย้อนหลัง · ล่วงหน้าคงเดิม): ล้างแคชนัดแล้ว ⇒ โหมดย้อนหลังต้องโหลดนัดของวันที่เลือกใหม่ (ไม่งั้นกล่องถาม L2 หายเงียบ)
   if (APPT_VIEW_DATE_ && APPT_VIEW_DATE_ !== todayStr()) loadPreView_(); // รอบ 88: การ์ดของวันที่เลือกในหน้า appt (วันนี้ป้อนผ่าน loadPreToday_)
 }
 
@@ -8133,7 +8317,8 @@ function preRowHtml_(it) {
     var arriveToday = (st === 'รอมา' && it.date === todayStr() && keyOrderHere);
     if (arriveToday) acts += '<button type="button" class="btn small" data-pre-act="arrive" data-pre-id="' + id + '">▶ บันทึกการมา</button>';
     else acts += '<button type="button" class="btn small secondary" data-pre-act="edit" data-pre-id="' + id + '">✎ แก้ไข</button>';
-    if (keyOrderHere && it.date <= todayStr()) acts += '<button type="button" class="btn small secondary" data-pre-act="link" data-pre-id="' + id + '">🔗 มาแล้ว (บันทึกซ้ำ)</button>';
+    // รอบ 119 (P1): 🔗 เปิดทุกจุด (ผูกกับแถวเดิม ไม่สร้างแถวใหม่ จึงไม่ขัดเหตุผล E5) — ▶ ยังเฉพาะจุดคีย์ order
+    if (it.date <= todayStr()) acts +='<button type="button" class="btn small secondary" data-pre-act="link" data-pre-id="' + id + '">🔗 มาแล้ว (บันทึกซ้ำ)</button>';
     acts += '<button type="button" class="btn small danger" data-pre-act="cancel" data-pre-id="' + id + '">✕ ยกเลิก</button>';
   }
   return '<div class="pre-row' + cls + '" data-pre-row="' + id + '">' +
@@ -8218,7 +8403,7 @@ function onPreCardClick_(e) {
   var item = preFindItem_(btn.getAttribute('data-pre-id'));
   if (!item) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรช'); return; }
   var act = btn.getAttribute('data-pre-act');
-  if ((act === 'arrive' || act === 'link') && STATE.point !== HO_ARRIVE_POINT_) return; // รอบ 88 (E5): ▶/🔗 เฉพาะจุดคีย์ order
+  if (act === 'arrive' && STATE.point !== HO_ARRIVE_POINT_) return; // รอบ 88 (E5): ▶ เฉพาะจุดคีย์ order · รอบ 119 (P1): 🔗 เปิดทุกจุดแล้ว
   if (act === 'activate') openPreActivate_(item);
   else if (act === 'arrive') { showScreen('log'); startPreArrive_(item); } // รอบ 87 (D5): หน้าบันทึก + เติมฟอร์มหลัก (confirm เดิมถ้าฟอร์มมีค่า) · ที่จุดอื่นก็ทำได้ (บันทึกที่จุดนั้น)
   else if (act === 'edit') startPreEdit_(item);
@@ -8477,20 +8662,43 @@ function preLinkChoose_(recordId) {
 
 /* ---------- W6: เตือนในฟอร์มปกติ — อาจเป็นคนที่ลงล่วงหน้าไว้ ---------- */
 // candidate = PRE_TODAY ที่ยังรอมา และ HN ตรง (norm) หรือ ชื่อตัวแรกตรง หรือ นามสกุล (คำสุดท้าย) ตรง
+// รอบ 119: รายการนัดที่ใช้เทียบตอนบันทึก — ปกติ = PRE_TODAY · ย้อนหลัง = นัดของวันที่เลือก (hoFutureWaiting_ · โหลดโดย hoFutureEnsure_)
+function preListForForm_() {
+  return isBackdateMode_() ? hoFutureWaiting_() : (PRE_TODAY || []);
+}
 function preCandidatesForForm_() {
   var hn = (qs('patientHn').value || '').trim();
   var name = (qs('patientName').value || '').trim();
+  var day = formDayStr_();
   var out = [];
-  (PRE_TODAY || []).forEach(function (it) {
-    if (!it || it.status !== 'รอมา' || it.date !== todayStr()) return;
+  preListForForm_().forEach(function (it) {
+    if (!it || it.status !== 'รอมา' || it.date !== day) return;
     if (preNearScore_(name, hn, it.patientName, it.patientHn) > 0) out.push(it);
   });
   return out;
+}
+// รอบ 119 (L1): กติกาเดียวกับ preAutoMatch_ ฝั่งเซิร์ฟเวอร์ — ตรงครบเพียงรายเดียว ⇒ คืนนัดนั้น (ไม่ต้องถาม เซิร์ฟเวอร์ผูกเอง) · ไม่งั้น null
+// normDupHn_/normDupName_ ทำงานเหมือน normHnForDup_/normNameForDup_ ฝั่งเซิร์ฟเวอร์ (ตัดช่องว่าง+พิมพ์ใหญ่ / trim+ยุบช่องว่าง)
+function preAutoMatch_(items, dateStr, hn, name) {
+  var nHn = normDupHn_(hn), nName = normDupName_(name);
+  var cand = (items || []).filter(function (it) { return it && it.status === 'รอมา' && it.date === dateStr; });
+  if (nHn) {
+    var byHn = cand.filter(function (it) { return normDupHn_(it.patientHn) === nHn; });
+    if (byHn.length > 1) return null;
+    if (byHn.length === 1) return byHn[0];
+  }
+  if (!nName || nName === normDupName_(HO_NO_HN_NAME_)) return null; // ชื่อว่าง/ชื่อแทน "ยังไม่มี HN" ไม่นับเป็นเกณฑ์
+  var byName = cand.filter(function (it) { return normDupName_(it.patientName) === nName; });
+  if (byName.length !== 1) return null;
+  var rowHn = normDupHn_(byName[0].patientHn);
+  if (rowHn && nHn && rowHn !== nHn) return null;
+  return byName[0];
 }
 function openPreWarn_(cands, onChoose) {
   var m = qs('preWarnModal');
   if (!m) { onChoose(''); return; }
   PRE_WARN.onChoose = onChoose;
+  if (qs('pwDay')) qs('pwDay').textContent = formDayWord_(); // รอบ 119: ย้อนหลังเทียบนัดของวันที่เลือก
   qs('pwList').innerHTML = cands.map(function (it) {
     var bits = [];
     if (it.patientHn) bits.push('HN ' + it.patientHn);
@@ -9166,7 +9374,8 @@ function hoWaitingToday_() {
 // D1/D2 ทำงานเมื่อ: จุดคีย์ order · ไม่ใช่แก้ไข · ไม่ใช่โหมดล่วงหน้า · ยังไม่ได้ผูกคนนัด (STATE.arrivePreId)
 function hoArriveActive_() {
   return STATE.point === HO_ARRIVE_POINT_ && !STATE.editingId && !STATE.arrivePreId &&
-    !(typeof isPreMode_ === 'function' && isPreMode_());
+    !(typeof isPreMode_ === 'function' && isPreMode_()) &&
+    !isBackdateMode_(); // รอบ 119: ย้อนหลังห้ามแนะนำนัดของวันนี้ (แตะแล้ววันที่จะดีดกลับเป็นวันนี้)
 }
 // รอบ 89 (F2): ค้นนัดของ "วันที่รับบริการ" ล่วงหน้า — จุดคีย์ order + จุดทำนัดหมาย · ไม่ใช่แก้ไข/แก้นัด · วันที่เลือก > วันนี้ (ไม่ซ้อนกับ hoArriveActive_)
 function hoFutureActive_() {
@@ -9175,7 +9384,8 @@ function hoFutureActive_() {
 }
 // รอบ 89 (F1): โหลดรายชื่อนัดของวันที่เลือก (preList เดิม) เมื่อยังไม่มีแคชของวันนั้น · ไม่ยิงซ้ำระหว่างโหลดวันเดียวกัน · ล้ม ⇒ เงียบ ไม่แคช (เรียกครั้งถัดไปลองใหม่)
 function hoFutureEnsure_() {
-  if (!STATE.staffKey || !hoFutureActive_()) return;
+  // รอบ 119: ย้อนหลังก็โหลดนัดของวันที่เลือก (ใช้ตัดสินผูกนัด/กล่องถามตอนบันทึก) · ห้ามขยาย hoFutureActive_ — มันคุมการเลือก 🔎 ล่วงหน้า
+  if (!STATE.staffKey || !(hoFutureActive_() || isBackdateMode_())) return;
   var day = serviceDateValue_();
   if (PRE_FUTURE_.date === day) return;
   if (PRE_FUTURE_.busy && PRE_FUTURE_.busyDate === day) return;
@@ -10014,6 +10224,8 @@ function onSpBoardDeleteClick(rec) {
   apiCall('cancel', { staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId }).then(function (resp) {
     if (resp && resp.status === 'ok') {
       showToast('ยกเลิกรายการแล้ว');
+      refreshBackdateDay_(); // รอบ 119
+      if (resp.preReverted === true && typeof reloadPreAfterAction_ === 'function') reloadPreAfterAction_(); // รอบ 119 (L3)
     } else {
       SP_BOARD_RECORDS.splice(origIndex, 0, rec);
       renderSpBoardCards();
@@ -16736,6 +16948,11 @@ function thdRenderPopup() {
       closedReason = pickupClosedReason(y + '-' + thdPad2(m) + '-' + thdPad2(d));
       if (closedReason) disabled = true;
     }
+    // รอบ 119: data-closed-days="backdate" ⇒ วันเสาร์ที่อยู่ก่อนวันนี้กดไม่ได้ (วันเสาร์ไม่มีให้บริการ) · ไม่แตะกติกา pickup
+    if (!disabled && closedKind === 'backdate') {
+      var ymdPop = y + '-' + thdPad2(m) + '-' + thdPad2(d);
+      if (ymdPop < todayStr() && isSaturdayYmd_(ymdPop)) { disabled = true; closedReason = 'วันเสาร์ไม่มีให้บริการ'; }
+    }
     var cls = 'thd-pop-day' + (closedReason ? ' thd-pop-day-closed' : '');
     if (todayP && todayP.y === y && todayP.m === m && todayP.d === d) cls += ' thd-today';
     if (selP && selP.y === y && selP.m === m && selP.d === d) cls += ' thd-selected';
@@ -17273,7 +17490,7 @@ document.addEventListener('DOMContentLoaded', function () {
     serviceDateEl.addEventListener('change', onServiceDateChange_);
   }
   var serviceDateTodayBtn = qs('btnServiceDateToday');
-  if (serviceDateTodayBtn) serviceDateTodayBtn.addEventListener('click', function () { resetServiceDate_(); recalcTotals(); });
+  if (serviceDateTodayBtn) serviceDateTodayBtn.addEventListener('click', function () { resetServiceDate_(); syncAfterServiceDateSet_(); });
   var cancelPreEditBtn = qs('btnCancelPreEdit');
   if (cancelPreEditBtn) cancelPreEditBtn.addEventListener('click', exitPreEdit_);
   // W3: การ์ด ⏳ ลงล่วงหน้า (ค้นหา + ปุ่มต่อแถว + ลองใหม่)
