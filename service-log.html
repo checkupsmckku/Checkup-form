@@ -476,6 +476,26 @@
     .rec-actions { flex-basis: 100%; border-left: none; border-top: 1px solid var(--border); flex-direction: row; }
   }
 
+  /* รอบ 119ฉ: รายการของวัน + สรุป ใต้แผงวัคซีน (เฉพาะจุดนับ vaccine) — แถวเป็นการ์ดยืดหดได้ ไม่ใช้ตารางกว้าง (ไม่ล้นแนวนอนที่ 360px) */
+  .vax-point-box { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); min-width: 0; }
+  .vax-point-title { font-weight: 700; color: var(--primary-dark); margin-bottom: 6px; }
+  .vax-point-summary { background: var(--gray-pale); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+  .vax-point-summary .vps-main { font-weight: 800; }
+  .vax-point-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 14px; min-width: 0; }
+  .vax-point-row .vpr-time { flex: 0 0 auto; font-weight: 700; color: var(--primary-dark); }
+  .vax-point-row .vpr-name { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+  .vax-point-row .vpr-money { flex: 0 0 auto; font-weight: 700; color: var(--accent); white-space: nowrap; }
+  .vax-point-row .vpr-staff { flex: 1 1 100%; color: var(--muted, #667); font-size: 13px; overflow-wrap: anywhere; }
+  .vax-point-row .vpr-actions { flex: 1 1 100%; display: flex; gap: 8px; }
+  .vax-point-row .vpr-actions .btn { min-height: 44px; flex: 1 1 0; }
+  @media (min-width: 768px) {
+    .vax-point-row { flex-wrap: nowrap; }
+    .vax-point-row .vpr-name { flex: 1 1 0; }
+    .vax-point-row .vpr-staff { flex: 0 0 170px; }
+    .vax-point-row .vpr-actions { flex: 0 0 auto; }
+    .vax-point-row .vpr-actions .btn { flex: 0 0 auto; min-width: 76px; }
+  }
+
   /* รอบ 29 (S4) W4 (ข้อ 4): มุมมองรายการของ "รายชื่อตรวจสุขภาพรายวัน" — ห่อแต่ละคนด้วยกล่องขอบชัดแยกกัน
      (หน้าตาอย่างเดียว พฤติกรรมเดิมทุกอย่าง — เนื้อหาข้างในยังเป็น recordItemHtml()+cuNoteHtml() เดิมเป๊ะ) */
   .cu-person {
@@ -562,6 +582,24 @@
   /* รอบ 13 (2026-09-16): ช่อง "วันที่ส่งออก" — <span> คู่กันมีไว้สำหรับใบพิมพ์เท่านั้น บนจอซ่อนไว้ */
   .cu-note-sentdate { flex: 0 0 auto; width: auto; min-width: 140px; }
   .cu-note-sentdate-print { display: none; }
+  /* รอบ 119ช: ช่อง "วันที่ไปตรวจภายใน" (no-print) + คำใบ้ · รายชื่อส่งนรีเวช (#cuGynWrap) ตาราง 6 คอลัมน์ ไม่ล้นแนวนอน */
+  .cu-note-gyn-date { flex: 0 0 auto; width: auto; min-width: 140px; font-size: 16px; }
+  .cu-note-gyn-hint { display: block; font-size: 13px; color: #666; margin-top: 2px; }
+  #cuGynWrap .gyn-head { margin: 14px 0 8px; font-size: 18px; }
+  #cuGynWrap table.gyn-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
+  #cuGynWrap .gyn-table th, #cuGynWrap .gyn-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
+  #cuGynWrap .gyn-table th { background: var(--gray-pale); }
+  #cuGynWrap .gyn-table .gyn-c-no { width: 8%; text-align: center; }
+  #cuGynWrap .gyn-table .gyn-c-q { width: 11%; }
+  #cuGynWrap .gyn-table .gyn-c-hn { width: 15%; }
+  #cuGynWrap .gyn-table .gyn-c-name { width: 28%; }
+  #cuGynWrap .gyn-table .gyn-c-type { width: 18%; }
+  #cuGynWrap .gyn-table .gyn-c-date { width: 20%; }
+  #cuGynWrap .gyn-total { margin-top: 10px; font-weight: 700; }
+  @media (max-width: 480px) {
+    #cuGynWrap table.gyn-table { font-size: 12.5px; }
+    #cuGynWrap .gyn-table th, #cuGynWrap .gyn-table td { padding: 4px 3px; }
+  }
   /* รอบ 27 — ช่องวันที่ทุกช่องที่ต้องรองรับ "กรอบแดง + ข้อความเหตุผลใต้ช่อง" (ลำดับส่งออกผิด / วันปิดของนัดรับวันที่)
      ใช้ .cu-date-cell ห่อ input[type=date] ทุกจุด — ปุ่มไทย (.thd-btn) ถูกแทรกเป็น sibling ถัดจาก input โดย
      thdEnhanceInput() อยู่แล้ว (ดู JS) ⇒ อยู่ใน .cu-date-cell เดียวกันเสมอโดยไม่ต้องแก้ thd* เพิ่ม */
@@ -1097,6 +1135,10 @@
     @page { size: A4; margin: 8mm; }
     #cuTableWrap .scroll-x { overflow: visible !important; }
     #cuListWrap .rec-actions { display: none; }
+    /* รอบ 119ช: ใบพิมพ์รายชื่อส่งนรีเวช (A4 · มีเฉพาะ #cuGynWrap เพราะส่วนอื่นเป็น .no-print/hidden) */
+    #cuGynWrap table.gyn-table { font-size: 11pt; }
+    #cuGynWrap .gyn-head { font-size: 14pt; margin: 0 0 4mm; }
+    #cuGynWrap .gyn-table tr { break-inside: avoid; page-break-inside: avoid; }
     /* เจ้าของสั่ง 2026-09-15: ชื่อแพทย์/consult ต้องเห็นบนใบพิมพ์ (ห้ามใส่ no-print ให้ทั้งบล็อก .cu-note)
        ป้ายสถานะบันทึกไม่มีความหมายบนกระดาษ ⇒ ซ่อนอย่างเดียว · ช่องพิมพ์เป็นเส้นใต้ให้เขียนมือเติมได้เหมือนช่องอื่นในใบนี้ */
     .cu-note-state { display: none; }
@@ -1634,7 +1676,7 @@
     <div id="hoImpError" class="error-box" hidden></div>
     <div id="hoImpBody"></div>
     <div class="row" style="margin-top:12px;">
-      <button type="button" class="btn" id="hoImpConfirm" hidden disabled>ยืนยันนำเข้า 0 คน</button>
+      <button type="button" class="btn" id="hoImpConfirm" hidden disabled>ยืนยันนำเข้า 0 ราย</button>
       <button type="button" class="btn secondary" id="hoImpCancel">ปิด</button>
     </div>
   </div>
@@ -1924,6 +1966,12 @@
                   </div>
                 </details>
               </section>
+              <!-- รอบ 119ฉ: รายการ+สรุปของวัน เฉพาะจุดนับ vaccine (ไม่ตอนแก้ไข) — ต้องเป็นลูกคนสุดท้ายของแผงนี้ เพราะแผงถูกย้ายด้วย insertBefore -->
+              <div id="vaxPointBox" class="vax-point-box no-print" hidden>
+                <div class="vax-point-title" id="vaxPointTitle"></div>
+                <div class="vax-point-summary" id="vaxPointSummary"></div>
+                <div id="vaxPointList"></div>
+              </div>
             </div>
           </section>
 
@@ -2100,7 +2148,7 @@
         <div id="qcList"></div>
       </div>
       <!-- รอบ 72: ข้อความตั้งต้นใช้ขีด ไม่ใช่ 0 — โหลดครั้งแรกไม่สำเร็จ แถบนี้ไม่ถูกเขียนทับ ⇒ "0 คน" จะดูเหมือนยอดจริง -->
-      <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท</div>
+      <div class="summary-bar" id="todaySummaryBar">วันนี้ให้บริการ — ราย · ยอดเงินรวม — บาท</div>
 
       <!-- รอบ 88 (E6): การ์ด ⏳ (#preCard) ย้ายไปหน้า #apptScreen แล้ว — หน้านี้ดูได้ถึงวันนี้เท่านั้น -->
 
@@ -2201,7 +2249,8 @@
              ปุ่มพิมพ์แยกออกมาอีกแถวและเล็กลงตามภาพที่เจ้าของส่งมา -->
         <div class="row" style="margin-top:10px;">
           <button type="button" class="btn" id="btnCuLoad">ดูรายชื่อ</button>
-          <button type="button" class="btn secondary" id="btnCuViewTable">📋 แบบตาราง</button>
+          <!-- รอบ 119ช (G1): ปุ่ม "📋 แบบตาราง" เดิมไม่มีคนใช้ ⇒ แทนด้วยรายชื่อส่งนรีเวช (ปุ่มพิมพ์ 2 ปุ่มข้างล่างยังวาด #cuTableWrap เองตอนพิมพ์) -->
+          <button type="button" class="btn secondary" id="btnCuViewGyn">รายชื่อส่งนรีเวช</button>
         </div>
         <div class="row" style="margin-top:6px;">
           <button type="button" class="btn secondary small no-print" id="btnCuPrint">🖨 ใบเซ็นรับผลตรวจ</button>
@@ -2216,6 +2265,8 @@
       <datalist id="doctorNameOptions"></datalist>
       <div id="cuTableWrap"></div>
       <div id="cuListWrap" hidden></div>
+      <!-- รอบ 119ช: มุมมอง "รายชื่อส่งนรีเวช" (อิงวันที่ #cuDate · ดู/พิมพ์อย่างเดียว) — วาดเองทั้งก้อนใน renderGynList_() -->
+      <div id="cuGynWrap" hidden></div>
     </div>
   </div>
 
@@ -2262,11 +2313,11 @@
       <!-- รอบ 75: แถบบันทึกติดล่างจอ (sticky bottom) — เลือก N คน · ป้ายวันที่ [วันที่] [ปุ่มบันทึก] · ป้าย/ปุ่มตามแท็บ (updatePendingBulkButton)
            ⚠ id เดิมคงไว้ทั้งหมด (#pendingBulkRow/#pendingSelectedCount/#pendingSentDate/#pendingSentDateLabel/#btnPendingBulkSave) -->
       <div class="row no-print pending-bulk-bar" id="pendingBulkRow">
-        <span id="pendingSelectedCount" class="pending-bulk-count">เลือก 0 คน</span>
+        <span id="pendingSelectedCount" class="pending-bulk-count">เลือก 0 ราย</span>
         <span class="pending-bulk-dot" aria-hidden="true">·</span>
         <label class="pending-bulk-label" for="pendingSentDate" id="pendingSentDateLabel">วันที่ส่งออก</label>
         <input type="date" id="pendingSentDate">
-        <button type="button" class="btn" id="btnPendingBulkSave" disabled>บันทึกวันที่ส่งออก (0 คน)</button>
+        <button type="button" class="btn" id="btnPendingBulkSave" disabled>บันทึกวันที่ส่งออก (0 ราย)</button>
       </div>
     </div>
   </div>
@@ -4880,6 +4931,208 @@ function applyVaccinePanelVisibility_() {
     if (vpe) vpe.checked = false;
   }
 }
+/* =========================================================================
+   รอบ 119ฉ — จุดนับ vaccine: ซ่อนแผงผู้รับบริการ + แผงบริการอื่น · รายการ+สรุปของวันใต้แผงวัคซีน (SPEC_รอบ119ฉ_จุดนับvaccine.md V1-V9)
+   ชื่อจุดต้องตรงกับแท็บ จุดบริการ ในชีตเป๊ะ (live ยืนยัน 2026-11-10: "จุดนับ vaccine")
+   ========================================================================= */
+var VACCINE_COUNT_POINT_ = 'จุดนับ vaccine';
+var VAX_POINT_HIDE_IDS_ = ['panelPerson', 'panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab'];
+function vaxCountPointHere_() { return STATE.point === VACCINE_COUNT_POINT_; }
+// โหมดซ่อนแผง = จุดนับ vaccine และไม่ได้แก้ไขแถว (V4: ตอนแก้ไขต้องเห็นแผงครบ ข้อมูลเดิมห้ามหาย)
+function vaxCountModeOn_() { return vaxCountPointHere_() && !STATE.editingId; }
+
+// ซ่อน/คืนแผงด้วย attribute hidden (กฎ [hidden]{display:none!important} ด้านบนรองรับ) · ซ่อนแล้วล้างค่าของแผงที่ซ่อน (checked = false จริง) เฉพาะตอนไม่ได้แก้ไข
+// ห้ามแตะวัคซีน/มาตรวจสุขภาพด้วย/คิด PE แล้ว · skipRecalc = true จากทาง exitEditMode (resetLogForm เรียก recalcTotals ต่อเอง)
+// ⚠ ต้องเรียกหลังจัดแผงใน applyPointLayout (ที่นั่นปลด hidden ของ #otherServicesDivider ทุกครั้ง) · ห้ามเรียก applyPointLayout จากที่นี่ (วนซ้ำ)
+function applyVaxCountPointMode_(skipRecalc) {
+  var on = vaxCountModeOn_();
+  VAX_POINT_HIDE_IDS_.forEach(function (id) {
+    var el = qs(id);
+    if (!el || !el.setAttribute) return;
+    if (on) el.setAttribute('hidden', ''); else if (el.removeAttribute) el.removeAttribute('hidden');
+  });
+  // เส้นคั่น "บริการอื่น": สถานะ hidden ปกติ applyPointLayout เป็นคนตัดสิน ⇒ จำเฉพาะกรณีที่เราเป็นคนซ่อนเองด้วย data-vax-hid เพื่อคืนให้ถูกตอนออกจากโหมด
+  var div = qs('otherServicesDivider');
+  if (div && div.setAttribute) {
+    if (on) {
+      if (div.hidden) { if (div.removeAttribute) div.removeAttribute('data-vax-hid'); }
+      else { div.setAttribute('data-vax-hid', '1'); div.hidden = true; }
+    } else if (div.getAttribute && div.getAttribute('data-vax-hid') === '1') {
+      div.hidden = false;
+      div.removeAttribute('data-vax-hid');
+    }
+  }
+  var changed = false;
+  if (on) {
+    // ล้างฟิลด์ผู้รับบริการ (ตัวตั้งค่าเดิม) — คิว/HN/คำนำหน้า/ชื่อ ⇒ validateForm ไม่ติดด่านคิว/HN ของค่าที่ค้างมาจากจุดอื่น
+    var q = qs('queueSelect'), nm = qs('patientName'), hn = qs('patientHn'), pf = qs('patientPrefix');
+    if ((q && q.value) || (nm && nm.value) || (hn && hn.value) || (pf && pf.value)) changed = true;
+    if (q) q.value = '';
+    if (nm) nm.value = '';
+    if (hn) hn.value = '';
+    if (pf) pf.value = '';
+    if (typeof syncPrefixButtons === 'function') syncPrefixButtons();
+    if (typeof updateHnHint === 'function') updateHnHint();
+    if (typeof clearHoArrive_ === 'function' && STATE.arrivePreId) { clearHoArrive_(); changed = true; } // คนนัดที่ผูกไว้ที่จุดอื่นห้ามติด preId มากับแถววัคซีน
+    // ล้างรายการของแผงที่ซ่อน — ซ่อนอย่างเดียวไม่พอ ค่าที่มองไม่เห็นจะหลุดไปกับ payload/ยอดเงิน
+    VAX_POINT_HIDE_IDS_.forEach(function (id) {
+      var panel = qs(id);
+      if (!panel || id === 'panelPerson' || !panel.querySelectorAll) return;
+      panel.querySelectorAll('input, select, textarea').forEach(function (f) {
+        if (f.type === 'checkbox' || f.type === 'radio') {
+          if (f.checked) { f.checked = false; changed = true; }
+        } else if (f.tagName === 'SELECT') {
+          if (f.value !== '') { f.value = ''; changed = true; }
+        } else if (f.type !== 'button' && f.type !== 'submit' && f.value !== f.defaultValue) {
+          f.value = f.defaultValue; changed = true;
+        }
+      });
+    });
+    if (STATE.labFollowupFree && typeof setLabFree_ === 'function') { setLabFree_(false); changed = true; }
+    // เพศอยู่ในแผงผู้รับบริการที่ซ่อน แต่ payload ส่ง getSelectedGender() เสมอ ⇒ ค่าค้างจากจุดอื่นต้องล้างด้วย
+    document.querySelectorAll('input[name="gender"]').forEach(function (g) { if (g.checked) { g.checked = false; changed = true; } });
+    var pfo = qs('patientPrefixOther');
+    if (pfo && pfo.value) { pfo.value = ''; changed = true; }
+    if (changed && typeof updatePickupDateVisibility === 'function') updatePickupDateVisibility(''); // ซ่อนช่องวันนัดรับกลับไปด้วย ไม่ใช่แค่ล้างค่า (เหมือน resetLogForm)
+    if (changed) {
+      STATE.lastAutoCheckupAmount = null;
+      STATE.lastPricingKey = null;
+      if (typeof resetMedLabSoloState_ === 'function') resetMedLabSoloState_();
+      if (!skipRecalc && typeof recalcTotals === 'function') recalcTotals();
+    }
+  }
+  if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_();
+}
+
+/* ---------- รอบ 119ฉ: สรุป + รายการของวัน (V2/V6/V7/V8) ---------- */
+// รหัสวัคซีนของแถว — ฝั่งเซิร์ฟเวอร์คืนเป็น rec.vaccineCodes (อาร์เรย์) · รับ rec.vaccines เป็นทางสำรอง (รายการ string หรือ {code})
+function vaxRecCodes_(rec) {
+  var c = rec && (Array.isArray(rec.vaccineCodes) ? rec.vaccineCodes : rec.vaccines);
+  if (!Array.isArray(c)) return [];
+  var out = [];
+  c.forEach(function (x) {
+    var s = (x && typeof x === 'object') ? (x.code || x.name) : x;
+    if (s !== undefined && s !== null && String(s) !== '') out.push(String(s));
+  });
+  return out;
+}
+function vaxNameOfCode_(code) {
+  var list = STATE.vaccines || [];
+  for (var i = 0; i < list.length; i++) if (String(list[i].code) === String(code)) return list[i].name || code;
+  return code;
+}
+// สรุปล้วน (ไม่แตะ DOM): แต่ละแถวจัดกลุ่มครั้งเดียวตามลำดับ ตรวจสุขภาพ → ใบรับรองมี Lab (คิด PE แล้ว) → วัคซีน ⇒ total = checkup + medLab + vaccine เสมอ
+// money = ผลรวม totals.vaccine ของแถวที่รับเข้ามา · doses เรียงตามลำดับรายการวัคซีนใน config เฉพาะตัวที่ ≥ 1 เข็ม (รหัสที่ไม่อยู่ใน config ต่อท้ายตามลำดับที่เจอ)
+function computeVaxPointSummary_(records) {
+  var r = { total: 0, checkup: 0, vaccine: 0, medLab: 0, money: 0, doses: [] };
+  var counts = {}, seen = [];
+  (records || []).forEach(function (rec) {
+    r.total++;
+    if (rec.vaccineWithCheckup) r.checkup++;
+    else if (rec.vaccinePeCharged) r.medLab++;
+    else r.vaccine++;
+    r.money += Number(rec.totals && rec.totals.vaccine) || 0;
+    vaxRecCodes_(rec).forEach(function (code) {
+      if (!Object.prototype.hasOwnProperty.call(counts, code)) { counts[code] = 0; seen.push(code); }
+      counts[code]++;
+    });
+  });
+  var order = (STATE.vaccines || []).map(function (v) { return String(v.code); });
+  seen.slice().sort(function (a, b) {
+    var ia = order.indexOf(a), ib = order.indexOf(b);
+    if (ia === -1) ia = 1e9 + seen.indexOf(a);
+    if (ib === -1) ib = 1e9 + seen.indexOf(b);
+    return ia - ib;
+  }).forEach(function (code) {
+    if (counts[code] >= 1) r.doses.push({ name: vaxNameOfCode_(code), n: counts[code] });
+  });
+  return r;
+}
+// แถวที่ขึ้นรายการ: เฉพาะที่บันทึกจากจุดนับ vaccine เอง · ไม่ยกเลิก · มีวัคซีน · ใหม่ไปเก่า (เวลาเท่ากัน คงลำดับท้ายก่อน)
+function vaxPointRows_(records) {
+  var rows = [];
+  (records || []).forEach(function (rec, i) {
+    if (!rec || rec.point !== VACCINE_COUNT_POINT_ || rec.status === 'ยกเลิก') return;
+    if (vaxRecCodes_(rec).length === 0) return;
+    rows.push({ rec: rec, i: i });
+  });
+  rows.sort(function (a, b) {
+    var ta = String(a.rec.time || ''), tb = String(b.rec.time || '');
+    if (ta !== tb) return ta < tb ? 1 : -1;
+    return b.i - a.i;
+  });
+  return rows.map(function (x) { return x.rec; });
+}
+function renderVaxPointBox_() {
+  var box = qs('vaxPointBox');
+  if (!box) return;
+  var show = vaxCountModeOn_();
+  box.hidden = !show;
+  if (!show) return;
+  var titleEl = qs('vaxPointTitle'), sumEl = qs('vaxPointSummary'), listEl = qs('vaxPointList');
+  if (!titleEl || !sumEl || !listEl) return;
+  var back = (typeof isBackdateMode_ === 'function') && isBackdateMode_();
+  var day = (typeof formDayStr_ === 'function') ? formDayStr_() : todayStr();
+  titleEl.textContent = 'รายการจุดนับ vaccine ' + (back ? ('วันที่ ' + formatThaiDate(day)) : 'วันนี้');
+  // ย้อนหลังแต่ยังโหลดรายการของวันนั้นไม่เสร็จ ⇒ ห้ามโชว์ 0 ราย (เป็นเลขเท็จ)
+  if (back && BACKDATE_DAY_.date !== day) {
+    sumEl.innerHTML = '';
+    if (BACKDATE_DAY_.failed === day) {
+      listEl.innerHTML = '<p class="muted">โหลดรายการของวันที่เลือกไม่สำเร็จ</p><button type="button" class="btn secondary small no-print" id="vaxPointRetry">ลองใหม่</button>';
+      var retryBtn = qs('vaxPointRetry');
+      if (retryBtn) retryBtn.addEventListener('click', function () { refreshBackdateDay_(); });
+    } else {
+      listEl.innerHTML = '<p class="muted">กำลังโหลดรายการของวันที่เลือก...</p>';
+    }
+    return;
+  }
+  // วันนี้ยังไม่เคยโหลดสำเร็จ ⇒ LAST_TODAY_RECORDS ว่างเพราะยังไม่มีข้อมูล ไม่ใช่เพราะไม่มีรายการ ห้ามโชว์ "0 ราย" (เจ้าหน้าที่อาจลงซ้ำ)
+  if (!back && TODAY_LOADED_DAY_ !== todayStr()) {
+    sumEl.innerHTML = '';
+    if (TODAY_FAILED_DAY_ === todayStr()) {
+      listEl.innerHTML = '<p class="muted">โหลดรายการวันนี้ไม่สำเร็จ</p><button type="button" class="btn secondary small no-print" id="vaxPointRetry">ลองใหม่</button>';
+      var retryToday = qs('vaxPointRetry');
+      if (retryToday) retryToday.addEventListener('click', function () { loadToday(); });
+    } else {
+      listEl.innerHTML = '<p class="muted">กำลังโหลดรายการวันนี้...</p>';
+    }
+    return;
+  }
+  var rows = vaxPointRows_(formDayRecords_());
+  var s = computeVaxPointSummary_(rows);
+  var html = '<div class="vps-main">ทั้งหมด ' + s.total + ' ราย · ยอดเงิน ' + escHtml(money(s.money)) + ' บาท</div>' +
+    '<div>คิวตรวจสุขภาพ ' + s.checkup + ' · คิว M ใบรับรองแพทย์มี Lab ' + s.medLab + ' · คิววัคซีน ' + s.vaccine + '</div>';
+  if (s.doses.length) {
+    html += '<div>' + s.doses.map(function (d) { return escHtml(d.name) + ' ' + d.n + ' เข็ม'; }).join(' · ') + '</div>';
+  }
+  sumEl.innerHTML = html;
+  if (!rows.length) {
+    listEl.innerHTML = '<p class="muted">ยังไม่มีบันทึกวัคซีน' + (back ? '' : 'วันนี้') + '</p>';
+    return;
+  }
+  listEl.innerHTML = rows.map(function (rec) {
+    var names = vaxRecCodes_(rec).map(vaxNameOfCode_).join(', ');
+    var t = String(rec.time || ''); // 'yyyy-MM-dd HH:mm:ss' ⇒ โชว์เฉพาะเวลา
+    var sp = t.indexOf(' ');
+    if (sp !== -1) t = t.slice(sp + 1, sp + 6);
+    return '<div class="vax-point-row">' +
+      '<span class="vpr-time">' + escHtml(t) + '</span>' +
+      '<span class="vpr-name">' + escHtml(names) + '</span>' +
+      '<span class="vpr-money">' + escHtml(money(Number(rec.totals && rec.totals.vaccine) || 0)) + ' บาท</span>' +
+      '<span class="vpr-staff">ผู้บันทึก: ' + escHtml(rec.staffName || '-') + '</span>' +
+      '<span class="vpr-actions no-print">' +
+      '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '">แก้ไข</button>' +
+      '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '">ยกเลิก</button>' +
+      '</span></div>';
+  }).join('');
+  listEl.querySelectorAll('button[data-record-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onCancelRecord(btn.getAttribute('data-record-id'), btn); });
+  });
+  listEl.querySelectorAll('button[data-edit-id]').forEach(function (btn) {
+    btn.addEventListener('click', function () { onEditRecordClick(btn.getAttribute('data-edit-id')); });
+  });
+}
+
 function applyPointLayout() {
   capturePanelHomePositions_();
   updatePointBanner();
@@ -4925,6 +5178,7 @@ function applyPointLayout() {
     if (logFormEl) logFormEl.classList.remove('point-layout-custom');
     placeSvcBar_(); // รอบ 92: จุดคีย์ order ที่ config ไม่มีหัวข้อแผง — แถบยังขึ้นตามชื่อจุด
     if (svcBarActive_()) applySvcBarDefault_();
+    applyVaxCountPointMode_(); // รอบ 119ฉ: ทางออกก่อนกำหนดนี้ต้องคืนแผงที่เคยซ่อนด้วย (ออกจากจุดนับ vaccine ไปจุดที่ไม่มีหัวข้อแผง)
     return;
   }
 
@@ -4994,6 +5248,7 @@ function applyPointLayout() {
   placeSvcBar_(); // รอบ 92: แถบปุ่มบริการต่อจาก #panelPerson (หลังแทรกแผงทั้งหมดแล้ว) · จุดคีย์ order: applyCheckupPanelDefault_ ข้างล่างจัดแผงตามปุ่มที่จำไว้
   // รอบ 64: จุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ แผงตรวจสุขภาพพับ ยกเว้นมีค่าในแผง/คิวปัจจุบันเป็นคิวตรวจสุขภาพ (ต้องอยู่หลังลูป data-collapsed='0' ข้างบน)
   applyCheckupPanelDefault_();
+  applyVaxCountPointMode_(); // รอบ 119ฉ: ต้องหลังจัดแผง (ปลด hidden ของเส้นคั่น "บริการอื่น" ไปแล้วข้างบน)
 }
 
 // A-W5: จุดที่มี 'รายชื่อ' -> เปิดหน้ารายชื่อตรวจสุขภาพ มุมมองรายการ วันนี้ โหลดให้เลย (ทางเดียวกับปุ่มเมนู 🩺)
@@ -5577,6 +5832,7 @@ function exitEditMode() {
   STATE.editSpecialBack = [];
   setSubmitLabel('บันทึก');
   qs('editBanner').hidden = true;
+  if (typeof applyVaxCountPointMode_ === 'function') applyVaxCountPointMode_(true); // รอบ 119ฉ (V4): ออกจากโหมดแก้ไข ⇒ จุดนับ vaccine ซ่อนแผงกลับ (ไม่ recalc — resetLogForm ทำต่อเอง)
 }
 
 /* =========================================================================
@@ -5827,6 +6083,7 @@ function enterEditMode(rec) {
   // (onSaveQueueRetry_() เรียก openEditModalForRecord(editCtx.rec) ซ้ำ) ไม่ต้องไปค้น LAST_TODAY_RECORDS/LAST_CU_RECORDS
   // อีกรอบซึ่งอาจโดนรีเฟรชทับไปแล้วตั้งแต่ตอนกดบันทึกครั้งแรก
   EDIT_MODAL.originalRec = rec;
+  if (typeof applyVaxCountPointMode_ === 'function') applyVaxCountPointMode_(); // รอบ 119ฉ (V4): แก้ไขแถวเก่าที่จุดนับ vaccine ⇒ แผงผู้รับบริการ/บริการอื่นกลับมาเห็น (ก่อนเติมค่าแถว)
 
   // รอบ 9 (ก้อน B, ข้อ 4.6) — ล้างข้อความ "รวมแถวแล้ว" ที่อาจค้างจากการรวมแถวครั้งก่อน ไม่ให้หลุดไปโผล่ตอนแก้ไขแถวธรรมดา
   var mergeNoteElReset = qs('editBannerMergeNote');
@@ -6783,7 +7040,9 @@ function sendQueuedSave_(qid) {
         renderCheckupTable(CU_CACHE.records, CU_LOADED_DATE);
         renderCheckupList(CU_CACHE.records, CU_LOADED_DATE);
       }
-      if (!isEdit && payload.serviceDate && typeof invalidateBackdateDay_ === 'function') invalidateBackdateDay_(); // รอบ 119: เพิ่มแถวในวันนั้นแล้ว ⇒ แคชรายการของวันที่เลือกเก่า
+      if (!isEdit && payload.serviceDate && typeof refreshBackdateDay_ === 'function') refreshBackdateDay_(); // รอบ 119: เพิ่มแถวในวันนั้นแล้ว ⇒ แคชรายการของวันที่เลือกเก่า · รอบ 119ฉ: ใช้ refresh (invalidate+โหลดใหม่) กันกล่องค้างกำลังโหลดเมื่อผู้ใช้เลือกวันอดีตซ้ำก่อนคำตอบมา
+      // รอบ 119ฉ: แก้แถวย้อนหลังสำเร็จ ⇒ แคชของวันนั้นเก่า (รายการ/สรุปใต้แผงวัคซีนต้องเห็นค่าใหม่) · โหลดใหม่เฉพาะถ้ามีแคชวันย้อนหลังอยู่
+      if (isEdit && BACKDATE_DAY_.date && typeof refreshBackdateDay_ === 'function') refreshBackdateDay_();
       // รอบ 81 (W6): log+preId สำเร็จ ⇒ แถวรอมาถูกผูกเป็น 'มาแล้ว' — โหลด PRE_TODAY/การ์ดใหม่ · รอบ 119: เซิร์ฟเวอร์ผูกอัตโนมัติ (resp.pre) ก็โหลดใหม่เช่นกัน
       if (!isEdit && (payload.preId || resp.pre) && typeof reloadPreAfterAction_ === 'function') reloadPreAfterAction_();
       if (isEdit) refreshPendingAfterEdit_(); // รอบ 75: แก้ไขสำเร็จ (เช่น เปลี่ยนช่องทางรับผล) ⇒ ถ้าอยู่หน้า "ติดตามผล" โหลด pending ใหม่
@@ -7164,12 +7423,12 @@ function renderSupOpdSummary(records, dateStr) {
   if (!body) return;
   var r = computeSupOpd_(records, dateStr || todayStr()); // รอบ 74: แถว PAP วันอาทิตย์ตัดสินตามวันที่ดูอยู่
   var rows = [
-    ['มีหัตถการ', r.withProc, 'คน', 1], ['ไม่มีหัตถการ', r.noProc, 'คน', 1], ['ยอดรวมหัตถการ', r.total, 'คน', 1], null,
-    ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'คน'], ['MMG + U/S Breast', r.mmgUs, 'คน'], ['ENT', r.ent, 'คน'],
-    ['ENT + Audio', r.entAudio, 'คน'], ['ห้องตรวจตา', r.vision, 'คน'], ['EKG', r.ekg, 'คน'], ['U/S ช่องท้อง', r.usAbdomen, 'คน'], ['Inbody', r.inbody, 'คน'],
-    ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'คน'], ['PPD test', r.ppd, 'คน']
+    ['มีหัตถการ', r.withProc, 'ราย', 1], ['ไม่มีหัตถการ', r.noProc, 'ราย', 1], ['ยอดรวมหัตถการ', r.total, 'ราย', 1], null,
+    ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'ราย'], ['MMG + U/S Breast', r.mmgUs, 'ราย'], ['ENT', r.ent, 'ราย'],
+    ['ENT + Audio', r.entAudio, 'ราย'], ['ห้องตรวจตา', r.vision, 'ราย'], ['EKG', r.ekg, 'ราย'], ['U/S ช่องท้อง', r.usAbdomen, 'ราย'], ['Inbody', r.inbody, 'ราย'],
+    ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'ราย'], ['PPD test', r.ppd, 'ราย']
   ];
-  if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'คน']);
+  if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'ราย']);
   // รอบ 115 R4: วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG+U/S Breast / ENT / ENT+Audio / ห้องตรวจตา ⇒ ซ่อนแถวเมื่อจำนวน 0 (ไม่ใช่ 0 ⇒ ยังแสดง · ยอดรวมไม่เปลี่ยน)
   if (r.isSunday) {
     var sundayHide = ['BMD', 'MMG + U/S Breast', 'ENT', 'ENT + Audio', 'ห้องตรวจตา'];
@@ -7255,11 +7514,11 @@ function renderTodaySummaryBar_(st) {
   //   (และห้ามพิมพ์แท็ก div แบบเต็มในคอมเมนต์ด้วย — test_verify_web.js นับแท็กเปิด/ปิดจากตัวไฟล์ดิบ แล้วจะล้ม)
   var rowsHtml = breakdown.map(function (b) {
     return '<span class="sum-name">' + b[0] + '</span>' +
-      '<span class="sum-n">' + (b[1] === null ? '—' : b[1]) + '</span><span class="sum-u">' + (b[1] === null ? '' : 'คน') + '</span>' +
+      '<span class="sum-n">' + (b[1] === null ? '—' : b[1]) + '</span><span class="sum-u">' + (b[1] === null ? '' : 'ราย') + '</span>' +
       '<span class="sum-b">' + money(b[2]) + '</span><span class="sum-u">บาท</span>';
   }).join('');
   sumBar.innerHTML =
-    '<div>ผู้รับบริการทั้งหมด ' + st.totalPeople + ' คน • ยอดค่าบริการรวม ' + money(st.totalMoney) + ' บาท</div>' +
+    '<div>ผู้รับบริการทั้งหมด ' + st.totalPeople + ' ราย • ยอดค่าบริการรวม ' + money(st.totalMoney) + ' บาท</div>' +
     '<div class="sum-grid sum-breakdown">' + rowsHtml + '</div>';
 }
 
@@ -7269,6 +7528,8 @@ function renderTodayList(records) {
   // (loadToday()/applySavedRecord()/ตัวกรอง HN) ⇒ อัปเดตแคชคู่กับ point+date ปัจจุบันไว้ที่นี่ที่เดียว
   TODAY_CACHE = { key: STATE.point + '|' + todayStr(), records: LAST_TODAY_RECORDS, json: JSON.stringify(LAST_TODAY_RECORDS) };
   maybeSuggestNextCheckupQueue(); // รอบ 60 ข้อ 2: ข้อมูลวันนี้ใหม่ ⇒ คำแนะนำคิวต้องไม่ค้างเลขเก่า (ไม่เขียนค่าในช่อง)
+  // รอบ 119ฉ: รายการใต้แผงวัคซีนเป็นของ "วันที่ของฟอร์ม" ไม่ใช่วันที่หน้ารายการรายวันกำลังดู ⇒ ต้องวาดก่อน return ข้างล่าง
+  if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_();
   // รอบ 74: ตั้ง state ของ "วันนี้จริง" เสมอ แต่วาดลงจอเฉพาะตอนกำลังดูวันนี้ — ดูวันอื่นอยู่ ⇒ จอเป็นของ TODAY_VIEW_RECORDS ห้ามทับ
   if (!isViewingToday_()) return;
   drawTodayList_(LAST_TODAY_RECORDS, todayStr());
@@ -7362,6 +7623,13 @@ function onEditRecordClick(recordId, src) {
     }
   }
   if (!rec) {
+    // รอบ 119ฉ: แถวของวันย้อนหลังที่ฟอร์มเลือกอยู่ (รายการใต้แผงวัคซีนที่จุดนับ vaccine) — อยู่ใน BACKDATE_DAY_ เท่านั้น
+    var bdRecs = BACKDATE_DAY_.records || [];
+    for (var b = 0; b < bdRecs.length; b++) {
+      if (bdRecs[b].recordId === recordId) { rec = bdRecs[b]; break; }
+    }
+  }
+  if (!rec) {
     // รอบ 75: แถวจากหน้า "ติดตามผล" (PENDING_RECORDS) — ไม่เคยอยู่ใน LAST_TODAY_RECORDS/LAST_CU_RECORDS ถ้าเป็นของวันก่อน ๆ
     for (var q = 0; q < PENDING_RECORDS.length; q++) {
       if (PENDING_RECORDS[q].recordId === recordId) { rec = PENDING_RECORDS[q]; break; }
@@ -7399,7 +7667,7 @@ function resetTodayDisplayLoading_(dateStr) {
   var noteEl = qs('todaySupNote');
   if (noteEl) noteEl.textContent = 'นับจากรายการทุกจุด ' + ((dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr))) + ' (ไม่นับที่ยกเลิก)';
   var sumBar = qs('todaySummaryBar');
-  if (sumBar) sumBar.textContent = 'วันนี้ให้บริการ — คน · ยอดเงินรวม — บาท';
+  if (sumBar) sumBar.textContent = 'วันนี้ให้บริการ — ราย · ยอดเงินรวม — บาท';
   var supBody = qs('specialTodaySummaryBody');
   if (supBody) supBody.innerHTML = '';
   var wrap = qs('todayList');
@@ -7819,10 +8087,18 @@ function onQcaClick_(e) {
   }
 }
 
+// รอบ 119ฉ (M1): สถานะ "วันนี้โหลดสำเร็จแล้วหรือยัง" สำหรับกล่องรายการจุดนับ vaccine — ตั้ง LOADED เฉพาะเมื่อคำตอบ today ใช้ได้ (isListResp_)
+// ผูกกับวันที่ (yyyy-MM-dd) ⇒ ข้ามวันแล้วกลับเป็นยังไม่โหลดเอง · applySavedRecord ที่ upsert ลง LAST_TODAY_RECORDS ตอนยังไม่โหลดห้ามนับเป็นโหลดแล้ว
+var TODAY_LOADED_DAY_ = '';
+var TODAY_FAILED_DAY_ = '';
 function loadTodayRun_(isRetry) {
   // รอบ 118 (แทนรอบ 72): เลิกด่าน "ยังไม่เลือกจุด ⇒ ไม่ยิง today" เพราะ todayAllPointsFor_() คืน true ทุกจุด (allPoints=true) — เซิร์ฟเวอร์ไม่ใช้ point
   var seq = ++TODAY_LOAD_SEQ;
   var dateStr = todayStr();
+  if (!isRetry) { // กดลองใหม่/เปลี่ยนจุด ⇒ ล้างสถานะล้มของกล่องจุดนับ vaccine (ลองใหม่อัตโนมัติรอบเดียวคงข้อความล้มไว้ไม่กระพริบ)
+    TODAY_FAILED_DAY_ = '';
+    if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_();
+  }
   var key = STATE.point + '|' + dateStr;
   // รอบ 15 (2026-09-17) — W2: มีแคชของจุดบริการ+วันนี้อยู่แล้ว -> โชว์ทันทีก่อนรอ API ตอบ (ไม่ขึ้น "กำลังโหลด...")
   // แล้วรีเฟรชเบื้องหลัง ป้าย "กำลังอัปเดต…" บอกว่ากำลังยิงซ้ำอยู่
@@ -7842,8 +8118,10 @@ function loadTodayRun_(isRetry) {
     if (isListResp_(resp)) {
       var records = resp.records;
       var json = JSON.stringify(records);
+      TODAY_LOADED_DAY_ = dateStr; TODAY_FAILED_DAY_ = ''; // รอบ 119ฉ (M1)
       if (cacheHit && json === TODAY_CACHE.json) {
         if (isViewingToday_()) setRefreshHint('todayRefreshHint', 'none'); // เหมือนเดิมทุกตัวอักษร ไม่ต้อง render ซ้ำ
+        if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_(); // รอบ 119ฉ: เพิ่งโหลดสำเร็จ (แคชเหมือนเดิม) ⇒ กล่องเลิกกำลังโหลด
         return;
       }
       renderTodayList(records); // ตั้ง LAST_TODAY_RECORDS + TODAY_CACHE ให้เองข้างในแล้ว (วาดเฉพาะตอนดูวันนี้)
@@ -7852,6 +8130,8 @@ function loadTodayRun_(isRetry) {
     }
     // ---- คำตอบเสีย ----
     var failMsg = badListRespMessage_(resp);
+    TODAY_FAILED_DAY_ = dateStr; // รอบ 119ฉ (M1): กล่องจุดนับ vaccine — ถ้าเคยโหลดสำเร็จแล้ว (LOADED) จะคงรายการเดิม · ถ้ายังไม่เคย โชว์ข้อความล้ม + ลองใหม่
+    if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_();
     // ข้อมูลเดิมของ key เดียวกันที่อยู่บนจอ (อาจมาจากแคชก่อนเรียกนี้ หรือจาก applySavedRecord ระหว่างรอ) — เช็คสดตอนนี้
     var haveData = !!(TODAY_CACHE.key === key && TODAY_CACHE.records);
     if (!isViewingToday_()) {
@@ -8014,10 +8294,11 @@ function syncAfterServiceDateSet_() {
   applySundayClosedSends_();
   if (typeof loadBackdateDay_ === 'function') loadBackdateDay_();
   recalcTotals();
+  if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_(); // รอบ 119ฉ: เปลี่ยนวัน ⇒ รายการ+สรุปใต้แผงวัคซีนตามวันที่เลือก (ย้อนหลังที่ยังโหลดไม่เสร็จ = ข้อความกำลังโหลด)
   if (typeof hoFutureEnsure_ === 'function') hoFutureEnsure_();
 }
 /* ---------- รอบ 119: ข้อมูลของ "วันที่เลือก" ตอนบันทึกย้อนหลัง (เช็คคิวซ้ำ/คนซ้ำ/แนะนำคิว ต้องเทียบวันเดียวกับที่จะลงชีต) ---------- */
-var BACKDATE_DAY_ = { date: '', records: [], seq: 0 };
+var BACKDATE_DAY_ = { date: '', records: [], seq: 0, failed: '' }; // failed = วันที่ (yyyy-MM-dd) ที่โหลดล้มเหลวล่าสุด (รอบ 119ฉ: ให้กล่องรายการโชว์ปุ่มลองใหม่ ไม่ค้างกำลังโหลด)
 // วันที่ของฟอร์ม: ย้อนหลัง = วันที่เลือก · นอกนั้น = วันนี้ (เดิม)
 function formDayStr_() { return isBackdateMode_() ? serviceDateValue_() : todayStr(); }
 // ตัวเข้าถึงเดียวของ "รายการของวันที่ฟอร์มจะลง": ย้อนหลัง = ของวันนั้น (ยังโหลดไม่เสร็จ/ล้ม = ว่าง · เซิร์ฟเวอร์ยังกันซ้ำเอง) · ปกติ = LAST_TODAY_RECORDS
@@ -8034,17 +8315,26 @@ function loadBackdateDay_() {
   var seq = ++BACKDATE_DAY_.seq;
   BACKDATE_DAY_.date = '';
   BACKDATE_DAY_.records = [];
+  BACKDATE_DAY_.failed = '';
   apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: day, allPoints: true }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
     if (seq !== BACKDATE_DAY_.seq) return; // มีคำขอใหม่/ล้างแคชแล้ว ⇒ ทิ้งคำตอบเก่า
-    if (!isListResp_(resp)) return; // โหลดไม่สำเร็จ ⇒ เงียบ (เซิร์ฟเวอร์ยังกันซ้ำ)
+    if (!isListResp_(resp)) { // โหลดไม่สำเร็จ ⇒ เงียบ (เซิร์ฟเวอร์ยังกันซ้ำ) · รอบ 119ฉ: แต่กล่องรายการจุดนับ vaccine ต้องบอกว่าล้มเหลว + ปุ่มลองใหม่
+      BACKDATE_DAY_.failed = day;
+      if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_();
+      return;
+    }
     if (!isBackdateMode_() || serviceDateValue_() !== day) return;
     BACKDATE_DAY_.date = day;
     BACKDATE_DAY_.records = resp.records || [];
     maybeSuggestNextCheckupQueue();
     recalcTotals();
+    if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_(); // รอบ 119ฉ
   });
 }
-function invalidateBackdateDay_() { BACKDATE_DAY_.date = ''; BACKDATE_DAY_.records = []; BACKDATE_DAY_.seq++; }
+function invalidateBackdateDay_() {
+  BACKDATE_DAY_.date = ''; BACKDATE_DAY_.records = []; BACKDATE_DAY_.seq++; BACKDATE_DAY_.failed = '';
+  if (typeof renderVaxPointBox_ === 'function') renderVaxPointBox_(); // รอบ 119ฉ: แคชเก่าทิ้งแล้ว ⇒ รายการใต้แผงวัคซีนต้องไม่โชว์ของเก่า
+}
 // ล้างแล้วโหลดใหม่ (ไม่ได้อยู่โหมดย้อนหลัง ⇒ loadBackdateDay_ ไม่ยิง) — ใช้หลังยกเลิกแถว: ทางแก้ลงผิดคือยกเลิกแล้วลงใหม่ ต้องไม่เห็นแถวที่ยกเลิกแล้วเป็นของซ้ำ
 function refreshBackdateDay_() { invalidateBackdateDay_(); loadBackdateDay_(); }
 // หลังกดบันทึก (ถัดจาก resetLogForm): ช่องวันที่เป็นอดีตและไม่ได้แก้รายการรอมา ⇒ กลับวันนี้ + ซิงก์ + ล้างแคชนัดล่วงหน้า (เป็นของวันเก่า)
@@ -8473,7 +8763,7 @@ function renderPreList_() {
   if (!rows.length) {
     if (PRE_VIEW.error && !sorted.length) { wrap.innerHTML = ''; return; } // โหลดล้ม ไม่มีข้อมูล ⇒ กล่องผิดพลาด+ลองใหม่เท่านั้น ไม่บอกว่า "ไม่มีรายชื่อ"
     wrap.innerHTML = String(q || '').trim() ? '<p class="muted">ไม่พบรายการที่ตรงกับคำค้น</p>'
-      : (noShowN > 0 ? ('<p class="muted">ไม่มีรายการรอ — ไม่มา ' + noShowN + ' คน</p>')
+      : (noShowN > 0 ? ('<p class="muted">ไม่มีรายการรอ — ไม่มา ' + noShowN + ' ราย</p>')
         : ('<p class="muted">ไม่มีรายชื่อนัด' + (PRE_VIEW.date === todayStr() ? 'วันนี้' : ('วันที่ ' + apptDayLabel_(PRE_VIEW.date))) + '</p>')); // รอบ 88: วันว่าง
     return;
   }
@@ -9262,7 +9552,7 @@ function hoImpUpdateButtons_() {
   if (!btn) return;
   var show = !!st.parsed && !st.done;
   btn.hidden = !show;
-  btn.textContent = st.busy ? 'กำลังนำเข้า…' : ('ยืนยันนำเข้า ' + st.newRows.length + ' คน');
+  btn.textContent = st.busy ? 'กำลังนำเข้า…' : ('ยืนยันนำเข้า ' + st.newRows.length + ' ราย');
   btn.disabled = !show || st.busy || st.newRows.length === 0;
 }
 function hoImpFail_(msg) {
@@ -9298,7 +9588,7 @@ function hoImpRender_() {
     h += '<p class="muted">ไม่มีรายการใหม่ให้นำเข้า</p>';
   }
   if (st.missing.length) {
-    h += '<div id="hoImpMissing"><h3 style="margin:10px 0 2px;">ไม่อยู่ในไฟล์ล่าสุด ' + st.missing.length + ' คน</h3>' +
+    h += '<div id="hoImpMissing"><h3 style="margin:10px 0 2px;">ไม่อยู่ในไฟล์ล่าสุด ' + st.missing.length + ' ราย</h3>' +
       '<p class="muted" style="margin:0 0 4px;">เคยนำเข้าจาก HO แต่ไม่อยู่ในไฟล์นี้ — ระบบไม่ลบให้เอง ยกเลิกรายคนได้</p>';
     st.missing.forEach(function (it) {
       h += '<div class="ho-missing-row" data-ho-miss="' + escHtml(it.preId) + '"><div class="pre-row-main"><span class="pre-name">' + escHtml(preItemFullName_(it)) + '</span>' +
@@ -9309,7 +9599,7 @@ function hoImpRender_() {
   }
   var r = st.result;
   if (r) {
-    h += '<div class="ho-sum" id="hoImpResult"><b>ผลนำเข้า:</b> นำเข้า ' + r.added + ' คน (ซ้ำ ข้าม ' + r.skipped + ' · ผิดพลาด ' + r.errors.length + ')';
+    h += '<div class="ho-sum" id="hoImpResult"><b>ผลนำเข้า:</b> นำเข้า ' + r.added + ' ราย (ซ้ำ ข้าม ' + r.skipped + ' · ผิดพลาด ' + r.errors.length + ')';
     r.errors.forEach(function (er) {
       h += '<div class="pre-field-err">' + escHtml('แถวที่ ' + (er.index + 1) + (er.name ? (' ' + er.name) : '') + ': ' + er.message) + '</div>';
     });
@@ -9414,12 +9704,12 @@ function hoImpConfirm_() {
     if (seq !== HO_IMPORT.seq) return;
     st.busy = false;
     if (added || skipped || errors.length) {
-      showToast('นำเข้า ' + added + ' คน (ซ้ำ ข้าม ' + skipped + ' · ผิดพลาด ' + errors.length + ')');
+      showToast('นำเข้า ' + added + ' ราย (ซ้ำ ข้าม ' + skipped + ' · ผิดพลาด ' + errors.length + ')');
       reloadPreAfterAction_();
     }
     if (failMsg) {
       // ส่วนที่นำเข้าไปแล้วไม่ต้องนำเข้าซ้ำ — ให้เลือกไฟล์ใหม่ (เซิร์ฟเวอร์กันซ้ำให้อยู่แล้ว)
-      hoImpSetError_(failMsg + (added ? ' (นำเข้าไปแล้ว ' + added + ' คน — เลือกไฟล์ใหม่เพื่อดูรายการที่เหลือ)' : ''));
+      hoImpSetError_(failMsg + (added ? ' (นำเข้าไปแล้ว ' + added + ' ราย — เลือกไฟล์ใหม่เพื่อดูรายการที่เหลือ)' : ''));
       if (added) { st.done = true; }
       hoImpRender_();
       return;
@@ -10107,13 +10397,13 @@ function renderSpPeopleCards(id) {
     hPills.className = 'sp-board-heading-pills';
     var pillTotal = document.createElement('span');
     pillTotal.className = 'sp-board-pill';
-    pillTotal.textContent = 'รวม ' + rows.length + ' คน';
+    pillTotal.textContent = 'รวม ' + rows.length + ' ราย';
     var pillSent = document.createElement('span');
     // สี: N=0 -> เป็นกลาง · X<N -> เตือน (ยังไปไม่ครบ) · X===N && N>0 -> สำเร็จ (ไปครบแล้ว)
     var pillClass = 'sp-board-pill';
     if (rows.length > 0) pillClass += (sentCount < rows.length) ? ' sp-pill-warn' : ' sp-pill-ok';
     pillSent.className = pillClass;
-    pillSent.textContent = 'ไปตรวจแล้ว ' + sentCount + ' / ' + rows.length + ' คน';
+    pillSent.textContent = 'ไปตรวจแล้ว ' + sentCount + ' / ' + rows.length + ' ราย';
     hPills.appendChild(pillTotal);
     hPills.appendChild(pillSent);
     headingEl.appendChild(hTitle);
@@ -10744,7 +11034,7 @@ function hnNameHtml(rec) {
 /* เจ้าของสั่ง 2026-09-13: ตัดยอด U/S ออกจากโน้ตท้ายใบ (`checkupFootText`) เพราะบรรทัดนั้นติดไปบนกระดาษด้วย
    ⇒ `checkupFootText` ยังคงเดิมทุกตัวอักษรตั้งแต่ตอนนั้น ห้ามเอา U/S กลับไปต่อท้ายบรรทัดนี้อีก */
 function checkupFootText(rows, totalMoney) {
-  var t = 'รวม ' + rows.length + ' คน';
+  var t = 'รวม ' + rows.length + ' ราย';
   if (typeof totalMoney === 'number') t += ' · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท';
   return t;
 }
@@ -11349,7 +11639,7 @@ function checkupExtraSummaryHtml(rows) {
   var doctors = checkupDoctorCounts(rows);
   var html = '<div class="cu-extra no-print">';
   // รอบ 36 (W3, เจ้าของสั่ง "consult นับเป็นแพทย์"): หน่วย "ครั้ง"->"แพทย์" · "(M คน)"->"(M เคส)" — ตัวเลข/การนับไม่เปลี่ยน
-  html += '<div class="cu-extra-line">ยอด U/S (P3+4 · P2 อาทิตย์) <b>' + usCount + '</b> คน · consult <b>' + consultTotal + '</b> แพทย์ (<b>' + consultPeople + '</b> เคส)</div>';
+  html += '<div class="cu-extra-line">ยอด U/S (P3+4 · P2 อาทิตย์) <b>' + usCount + '</b> ราย · consult <b>' + consultTotal + '</b> แพทย์ (<b>' + consultPeople + '</b> เคส)</div>';
   if (doctors.length > 0) {
     // ชื่อแพทย์เป็นข้อความที่เจ้าหน้าที่พิมพ์เอง ⇒ ต้องผ่าน escHtml() เสมอ กัน < > โดนอ่านเป็นแท็ก
     var parts = doctors.map(function (d) { return escHtml(d.name) + ' = ' + d.count + ' เคส'; });
@@ -11889,6 +12179,19 @@ function cuNoteHtml(rec) {
       return cuNoteResendRowHtml(idx, item, pelvicResendLocked);
     }).join('');
     var pelvicMethodVal = (rec && rec.pelvicMethod) || '';
+    // รอบ 119ช (G8): ช่อง "วันที่ไปตรวจภายใน" — ไม่มีใน DOM เลยที่แถว pelvicsun · no-print · ว่าง = วันเดียวกับวันตรวจสุขภาพ
+    // data-service-date/min = วันตรวจสุขภาพของแถว (ปฏิทินไทย thd* อ่าน min · กรอบแดงผ่าน data-closed-days="gyn")
+    var gynServiceDate = (rec && rec.date) || '';
+    var gynDateFieldHtml = isPelvicOnlyProgram_(rec && rec.program) ? '' :
+      '<label class="field-label no-print">วันที่ไปตรวจภายใน</label>' +
+      '<span class="cu-note-field no-print">' +
+      '<span class="cu-date-cell">' +
+      '<input type="date" class="cu-note-gyn-date" data-note-gyn-date="' + recId + '" data-closed-days="gyn" data-service-date="' + escHtml(gynServiceDate) + '"' +
+      (gynServiceDate ? ' min="' + escHtml(gynServiceDate) + '"' : '') + ' value="' + escHtml((rec && rec.gynDate) || '') + '"' + disAttr + '>' +
+      '<span class="cu-date-err-msg"></span>' +
+      '</span>' +
+      '<span class="cu-note-gyn-hint">ว่าง = วันเดียวกับวันตรวจสุขภาพ</span>' +
+      '</span>';
     // รอบ 27: ห่อเป็นกล่องแยกของตัวเอง ("ผลตรวจมะเร็งปากมดลูก · <ชนิด>") แทนการไหลต่อจากกล่อง "ผลตรวจสุขภาพ"
     // ด้วย .cu-note-break — กล่องแยกเป็นบรรทัดใหม่โดยอัตโนมัติอยู่แล้วจากการเป็น div คนละก้อน ไม่ต้องพึ่งตัวคั่นอีก
     pelvicBlockHtml =
@@ -11900,6 +12203,7 @@ function cuNoteHtml(rec) {
       // ผ่าน cuNotePelvicMethodOptionsHtml() ซึ่งกันค่าเก่าที่หลุดจากลิสต์ปัจจุบันไม่ให้หายด้วย
       // ⚠ ห้ามมี print span คู่กัน — เจ้าของสั่งให้ A4 ไม่แสดงช่องทางนี้เลย (ของเดิมก็ไม่เคยแสดงอยู่แล้ว)
       // .cu-note-field no-print ห่อตัว select ไว้เพื่อซ่อนตอนพิมพ์ list view เอง (ไม่ใช่แค่ CSS ประดับ)
+      gynDateFieldHtml +
       '<label class="field-label">ช่องทางส่งผล</label>' +
       '<span class="cu-note-field no-print">' +
       '<select class="cu-note-pelvic-method" data-note-pelvic-method="' + recId + '"' + disAttr + '>' +
@@ -12039,6 +12343,7 @@ function buildCuNotePayload_(recordId, values, flags, doctorNameBefore) {
   if (flags.hasReceivedBtn) payload.receivedDate = values.receivedDate;
   if (flags.hasPelvicMethod) payload.pelvicMethod = values.pelvicMethod;
   if (flags.hasPickupDate) payload.pickupDate = values.pickupDate;
+  if (flags.hasGynDate) payload.gynDate = values.gynDate; // รอบ 119ช: ส่งเฉพาะแถวที่มีช่องนี้ และ maybeSaveCuNote ส่งต่อเมื่อเปลี่ยนจริงเท่านั้น
   return payload;
 }
 
@@ -12073,6 +12378,9 @@ function describeCuNoteChanges_(oldValues, newValues, flags) {
   }
   if (flags.hasPickupDate && oldValues.pickupDate !== newValues.pickupDate) {
     parts.push(newValues.pickupDate ? ('นัดรับ ' + formatThaiDateShort(newValues.pickupDate)) : 'ล้างวันนัดรับ');
+  }
+  if (flags.hasGynDate && oldValues.gynDate !== newValues.gynDate) {
+    parts.push(newValues.gynDate ? ('ไปตรวจภายใน ' + formatThaiDateShort(newValues.gynDate)) : 'ล้างวันที่ไปตรวจภายใน');
   }
   return parts.join(' · ');
 }
@@ -12149,6 +12457,7 @@ function performCuNoteUndo_(recordId, oldValues, flags, label) {
         if (flags.hasReceivedBtn) rec.receivedDate = oldValues.receivedDate;
         if (flags.hasPelvicMethod) rec.pelvicMethod = oldValues.pelvicMethod;
         if (flags.hasPickupDate) rec.pickupDate = oldValues.pickupDate;
+        if (flags.hasGynDate) rec.gynDate = oldValues.gynDate;
       }
       // รอบ 41 (W3): ให้ชื่อแพทย์ที่เซิร์ฟเวอร์คืนมา (อาจเป็นชื่อที่กัปตันเติมไว้) ชนะค่าที่เลิกทำถ้าต่างกัน — ก่อน rerender กล่อง
       applyCuNoteServerDoctor_(recordId, resp, oldValues.doctorName);
@@ -12166,7 +12475,7 @@ function performCuNoteUndo_(recordId, oldValues, flags, label) {
 }
 
 function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl) {
+    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl, gynDateInput) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
@@ -12186,6 +12495,10 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var pelvicMethod = hasPelvicMethod ? pelvicMethodSelect.value : '';
   var hasPickupDate = !!pickupDateInput;
   var pickupDate = hasPickupDate ? pickupDateInput.value : '';
+  // รอบ 119ช: gynDateInput เป็น null ที่แถว pelvicsun/แถวไม่ตรวจภายใน ⇒ ไม่ส่งคีย์ gynDate
+  var hasGynDate = !!gynDateInput;
+  var gynDate = hasGynDate ? gynDateInput.value : '';
+  var recGynDate = (rec && rec.gynDate) || '';
 
   var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
   var recSentDate = (rec && rec.sentDate) || '';
@@ -12208,6 +12521,15 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   // รอบ 27 (C3) — "นัดรับวันที่" ถูกแก้เป็นวันปิด (วันเสาร์/วันหยุด) ⇒ ไม่ยิง noteUpdate จนกว่าจะแก้
   // ⚠ เฉพาะตอนค่า "เปลี่ยนจริง" จากค่าที่บันทึกไว้ล่าสุดเท่านั้น — แถวเก่าที่มีวันนัดเป็นวันปิดอยู่แล้วโดยยังไม่ได้แก้
   // ต้องยังบันทึกช่องอื่นได้ปกติ (ต่างจากกติกาลำดับวันที่ข้างบนโดยเจตนา — เจ้าของตัดสินไว้ทั้งคู่แล้ว)
+  // รอบ 119ช (G10): "วันที่ไปตรวจภายใน" ผิดกติกา (ก่อนวันตรวจสุขภาพ/วันอาทิตย์) ⇒ เตือน ไม่ส่ง ไม่แก้ค่าในแคช — เฉพาะตอนค่าเปลี่ยนจริง
+  if (hasGynDate && gynDate && gynDate !== recGynDate) {
+    var gynBlockReason = gynDateReason_(gynDate, (rec && rec.date) || '');
+    if (gynBlockReason) {
+      if (stateEl) { stateEl.textContent = 'ยังไม่บันทึก — ' + gynBlockReason; stateEl.className = 'cu-note-state err'; }
+      showToast(gynBlockReason);
+      return;
+    }
+  }
   if (hasPickupDate && pickupDate && pickupDate !== recPickupDate) {
     var pickupBlockReason = pickupClosedReason(pickupDate);
     if (pickupBlockReason) {
@@ -12224,23 +12546,24 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
       JSON.stringify(recPelvicResendList) === JSON.stringify(pelvicResendList) &&
       (!hasReceivedBtn || recReceivedDate === receivedDate) &&
       (!hasPelvicMethod || recPelvicMethod === pelvicMethod) &&
-      (!hasPickupDate || recPickupDate === pickupDate)) {
+      (!hasPickupDate || recPickupDate === pickupDate) &&
+      (!hasGynDate || recGynDate === gynDate)) {
     return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
   // รอบ 31B ข้อ 4: flags/oldValues/newValues ใช้รูปร่างเดียวกับ buildCuNotePayload_()/performCuNoteUndo_() —
   // oldValues เก็บ snapshot จากแคช (rec.*) "ก่อน" บันทึกเสมอ (ตัวแปร recXxx ข้างบนอ่านจาก rec ไปแล้วตั้งแต่ต้นฟังก์ชัน
   // ก่อนจะแตะ rec.* บรรทัดไหนเลย) — ใช้เป็น payload ของปุ่ม "เลิกทำ" ได้ตรง ๆ
-  var cuNoteFlags_ = { hasSentDate: hasSentDate, hasReceivedBtn: hasReceivedBtn, hasPelvicMethod: hasPelvicMethod, hasPickupDate: hasPickupDate };
+  var cuNoteFlags_ = { hasSentDate: hasSentDate, hasReceivedBtn: hasReceivedBtn, hasPelvicMethod: hasPelvicMethod, hasPickupDate: hasPickupDate, hasGynDate: hasGynDate && gynDate !== recGynDate };
   var cuNoteOldValues_ = {
     doctorName: (rec && rec.doctorName) || '', consult: !!(rec && rec.consult), consultCount: recConsultCount, consultNote: (rec && rec.consultNote) || '',
     pelvicSentDate: recPelvicSentDate, pelvicResendList: recPelvicResendList,
-    sentDate: recSentDate, resendList: recResendList, receivedDate: recReceivedDate, pelvicMethod: recPelvicMethod, pickupDate: recPickupDate
+    sentDate: recSentDate, resendList: recResendList, receivedDate: recReceivedDate, pelvicMethod: recPelvicMethod, pickupDate: recPickupDate, gynDate: recGynDate
   };
   var cuNoteNewValues_ = {
     doctorName: doctorName, consult: consult, consultCount: consultCount, consultNote: consultNote,
     pelvicSentDate: pelvicSentDate, pelvicResendList: pelvicResendList,
-    sentDate: sentDate, resendList: resendList, receivedDate: receivedDate, pelvicMethod: pelvicMethod, pickupDate: pickupDate
+    sentDate: sentDate, resendList: resendList, receivedDate: receivedDate, pelvicMethod: pelvicMethod, pickupDate: pickupDate, gynDate: gynDate
   };
   // รอบ 41 (W3): doctorNameBefore = ชื่อแพทย์ที่หน้านี้เห็นก่อนแก้ (cuNoteOldValues_.doctorName = rec.doctorName ในแคช;
   // ไม่มี rec ในแคช ⇒ ใช้ค่าตั้งต้นของช่องตอนวาดกล่อง = attribute value ไม่ใช่ค่าที่เพิ่งพิมพ์)
@@ -12259,6 +12582,7 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
         if (hasReceivedBtn) rec.receivedDate = receivedDate;
         if (hasPelvicMethod) rec.pelvicMethod = pelvicMethod;
         if (hasPickupDate) rec.pickupDate = pickupDate;
+        if (hasGynDate) rec.gynDate = (resp && typeof resp.gynDate === 'string') ? resp.gynDate : gynDate; // รอบ 119ช: ค่าจริงในชีต (อัปเดต CU_CACHE ผ่าน rec ตัวเดียวกัน)
       }
       // รอบ 41 (W3): แสดงผลจากค่าที่เซิร์ฟเวอร์คืนมา — ชื่อแพทย์ที่กัปตันเติมไว้ระหว่างที่หน้าเปิดค้างโผล่ทันที (ไม่ถูกค่าว่างของหน้านี้ทับ)
       applyCuNoteServerDoctor_(recordId, resp, doctorName);
@@ -12429,6 +12753,7 @@ function bindCuNoteEvents(container) {
     var pelvicMethodSelect = box.querySelector('.cu-note-pelvic-method');
     // รอบ 25 (2026-09-22): "นัดรับวันที่" ของผลตรวจสุขภาพ — null สำหรับแถวที่ deliveryMethod ไม่ใช่ 'นัดรับวันที่'
     var pickupDateInput = box.querySelector('.cu-note-pickupdate');
+    var gynDateInput = box.querySelector('.cu-note-gyn-date'); // รอบ 119ช: null ที่แถว pelvicsun/ไม่ตรวจภายใน
     // รอบ 27: หัวกล่อง "ผลตรวจสุขภาพ · <ช่องทางแบบสั้น>" — อัปเดตทันทีเมื่อแก้วันนัดในกล่อง
     var checkupSubEl = box.querySelector('[data-note-checkup-sub]');
     var stateEl = box.querySelector('.cu-note-state');
@@ -12439,7 +12764,7 @@ function bindCuNoteEvents(container) {
 
     function trySave() {
       return maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl);
+        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl, gynDateInput);
     }
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
@@ -12574,6 +12899,8 @@ function bindCuNoteEvents(container) {
     if (pickupDateInput) {
       pickupDateInput.addEventListener('change', function () { syncCheckupSub(); trySave(); });
     }
+    // รอบ 119ช: เฉพาะ change (thdSetValue ยิง input+change ⇒ บันทึกครั้งเดียวต่อการเลือกวัน)
+    if (gynDateInput) gynDateInput.addEventListener('change', trySave);
     // เฉพาะ change (ไม่ผูก blur ด้วย) กันยิงซ้ำ 2 ครั้งตอนพิมพ์แล้วคลิกออกช่อง
     consultCountInput.addEventListener('change', function () { syncConsultCountPrint(); trySave(); });
     consultChk.addEventListener('change', function () {
@@ -12626,7 +12953,7 @@ function renderCheckupList(records, dateStr) {
   // เจ้าของสั่ง 2026-09-15: ช่องค้นหา HN — แถบสรุป/กล่อง U/S ข้างบนยังคิดจาก rows (ทั้งวัน) เสมอ
   // มีแค่การ์ดที่ "แสดง" ในลูปข้างล่างที่กรองด้วย shownRows
   var shownRows = cuFilterRows(rows);
-  var html = '<div class="summary-bar">รวม ' + rows.length + ' คน · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท</div>';
+  var html = '<div class="summary-bar">รวม ' + rows.length + ' ราย · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท</div>';
   html += checkupExtraSummaryHtml(rows); // ต่อจาก .summary-bar ก่อนการ์ดใบแรก (no-print)
   if (shownRows.length === 0) html += '<p class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</p>';
   // รอบ 29 (S4) W4 (ข้อ 4): ห่อแต่ละคนด้วย .cu-person + แถบหัว (คิว/HN/ชื่อ-สกุล/โปรแกรม) ให้แยกคนได้ชัดเจนขึ้น
@@ -12672,7 +12999,7 @@ function renderCheckupList(records, dateStr) {
     var hintEl = qs('cuHnHint');
     if (hintEl) {
       hintEl.hidden = false;
-      hintEl.innerHTML = 'แสดง 1 จาก ' + rows.length + ' คน · <a href="#" id="cuSearchClearLink" class="no-print">ล้างการค้นหา</a>';
+      hintEl.innerHTML = 'แสดง 1 จาก ' + rows.length + ' ราย · <a href="#" id="cuSearchClearLink" class="no-print">ล้างการค้นหา</a>';
     }
   }
 }
@@ -12685,15 +13012,20 @@ var CU_VIEW = 'table';
 var CU_LOADED_DATE = ''; // วันที่ที่โหลดข้อมูลสำเร็จล่าสุด — showCuView() ใช้ตัดสินว่าต้องยิง API ใหม่หรือสลับมุมมองเฉย ๆ
 function setCuView(view) {
   // รอบ 60 ข้อ 6: ถอดมุมมอง 'pending' ออก — ทุกเส้นทางที่เคยตั้ง CU_VIEW='pending' (ค่าเก่า/ผู้เรียกเก่า) ตกไปเป็นมุมมองตาราง
-  CU_VIEW = (view === 'list') ? 'list' : 'table';
-  var tableEl = qs('cuTableWrap'), listEl = qs('cuListWrap');
+  // รอบ 119ช: เพิ่มมุมมอง 'gyn' (รายชื่อส่งนรีเวช) · 'table' ยังใช้เป็นพื้นที่พิมพ์ของปุ่มพิมพ์ 2 ปุ่ม (cuPrintAs_)
+  CU_VIEW = (view === 'list') ? 'list' : (view === 'gyn' ? 'gyn' : 'table');
+  var tableEl = qs('cuTableWrap'), listEl = qs('cuListWrap'), gynEl = qs('cuGynWrap');
   if (tableEl) tableEl.hidden = (CU_VIEW !== 'table');
   if (listEl) listEl.hidden = (CU_VIEW !== 'list');
-  ['btnCuViewTable'].forEach(function (id) {
+  if (gynEl) gynEl.hidden = (CU_VIEW !== 'gyn');
+  // หัวใบของมุมมองตาราง/รายการ (#cuTableHeading) ไม่เกี่ยวกับใบรายชื่อส่งนรีเวช ⇒ ซ่อนเมื่ออยู่มุมมองนี้ (ใบพิมพ์มีเฉพาะตารางนรีเวช)
+  var cuHeadEl = qs('cuTableHeading');
+  if (cuHeadEl) cuHeadEl.hidden = (CU_VIEW === 'gyn');
+  ['btnCuViewGyn'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var active = (CU_VIEW === 'table');
-    b.className = 'btn small' + (active ? '' : ' secondary');
+    var active = (CU_VIEW === 'gyn');
+    b.className = 'btn' + (active ? '' : ' secondary');
   });
   var loadBtn = qs('btnCuLoad'); // ตัวแทนมุมมอง list — ไม่ใส่คลาส small (ขนาดเดิมของปุ่มนี้ไม่เคยเป็น small)
   if (loadBtn) loadBtn.className = 'btn' + (CU_VIEW === 'list' ? '' : ' secondary');
@@ -13081,7 +13413,7 @@ function loadCheckupTableRun_(view, isRetry) {
           CU_LOADED_DATE = dateStr;
           renderCheckupTable(records, dateStr);
           renderCheckupList(records, dateStr);
-          setCuView(CU_VIEW);
+          setCuView(CU_VIEW); // รอบ 119ช: CU_VIEW อาจเป็น 'gyn' ⇒ คงไว้
           setRefreshHint('cuRefreshHint', 'none');
         });
         return;
@@ -13090,7 +13422,7 @@ function loadCheckupTableRun_(view, isRetry) {
       CU_CACHE = { key: dateStr, records: records, json: json };
       renderCheckupTable(records, dateStr);
       renderCheckupList(records, dateStr);
-      setCuView(view); // วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
+      setCuView(CU_VIEW === 'gyn' ? 'gyn' : view); // รอบ 119ช: ผู้ใช้ย้ายไปรายชื่อส่งนรีเวชระหว่างรอ ⇒ ไม่ดึงกลับ · วาดครบ 3 มุมมองแล้วค่อยยืนยันมุมมองอีกครั้ง (กันกรณี setCuView ถูกเรียกแทรกระหว่างรอ API)
       setRefreshHint('cuRefreshHint', 'none');
     } else {
       // ---- คำตอบเสีย (รอบ 72) ----
@@ -13112,6 +13444,128 @@ function loadCheckupTableRun_(view, isRetry) {
       }
     }
   });
+}
+
+/* =========================================================================
+   รอบ 119ช — มุมมอง "รายชื่อส่งนรีเวช" (#cuGynWrap) · action gynList (อ่านอย่างเดียว · ต้องมี staffKey)
+   อิงวันที่ #cuDate · โหลดสดทุกครั้งที่เปิด/เปลี่ยนวัน (G12 ไม่ใช้แคช) · ตัวนับ GYN_SEQ กันคำตอบเก่าทับ
+   ========================================================================= */
+var GYN_SEQ = 0;
+var GYN_LAST_ROWS = []; // เฉพาะอ่านล่าสุด (ไม่ใช่แคช · ไม่ถูกใช้ตัดสินใจโหลด)
+// วันอาทิตย์จากตัวเลข y-m-d ล้วน (Date.UTC) ⇒ ไม่ขึ้นกับ timezone ของเครื่อง
+function ymdIsSunday_(ymd) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  if (!m) return false;
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0;
+}
+// G10 ฝั่งเว็บ (คู่ขนานกับเซิร์ฟเวอร์): คืนข้อความเหตุผล หรือ null = ผ่าน · serviceDate = วันตรวจสุขภาพของแถว
+function gynDateReason_(ymd, serviceDate) {
+  if (!ymd) return null;
+  if (serviceDate && ymd < serviceDate) return 'วันที่ไปตรวจภายในต้องไม่ก่อนวันตรวจสุขภาพ';
+  if (ymdIsSunday_(ymd)) return 'วันที่ไปตรวจภายในห้ามเป็นวันอาทิตย์';
+  return null;
+}
+// คิว "C2" ก่อน "C10" — แยกอักษรนำ + เลข · ไม่มีเลข ⇒ ท้ายกลุ่ม
+function gynQueueKey_(q) {
+  var m = /^(\D*?)\s*(\d+)$/.exec(String(q || '').trim());
+  return m ? { p: m[1].toUpperCase(), n: parseInt(m[2], 10), has: true } : { p: '', n: 0, has: false };
+}
+function gynCmpName_(a, b) {
+  return String(a.name || '').localeCompare(String(b.name || ''), 'th');
+}
+// เรียง: วันนี้ก่อน (คิวตามเลข · ไม่มีคิวท้ายกลุ่ม) · คนจากวันอื่นต่อท้าย (วันตรวจสุขภาพ แล้วชื่อ)
+function sortGynRows_(rows) {
+  var today = [], other = [];
+  (rows || []).forEach(function (r) { (r && r.otherDay ? other : today).push(r); });
+  today.sort(function (a, b) {
+    var ka = gynQueueKey_(a.queue), kb = gynQueueKey_(b.queue);
+    if (ka.has !== kb.has) return ka.has ? -1 : 1;
+    if (ka.has) {
+      if (ka.p !== kb.p) return ka.p < kb.p ? -1 : 1;
+      if (ka.n !== kb.n) return ka.n - kb.n;
+    }
+    return gynCmpName_(a, b);
+  });
+  other.sort(function (a, b) {
+    var da = String(a.serviceDate || ''), db = String(b.serviceDate || '');
+    if (da !== db) return da < db ? -1 : 1;
+    return gynCmpName_(a, b);
+  });
+  return today.concat(other);
+}
+function gynRowsTableHtml_(rows) {
+  var html = '<table class="gyn-table"><thead><tr>' +
+    '<th class="gyn-c-no">ลำดับ</th><th class="gyn-c-q">คิว</th><th class="gyn-c-hn">HN</th>' +
+    '<th class="gyn-c-name">ชื่อ-สกุล</th><th class="gyn-c-type">ชนิดการตรวจ</th><th class="gyn-c-date">วันตรวจสุขภาพ</th>' +
+    '</tr></thead><tbody>';
+  rows.forEach(function (r, i) {
+    var queueText = r.otherDay ? '-' : String(r.queue || '');
+    var fullName = String(r.prefix || '') + String(r.name || '');
+    html += '<tr>' +
+      '<td class="gyn-c-no">' + (i + 1) + '</td>' +
+      '<td class="gyn-c-q">' + escHtml(queueText) + '</td>' +
+      '<td class="gyn-c-hn">' + escHtml(r.hn || '') + '</td>' +
+      '<td class="gyn-c-name">' + escHtml(fullName) + '</td>' +
+      '<td class="gyn-c-type">' + escHtml(pelvicShortLabel_(r.pelvic)) + '</td>' +
+      '<td class="gyn-c-date">' + escHtml(formatThaiDateShort(r.serviceDate)) + '</td>' +
+      '</tr>';
+  });
+  return html + '</tbody></table>';
+}
+function gynShell_(dateStr) {
+  var wrap = qs('cuGynWrap');
+  if (!wrap) return null;
+  wrap.innerHTML = '<h2 class="gyn-head" id="cuGynHeading">รายชื่อส่งนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
+    '<div id="cuGynBody"></div>';
+  return qs('cuGynBody');
+}
+function renderGynRows_(dateStr, rows) {
+  var body = gynShell_(dateStr);
+  if (!body) return;
+  var sorted = sortGynRows_(rows);
+  GYN_LAST_ROWS = sorted;
+  if (!sorted.length) {
+    body.innerHTML = '<p class="muted">ไม่มีรายชื่อส่งนรีเวชวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
+    return;
+  }
+  body.innerHTML = gynRowsTableHtml_(sorted) +
+    '<p class="gyn-total" id="cuGynTotal">รวม ' + sorted.length + ' ราย</p>' +
+    '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อส่งนรีเวช</button></div>';
+  var pb = qs('btnGynPrint');
+  if (pb) pb.addEventListener('click', function () { try { window.print(); } catch (e) { /* ไม่มีหน้าต่างพิมพ์ (DOM จำลอง) */ } });
+}
+function loadGynList() {
+  var seq = ++GYN_SEQ;
+  var dateStr = qs('cuDate').value || todayStr();
+  var body = gynShell_(dateStr);
+  if (!body) return;
+  GYN_LAST_ROWS = [];
+  if (ymdIsSunday_(dateStr)) { // G6: วันอาทิตย์ตรวจที่คลินิก ⇒ ไม่ยิงเซิร์ฟเวอร์
+    body.innerHTML = '<p class="muted">วันอาทิตย์ไม่มีรายชื่อส่งนรีเวช</p>';
+    return;
+  }
+  body.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  apiCall('gynList', { staffKey: STATE.staffKey, date: dateStr }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== GYN_SEQ) return; // มีการโหลดใหม่/เปลี่ยนวันแทรก ⇒ ทิ้งคำตอบเก่า
+    if (isListResp_(resp, ['rows'])) {
+      renderGynRows_(dateStr, resp.rows);
+    } else {
+      var b = qs('cuGynBody');
+      if (b) renderLoadFailBox_(b, 'โหลดรายชื่อส่งนรีเวชไม่สำเร็จ', badListRespMessage_(resp), function () { loadGynList(); });
+    }
+  }).catch(function () {
+    if (seq !== GYN_SEQ) return;
+    var b2 = qs('cuGynBody');
+    if (b2) renderLoadFailBox_(b2, 'โหลดรายชื่อส่งนรีเวชไม่สำเร็จ', '', function () { loadGynList(); });
+  });
+}
+function openGynView_() {
+  setCuView('gyn');
+  loadGynList(); // G12: อ่านจากแถวจริงทุกครั้งที่เปิด
+}
+// โหลดมุมมองที่เปิดอยู่ใหม่ (ข้ามวัน/เปลี่ยนวัน) — gyn ไม่ผ่าน loadCheckupTable
+function reloadCurrentCuView_() {
+  if (CU_VIEW === 'gyn') loadGynList(); else loadCheckupTable(CU_VIEW);
 }
 
 /* ตัวกลางที่ปุ่มแบบตาราง/แบบการ์ดเรียก — ถ้าข้อมูลของวันที่เลือกอยู่โหลดไว้แล้ว (CU_LOADED_DATE ตรงกับ #cuDate)
@@ -13578,7 +14032,7 @@ function listDatesCheckDayRollover() {
   if (cuScr && cuScr.style.display === 'block') {
     var ae = document.activeElement;
     var typing = ae && cuScr.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.id !== 'cuDate';
-    if (!typing && ensureCuDateDefault()) loadCheckupTable(CU_VIEW);
+    if (!typing && ensureCuDateDefault()) reloadCurrentCuView_();
   }
   var pdScr = qs('pendingScreen');
   if (pdScr && pdScr.style.display === 'block' && ensurePendingDateDefault()) updatePendingBulkButton();
@@ -13728,16 +14182,16 @@ function pendingSummaryHtml() {
     rows.forEach(function (rec) { var d = (rec && rec.date) || ''; counts[d] = (counts[d] || 0) + 1; });
     var dates = Object.keys(counts).sort();
     return dates.map(function (d) {
-      return '<div class="line muted">' + escHtml(formatThaiDateShort(d)) + ' : ' + counts[d] + ' คน</div>';
+      return '<div class="line muted">' + escHtml(formatThaiDateShort(d)) + ' : ' + counts[d] + ' ราย</div>';
     }).join('');
   }
 
   return filterLine +
-    '<div class="line">ผลตรวจสุขภาพ รอส่งออก <b>' + checkupExportRows.length + '</b> คน</div>' +
+    '<div class="line">ผลตรวจสุขภาพ รอส่งออก <b>' + checkupExportRows.length + '</b> ราย</div>' +
     byDateLines(checkupExportRows) +
-    '<div class="line" style="margin-top:8px;">ผลตรวจมะเร็งปากมดลูก รอส่งออก <b>' + pelvicExportRows.length + '</b> คน</div>' +
+    '<div class="line" style="margin-top:8px;">ผลตรวจมะเร็งปากมดลูก รอส่งออก <b>' + pelvicExportRows.length + '</b> ราย</div>' +
     byDateLines(pelvicExportRows) +
-    '<div class="line" style="margin-top:8px;">ผลตรวจสุขภาพ รอมารับ <b>' + checkupPickupCount + '</b> คน</div>';
+    '<div class="line" style="margin-top:8px;">ผลตรวจสุขภาพ รอมารับ <b>' + checkupPickupCount + '</b> ราย</div>';
 }
 
 function syncPendingSelectAll() {
@@ -13752,7 +14206,7 @@ function syncPendingSelectAll() {
 function updatePendingSelectedCount() {
   var el = qs('pendingSelectedCount');
   if (!el) return;
-  el.textContent = 'เลือก ' + Object.keys(PENDING_SELECTED).length + ' คน'; // รอบ 75: อยู่ในแถบล่าง "เลือก N คน · ป้ายวันที่ [วันที่] [ปุ่ม]"
+  el.textContent = 'เลือก ' + Object.keys(PENDING_SELECTED).length + ' ราย'; // รอบ 75: อยู่ในแถบล่าง "เลือก N ราย · ป้ายวันที่ [วันที่] [ปุ่ม]"
 }
 
 function updatePendingBulkButton() {
@@ -13766,7 +14220,7 @@ function updatePendingBulkButton() {
   var isPickup = (PENDING_KIND === 'pickup');
   var lbl = qs('pendingSentDateLabel');
   if (lbl) lbl.textContent = isPickup ? 'วันที่รับผล' : 'วันที่ส่งออก';
-  btn.textContent = isPickup ? ('บันทึกรับผลแล้ว (' + n + ' คน)') : ('บันทึกวันที่ส่งออก (' + n + ' คน)');
+  btn.textContent = isPickup ? ('บันทึกรับผลแล้ว (' + n + ' ราย)') : ('บันทึกวันที่ส่งออก (' + n + ' ราย)');
 }
 
 function renderPendingTable() {
@@ -13932,8 +14386,8 @@ function onPendingBulkSave() {
   var label = (PENDING_KIND === 'pelvic') ? 'ผลตรวจมะเร็งปากมดลูก' : 'ผลตรวจสุขภาพ';
   // รอบ 73: ชนิด pickup ใช้ข้อความยืนยันของ "รับผลแล้ว" · ชนิดอื่นข้อความเดิมเป๊ะ
   var confirmMsg = (PENDING_KIND === 'pickup')
-    ? ('บันทึกรับผลตรวจสุขภาพแล้ว ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' คน ใช่ไหม?')
-    : ('บันทึกวันที่ส่งออก' + label + ' ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' คน ใช่ไหม?');
+    ? ('บันทึกรับผลตรวจสุขภาพแล้ว ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' ราย ใช่ไหม?')
+    : ('บันทึกวันที่ส่งออก' + label + ' ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' ราย ใช่ไหม?');
   if (!window.confirm(confirmMsg)) return;
 
   var btn = qs('btnPendingBulkSave');
@@ -13986,13 +14440,13 @@ function onPendingBulkSave() {
     updatePendingBulkButton();
     showSkippedBox();
     if (errorMessage) {
-      showToast('❌ บันทึกไม่สำเร็จ: ' + errorMessage + ' (บันทึกไปแล้ว ' + allUpdated.length + ' คนก่อนหยุด)');
+      showToast('❌ บันทึกไม่สำเร็จ: ' + errorMessage + ' (บันทึกไปแล้ว ' + allUpdated.length + ' รายก่อนหยุด)');
     } else {
-      showToast('บันทึกแล้ว ' + allUpdated.length + ' คน');
+      showToast('บันทึกแล้ว ' + allUpdated.length + ' ราย');
     }
   }
 
-  if (chunks.length > 1) setProgress('กำลังบันทึก 0/' + ids.length + ' คน');
+  if (chunks.length > 1) setProgress('กำลังบันทึก 0/' + ids.length + ' ราย');
 
   function runChunk(i) {
     if (i >= chunks.length) { finish(null); return; }
@@ -14006,7 +14460,7 @@ function onPendingBulkSave() {
       allUpdated = allUpdated.concat(updated);
       allSkipped = allSkipped.concat(resp.skipped || []);
       doneCount += chunk.length;
-      if (chunks.length > 1) setProgress('กำลังบันทึก ' + doneCount + '/' + ids.length + ' คน');
+      if (chunks.length > 1) setProgress('กำลังบันทึก ' + doneCount + '/' + ids.length + ' ราย');
       applyChunkResult(updated);
       runChunk(i + 1); // ทีละชุดตามลำดับ — ยิงชุดถัดไปหลังชุดนี้ตอบสำเร็จแล้วเท่านั้น ห้ามยิงพร้อมกัน
     });
@@ -14103,7 +14557,7 @@ function dqIsCheckupQueue(q) {
 }
 // รอบ 48/49: ข้อความสรุป "N คิว · เฉลี่ย X นาที/คน" ใช้ทั้งระดับห้องและรายแพทย์ — รอบ 49: เฉลี่ยนับตามจริง ไม่มีหมายเหตุตัดเคส
 function dqFmtRoomStat(count, avgMinutes) {
-  return count + ' คิว · เฉลี่ย ' + avgMinutes + ' นาที/คน';
+  return count + ' คิว · เฉลี่ย ' + avgMinutes + ' นาที/ราย';
 }
 // รอบ 51: dqRoomDoctorGroups (ใช้ summary.byDoctor ของเซิร์ฟเวอร์) ถูกแทนด้วย dqRoomDoctorSplit — คำนวณจาก logs ในหน้าเว็บ
 // รอบ 96: รายการห้องที่ให้สีต้องตรงกับ dqRoomChoices (เพิ่ม/เปลี่ยนห้องที่หนึ่งต้องแก้อีกที่ด้วย)
@@ -16011,7 +16465,7 @@ function dqRenderDaySummary() {
   if (sm.manual && sm.noRecord > 0) {
     var nr = document.createElement('div');
     nr.className = 'dq-ds-norec';
-    nr.textContent = 'อีก ' + sm.noRecord + ' คนยังไม่มีบันทึก';
+    nr.textContent = 'อีก ' + sm.noRecord + ' รายยังไม่มีบันทึก';
     pd.appendChild(nr);
   }
   box.appendChild(pd);
@@ -17120,7 +17574,8 @@ function thdSetValue(input, dateStr) {
 function thdSyncClosedError(input) {
   var kind = input.getAttribute('data-closed-days');
   if (!kind) return;
-  var reason = (kind === 'pickup') ? pickupClosedReason(input.value) : null;
+  var reason = (kind === 'pickup') ? pickupClosedReason(input.value)
+    : (kind === 'gyn' ? gynDateReason_(input.value, input.getAttribute('data-service-date') || '') : null); // รอบ 119ช
   setDateFieldError(input, reason);
 }
 
@@ -17791,7 +18246,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // เจ้าของสั่ง 2026-09-15: "แบบตาราง/แบบการ์ด กดดูได้เลย แยกอิสระจากกัน" ⇒ ผ่าน showCuView() ทั้งคู่
   // (โหลดเองถ้ายังไม่มีข้อมูลของวันนี้ / สลับเฉย ๆ ถ้ามีแล้ว) — ส่วน "ดูรายชื่อ" เป็นปุ่ม "โหลด/รีเฟรช" ยิงใหม่เสมอ ไม่ใช้แคช
   qs('btnCuLoad').addEventListener('click', function () { loadCheckupTable('list'); }); // รอบ 8 (B7)
-  qs('btnCuViewTable').addEventListener('click', function () { showCuView('table'); });
+  qs('btnCuViewGyn').addEventListener('click', openGynView_); // รอบ 119ช (G1)
+  // รอบ 119ช: เปลี่ยนวันระหว่างอยู่มุมมองรายชื่อส่งนรีเวช ⇒ โหลดใหม่ (มุมมองอื่นยังต้องกด "ดูรายชื่อ" เหมือนเดิม)
+  qs('cuDate').addEventListener('change', function () { if (CU_VIEW === 'gyn') loadGynList(); });
   setCuView('table');
   qs('btnCuPrint').addEventListener('click', function () { cuPrintAs_('sign'); }); // รอบ 65: ลดฟอนต์ชื่อยาวก่อนพิมพ์ (afterprint คืนค่า) · รอบ 103: ใบเซ็นรับผลตรวจ
   qs('btnCuPrintData').addEventListener('click', function () { cuPrintAs_('data'); }); // รอบ 103: รายชื่อเก็บข้อมูล
