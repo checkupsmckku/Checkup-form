@@ -2620,6 +2620,15 @@ var SP_BOARD_SHORT_LABEL = { mmg: 'MMG', bmd: 'BMD', ent: 'ENT', ent_hearing: 'E
 // (รวมอยู่ในแท็บ mmg แทน) ใช้เฉพาะ renderSpBoardCards/renderSpBoardSwitchBar/spBoardCounts (เมนู+แถบสลับของกระดาน)
 // ห้ามใช้แทน SP_BOARD_ITEMS ที่อื่น (ฟอร์ม/สรุปรายวันต้องมี us_breast เป็นรายการของตัวเอง)
 var SP_BOARD_TAB_ITEMS = SP_BOARD_ITEMS.filter(function (s) { return s.id !== 'us_breast'; });
+// เจ้าของ 2026-11-10: ทั้งกระดานแสดง U/S Breast ถัดจาก MMG — คืนสำเนาเรียงใหม่สำหรับแสดงผล ห้ามเรียง SPECIAL_SENDS เอง (ต้องตรงกับเซิร์ฟเวอร์)
+function spDisplayOrder_(items) {
+  var us = items.filter(function (s) { return s.id === 'us_breast'; })[0];
+  var rest = items.filter(function (s) { return s.id !== 'us_breast'; });
+  var at = rest.map(function (s) { return s.id; }).indexOf('mmg');
+  if (!us || at === -1) return items.slice();
+  rest.splice(at + 1, 0, us);
+  return rest;
+}
 
 // รอบ 29 (S7) W7 (ข้อ 7): id ที่ใช้กับปุ่มสถานะ/ป้ายสถานะ/เรียง/ลบรายคนของคนนั้น — แท็บ mmg ⇒ 'mmg' ถ้าลงชื่อ mmg
 // ไม่งั้น 'us_breast' (แปลว่าลงแค่ us_breast) · แท็บอื่น ⇒ tabId ตรง ๆ ไม่มีการแปลง
@@ -3590,7 +3599,7 @@ function buildMedLabSpMirror_() {
   var wrap = qs('medLabSpMirror');
   if (!wrap) return;
   wrap.innerHTML = '';
-  SP_BOARD_ITEMS.forEach(function (item) {
+  spDisplayOrder_(SP_BOARD_ITEMS).forEach(function (item) {
     var row = document.createElement('label');
     row.className = 'check-row';
     row.id = 'mirror_row_' + item.id;
@@ -13441,7 +13450,7 @@ function renderReport(summary, period) {
     '</div>';
 
   // 5 ส่งตรวจพิเศษ — summary.special.items (object map {id: {reg, prep, sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
-  // มีแถว U/S Breast ตามลำดับ SPECIAL_SENDS เอง (วนตาม SPECIAL_SENDS อยู่แล้ว ไม่ต้องแก้เมื่อเพิ่ม id ใหม่)
+  // มีแถว U/S Breast ถัดจาก MMG ตาม spDisplayOrder_ (วนทุก id ใน SPECIAL_SENDS อยู่แล้ว ไม่ต้องแก้เมื่อเพิ่ม id ใหม่)
   // 🗑 เจ้าของสั่งตัดออก 2026-09-17 (ส่งภาพหน้าจอมาชี้): คอลัมน์สถานะ "คีย์ consult / ส่ง line" · "ส่งไปแล้ว" · "กลับมาแล้ว"
   //    รายงานรายเดือนต้องการแค่ "จำนวน" ต่อรายการ = reg (เซิร์ฟเวอร์บังคับ reg ⊇ prep/sent/back ⇒ นับครบทุกคน)
   //    ฝั่ง Apps Script ยังส่ง prep/sent/back มาเหมือนเดิม (ไม่ได้แตะ backend) — สถานะรายคนดูที่กระดานส่งตรวจพิเศษ
@@ -13449,7 +13458,7 @@ function renderReport(summary, period) {
   var specialItems = special.items || {};
   html += '<div class="card"><h2>5 ส่งตรวจพิเศษ</h2><div class="scroll-x"><table class="report-table"><thead><tr>' +
     '<th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
-  SPECIAL_SENDS.forEach(function (item) {
+  spDisplayOrder_(SPECIAL_SENDS).forEach(function (item) {
     var row = specialItems[item.id] || { reg: 0 };
     html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.reg) + '</td></tr>';
   });
@@ -14374,7 +14383,14 @@ function dqApplyJobLocal(st, job) {
   } else if (job.type === 'dqEnd') {
     dqCloseOpenLocal_(dqOpenLogsOfRoom_(logs, job.room), job.at); // รอบ 82: ปิดทุกแถวเปิดของห้อง
   } else if (job.type === 'dqCancel') {
-    logs.forEach(function (l) { if (String(l.id) === String(job.id)) l.status = 'ยกเลิก'; });
+    logs.forEach(function (l) {
+      if (String(l.id) !== String(job.id)) return;
+      l.status = 'ยกเลิก';
+      if (Array.isArray(st.doctorQueues)) { // เจ้าของ 2026-11-10: ยกเลิกแล้วคิวกลับไปค้างทันที ไม่ต้องรอเซิร์ฟเวอร์ล้างชื่อแพทย์
+        var cancelKey = dqQueueKey(l.queue);
+        st.doctorQueues = st.doctorQueues.filter(function (q) { return dqQueueKey(q) !== cancelKey; });
+      }
+    });
   } else if (job.type === 'dqEditQueue') {
     // รอบ 79: แก้เลขคิว (optimistic) — แก้เฉพาะเลขคิวของแถวเดิม (เวลา/ห้อง/แพทย์คงเดิม) · คิวใหม่หายจากแถวแนะนำทันที เหมือน dqEnter
     logs.forEach(function (l) { if (String(l.id) === String(job.id) && l.status !== 'ยกเลิก') l.queue = job.queue; });
@@ -15813,9 +15829,14 @@ function dqComputeDaySummary(st, nowMs) {
       var t1 = dqBkkHM(earliest[k1]);
       if (t1.h < dqAfternoonHour) morningO++; else afternoonO++;
     });
-    var pendingO = [];
+    // เจ้าของ 2026-11-10: จุดจำหน่ายลงชื่อแพทย์แล้ว แต่ไม่ได้กด ＋ เข้าห้อง ⇒ ไม่ค้าง · ไม่มีเวลาเข้าห้องจึงไม่นับเช้า/บ่าย (แสดงแยกให้ยอดลงกัน)
+    var doctorSet = {};
+    if (Array.isArray(st.doctorQueues)) st.doctorQueues.forEach(function (dq0) { doctorSet[dqQueueKey(dq0)] = true; });
+    var pendingO = [], doctorOnly = [];
     orderKeys.forEach(function (k2) {
-      if (!Object.prototype.hasOwnProperty.call(earliest, k2)) pendingO.push(orderShown[k2]); // คงลำดับเซิร์ฟเวอร์
+      if (Object.prototype.hasOwnProperty.call(earliest, k2)) return;
+      if (Object.prototype.hasOwnProperty.call(doctorSet, k2)) doctorOnly.push(orderShown[k2]);
+      else pendingO.push(orderShown[k2]); // คงลำดับเซิร์ฟเวอร์
     });
     // unknownList เรียง C ตามเลขก่อน แล้ว 'ไม่นัด' ตามเลข (อ่านง่ายใน "ตรวจเลขคิวอีกครั้ง")
     var uKey = function (q) { var m = /([0-9]+)$/.exec(dqQueueKey(q)); return [/^C/.test(dqQueueKey(q)) ? 0 : 1, m ? parseInt(m[1], 10) : 0]; };
@@ -15824,7 +15845,7 @@ function dqComputeDaySummary(st, nowMs) {
       return kx[0] !== ky[0] ? kx[0] - ky[0] : kx[1] - ky[1];
     });
     return finishCT({ total: orderKeys.length, morning: morningO, afternoon: afternoonO, pending: pendingO.length,
-      pendingList: pendingO, unknownList: unknownList }, orderKeys.length, Object.keys(earliest).length);
+      pendingList: pendingO, unknownList: unknownList, doctorOnly: doctorOnly }, orderKeys.length, Object.keys(earliest).length + doctorOnly.length);
   }
 
   var morning = 0, afternoon = 0;
@@ -15845,7 +15866,7 @@ function dqComputeDaySummary(st, nowMs) {
     pending = pendingList.length;
   }
   return finishCT({ total: pending === null ? null : morning + afternoon + pending,
-    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList, unknownList: [] },
+    morning: morning, afternoon: afternoon, pending: pending, pendingList: pendingList, unknownList: [], doctorOnly: [] },
     morning + afternoon + pendingList.length, Object.keys(earliest).length);
 }
 function dqRenderDaySummary() {
@@ -15927,7 +15948,7 @@ function dqRenderDaySummary() {
   grid.className = 'dq-ds-grid';
   [['เช้า ตรวจแล้ว', sm.morning, 'คิว C/ไม่นัด ที่เข้าห้องก่อน 13:00 · นับคิวละครั้ง'],
    ['บ่าย ตรวจแล้ว', sm.afternoon, 'คิว C/ไม่นัด ที่เข้าห้องตั้งแต่ 13:00 · นับคิวละครั้ง'],
-   ['ยังไม่ได้พบแพทย์', sm.pending === null ? '—' : sm.pending, 'คิว C/ไม่นัด ที่ลงกระดานสถิติวันนี้แล้ว แต่ยังไม่กด ＋ เข้าห้อง']].forEach(function (c) {
+   ['ยังไม่ได้พบแพทย์', sm.pending === null ? '—' : sm.pending, 'คิว C/ไม่นัด ที่ลงกระดานสถิติวันนี้แล้ว แต่ยังไม่กด ＋ เข้าห้อง และยังไม่มีชื่อแพทย์ในแถว']].forEach(function (c) {
     var cell = document.createElement('div');
     cell.className = 'dq-ds-cell';
     cell.title = c[2];
@@ -15940,6 +15961,12 @@ function dqRenderDaySummary() {
     grid.appendChild(cell);
   });
   box.appendChild(grid);
+  if (sm.doctorOnly && sm.doctorOnly.length > 0) {
+    var dOnly = document.createElement('div');
+    dOnly.className = 'dq-ds-manual';
+    dOnly.textContent = 'พบแพทย์แล้ว แต่ไม่ได้กดเข้าห้อง ' + sm.doctorOnly.length + ' คิว: ' + sm.doctorOnly.join(', ');
+    box.appendChild(dOnly);
+  }
   // รอบ 60 ข้อ 9: คิวที่กัปตันกดแต่ไม่อยู่ในรายการตรวจสุขภาพของวันนี้ (ไม่นับในยอด) — เตือนด้วยโทน warning เดียวกับ .warning-box · textContent ล้วน
   if (sm.unknownList && sm.unknownList.length > 0) {
     var unk = document.createElement('div');
