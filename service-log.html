@@ -5106,10 +5106,8 @@ function validateForm(ctx) {
   } else if (!preM && mGroupFormOn_(ctx) && ctx.nCert > 0 && !ctx.patientHn) {
     // รอบ 98 (เจ้าของ 2026-10-28): ใบรับรองแพทย์ทั่วไป (5 โรค/ขับขี่ · ctx.nCert > 0) ต้องใส่ HN เหมือนมี Lab — ชื่อไม่บังคับ
     // ฝั่งเว็บเท่านั้น (แถวเก่าในชีตไม่มี HN) · มี Lab ไม่มี nCert ใช้ด่าน "ใบรับรองแพทย์มี lab ต้องกรอก HN" ด้านล่างตามเดิม
+    // เจ้าของ 2026-11-10: ยกเลิกด่านชื่อ-สกุลของรอบ 118 กลับเป็นกติการอบ 98 (บังคับคิว M + HN · ชื่อไม่บังคับ)
     msg = 'ใบรับรองแพทย์ต้องกรอก HN';
-  } else if (!preM && mGroupFormOn_(ctx) && ctx.nCert > 0 && !ctx.patientName) {
-    // รอบ 118 (เจ้าของ 2026-11-09): ใบรับรองแพทย์ทั่วไปต้องมี คิว + HN + ชื่อ-สกุล — แทนข้อ "ชื่อไม่บังคับ" ของรอบ 98 · ฝั่งเว็บเท่านั้น เหตุผลเดียวกับด่าน HN
-    msg = 'ใบรับรองแพทย์ต้องกรอกชื่อ-สกุล';
   } else if (!preM && isPelvicOnlyProgram_(ctx.program) && String(ctx.queue || '').trim() && !mQueueNum_(ctx.queue) &&
              !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
     // รอบ 117 (เจ้าของ 2026-11-08): ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น — ยกเว้นกติการอบ 101 (คิว C) เฉพาะโปรแกรมนี้ · คิวว่างให้ checkupMissing จับตามเดิม
