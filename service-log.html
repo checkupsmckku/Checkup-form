@@ -1224,6 +1224,7 @@
   /* รอบ 119: โหมดบันทึกย้อนหลัง — สีต่างจากล่วงหน้า (ส้ม) ให้มองออกทันทีว่าไม่ใช่วันนี้ */
   .rec-backdate-tag { display: inline-block; margin: 0 6px; padding: 2px 8px; border-radius: 999px; background: #FDECEC; color: #8E1B1B; border: 1px solid #C62828; font-size: 13px; font-weight: 700; }
   .pre-mode-bar.backdate { background: #FDECEC; border-color: #C62828; color: #8E1B1B; }
+  #formWarning { white-space: pre-line; } /* รอบ 119ข: เตือนคนซ้ำ + ด่านเดิมแยกบรรทัด */
   /* โหมดล่วงหน้า: ซ่อนคิว (+ปุ่มแนะนำ ◀ ▶) · ช่องทางรับผล · นัดรับวันที่ — ค่าในช่องไม่ถูกแตะ แค่ไม่เข้า payload */
   #svcFormWrap.pre-mode #queueRow, #svcFormWrap.pre-mode #deliveryRow, #svcFormWrap.pre-mode #pickupDateWrap { display: none !important; }
   /* แผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ: จางลง + inert (กดไม่ได้ โฟกัสไม่ได้) แต่ไม่ซ่อน */
@@ -4076,6 +4077,7 @@ function buildSpecialSendsUI() {
       if (regCb) regCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
     });
   }
+  if (typeof placeBreastCtRows_ === 'function') placeBreastCtRows_(); // รอบ 119ข · typeof guard: vm จำลองของเทสต์เก่าตัดมาเฉพาะบางฟังก์ชัน
 }
 
 // เจ้าของสั่ง 2026-09-11: เพศชายส่งตรวจ MMG (แมมโมแกรม) ไม่ได้ ⇒ ล็อกช่องติ๊ก sp_reg_mmg ตามเพศที่เลือก
@@ -4786,6 +4788,14 @@ function reorderSpecialSendsRows_(groupPriority) {
   });
   var heading = qs('spSendsCountOnlyHeading');
   if (heading) wrap.appendChild(heading);
+  if (typeof placeBreastCtRows_ === 'function') placeBreastCtRows_();
+}
+// รอบ 119ข (O1/O2): U/S Breast ถัดจาก MMG · CT Low dose ล่างสุดของแผง — ย้ายเฉพาะแถวบนจอ ห้ามเรียงอาร์เรย์ SPECIAL_SENDS (ต้องตรงกับเซิร์ฟเวอร์)
+function placeBreastCtRows_() {
+  var wrap = qs('specialSendsList'), mmg = qs('sp_row_mmg'), us = qs('sp_row_us_breast'), ct = qs('sp_row_ct_lowdose');
+  if (!wrap || !wrap.insertBefore) return;
+  if (mmg && us) wrap.insertBefore(us, mmg.nextSibling);
+  if (ct) wrap.appendChild(ct);
 }
 
 // A-W4: แถบหัวจุด #pointBanner — <ชื่อจุด> · <หัวข้อ...> · ไม่ได้เลือกจุด = ซ่อน · ไม่มีหัวข้อ = แค่ชื่อจุด สีกลาง
@@ -5150,10 +5160,18 @@ function validateForm(ctx) {
     msg = 'คำนำหน้า "' + String(qs('patientPrefix').value).trim() + '" เป็นของผู้ชาย แต่เลือกเพศหญิงไว้ — แก้อย่างใดอย่างหนึ่งก่อนบันทึก';
   }
 
+  // รอบ 119ข (D1/D2): คนซ้ำเตือนตั้งแต่ตอนกรอก — เตือนอย่างเดียว ไม่ปิดปุ่ม (ปุ่มยังติดเฉพาะด่านเดิมใน msg) · กดบันทึกแล้วขึ้นกล่องรวมแถวเดิม
+  var personDupText = (typeof personDupWarnText_ === 'function') ? personDupWarnText_(ctx) : '';
   if (msg) {
-    warnEl.textContent = '⚠ ' + msg;
+    // คิวซ้ำกับคนอื่นเป็นด่านแรก (รอบ 116) ⇒ ขึ้นก่อนบรรทัดคนซ้ำ · ด่านอื่นคนซ้ำขึ้นก่อน
+    var personLine = personDupText ? '⚠ ' + personDupText : '', msgLine = '⚠ ' + msg;
+    warnEl.textContent = !personLine ? msgLine : (queueDupInfo ? msgLine + '\n' + personLine : personLine + '\n' + msgLine);
     warnEl.hidden = false;
     btn.disabled = true;
+  } else if (personDupText) {
+    warnEl.textContent = '⚠ ' + personDupText;
+    warnEl.hidden = false;
+    btn.disabled = false;
   } else {
     warnEl.hidden = true;
     btn.disabled = false;
@@ -6083,6 +6101,32 @@ function saveQueueRemove_(id) {
 }
 // W3 (ข้อ 1): เช็คซ้ำในเครื่องตอนบันทึกรายใหม่ต้องมองเห็นรายการ kind:'log' ที่ยัง pending/failed ในคิวด้วย
 // (นอกจาก LAST_TODAY_RECORDS) — normalize เดิมเป๊ะ (normDupHn_/normDupName_ ประกาศไว้ข้างบนแล้ว)
+// รอบ 119ข: หาคนเดียวกัน (HN หรือชื่อตรง · ไม่นับแถวยกเลิก) ในวันที่ฟอร์มจะลง — ใช้ร่วมทั้งเตือนตอนกรอกและด่านตอนกดบันทึก
+function findPersonDupInForm_(hn, name) {
+  var normHn = normDupHn_(hn), normName = normDupName_(name);
+  var recs = formDayRecords_();
+  for (var i = 0; i < recs.length; i++) {
+    var rec = recs[i];
+    if (!rec || rec.status === 'ยกเลิก') continue;
+    if (rec.date && String(rec.date).slice(0, 10) !== formDayStr_()) continue; // เปิดหน้าค้างข้ามคืน: รายการเมื่อวานยังไม่ถูกโหลดใหม่ ⇒ ไม่นับเป็นคนซ้ำ
+    var hnMatch = !!normHn && normDupHn_(rec.patientHn) === normHn;
+    var nameMatch = !!normName && normDupName_(rec.patientName) === normName;
+    if (hnMatch || nameMatch) return { rec: rec, matchedByHn: hnMatch };
+  }
+  return null;
+}
+// รอบ 119ข (D1): ข้อความเตือนคนซ้ำตอนกรอก ('' = ไม่เตือน) · ไม่เตือนตอนแก้ไขแถว/แก้นัด/ลงล่วงหน้า
+function personDupWarnText_(ctx) {
+  if (STATE.editingId || STATE.preEditId || isPreMode_()) return '';
+  var hn = String(ctx.patientHn || '').trim(), name = String(ctx.patientName || '').trim();
+  if (!hn && !name) return '';
+  var d = findPersonDupInForm_(hn, name);
+  if (d) {
+    var where = d.rec.point ? (d.rec.point + ' เวลา ' + queueDupHhmm_(d.rec.time)) : ('เวลา ' + queueDupHhmm_(d.rec.time));
+    return (d.matchedByHn ? ('HN ' + hn) : ('ชื่อ ' + name)) + ' บันทึกไว้แล้ว' + formDayWord_() + ' (' + where + ') — กดบันทึกเพื่อรวมเข้าแถวเดิม';
+  }
+  return saveQueueFindLogDup_(normDupHn_(hn), normDupName_(name)) ? 'HN/ชื่อนี้มีรายการที่กำลังบันทึกหรือบันทึกไม่สำเร็จค้างอยู่' : '';
+}
 function saveQueueFindLogDup_(normHn, normName) {
   for (var i = 0; i < SAVE_QUEUE.length; i++) {
     var it = SAVE_QUEUE[i];
@@ -6465,16 +6509,9 @@ function onSubmitLog(e) {
   if (!isEdit) {
     var normPatientHn = normDupHn_(patientHn);
     var normPatientName = normDupName_(patientName);
-    var existingTodayRec = null;
-    var matchedByHn = false;
-    var dayRecs = formDayRecords_(); // รอบ 119: ย้อนหลัง = รายการของวันที่เลือก (คนซ้ำเทียบกับวันที่จะลง)
-    for (var mi = 0; mi < dayRecs.length; mi++) {
-      var mrec = dayRecs[mi];
-      if (mrec.status === 'ยกเลิก') continue;
-      var hnMatch = !!normPatientHn && normDupHn_(mrec.patientHn) === normPatientHn;
-      var nameMatch = !!normPatientName && normDupName_(mrec.patientName) === normPatientName;
-      if (hnMatch || nameMatch) { existingTodayRec = mrec; matchedByHn = hnMatch; break; }
-    }
+    var personDup = findPersonDupInForm_(patientHn, patientName); // รอบ 119ข: ตัวเดียวกับที่เตือนตอนกรอก
+    var existingTodayRec = personDup ? personDup.rec : null;
+    var matchedByHn = personDup ? personDup.matchedByHn : false;
     if (existingTodayRec) {
       var dupLabel = matchedByHn ? ('HN ' + patientHn) : ('ชื่อ ' + patientName);
       if (window.confirm(dupMergeConfirmMsg_(dupLabel, null, existingTodayRec.time))) {
