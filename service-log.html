@@ -589,17 +589,17 @@
   /* รอบ 119ช: ช่อง "วันที่ไปตรวจภายใน" (no-print) + คำใบ้ · รายชื่อส่งนรีเวช (#cuGynWrap) ตาราง 6 คอลัมน์ ไม่ล้นแนวนอน */
   .cu-note-gyn-date { flex: 0 0 auto; width: auto; min-width: 140px; font-size: 16px; }
   .cu-note-gyn-hint { display: block; font-size: 13px; color: #666; margin-top: 2px; }
-  #cuGynWrap .gyn-head { margin: 14px 0 8px; font-size: 18px; }
-  #cuGynWrap table.gyn-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
-  #cuGynWrap .gyn-table th, #cuGynWrap .gyn-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
-  #cuGynWrap .gyn-table th { background: var(--gray-pale); }
-  #cuGynWrap .gyn-table .gyn-c-no { width: 8%; text-align: center; }
-  #cuGynWrap .gyn-table .gyn-c-q { width: 11%; }
-  #cuGynWrap .gyn-table .gyn-c-hn { width: 15%; }
-  #cuGynWrap .gyn-table .gyn-c-name { width: 28%; }
-  #cuGynWrap .gyn-table .gyn-c-type { width: 18%; }
-  #cuGynWrap .gyn-table .gyn-c-date { width: 20%; }
-  #cuGynWrap .gyn-total { margin-top: 10px; font-weight: 700; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-head { margin: 14px 0 8px; font-size: 18px; }
+  :is(#cuGynWrap, .gyn-capture) table.gyn-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table th, :is(#cuGynWrap, .gyn-capture) .gyn-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table th { background: var(--gray-pale); }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table .gyn-c-no { width: 8%; text-align: center; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table .gyn-c-q { width: 11%; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table .gyn-c-hn { width: 15%; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table .gyn-c-name { width: 28%; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table .gyn-c-type { width: 18%; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-table .gyn-c-date { width: 20%; }
+  :is(#cuGynWrap, .gyn-capture) .gyn-total { margin-top: 10px; font-weight: 700; }
   @media (max-width: 480px) {
     #cuGynWrap table.gyn-table { font-size: 12.5px; }
     #cuGynWrap .gyn-table th, #cuGynWrap .gyn-table td { padding: 4px 3px; }
@@ -672,6 +672,11 @@
   .today-search { display: flex; gap: 8px; align-items: center; margin: 8px 0 10px; }
   .today-search input[type=search] { flex: 1 1 auto; min-width: 0; }
   .today-search .btn { flex: 0 0 auto; }
+  /* รอบ 121 (Q1): แถวปุ่มกรองกลุ่มคิว C/M/V ของรายการรายวัน */
+  .today-qgroup { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+  .today-qgroup .btn { flex: 1 1 0; min-width: 0; min-height: 44px; }
+  /* รอบ 121 (G1): ปุ่มบันทึกรายชื่อส่งนรีเวชเป็นรูป */
+  #btnGynImage { min-height: 44px; }
   .today-search-hint {
     background: #FFF4E5; border: 1px solid #E6A23C; color: #8A5A00;
     border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; font-weight: 600;
@@ -2197,6 +2202,13 @@
       <div class="today-search no-print">
         <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา ชื่อ / HN / คิว">
         <button type="button" class="btn secondary small" id="todayHnClear">ล้าง</button>
+      </div>
+      <!-- รอบ 121 (Q1): กรองกลุ่มคิว (เฉพาะการ์ดรายการ · แถบสรุป/SUP OPD ยังเป็นทั้งวัน) -->
+      <div class="today-qgroup no-print" id="todayQGroup" role="group" aria-label="กรองกลุ่มคิว">
+        <button type="button" class="btn small" data-qgroup="all" aria-pressed="true">ทั้งหมด</button>
+        <button type="button" class="btn small secondary" data-qgroup="C" aria-pressed="false">คิว C</button>
+        <button type="button" class="btn small secondary" data-qgroup="M" aria-pressed="false">คิว M</button>
+        <button type="button" class="btn small secondary" data-qgroup="V" aria-pressed="false">คิว V</button>
       </div>
       <div class="today-search-hint" id="todayHnHint" hidden></div>
       <div id="todayList"></div>
@@ -7701,6 +7713,36 @@ function renderTodayList(records) {
   drawTodayList_(LAST_TODAY_RECORDS, todayStr());
 }
 
+/* รอบ 121 (Q1-Q4): กรองกลุ่มคิว C/M/V ของการ์ดรายการรายวัน · TODAY_QGROUP = 'all'|'C'|'M'|'V'
+   กลุ่มจาก prefix ตัวพิมพ์ใหญ่ (queuePrefixOf) · "ไม่นัด N" = C · ไม่มีคิว/prefix อื่น เห็นเฉพาะ "ทั้งหมด" */
+var TODAY_QGROUP = 'all';
+function recQueueGroup_(rec) {
+  var q = String((rec && rec.queue) || '').trim();
+  if (!q) return '';
+  if (isWalkInQueue(q)) return 'C';
+  var p = queuePrefixOf(q.replace(/\s+/g, ''));
+  return (p === 'C' || p === 'M' || p === 'V') ? p : '';
+}
+function renderTodayQGroupBar_() {
+  var bar = qs('todayQGroup');
+  if (!bar || !bar.querySelectorAll) return;
+  bar.querySelectorAll('button[data-qgroup]').forEach(function (b) {
+    var on = b.getAttribute('data-qgroup') === TODAY_QGROUP;
+    b.className = 'btn small' + (on ? '' : ' secondary');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+// Q4: เปิดหน้า/เปลี่ยนวันที่ดู ⇒ กลับ "ทั้งหมด" (ไม่วาดเอง — ผู้เรียกโหลด/วาดต่อ)
+function resetTodayQGroup_() {
+  TODAY_QGROUP = 'all';
+  renderTodayQGroupBar_();
+}
+function onTodayQGroupClick_(g) {
+  TODAY_QGROUP = (g === 'C' || g === 'M' || g === 'V') ? g : 'all';
+  renderTodayQGroupBar_();
+  redrawTodayCurrent_();
+}
+
 // รอบ 74: "วาด" ล้วน (ไม่ตั้ง LAST_TODAY_RECORDS/TODAY_CACHE) — ใช้ทั้งวันนี้ (renderTodayList) และวันอื่น (renderTodayViewList_)
 // dateStr = วันที่ของ records ชุดนี้ · ถ้าไม่ใช่วันนี้ ข้อความ "วันนี้" ที่เป็นตัวบอกวันเปลี่ยนเป็น "วันที่ …" (แถบสรุปไม่เปลี่ยนคำ)
 function drawTodayList_(records, dateStr) {
@@ -7728,6 +7770,7 @@ function drawTodayList_(records, dateStr) {
     var cancelled = rec.status === 'ยกเลิก';
     // รอบ 114 (เจ้าของสั่ง 2026-11-02): ค้นได้ทั้ง ชื่อ / HN / คิว (recordMatchesQuery ตัวเดียวกับหน้ารายชื่อตรวจสุขภาพ) · คง HN บางส่วนแบบเดิมไว้ด้วย
     if (!recordMatchesQuery(rec, rawQ0) && !(q && recordMatchesHn(rec, q))) return;
+    if (TODAY_QGROUP !== 'all' && recQueueGroup_(rec) !== TODAY_QGROUP) return; // รอบ 121 (Q2/Q3): AND กับคำค้น · เฉพาะการ์ด
     shown++;
 
     var div = document.createElement('div');
@@ -7736,6 +7779,12 @@ function drawTodayList_(records, dateStr) {
     wrap.appendChild(div);
   });
 
+  if (shown === 0 && TODAY_QGROUP !== 'all' && !rawQ0) { // รอบ 121 (Q4): กรองคิวแล้วไม่เหลือ ≠ วันที่ว่างจริง
+    var qEmpty = document.createElement('p');
+    qEmpty.className = 'muted';
+    qEmpty.textContent = 'ไม่มีรายการคิว ' + TODAY_QGROUP + ' ใน' + dayWord;
+    wrap.appendChild(qEmpty);
+  }
   wrap.querySelectorAll('button[data-record-id]').forEach(function (btn) {
     btn.addEventListener('click', function () { onCancelRecord(btn.getAttribute('data-record-id'), btn); });
   });
@@ -7750,7 +7799,7 @@ function drawTodayList_(records, dateStr) {
       hint.hidden = true; hint.textContent = '';
     } else if (shown === 0) {
       hint.hidden = false;
-      hint.textContent = 'ไม่พบ "' + rawQ + '" ในรายการ (ทั้งวันมี ' + records.length + ' รายการ)';
+      hint.textContent = 'ไม่พบ "' + rawQ + '" ในรายการ' + (TODAY_QGROUP !== 'all' ? 'คิว ' + TODAY_QGROUP + ' (กำลังกรองคิว ' + TODAY_QGROUP + ' อยู่ — กด "ทั้งหมด" เพื่อค้นทุกคิว)' : '') + ' (ทั้งวันมี ' + records.length + ' รายการ)';
     } else {
       hint.hidden = false;
       hint.textContent = 'กำลังกรองด้วย "' + rawQ + '" — แสดง ' + shown + ' จาก ' + records.length + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
@@ -7926,6 +7975,7 @@ function setTodayViewDate_(dateStr) {
   TODAY_VIEW_AUTO_ = (d === today);
   if (d === TODAY_VIEW_DATE) return;
   TODAY_VIEW_DATE = d;
+  resetTodayQGroup_(); // รอบ 121 (Q4)
   TODAY_VIEW_SEQ++; // ทิ้งคำตอบของวันก่อนหน้าที่ยังค้าง
   var cached = (d === today) ? !!(TODAY_CACHE.key === STATE.point + '|' + d && TODAY_CACHE.records)
     : !!(TODAY_VIEW_CACHE.key === STATE.point + '|' + d && TODAY_VIEW_CACHE.records);
@@ -7943,6 +7993,7 @@ function todayViewCheckDayRollover_() {
   if (typeof applyFutureViewState_ === 'function') applyFutureViewState_(); // วันที่ดูอยู่อาจเพิ่งกลายเป็น "วันนี้"
   if (TODAY_VIEW_AUTO_ && TODAY_VIEW_DATE !== today) {
     TODAY_VIEW_DATE = today;
+    resetTodayQGroup_(); // รอบ 121 (Q4)
     TODAY_VIEW_SEQ++;
     if (el && el.value !== today) el.value = today;
     if (isTodayScreenVisible_()) { resetTodayDisplayLoading_(today); loadToday(); }
@@ -13681,9 +13732,87 @@ function gynRowsTableHtml_(rows) {
 function gynShell_(dateStr) {
   var wrap = qs('cuGynWrap');
   if (!wrap) return null;
-  wrap.innerHTML = '<h2 class="gyn-head" id="cuGynHeading">รายชื่อส่งนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
+  GYN_SHOWN_DATE = dateStr;
+  // รอบ 121 (G1/G5): ปุ่มบันทึกรูป disabled ไว้ก่อนเสมอ — renderGynRows_ เปิดให้เมื่อมีแถวเท่านั้น (ยังไม่โหลด/ล้มเหลว/ว่าง/วันอาทิตย์ ⇒ ปิด)
+  wrap.innerHTML = '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn secondary" id="btnGynImage" disabled>บันทึกเป็นรูปภาพ</button></div>' +
+    '<h2 class="gyn-head" id="cuGynHeading">รายชื่อส่งนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
     '<div id="cuGynBody"></div>';
+  var ib = qs('btnGynImage');
+  if (ib) ib.addEventListener('click', onGynImageClick_);
   return qs('cuGynBody');
+}
+/* รอบ 121 (G1-G6): บันทึกรายชื่อส่งนรีเวชที่แสดงอยู่เป็นรูป PNG · html2canvas 1.4.1 โหลดตอนกดครั้งแรกเท่านั้น
+   รูปมาจากสำเนา DOM ที่ escape แล้วบนจอ (หัว + ตาราง + รวม · ตัดปุ่ม/ช่องกรอก/id) วางนอกจอกว้างคงที่ ⇒ ไม่ตัดแถวที่ขอบจอ · ไม่ส่งข้อมูลไปไหน ไม่เก็บ storage */
+var GYN_SHOWN_DATE = '';
+var HTML2CANVAS_URL_ = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+var HTML2CANVAS_SRI_ = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
+var GYN_IMG_BUSY_ = false;
+var GYN_IMG_FAIL_MSG_ = 'บันทึกรูปไม่สำเร็จ — ตรวจอินเทอร์เน็ตแล้วลองใหม่';
+function loadHtml2canvas_() {
+  return new Promise(function (resolve, reject) {
+    if (typeof window.html2canvas === 'function') { resolve(window.html2canvas); return; }
+    var sc = document.createElement('script');
+    sc.src = HTML2CANVAS_URL_;
+    sc.integrity = HTML2CANVAS_SRI_; sc.crossOrigin = 'anonymous';
+    sc.onload = function () { if (typeof window.html2canvas === 'function') resolve(window.html2canvas); else reject(new Error('html2canvas missing')); };
+    sc.onerror = function () { try { if (sc.parentNode) sc.parentNode.removeChild(sc); } catch (e) { /* ไม่เป็นไร */ } reject(new Error('html2canvas load failed')); };
+    document.head.appendChild(sc);
+  });
+}
+function gynImageFileName_(ymd) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  return m ? ('รายชื่อส่งนรีเวช_' + (+m[1] + 543) + '-' + m[2] + '-' + m[3] + '.png') : 'รายชื่อส่งนรีเวช.png';
+}
+// สำเนาสำหรับถ่ายรูป: จาก DOM บนจอ ตัด .no-print/ปุ่ม/ช่องกรอก/id ออก
+function buildGynCaptureNode_() {
+  var wrap = qs('cuGynWrap');
+  if (!wrap) return null;
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:-10000px;top:0;width:820px;background:#fff;padding:16px;color:#000;';
+  var clone = wrap.cloneNode(true);
+  clone.removeAttribute('hidden');
+  Array.prototype.slice.call(clone.querySelectorAll('.no-print, button, input, select, textarea')).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+  Array.prototype.slice.call(clone.querySelectorAll('[id]')).forEach(function (n) { n.removeAttribute('id'); });
+  clone.removeAttribute('id');
+  clone.style.padding = '16px'; clone.style.background = '#fff'; // ระยะขอบในรูป (ถ่าย box.firstChild)
+  clone.classList.add('gyn-capture'); // CSS ตารางนรีเวชผูกกับ :is(#cuGynWrap, .gyn-capture) — ไม่มีคลาสนี้ รูปจะไม่มีเส้นตาราง/ความกว้างคอลัมน์
+  box.appendChild(clone);
+  return box;
+}
+function onGynImageClick_() {
+  var btn = qs('btnGynImage');
+  if (GYN_IMG_BUSY_ || !btn || btn.disabled) return;
+  var ymd = GYN_SHOWN_DATE;
+  GYN_IMG_BUSY_ = true;
+  var box = null;
+  function done_() { GYN_IMG_BUSY_ = false; if (box && box.parentNode) box.parentNode.removeChild(box); box = null; }
+  var STALE_ = {};
+  loadHtml2canvas_().then(function (h2c) {
+    // ระหว่างรอโหลดสคริปต์ ผู้ใช้อาจเปลี่ยนวัน/รายชื่อยังโหลดไม่เสร็จ ⇒ ไม่ถ่ายรูป (กันรูปผิดวัน/รูป "กำลังโหลด...")
+    var b2 = qs('btnGynImage');
+    if (b2 !== btn || b2.disabled || GYN_SHOWN_DATE !== ymd) throw STALE_;
+    box = buildGynCaptureNode_();
+    if (!box) throw new Error('no node');
+    document.body.appendChild(box);
+    return h2c(box.firstChild, { backgroundColor: '#ffffff', scale: 2, useCORS: false, logging: false });
+  }).then(function (canvas) {
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(function (blob) { if (!blob) { reject(new Error('toBlob')); return; } resolve(blob); }, 'image/png');
+    });
+  }).then(function (blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = gynImageFileName_(ymd); a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    done_();
+  }).catch(function (err) {
+    done_();
+    if (err === STALE_) return;
+    showToast(GYN_IMG_FAIL_MSG_);
+  });
 }
 function renderGynRows_(dateStr, rows) {
   var body = gynShell_(dateStr);
@@ -13694,6 +13823,8 @@ function renderGynRows_(dateStr, rows) {
     body.innerHTML = '<p class="muted">ไม่มีรายชื่อส่งนรีเวชวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
     return;
   }
+  var imgBtn = qs('btnGynImage');
+  if (imgBtn) imgBtn.disabled = false; // รอบ 121 (G5): มีแถวแล้วถึงเปิด
   body.innerHTML = gynRowsTableHtml_(sorted) +
     '<p class="gyn-total" id="cuGynTotal">รวม ' + sorted.length + ' ราย</p>' +
     '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อส่งนรีเวช</button></div>';
@@ -17570,7 +17701,7 @@ function showScreen(name) {
     recalcTotals(); // เรียก updatePersonCardLabels()/updatePanelSummaries() ผ่านในตัวอยู่แล้ว
   }
 
-  if (name === 'today') { todayViewCheckDayRollover_(); loadTodayScreen_(); if (typeof qcOnViewChange_ === 'function') qcOnViewChange_(); } // รอบ 74: คงวันที่ที่เลือกไว้เดิมเมื่อออกแล้วกลับมา (TODAY_VIEW_DATE ไม่ถูกรีเซ็ต) · รอบ 91: แผงปิดยอดคิว M (ถ้าเปิดค้าง) โหลดใหม่
+  if (name === 'today') { resetTodayQGroup_(); todayViewCheckDayRollover_(); loadTodayScreen_(); if (typeof qcOnViewChange_ === 'function') qcOnViewChange_(); } // รอบ 74: คงวันที่ที่เลือกไว้เดิมเมื่อออกแล้วกลับมา (TODAY_VIEW_DATE ไม่ถูกรีเซ็ต) · รอบ 91: แผงปิดยอดคิว M (ถ้าเปิดค้าง) โหลดใหม่
   if (name === 'report' && typeof resetReportDayGroup_ === 'function') resetReportDayGroup_(); // รอบ 120 (R3): เปิดหน้ารายงานเริ่มที่ "ทั้งหมด" เสมอ
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable('list'); } // รอบ 8 (B7)
   if (name === 'pending') { ensurePendingDateDefault(); loadPending(); } // รอบ 28 (W8)
@@ -18244,6 +18375,9 @@ document.addEventListener('DOMContentLoaded', function () {
     todayHnEl.addEventListener('input', function () { redrawTodayCurrent_(); }); // รอบ 74: ใช้กับวันที่ที่ดูอยู่
     todayHnEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
   }
+  document.querySelectorAll('#todayQGroup button[data-qgroup]').forEach(function (b) { // รอบ 121
+    b.addEventListener('click', function () { onTodayQGroupClick_(b.getAttribute('data-qgroup')); });
+  });
   var todayHnClearEl = qs('todayHnClear');
   if (todayHnClearEl) {
     todayHnClearEl.addEventListener('click', function () {
