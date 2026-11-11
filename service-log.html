@@ -82,6 +82,10 @@
   /* รอบ 108: ปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab) — สถานะกดไว้ */
   #btnLabFree { min-height: 44px; }
   #btnLabFree.is-active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 700; }
+  /* รอบ 120: ปุ่ม "ไม่มีค่าใช้จ่าย" ของแผงตรวจร่างกายไปต่างประเทศ — พฤติกรรมเดียวกับ #btnLabFree */
+  #btnAbroadFree { min-height: 44px; }
+  #btnAbroadFree.is-active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 700; }
+  #panelAbroad input[type=number] { font-size: 16px; }
   .btn.block { display: block; width: 100%; text-align: center; }
   input[type=text], input[type=password], input[type=number], input[type=search], input[type=month], select {
     width: 100%;
@@ -1084,7 +1088,7 @@
   .svc-btn[aria-pressed="true"] { background: var(--svc-line); color: #fff; box-shadow: 0 0 0 3px var(--svc-tint), 0 0 0 5px var(--svc-line); }
   .svc-btn[data-svc-key="checkup"] { --svc-tint: #FFEBD8; --svc-line: #F47920; --svc-ink: #8A4206; }
   .svc-btn[data-svc-key="special"] { --svc-tint: #FCE1EE; --svc-line: #E0559B; --svc-ink: #8C2059; }
-  .svc-btn[data-svc-key="medGen"], .svc-btn[data-svc-key="medLab"] { --svc-tint: #DCEEFB; --svc-line: #3E8FD0; --svc-ink: #0F4E7C; }
+  .svc-btn[data-svc-key="medGen"], .svc-btn[data-svc-key="medLab"], .svc-btn[data-svc-key="abroad"] { --svc-tint: #DCEEFB; --svc-line: #3E8FD0; --svc-ink: #0F4E7C; }
   @media (min-width: 700px) { .svc-btn { flex: 1 1 0; } }
 
   /* รอบ 31A (A-W2..A-W4) — หน้าจอของแต่ละจุด: เส้นคั่น "บริการอื่น" + แถบหัวจุด + บังคับ 1 คอลัมน์เมื่อจัดเลย์เอาต์ตามหัวข้อหลัก */
@@ -1849,6 +1853,7 @@
             <button type="button" class="svc-btn" data-svc-key="checkup" aria-pressed="false">ตรวจสุขภาพ</button>
             <button type="button" class="svc-btn" data-svc-key="medGen" aria-pressed="false">ใบรับรองทั่วไป</button>
             <button type="button" class="svc-btn" data-svc-key="medLab" aria-pressed="false">ใบรับรองมี Lab</button>
+            <button type="button" class="svc-btn" data-svc-key="abroad" aria-pressed="false">ต่างประเทศ</button><!-- รอบ 120 -->
             <button type="button" class="svc-btn" data-svc-key="special" aria-pressed="false">ส่งตรวจพิเศษ</button>
           </div>
 
@@ -2062,6 +2067,33 @@
             </div>
           </section>
 
+          <!-- แผง "ตรวจร่างกายไปต่างประเทศ" — รอบ 120 (F1/F2): ใช้คอลัมน์ ยอด Lab / DF ฟังผล / ไม่มีค่าใช้จ่าย ชุดเดียวกับแผง Lab (HEADER ไม่เปลี่ยน) ·
+               เก็บเป็น id 'abroad' ใน specialReg · getMedCertNums() เป็นแหล่งเดียวที่เลือกว่าจะอ่านค่าจากแผงไหน · แถวเดียวมีเงินทั้งสองแผงไม่ได้ (validateForm) -->
+          <section class="log-panel" id="panelAbroad" data-svc="medcert" data-collapsed="1">
+            <button type="button" class="log-panel-head" data-panel="panelAbroad">
+              <span class="log-panel-title">ตรวจร่างกายไปต่างประเทศ</span>
+              <span class="log-panel-summary" id="panelAbroadSummary">—</span>
+              <span class="log-panel-arrow">▾</span>
+            </button>
+            <div class="log-panel-body">
+              <section id="svcAbroad">
+                <div class="row">
+                  <div>
+                    <label class="field-label" for="abroadLabAmount">ค่าบริการ Lab (กรอกเอง)</label>
+                    <input type="number" id="abroadLabAmount" min="0" step="1" value="0" inputmode="numeric">
+                  </div>
+                </div>
+                <div class="row" style="margin-top:10px;">
+                  <div>
+                    <label class="field-label" for="abroadLabFollowup">ค่า DF พบแพทย์ (กรณีชำระค่า DF อย่างเดียว)</label>
+                    <input type="number" id="abroadLabFollowup" min="0" step="1" value="0" inputmode="numeric">
+                  </div>
+                </div>
+                <button type="button" class="btn secondary small" id="btnAbroadFree" aria-pressed="false" style="margin-top:8px;min-height:44px;white-space:normal;">ไม่มีค่าใช้จ่าย (กรณี ชำระเงินครบแล้วนัดฟังผล)</button>
+              </section>
+            </div>
+          </section>
+
           <!-- แผง "ยอดรวม/บันทึก" — ห้ามพับ (ต้องเห็นตลอด)
                รอบ 17 (2026-09-17): เจ้าของสั่งเอา #stickyBar แถบล่างเต็มจอออก ให้แผงนี้เป็นกล่องลอยเดียว (ไม่มีปุ่มบันทึก 2 ที่แล้ว)
                ยังอยู่ที่เดิมใน DOM (คอลัมน์ 3 ของฟอร์ม) — ย้ายตำแหน่งด้วย CSS ล้วน ๆ (ดูกฎ #panelTotals) ⇒ หน้าอื่นซ่อนไปเองเพราะ
@@ -2208,6 +2240,12 @@
               <select id="reportQuarter"></select>
             </div>
           </div>
+        </div>
+        <!-- รอบ 120 (R1/R3): กรองกลุ่มวันของรายงานรายเดือน/รายไตรมาส — ตั้งต้น "ทั้งหมด" ทุกครั้งที่เปิดหน้า/สลับโหมด · ซ่อนในโหมดรายวัน -->
+        <div class="row" id="reportDayGroup" style="margin-top:10px;">
+          <button type="button" class="btn small" data-day-group="all" style="min-height:44px;">ทั้งหมด</button>
+          <button type="button" class="btn small secondary" data-day-group="week" style="min-height:44px;">จันทร์–ศุกร์</button>
+          <button type="button" class="btn small secondary" data-day-group="sun" style="min-height:44px;">วันอาทิตย์</button>
         </div>
         <div class="row" style="margin-top:10px;">
           <button type="button" class="btn" id="btnLoadReport">ดูรายงาน</button>
@@ -2601,7 +2639,10 @@ var SPECIAL_SENDS = [
   { id: 'eye_test', name: 'ตรวจสายตา', group: 'medcert', prepLabel: null },
   { id: 'color_blind', name: 'ตาบอดสี', group: 'medcert', prepLabel: null },
   // รอบ 111 (2026-11-01): U/S ช่องท้อง — นับยอดอย่างเดียวเหมือน EKG (ต่อท้ายสุด ห้ามเรียงใหม่ของเดิม 11 ตัว) · ต้องตรงกับ สถิติบริการ.js เป๊ะ
-  { id: 'us_abdomen', name: 'U/S ช่องท้อง', group: 'medcert', prepLabel: null }
+  { id: 'us_abdomen', name: 'U/S ช่องท้อง', group: 'medcert', prepLabel: null },
+  // รอบ 120 (E3): ตรวจร่างกายไปต่างประเทศ — เก็บเป็น id ใน specialReg · ไม่มีช่องติ๊ก sp_reg_abroad (ใช้แผง #panelAbroad) · ไม่อยู่ใน MEDLAB_SPECIAL_IDS ·
+  // ต้องตรงกับ สถิติบริการ.js เป๊ะ · ห้ามโผล่ใน #specialSendsList/SP_COUNT_ONLY_ITEMS/#medLabSpecialList/spBoard/การ์ด 5 ของรายงาน/isSpecialOn()
+  { id: 'abroad', name: 'ตรวจร่างกายไปต่างประเทศ', group: 'medcert', prepLabel: null }
 ];
 
 // รอบ 7 (B7) — สร้างตัวช่วยค้นหาแบบเดียวกับฝั่งเซิร์ฟเวอร์ (SPECIAL_SEND_BY_ID ใน สถิติบริการ.js)
@@ -2942,6 +2983,7 @@ var STATE = {
   // รอบ 31A (A-W2): { <จุด>: [คำหัวข้อหลัก...] } จาก config (ไม่มีคีย์นี้เลย = เซิร์ฟเวอร์รุ่นเก่า -> {} เสมอ ไม่ crash)
   pointTopics: {},
   labFollowupFree: false, // รอบ 108: กดปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab ที่จ่ายครบแล้ว) · ล้างเมื่อ resetLogForm
+  abroadFree: false, // รอบ 120: ปุ่ม "ไม่มีค่าใช้จ่าย" ของแผงตรวจร่างกายไปต่างประเทศ · ล้างเมื่อ resetLogForm
   // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
   // preModeApplied = applyPreMode_() ทำงานในโหมดล่วงหน้าอยู่ไหม (ตรวจจับ "เปลี่ยนสถานะ") · serviceDateDay = วันที่ที่ใช้ตั้งขอบเขต #serviceDate ล่าสุด (ตรวจข้ามวัน)
   preEditId: '',
@@ -3459,12 +3501,12 @@ function updatePersonCardLabels() {
   // กติกาบังคับจริง (validateForm) ไม่เปลี่ยน — แก้แค่ข้อความ placeholder ให้ไม่หลอกผู้ใช้
   var reqPh = 'บังคับกรอก', normalPh = 'บังคับกรอกสำหรับตรวจสุขภาพ / ส่งตรวจพิเศษ';
   var checkupOn = isCheckupOn();
-  var needPerson = checkupOn || isSpecialOn();
+  var needPerson = checkupOn || isSpecialOn() || getMedCertNums().abroad; // รอบ 120: ต่างประเทศบังคับชื่อ+HN (F6)
 
   if (queueLabelEl) queueLabelEl.textContent = checkupOn ? 'คิว *' : 'คิว';
   // เจ้าของยกเลิกกติกา "วัคซีนบังคับ HN" เมื่อ 2026-09-21 (1 บันทึก = 1 คน อยู่แล้ว ไม่ต้องพึ่ง HN)
   // ⇒ HN บังคับเฉพาะตรวจสุขภาพ/ส่งตรวจพิเศษเหมือนเดิม (เดิมเคยบังคับวัคซีนด้วยตามคำสั่ง 2026-09-18)
-  var needHn = needPerson || medLabAmountNow_() > 0 || isMedLabSpecialOn(); // รอบ 68: ใบรับรองแพทย์มี lab บังคับ HN ด้วย · รอบ 70: รวมติ๊ก EKG/ตรวจสายตา/ตาบอดสี
+  var needHn = needPerson || getMedCertNums().labAmount > 0 || isMedLabSpecialOn(); // รอบ 120: อ่านผ่าน getMedCertNums() (แหล่งเดียว) ไม่อ่าน #medCertLabAmount ตรง ๆ // รอบ 68: ใบรับรองแพทย์มี lab บังคับ HN ด้วย · รอบ 70: รวมติ๊ก EKG/ตรวจสายตา/ตาบอดสี
   var preM = (typeof isPreMode_ === 'function') && isPreMode_(); // รอบ 81: โหมดล่วงหน้า HN แสดงแต่ไม่บังคับ
   if (preM) needHn = false;
   if (hnLabelEl) hnLabelEl.textContent = needHn ? 'HN *' : 'HN';
@@ -3704,6 +3746,29 @@ function onLabFreeClick_() {
   setLabFree_(!STATE.labFollowupFree);
   onServiceFieldChange();
 }
+/* รอบ 120: ปุ่ม "ไม่มีค่าใช้จ่าย" ของแผงต่างประเทศ — พฤติกรรมเดียวกับ syncLabFreeUi_ (2 ช่องเป็น 0 + disabled · กดซ้ำยกเลิก) */
+function syncAbroadFreeUi_() {
+  var on = !!STATE.abroadFree;
+  ['abroadLabFollowup', 'abroadLabAmount'].forEach(function (id) {
+    var el = qs(id);
+    if (!el) return;
+    if (on && String(el.value) !== '0') el.value = '0';
+    el.disabled = on;
+  });
+  var b = qs('btnAbroadFree');
+  if (b && b.setAttribute) {
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (b.classList) { b.classList.toggle('is-active', on); b.classList.toggle('secondary', !on); }
+  }
+}
+function setAbroadFree_(on) {
+  STATE.abroadFree = !!on;
+  syncAbroadFreeUi_();
+}
+function onAbroadFreeClick_() {
+  setAbroadFree_(!STATE.abroadFree);
+  onServiceFieldChange();
+}
 
 /* รอบ 66 (เจ้าของสั่ง 2026-10-07, SPEC_รอบ66_MMGราคาตามคิว.md): ติ๊ก MMG / U/S Breast ที่แผงส่งตรวจพิเศษ ⇒ ระบบใส่ราคาเดี่ยวในยอด
    "ใบรับรองแพทย์มี Lab" ตาม "คิว" — เดิม (รอบ 60 ข้อ 3) มีปุ่ม MMG เดี่ยว/U/S Breast เดี่ยวแยกในแผงใบรับรองแพทย์มี Lab ถูกถอดออกแล้ว
@@ -3742,6 +3807,8 @@ function medLabAmountNow_() {
 function resetMedLabSoloState_() {
   STATE.labFollowupFree = false; // รอบ 108: "ไม่มีค่าใช้จ่าย" ล้างเมื่อ resetLogForm
   if (typeof syncLabFreeUi_ === 'function') syncLabFreeUi_();
+  STATE.abroadFree = false; // รอบ 120
+  if (typeof syncAbroadFreeUi_ === 'function') syncAbroadFreeUi_();
   STATE.medLabAutoAmount = 0;
   STATE.medLabSeen = { solo: '', q: false };
 }
@@ -4107,7 +4174,7 @@ function buildSpecialRow(item) {
 // ต้องตรงกับ MEDLAB_SPECIAL_IDS_ ใน สถิติบริการ.js · เหลือ inbody/ct_lowdose ในรายการ "นับยอดอย่างเดียว" ของแผงส่งตรวจพิเศษ
 var MEDLAB_SPECIAL_IDS = ['ekg', 'eye_test', 'color_blind', 'us_abdomen']; // รอบ 111: + us_abdomen
 var MEDLAB_SPECIAL_SHORT = { ekg: 'EKG', eye_test: 'ตรวจสายตา', color_blind: 'ตาบอดสี', us_abdomen: 'U/S ช่องท้อง' }; // ป้ายสั้นบนหัวแผง Lab
-var SP_COUNT_ONLY_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel == null && MEDLAB_SPECIAL_IDS.indexOf(s.id) === -1; });
+var SP_COUNT_ONLY_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel == null && MEDLAB_SPECIAL_IDS.indexOf(s.id) === -1; }).filter(function (s) { return s.id !== 'abroad'; }); // รอบ 120: abroad มีแผงของตัวเอง
 
 function buildSpecialSendsUI() {
   var wrap = qs('specialSendsList');
@@ -4552,13 +4619,46 @@ function applyVaccinePeChargedLock_(checkupOn) {
    ให้ตรงกับเกณฑ์ที่ buildRecordFromPayload_ ฝั่งเซิร์ฟเวอร์ใช้ตัดสินอยู่แล้ว (เดิมเว็บใช้ checkbox เป็นสวิตช์ คนละเกณฑ์กัน) */
 function isCheckupOn() { return !!getSelectedProgram(); } // รวม 'pea'
 function isVaccineOn() { return getCheckedVaccineCodes().length > 0; }
-function getMedCertNums() {
+/* รอบ 120: ค่าดิบของ 2 แผงที่ใช้คอลัมน์ Lab/DF/ไม่มีค่าใช้จ่ายร่วมกัน (แผง Lab เดิม · แผงต่างประเทศ) — ใช้ภายใน getMedCertNums() และด่าน E2 เท่านั้น */
+function labPanelRaw_() {
   return {
-    n5: Math.max(0, parseInt(qs('medCert5').value, 10) || 0),
-    nDriver: Math.max(0, parseInt(qs('medCertDriver').value, 10) || 0),
-    labAmount: STATE.labFollowupFree ? 0 : Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0), // รอบ 108: free ⇒ 0
+    labAmount: STATE.labFollowupFree ? 0 : Math.max(0, parseInt((qs('medCertLabAmount') || {}).value, 10) || 0), // รอบ 108: free ⇒ 0
     labFollowup: STATE.labFollowupFree ? 0 : Math.max(0, parseInt((qs('labFollowup') || {}).value, 10) || 0), // รอบ 91
-    labFree: !!STATE.labFollowupFree // รอบ 108 (ตรงกับ getLabFollowupNum_ · เขียนตรงนี้เพื่อไม่พึ่งฟังก์ชันอื่น — เทสต์เก่าดึงฟังก์ชันออกมาทีละตัว)
+    labFree: !!STATE.labFollowupFree
+  };
+}
+function abroadPanelRaw_() {
+  return {
+    labAmount: STATE.abroadFree ? 0 : Math.max(0, parseInt((qs('abroadLabAmount') || {}).value, 10) || 0),
+    labFollowup: STATE.abroadFree ? 0 : Math.max(0, parseInt((qs('abroadLabFollowup') || {}).value, 10) || 0),
+    labFree: !!STATE.abroadFree
+  };
+}
+// รอบ 120 (E1): "ติ๊กต่างประเทศ" = แผงต่างประเทศมีข้อมูล (ยอด Lab > 0 หรือ DF > 0 หรือกดไม่มีค่าใช้จ่าย) — ไม่มีช่องติ๊กแยก
+function isAbroadOn_() {
+  var a = abroadPanelRaw_();
+  return a.labAmount > 0 || a.labFollowup > 0 || a.labFree; // ต้องตรงกับ abroad ใน getMedCertNums()
+}
+// รอบ 120: แถวมีเงินทั้งแผง Lab และแผงต่างประเทศ (E2 — validateForm บล็อก)
+function isLabAndAbroadBoth_() {
+  var l = labPanelRaw_();
+  return isAbroadOn_() && (l.labAmount > 0 || l.labFollowup > 0 || l.labFree);
+}
+// ⚠ รอบ 120: แหล่งเดียวของยอด Lab/DF/ไม่มีค่าใช้จ่าย ทั้งหน้าจอ (ยอดรวม/ด่าน/ป้ายแผง) และ payload (onSubmitLog) — ต่างประเทศเปิดอยู่ (แผงต่างประเทศมียอด Lab/DF หรือกดไม่มีค่าใช้จ่าย)
+// ⇒ labAmount/labFollowup/labFree มาจากแผงต่างประเทศ + abroad:true · ไม่งั้นมาจากแผง Lab เดิม · เขียนให้พึ่งตัวเองทั้งหมด (เทสต์เก่าดึงฟังก์ชันออกมาทีละตัว)
+function getMedCertNums() {
+  function iv(id) { var el = qs(id); return el ? Math.max(0, parseInt(el.value, 10) || 0) : 0; }
+  var abFree = !!STATE.abroadFree, lFree = !!STATE.labFollowupFree;
+  var abAmt = abFree ? 0 : iv('abroadLabAmount'), abDf = abFree ? 0 : iv('abroadLabFollowup');
+  var abroad = abAmt > 0 || abDf > 0 || abFree;
+  var lAmt = lFree ? 0 : iv('medCertLabAmount'), lDf = lFree ? 0 : iv('labFollowup'); // รอบ 108: free ⇒ 0
+  return {
+    n5: iv('medCert5'),
+    nDriver: iv('medCertDriver'),
+    labAmount: abroad ? abAmt : lAmt,
+    labFollowup: abroad ? abDf : lDf, // รอบ 91
+    labFree: abroad ? abFree : lFree, // รอบ 108
+    abroad: abroad
   };
 }
 // รอบ 91 (G, แก้ 2026-10-21): DF พบแพทย์ฟังผล Lab = ยอดเงินบาทที่พิมพ์เอง (int >= 0 · ไม่ใช่ตัวเลข ⇒ 0) · ไม่มีราคาในแท็บราคาแล้ว
@@ -4577,8 +4677,11 @@ function isMedGenOn() {
 }
 // รอบ 70: แผง Lab มีข้อมูล = ยอด Lab > 0 หรือติ๊ก EKG/ตรวจสายตา/ตาบอดสี (ห้ามพับแผงที่มีข้อมูลในร่าง)
 function isMedLabOn() {
-  if (getMedCertNums().labFollowup > 0 || STATE.labFollowupFree) return true; // รอบ 91: ฟังผล Lab มีค่า ⇒ ไม่พับแผง · รอบ 108: + ไม่มีค่าใช้จ่าย
-  return getMedCertNums().labAmount > 0 || isMedLabSpecialOn();
+  // รอบ 120: แผง Lab ดูค่าดิบของแผงตัวเอง (getMedCertNums() อาจชี้ไปแผงต่างประเทศ) · เขียนพึ่งตัวเอง (เทสต์เก่าดึงฟังก์ชันทีละตัว)
+  if (STATE.labFollowupFree) return true; // รอบ 108: ไม่มีค่าใช้จ่าย ⇒ ไม่พับแผง
+  var lDf = Math.max(0, parseInt((qs('labFollowup') || {}).value, 10) || 0); // รอบ 91
+  var lAmt = Math.max(0, parseInt((qs('medCertLabAmount') || {}).value, 10) || 0);
+  return lDf > 0 || lAmt > 0 || isMedLabSpecialOn();
 }
 // รอบ 8 (B1): specialReg (ลงชื่อไว้) ⊇ ทุกสถานะเสมอ (กติกาแม่บท) ⇒ ใช้ reg ตัวเดียวพอ ครอบคลุมของเดิมทั้งหมด
 // รอบ 70: isSpecialOn() นับเฉพาะ reg ที่ "ไม่ใช่" MEDLAB_SPECIAL_IDS (ใช้กับ needPerson ชื่อ+HN · ด่านชื่อ+HN · แผง panelSpecial · แถบร่าง)
@@ -4604,10 +4707,11 @@ var POINT_TOPIC_PANEL_MAP_ = {
   'ตรวจสุขภาพ': 'panelCheckup',
   'วัคซีน': 'panelVaccine',
   'ใบรับรองทั่วไป': 'panelMedcertGen',
-  'ใบรับรองมี Lab': 'panelMedcertLab'
+  'ใบรับรองมี Lab': 'panelMedcertLab',
+  'ตรวจร่างกายไปต่างประเทศ': 'panelAbroad' // รอบ 120
 };
 // แผงทั้งหมดที่ applyPointLayout() ย้ายตำแหน่งได้ — ลำดับนี้คือลำดับตั้งต้น/ลำดับของกลุ่ม "บริการอื่น" ด้วย
-var MOVABLE_PANEL_IDS_ = ['panelCheckup', 'panelVaccine', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab'];
+var MOVABLE_PANEL_IDS_ = ['panelCheckup', 'panelVaccine', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab', 'panelAbroad'];
 
 // จำตำแหน่งเดิม (parent + nextSibling) ของแต่ละแผง "ครั้งแรกที่เจอ" เท่านั้น — ใช้คืนตำแหน่งตอนจุดไม่มีหัวข้อหลัก (fallback)
 var PANEL_HOME_POSITION_ = {};
@@ -4635,6 +4739,7 @@ function panelHasDraftData_(id) {
   if (id === 'panelSpecial') return isSpecialOn();
   if (id === 'panelMedcertGen') return isMedGenOn();
   if (id === 'panelMedcertLab') return isMedLabOn();
+  if (id === 'panelAbroad') return isAbroadOn_(); // รอบ 120
   return false;
 }
 
@@ -4733,11 +4838,11 @@ function expandCheckupPanelIfBlocking_() {
    แผงอื่นใน 4 แผงนี้พับ (เหลือหัวแผง) ยกเว้นแผงที่มีข้อมูลในร่าง ⇒ กางเสมอ · ตั้งทั้ง data-collapsed + data-user-collapsed (จอกว้าง/แคบเหมือนกัน)
    ========================================================================= */
 var SVC_BAR_POINT_ = 'จุดคีย์ order';
-var SVC_BAR_KEYS_ = ['checkup', 'medGen', 'medLab', 'special'];
-var SVC_BAR_LABELS_ = { checkup: 'ตรวจสุขภาพ', medGen: 'ใบรับรองทั่วไป', medLab: 'ใบรับรองมี Lab', special: 'ส่งตรวจพิเศษ' };
-var SVC_BAR_PANELS_ = { checkup: ['panelCheckup', 'panelSpecial'], medGen: ['panelMedcertGen'], medLab: ['panelMedcertLab'], special: ['panelSpecial'] };
-var SVC_PANEL_IDS_ = ['panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab'];
-var SVC_PANEL_KEY_ = { panelCheckup: 'checkup', panelSpecial: 'special', panelMedcertGen: 'medGen', panelMedcertLab: 'medLab' };
+var SVC_BAR_KEYS_ = ['checkup', 'medGen', 'medLab', 'abroad', 'special']; // รอบ 120: + abroad (ป้ายปุ่ม "ต่างประเทศ")
+var SVC_BAR_LABELS_ = { checkup: 'ตรวจสุขภาพ', medGen: 'ใบรับรองทั่วไป', medLab: 'ใบรับรองมี Lab', abroad: 'ต่างประเทศ', special: 'ส่งตรวจพิเศษ' };
+var SVC_BAR_PANELS_ = { checkup: ['panelCheckup', 'panelSpecial'], medGen: ['panelMedcertGen'], medLab: ['panelMedcertLab'], abroad: ['panelAbroad'], special: ['panelSpecial'] };
+var SVC_PANEL_IDS_ = ['panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab', 'panelAbroad'];
+var SVC_PANEL_KEY_ = { panelCheckup: 'checkup', panelSpecial: 'special', panelMedcertGen: 'medGen', panelMedcertLab: 'medLab', panelAbroad: 'abroad' };
 function svcBarActive_() {
   if (STATE.point !== SVC_BAR_POINT_) return false;
   return !((typeof isPreMode_ === 'function') && isPreMode_());
@@ -4759,12 +4864,13 @@ function svcKeyHasData_(key) {
   if (key === 'checkup') return checkupPanelHasInput_();
   if (key === 'medGen') return isMedGenOn();
   if (key === 'medLab') return isMedLabOn();
+  if (key === 'abroad') return isAbroadOn_(); // รอบ 120
   if (key === 'special') return isSpecialOn();
   return false;
 }
 // B8: บริการแรกที่มีข้อมูลตามลำดับ checkup > medLab > medGen > special · ไม่มีเลย = ''
 function svcFirstDataKey_() {
-  var order = ['checkup', 'medLab', 'medGen', 'special'];
+  var order = ['checkup', 'medLab', 'abroad', 'medGen', 'special']; // รอบ 120: abroad ต่อจาก medLab
   for (var i = 0; i < order.length; i++) if (svcKeyHasData_(order[i])) return order[i];
   return '';
 }
@@ -4936,7 +5042,7 @@ function applyVaccinePanelVisibility_() {
    ชื่อจุดต้องตรงกับแท็บ จุดบริการ ในชีตเป๊ะ (live ยืนยัน 2026-11-10: "จุดนับ vaccine")
    ========================================================================= */
 var VACCINE_COUNT_POINT_ = 'จุดนับ vaccine';
-var VAX_POINT_HIDE_IDS_ = ['panelPerson', 'panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab'];
+var VAX_POINT_HIDE_IDS_ = ['panelPerson', 'panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab', 'panelAbroad']; // รอบ 120: + panelAbroad
 function vaxCountPointHere_() { return STATE.point === VACCINE_COUNT_POINT_; }
 // โหมดซ่อนแผง = จุดนับ vaccine และไม่ได้แก้ไขแถว (V4: ตอนแก้ไขต้องเห็นแผงครบ ข้อมูลเดิมห้ามหาย)
 function vaxCountModeOn_() { return vaxCountPointHere_() && !STATE.editingId; }
@@ -4989,6 +5095,7 @@ function applyVaxCountPointMode_(skipRecalc) {
       });
     });
     if (STATE.labFollowupFree && typeof setLabFree_ === 'function') { setLabFree_(false); changed = true; }
+    if (STATE.abroadFree && typeof setAbroadFree_ === 'function') { setAbroadFree_(false); changed = true; } // รอบ 120
     // เพศอยู่ในแผงผู้รับบริการที่ซ่อน แต่ payload ส่ง getSelectedGender() เสมอ ⇒ ค่าค้างจากจุดอื่นต้องล้างด้วย
     document.querySelectorAll('input[name="gender"]').forEach(function (g) { if (g.checked) { g.checked = false; changed = true; } });
     var pfo = qs('patientPrefixOther');
@@ -5361,6 +5468,14 @@ function validateForm(ctx) {
     msg = 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
   } else if (!hasAnything) {
     msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+  } else if (!preM && ctx.abroad && typeof isLabAndAbroadBoth_ === 'function' && isLabAndAbroadBoth_()) {
+    // รอบ 120 (E2): แถวเดียวมีเงินทั้งแผง Lab และแผงตรวจร่างกายไปต่างประเทศไม่ได้ (ใช้คอลัมน์ยอด Lab/DF เดียวกัน)
+    msg = 'ใบรับรองแพทย์มี Lab กับ ตรวจร่างกายไปต่างประเทศ ใส่ยอดในรายการเดียวกันไม่ได้ — เลือกอย่างใดอย่างหนึ่ง';
+  } else if (!preM && ctx.abroad && !mQueueNum_(ctx.queue)) {
+    // รอบ 120 (F6): ต่างประเทศใช้คิว M เท่านั้น — ข้อความเดียวกับเซิร์ฟเวอร์
+    msg = 'ตรวจร่างกายไปต่างประเทศต้องใช้คิว M';
+  } else if (!preM && ctx.abroad && (!ctx.patientName || !ctx.patientHn)) {
+    msg = 'กรุณากรอกชื่อ-นามสกุลและ HN เมื่อมีรายการส่งตรวจพิเศษ';
   } else if (!preM && mGroupFormOn_(ctx) && !String(ctx.queue || '').trim()) {
     // รอบ 91 (Q, ข้อ 13–15): แถวกลุ่มคิว M (ใบรับรอง/Lab/ฟังผล Lab · ไม่มีตรวจสุขภาพ) ต้องมีคิว M — ใช้ทุกจุด รวมแก้ไขแถวเก่า · ไม่ใช่โหมดล่วงหน้า
     // ระบบห้ามเติมคิวให้เอง (กติการอบ 60) · บังคับฝั่งเว็บเท่านั้น (แถวเก่าไม่มีคิวต้องแก้ไขได้จากเซิร์ฟเวอร์/ชีต)
@@ -5613,6 +5728,7 @@ function recalcTotals() {
   var peCharged = !withCheckupRate && !!(qs('vaccinePeCharged') && qs('vaccinePeCharged').checked); // รอบ 119ค
 
   syncLabFreeUi_(); // รอบ 108: free ⇒ ช่อง DF/ยอด Lab เป็น 0 + disabled ก่อนอ่านค่า
+  syncAbroadFreeUi_(); // รอบ 120: เช่นเดียวกัน สำหรับแผงต่างประเทศ
   var medNums = getMedCertNums();
   var medOn = isMedOn();
   var nCert = medNums.n5 + medNums.nDriver;                  // เข้าสูตร 120/20 เท่านั้น
@@ -5621,7 +5737,7 @@ function recalcTotals() {
   var labFree = !!medNums.labFree; // รอบ 108
   // รอบ 81 (W1): โหมดล่วงหน้า ⇒ ค่าในแผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ ไม่นับ (ไม่เข้ายอด/ด่าน/payload) — ค่าในช่องไม่ถูกล้าง กลับโหมดปกติแล้วยังอยู่
   var preM = (typeof isPreMode_ === 'function') && isPreMode_();
-  if (preM) { vaccineCodes = []; vaccineOn = false; medNums = { n5: 0, nDriver: 0, labAmount: 0, labFollowup: 0, labFree: false }; medOn = false; nCert = 0; labAmount = 0; labFollowup = 0; labFree = false; }
+  if (preM) { vaccineCodes = []; vaccineOn = false; medNums = { n5: 0, nDriver: 0, labAmount: 0, labFollowup: 0, labFree: false, abroad: false }; medOn = false; nCert = 0; labAmount = 0; labFollowup = 0; labFree = false; }
 
   var medCertGenAmountEl = qs('medCertGenAmount');
   if (medCertGenAmountEl) medCertGenAmountEl.textContent = 'คิดเงินอัตโนมัติ: ' + money(calcMedCertTotal(nCert, STATE.prices)) + ' บาท';
@@ -5679,7 +5795,7 @@ function recalcTotals() {
   validateForm({
     checkupOn: checkupOn, program: program, gender: gender, checkupAmountNum: checkupAmountNum,
     vaccineOn: vaccineOn, vaccineCodes: vaccineCodes, medOn: medOn, nCert: nCert,
-    extraIds: extraIds, labAmount: labAmount, labFollowup: labFollowup, labFree: labFree,
+    extraIds: extraIds, labAmount: labAmount, labFollowup: labFollowup, labFree: labFree, abroad: !!medNums.abroad, // รอบ 120
     specialSentIds: specialSentIds, specialPrepIds: specialPrepIds, specialOn: specialOn, medLabSpecialOn: medLabSpecialOn,
     patientName: patientName, patientHn: patientHn,
     queue: queue, deliveryMethod: deliveryMethod,
@@ -5735,13 +5851,21 @@ function updatePanelSummaries(ctx) {
   if (medLabSumEl) {
     // รอบ 70: ต่อท้ายด้วยชื่อสั้นของรายการนับยอดที่ติ๊ก (เช่น lab 250 บาท · EKG · ตาบอดสี) — textContent เท่านั้น
     var medLabBits = [];
-    if (ctx.medNums.labAmount > 0) medLabBits.push('lab ' + money(ctx.medNums.labAmount) + ' บาท');
-    if (ctx.medNums.labFollowup > 0) medLabBits.push('ฟังผล Lab DF ' + money(ctx.medNums.labFollowup) + ' บาท'); // รอบ 91
-    if (ctx.medNums.labFree) medLabBits.push('ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
+    var labRaw = (typeof labPanelRaw_ === 'function' && ctx.medNums.abroad) ? labPanelRaw_() : ctx.medNums; // รอบ 120: ป้ายแผง Lab อ่านค่าดิบของแผงตัวเอง (ctx.medNums เป็นค่าของแผงต่างประเทศเมื่อ abroad เปิด)
+    if (labRaw.labAmount > 0) medLabBits.push('lab ' + money(labRaw.labAmount) + ' บาท');
+    if (labRaw.labFollowup > 0) medLabBits.push('ฟังผล Lab DF ' + money(labRaw.labFollowup) + ' บาท'); // รอบ 91
+    if (labRaw.labFree) medLabBits.push('ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
     getSpecialRegIds().forEach(function (id) {
       if (MEDLAB_SPECIAL_IDS.indexOf(id) !== -1) medLabBits.push(MEDLAB_SPECIAL_SHORT[id] || id);
     });
     medLabSumEl.textContent = medLabBits.length ? medLabBits.join(' · ') : '—';
+  }
+
+  // รอบ 120: ป้ายสรุปหัวแผงต่างประเทศ = ยอดเงิน (Lab + DF) หรือ "ไม่มีค่าใช้จ่าย" หรือ "—"
+  var abroadSumEl = qs('panelAbroadSummary');
+  if (abroadSumEl && typeof abroadPanelRaw_ === 'function') {
+    var abRaw = abroadPanelRaw_();
+    abroadSumEl.textContent = abRaw.labFree ? 'ไม่มีค่าใช้จ่าย' : ((abRaw.labAmount + abRaw.labFollowup) > 0 ? (money(abRaw.labAmount + abRaw.labFollowup) + ' บาท') : '—');
   }
 
   var spSumEl = qs('panelSpecialSummary');
@@ -5866,6 +5990,7 @@ function captureFormDraft_() {
     }
   });
   data.__labFree = !!STATE.labFollowupFree; // รอบ 108: ปุ่ม 'ไม่มีค่าใช้จ่าย' เป็นสถานะใน STATE (ไม่ใช่ input) ต้องจำไปกับร่างด้วย
+  data.__abroadFree = !!STATE.abroadFree; // รอบ 120: ปุ่มไม่มีค่าใช้จ่ายของแผงต่างประเทศ (ช่องยอด/DF ถูกเก็บโดยลูป input ด้านบนอยู่แล้ว)
   data.__progSet = STATE.progSet; // ชุดโปรแกรม (week/sun) ต้องคืนก่อนค่า radio — setProgramSet() ปลดติ๊กปุ่มของชุดที่ซ่อน
   // รอบ 119: ช่อง #serviceDate อยู่นอก #logForm ⇒ ร่างต้องจำวันย้อนหลังเอง ('' = ไม่ใช่โหมดย้อนหลัง) — "แก้แล้วบันทึกใหม่" จากรายการล้มเหลวได้วันเดิมกลับมา
   data.__backdate = isBackdateMode_() ? serviceDateValue_() : '';
@@ -5902,6 +6027,7 @@ function restoreFormDraft_(data) {
   });
   // ค่าที่ยัดกลับตรง ๆ ไม่ยิง event ⇒ ต้อง sync ผลข้างเคียง (ปุ่มคำนำหน้า/ล็อกแผง/ยอดรวม) เอง
   setLabFree_(!!data.__labFree); // รอบ 108: คืนสถานะปุ่ม 'ไม่มีค่าใช้จ่าย' (ช่อง DF/ยอด Lab ล็อกตาม)
+  setAbroadFree_(!!data.__abroadFree); // รอบ 120
   syncPrefixButtons();
   updateHnHint();
   applyVaccineFilter();
@@ -6165,9 +6291,14 @@ function enterEditMode(rec) {
   var labAmount = rec.medCertLabAmount || 0;
   qs('medCert5').value = rec.medCert5 || 0;
   qs('medCertDriver').value = rec.medCertDriver || 0;
-  qs('medCertLabAmount').value = labAmount;
-  if (qs('labFollowup')) qs('labFollowup').value = rec.labFollowup || 0; // รอบ 91: โหลดค่าเดิมตอนแก้ไข
-  setLabFree_(!!rec.labFollowupFree); // รอบ 108: แถวไม่มีค่าใช้จ่าย ⇒ ปุ่มกดไว้ + ช่องล็อก (ค่า 0)
+  // รอบ 120 (F5/A7): แถวที่ specialReg มี abroad ⇒ ยอด Lab/DF/ไม่มีค่าใช้จ่ายไปอยู่แผงต่างประเทศ แผง Lab เป็น 0 · แถวอื่นลงแผง Lab ตามเดิม (แถวเก่าย้ายเองได้โดยกรอกแผงต่างประเทศแล้วเคลียร์แผง Lab)
+  var editIsAbroad = (rec.specialReg || []).indexOf('abroad') !== -1;
+  qs('medCertLabAmount').value = editIsAbroad ? 0 : labAmount;
+  if (qs('labFollowup')) qs('labFollowup').value = editIsAbroad ? 0 : (rec.labFollowup || 0); // รอบ 91: โหลดค่าเดิมตอนแก้ไข
+  setLabFree_(editIsAbroad ? false : !!rec.labFollowupFree); // รอบ 108: แถวไม่มีค่าใช้จ่าย ⇒ ปุ่มกดไว้ + ช่องล็อก (ค่า 0)
+  if (qs('abroadLabAmount')) qs('abroadLabAmount').value = editIsAbroad ? labAmount : 0;
+  if (qs('abroadLabFollowup')) qs('abroadLabFollowup').value = editIsAbroad ? (rec.labFollowup || 0) : 0;
+  setAbroadFree_(editIsAbroad ? !!rec.labFollowupFree : false);
 
   applyVaccineFilter();
 
@@ -6344,9 +6475,22 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   // ใบรับรองแพทย์: บวกกัน เก่า + ร่าง (ไม่ใช่ทับ)
   qs('medCert5').value = String((rec.medCert5 || 0) + (draft.medCert5 || 0));
   qs('medCertDriver').value = String((rec.medCertDriver || 0) + (draft.medCertDriver || 0));
-  qs('medCertLabAmount').value = String((rec.medCertLabAmount || 0) + (draft.medCertLabAmount || 0));
-  if (qs('labFollowup')) qs('labFollowup').value = String((rec.labFollowup || 0) + (draft.labFollowup || 0)); // รอบ 91
-  setLabFree_(!!(rec.labFollowupFree || draft.labFollowupFree)); // รอบ 108: OR ของสองฝั่ง
+  // รอบ 120: แยกตามฝั่ง — ฝั่งที่เป็นต่างประเทศ (rec.specialReg / draft.specialRegIds มี abroad) ลงแผงต่างประเทศ · ฝั่งอื่นลงแผง Lab
+  // ฝั่งผสม ⇒ เงินอยู่ทั้งสองแผง ⇒ ด่าน E2 ใน validateForm บล็อกเอง (ห้ามจัดประเภทใหม่เงียบ ๆ) · free = OR ต่อแผงเฉพาะฝั่งของแผงนั้น
+  var recAb = (rec.specialReg || []).indexOf('abroad') !== -1, drAb = (draft.specialRegIds || []).indexOf('abroad') !== -1;
+  function mergeSide_(wantAb) {
+    var a = 0, d = 0, fr = false;
+    if (recAb === wantAb) { a += (rec.medCertLabAmount || 0); d += (rec.labFollowup || 0); fr = fr || !!rec.labFollowupFree; }
+    if (drAb === wantAb) { a += (draft.medCertLabAmount || 0); d += (draft.labFollowup || 0); fr = fr || !!draft.labFollowupFree; }
+    return { a: String(a), d: String(d), free: fr };
+  }
+  var mLab = mergeSide_(false), mAb = mergeSide_(true);
+  qs('medCertLabAmount').value = mLab.a;
+  if (qs('labFollowup')) qs('labFollowup').value = mLab.d; // รอบ 91
+  setLabFree_(mLab.free); // รอบ 108
+  if (qs('abroadLabAmount')) qs('abroadLabAmount').value = mAb.a;
+  if (qs('abroadLabFollowup')) qs('abroadLabFollowup').value = mAb.d;
+  setAbroadFree_(mAb.free);
 
   // sp_reg_* (ลงชื่อไว้ รวม inbody): union
   (draft.specialRegIds || []).forEach(function (id) {
@@ -6769,9 +6913,11 @@ function onSubmitLog(e) {
   if (!vaccineCodes.length) peCharged = false;
   var medCert5 = Math.max(0, parseInt(qs('medCert5').value, 10) || 0);
   var medCertDriver = Math.max(0, parseInt(qs('medCertDriver').value, 10) || 0);
-  var labFollowupFree = !!STATE.labFollowupFree; // รอบ 108
-  var medCertLabAmount = labFollowupFree ? 0 : Math.max(0, parseInt(qs('medCertLabAmount').value, 10) || 0);
-  var labFollowup = labFollowupFree ? 0 : getLabFollowupNum_(); // รอบ 91
+  // รอบ 120: ยอด Lab/DF/ไม่มีค่าใช้จ่ายอ่านจาก getMedCertNums() ที่เดียว (เท่ากับยอดบนจอ) — ต่างประเทศเปิดอยู่ ⇒ ค่ามาจากแผงต่างประเทศ
+  var payloadMed = getMedCertNums();
+  var labFollowupFree = !!payloadMed.labFree; // รอบ 108
+  var medCertLabAmount = payloadMed.labAmount;
+  var labFollowup = payloadMed.labFollowup; // รอบ 91
   // รอบ 112 (เจ้าของตัดสิน 2026-11-01): กรอกทั้งยอด Lab และค่า DF ⇒ เตือนแต่บันทึกต่อได้ (พบแพทย์วันเดียวกันต้องรวมก้อนเดียวในช่องยอด Lab)
   // ถามก่อนด่านซ้ำ/คิว · ยกเลิก ⇒ ไม่ยิง API ไม่ล้างฟอร์ม · ใช้ทั้งบันทึกใหม่และบันทึกแก้ไข
   if (medCertLabAmount > 0 && labFollowup > 0 && !window.confirm(LAB_BOTH_CONFIRM_MSG)) return;
@@ -6791,6 +6937,7 @@ function onSubmitLog(e) {
   var specialBackIds = STATE.editSpecialBack || [];
   var specialPrepIds = STATE.editSpecialPrep || [];
   var specialRegIds = getSpecialRegIds(); // รอบ 8 (B4)
+  if (payloadMed.abroad && specialRegIds.indexOf('abroad') === -1) specialRegIds.push('abroad'); // รอบ 120: abroad เป็นตัวสุดท้ายของ SPECIAL_SENDS ⇒ ต่อท้ายคงลำดับ
   var queue = (qs('queueSelect').value || '').toUpperCase(); // รอบ 100
 
   var isEdit = !!STATE.editingId;
@@ -7153,7 +7300,10 @@ function summarizeRecordParts(rec) {
   if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
   if (rec.vaccineCount) parts.push('วัคซีน ' + rec.vaccineCount + ' เข็ม');
   if (rec.medCertCount) parts.push('ใบรับรอง ' + rec.medCertCount + ' ใบ');
-  if (rec.medCertLabAmount) parts.push('ใบรับรองมี lab ' + money(rec.medCertLabAmount) + ' บาท');
+  if ((rec.specialReg || []).indexOf('abroad') !== -1) {
+    // รอบ 120 (F8): แถวต่างประเทศขึ้นต้นด้วยชื่อหมวดนี้แทน "ใบรับรองมี lab" (ไม่ขึ้นในการ์ดส่งตรวจพิเศษ)
+    parts.push('ตรวจร่างกายไปต่างประเทศ' + (rec.medCertLabAmount ? (' ' + money(rec.medCertLabAmount) + ' บาท') : ''));
+  } else if (rec.medCertLabAmount) parts.push('ใบรับรองมี lab ' + money(rec.medCertLabAmount) + ' บาท');
   if (rec.labFollowup) parts.push('ฟังผล Lab DF ' + money(rec.labFollowup) + ' บาท'); // รอบ 91
   if (rec.labFollowupFree) parts.push('ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
   if (rec.specialPrepItems) parts.push('คีย์ consult/ส่ง line: ' + rec.specialPrepItems);
@@ -7350,7 +7500,10 @@ function computeTodayStats_(records) {
     // sumLabFollowup ถูกบวกเข้าหมวด "ใบรับรองแพทย์มี lab" บนแถบ (และหักออกจากหมวดทั่วไป) ⇒ 5 หมวดรวมกันยังเท่ายอดรวม
     // cntMedLabAny = แถวที่ยอด Lab > 0 หรือ ฟังผล Lab > 0 (จำนวนคนของหมวด Lab บนแถบ) · cntMedLab คงนิยามเดิม (ยอด Lab > 0 — SUP OPD ใช้)
     // cntLabFollowupExtra = แถวฟังผล Lab ที่ยังไม่ถูกนับเป็น "มีหัตถการ" จากตรวจสุขภาพ/มี Lab/วัคซีนเดี่ยว (SUP OPD นับเพิ่ม คนเดียวนับครั้งเดียว)
-    cntLabFollowup: 0, sumLabFollowup: 0, cntMedLabAny: 0, cntLabFollowupExtra: 0 };
+    cntLabFollowup: 0, sumLabFollowup: 0, cntMedLabAny: 0, cntLabFollowupExtra: 0,
+    // รอบ 120 (B1/B2): ตัวแปรสำหรับ "แถบสรุปรายวัน" เท่านั้น — แถวต่างประเทศแยกออกจากหมวดมี lab (ทั้งคนและเงิน) · ⚠ cntMedLab/cntLabFollowupExtra/cntMedLabAny (SUP OPD ใช้) คงนิยามเดิม ห้ามแก้
+    // cntMedLabBar/sumMedLabBar = หมวดมี lab (หักแถวต่างประเทศ) · cntAbroad = แถวต่างประเทศที่ (ยอด Lab > 0 หรือ DF > 0 หรือไม่มีค่าใช้จ่าย) · sumAbroad = ยอด Lab + DF
+    cntMedLabBar: 0, sumMedLabBar: 0, cntAbroad: 0, sumAbroad: 0 };
   var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
   (records || []).forEach(function (rec) {
     if (!rec || rec.status === 'ยกเลิก') return;
@@ -7367,6 +7520,14 @@ function computeTodayStats_(records) {
       if (!rec.program && !(labAmt > 0) && !((rec.vaccineCount || 0) > 0 && !rec.vaccineWithCheckup)) st.cntLabFollowupExtra++;
     }
     if (labAmt > 0 || lfN > 0 || rec.labFollowupFree) st.cntMedLabAny++;
+    // รอบ 120 (B1/B2): แถบรายวันแยกต่างประเทศ ⇒ คน = ติ๊กต่างประเทศ และ (ยอด Lab > 0 หรือ DF > 0 หรือไม่มีค่าใช้จ่าย) · เงิน = ยอด Lab + DF
+    if ((rec.specialReg || []).indexOf('abroad') !== -1) {
+      if (labAmt > 0 || lfN > 0 || rec.labFollowupFree) st.cntAbroad++;
+      st.sumAbroad += labAmt + lfN;
+    } else {
+      if (labAmt > 0 || lfN > 0 || rec.labFollowupFree) st.cntMedLabBar++;
+      st.sumMedLabBar += labAmt + lfN;
+    }
     if (rec.program) { st.cntCheckup++; st.sumCheckup += numOf(t.checkup); }
     if ((rec.vaccineCount || 0) > 0) {
       if (rec.vaccineWithCheckup) { st.cntVaccineCu++; st.sumVaccineCu += numOf(t.vaccine); }
@@ -7387,7 +7548,7 @@ function computeSupOpd_(records, dateStr) {
   var st = computeTodayStats_(records);
   // รอบ 91: + แถวฟังผล Lab ที่ยังไม่ถูกนับจากตรวจสุขภาพ/มี Lab/วัคซีนเดี่ยว (เจ้าของยืนยัน 2026-10-20: สูตรเดิมถูกแล้ว เพิ่มเฉพาะส่วนนี้)
   var r = { withProc: st.cntCheckup + st.cntMedLab + st.cntVaccine + st.cntLabFollowupExtra, noProc: st.cntMedGen,
-    vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, usAbdomen: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, isSunday: false, total: 0 };
+    vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, usAbdomen: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, abroad: 0, isSunday: false, total: 0 };
   var m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(String(dateStr || ''));
   if (m) r.isSunday = (new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0);
   var tstRows = 0;
@@ -7409,10 +7570,12 @@ function computeSupOpd_(records, dateStr) {
     if (has('inbody')) r.inbody++;
     if (has('eye_test') || has('color_blind')) r.eyeTest++; // คนเดียวนับครั้งเดียว
     if (rec.pelvic === 'pap' || rec.pelvic === 'thinprep' || rec.pelvic === 'thinprep_hpv') r.pap++;
+    // รอบ 120 (S1): ตรวจร่างกายไปต่างประเทศ = แถวที่ติ๊ก และ ยอด Lab > 0 (วันฟังผล DF อย่างเดียว/ไม่มีค่าใช้จ่าย ไม่นับ) · บวกเข้ายอดรวมหัตถการ · withProc/noProc ไม่แก้
+    if (has('abroad') && (Number(rec.medCertLabAmount) || 0) > 0) r.abroad++;
   });
   r.vaccineShots -= tstRows;
   if (!r.isSunday) r.pap = 0;
-  r.total = r.vaccineShots + r.bmd + r.mmgUs + r.ent + r.entAudio + r.vision + r.ekg + r.usAbdomen + r.inbody + r.eyeTest + r.ppd + r.pap;
+  r.total = r.vaccineShots + r.bmd + r.mmgUs + r.ent + r.entAudio + r.vision + r.ekg + r.usAbdomen + r.inbody + r.eyeTest + r.ppd + r.pap + r.abroad;
   return r;
 }
 
@@ -7429,6 +7592,7 @@ function renderSupOpdSummary(records, dateStr) {
     ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'ราย'], ['PPD test', r.ppd, 'ราย']
   ];
   if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'ราย']);
+  rows.push(['ตรวจร่างกายไปต่างประเทศ', r.abroad, 'ราย']); // รอบ 120 (S1): ต่อท้ายรายการ · หน่วย ราย
   // รอบ 115 R4: วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG+U/S Breast / ENT / ENT+Audio / ห้องตรวจตา ⇒ ซ่อนแถวเมื่อจำนวน 0 (ไม่ใช่ 0 ⇒ ยังแสดง · ยอดรวมไม่เปลี่ยน)
   if (r.isSunday) {
     var sundayHide = ['BMD', 'MMG + U/S Breast', 'ENT', 'ENT + Audio', 'ห้องตรวจตา'];
@@ -7507,7 +7671,9 @@ function renderTodaySummaryBar_(st) {
     ['วัคซีนตรวจสุขภาพ', st.cntVaccineCu, st.sumVaccineCu],
     ['ใบรับรองแพทย์ทั่วไป', st.cntMedGen, st.sumMedGen],
     // รอบ 91: หมวด Lab รวมแถวฟังผล Lab (จำนวนคน = ยอด Lab > 0 หรือ ฟังผล Lab > 0 · เงิน = ยอด Lab + DF ฟังผล Lab)
-    ['ใบรับรองแพทย์มี lab', st.cntMedLabAny, st.sumMedLab + st.sumLabFollowup]
+    // รอบ 120 (B1): หมวดมี lab หักแถวต่างประเทศ · เพิ่มหมวด "ตรวจร่างกายไปต่างประเทศ" ต่อจากมี lab · ทุกหมวดรวมกัน = ยอดรวม · st เก่าที่ไม่มีตัวแปรใหม่ ⇒ ใช้นิยามเดิม
+    ['ใบรับรองแพทย์มี lab', (st.cntMedLabBar !== undefined ? st.cntMedLabBar : st.cntMedLabAny), (st.sumMedLabBar !== undefined ? st.sumMedLabBar : (st.sumMedLab + st.sumLabFollowup))],
+    ['ตรวจร่างกายไปต่างประเทศ', st.cntAbroad || 0, st.sumAbroad || 0]
   ];
   if (st.sumOther > 0) breakdown.push(['อื่น ๆ (ตรวจเพิ่มของแถวเก่า)', null, st.sumOther]);
   // ⚠ ห้ามห่อแต่ละหมวดด้วยแท็ก div — .sum-breakdown เป็น grid (5 คอลัมน์) ถ้าห่อ แต่ละหมวดจะกลายเป็น grid item ตัวเดียวแล้วไหลไปเรียงข้างกัน
@@ -8183,7 +8349,7 @@ function onCancelRecord(recordId, btnEl) {
    ⚠ ทุกจุดที่แตะโค้ดเดิมเรียกฟังก์ชันของก้อนนี้ผ่าน typeof guard — vm จำลองของเทสต์เก่าไม่มีฟังก์ชันพวกนี้
    ========================================================================= */
 var PRE_MAX_DAYS_AHEAD = 7;
-var PRE_DISABLED_PANELS_ = ['panelVaccine', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab']; // โหมดล่วงหน้า: แผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ
+var PRE_DISABLED_PANELS_ = ['panelVaccine', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab', 'panelAbroad']; // โหมดล่วงหน้า: แผงอื่นนอกจากผู้รับบริการ/ตรวจสุขภาพ
 var THAI_WEEKDAY_FULL = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
 var PRE_TODAY = [];            // W6: items ของ preList วันนี้ (โหลดล้ม ⇒ ใช้ค่าเก่า ไม่แจ้งเตือน)
 var PRE_TODAY_RESP = null;     // คำตอบ preList วันนี้ล่าสุดทั้งก้อน (ใช้ป้อนการ์ด #preCard ตอนกลับมาดูวันนี้)
@@ -13586,6 +13752,33 @@ function showCuView(view) {
 // เจ้าของสั่ง 2026-09-18: รายงานรายวัน (รวมทุกจุด ไม่ต้องพิมพ์) — โหมดปัจจุบันของแท็บ + ตัวนับกันผลเก่ามาทับผลใหม่
 var REPORT_MODE = 'month';
 var REPORT_SEQ = 0;
+// รอบ 120 (R1/R3): กลุ่มวันของรายงานรายเดือน/ไตรมาส 'all'|'week'|'sun' · REPORT_LOADED_ = เคยโหลดรายงานในโหมดนี้แล้ว (กดกลุ่มวัน ⇒ โหลดใหม่เอง) · REPORT_SHOWN_GROUP_ = กลุ่มของรายงานที่แสดงอยู่
+var REPORT_DAYGROUP = 'all';
+var REPORT_LOADED_ = false;
+var REPORT_SHOWN_GROUP_ = 'all';
+function renderReportDayGroupBar_() {
+  var bar = qs('reportDayGroup');
+  if (!bar) return;
+  bar.hidden = (REPORT_MODE === 'day');
+  bar.querySelectorAll('button[data-day-group]').forEach(function (b) {
+    var on = b.getAttribute('data-day-group') === REPORT_DAYGROUP;
+    b.className = 'btn small' + (on ? '' : ' secondary');
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+// เปิดหน้ารายงาน ⇒ กลับ "ทั้งหมด" เสมอ · ถ้ารายงานที่ค้างอยู่เป็นของกลุ่มอื่น ล้างทิ้ง (กันอ่าน/พิมพ์ผิดกลุ่ม)
+function resetReportDayGroup_() {
+  if (REPORT_DAYGROUP !== 'all') REPORT_SEQ++; // ผู้ตรวจ m3: ทิ้งผลตอบของกลุ่มวันเดิมที่ยังโหลดค้าง (กันรายงานอาทิตย์มาวาดใต้แถบ "ทั้งหมด")
+  REPORT_DAYGROUP = 'all';
+  if (REPORT_SHOWN_GROUP_ !== 'all' && qs('reportContent')) { qs('reportContent').innerHTML = ''; REPORT_SEQ++; REPORT_LOADED_ = false; REPORT_SHOWN_GROUP_ = 'all'; }
+  renderReportDayGroupBar_();
+}
+function onReportDayGroupClick_(group) {
+  if (group !== 'week' && group !== 'sun') group = 'all';
+  REPORT_DAYGROUP = group;
+  renderReportDayGroupBar_();
+  if (REPORT_MODE !== 'day' && REPORT_LOADED_) loadReport();
+}
 
 function supportsMonthInput() {
   var i = document.createElement('input');
@@ -13706,6 +13899,8 @@ function setReportMode(mode) {
   qs('btnReportModeQuarter').className = 'btn small' + (isQuarter ? '' : ' secondary');
   qs('reportContent').innerHTML = '';
   REPORT_SEQ++;
+  REPORT_DAYGROUP = 'all'; REPORT_LOADED_ = false; REPORT_SHOWN_GROUP_ = 'all'; // รอบ 120: สลับโหมด ⇒ กลับ "ทั้งหมด"
+  renderReportDayGroupBar_();
 }
 
 function numOr0(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
@@ -13786,6 +13981,9 @@ function renderReport(summary, period) {
     var periodLine = isDay ? ('วันที่ ' + formatThaiDate(period.value))
       : isQuarter ? formatThaiQuarter(period.value)
       : ('เดือน ' + formatThaiMonthYear(period.value));
+    // รอบ 120 (R3): กรองกลุ่มวันแล้ว ⇒ หัวรายงาน/ใบพิมพ์บอกกลุ่ม
+    if (!isDay && period.dayGroup === 'sun') periodLine += ' — เฉพาะวันอาทิตย์';
+    else if (!isDay && period.dayGroup === 'week') periodLine += ' — เฉพาะจันทร์–ศุกร์';
     html += '<div class="line">' + periodLine + '</div>';
   }
   // รอบ 30 (W1): ป้ายยอดรวมเป็น "ยอดค่าบริการรวมทั้งหมด" ทุกโหมด (ตามภาพเจ้าของ แทน "ยอดเงินรวมทั้งเดือน/วัน" เดิม)
@@ -13896,11 +14094,14 @@ function renderReport(summary, period) {
   var medcert = summary.medcert || {};
   var medcertGenCount = numOr0(medcert.count5) + numOr0(medcert.countDriver);
   // รอบ 91 (เจ้าของตัดสิน ก): ยอด DF พบแพทย์ฟังผล Lab (medcert.labFollowupMoney) นับในบรรทัด "มี Lab" ไม่ใช่ "ทั่วไป" (เหมือนแถบสรุปรายวัน) · เซิร์ฟเวอร์รุ่นเก่าไม่มีคีย์ ⇒ numOr0 = 0 พฤติกรรมเดิม
-  var medcertGenMoney = numOr0(medcert.money) - numOr0(medcert.labMoney) - numOr0(medcert.labFollowupMoney);
+  // รอบ 120 (F3): แถวต่างประเทศมีบรรทัดของตัวเอง (ไม่นับซ้ำในมี Lab) · ไม่มี medcert.abroad (เซิร์ฟเวอร์เก่า) ⇒ ไม่แสดงบรรทัด
+  var abroadObj = (medcert.abroad && typeof medcert.abroad === 'object') ? medcert.abroad : null;
+  var medcertGenMoney = numOr0(medcert.money) - numOr0(medcert.labMoney) - numOr0(medcert.labFollowupMoney) - (abroadObj ? numOr0(abroadObj.money) : 0);
   html += '<div class="card"><h2>4 ใบรับรองแพทย์</h2>' +
     // รอบ 118 (เจ้าของ 2026-11-09): รวมเป็นหมวดละบรรทัด + จำนวนราย (genPeople/labPeople จากเซิร์ฟเวอร์)
     '<div class="line">ใบรับรองแพทย์ทั่วไป : ' + medcertGenCount + ' ใบ , ' + numOr0(medcert.genPeople) + ' ราย , ค่าบริการใบรับรองแพทย์ทั่วไป ' + money(medcertGenMoney) + ' บาท</div>' +
     '<div class="line">ใบรับรองแพทย์มี Lab : ' + numOr0(medcert.labPeople) + ' ราย , ค่าบริการใบรับรองแพทย์มี Lab ' + money(numOr0(medcert.labMoney) + numOr0(medcert.labFollowupMoney)) + ' บาท</div>' +
+    (abroadObj ? ('<div class="line">ตรวจร่างกายไปต่างประเทศ : ' + numOr0(abroadObj.people) + ' ราย , ค่าบริการ ' + money(numOr0(abroadObj.money)) + ' บาท</div>') : '') +
     '</div>';
 
   // 5 ส่งตรวจพิเศษ — summary.special.items (object map {id: {reg, prep, sent, back}}) — ไม่คิดเงิน ไม่มีคอลัมน์ยอดเงิน
@@ -13914,6 +14115,7 @@ function renderReport(summary, period) {
     '<th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
   spDisplayOrder_(SPECIAL_SENDS).forEach(function (item) {
     var row = specialItems[item.id] || { reg: 0 };
+    if (item.id === 'abroad') return; // รอบ 120 (F8): ต่างประเทศมีบรรทัดของตัวเองในการ์ด 4 ไม่ขึ้นการ์ด 5
     html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.reg) + '</td></tr>';
   });
   html += '</tbody></table></div></div>';
@@ -13983,6 +14185,10 @@ function loadReport() {
   var payload = { staffKey: STATE.staffKey };
   if (period.mode === 'quarter') payload.quarter = period.value;
   else payload.month = period.value;
+  // รอบ 120 (R1): กรองกลุ่มวัน — เฉพาะรายเดือน/รายไตรมาส · ไม่ใช่ all ⇒ ส่ง dayGroup
+  var reqGroup = (period.mode !== 'day' && (REPORT_DAYGROUP === 'week' || REPORT_DAYGROUP === 'sun')) ? REPORT_DAYGROUP : 'all';
+  if (reqGroup !== 'all') { payload.dayGroup = reqGroup; period.dayGroup = reqGroup; }
+  REPORT_LOADED_ = true;
   apiCall('report', payload).then(function (resp) {
     if (seq !== REPORT_SEQ) return; // ผลตอบของการโหลด/โหมดที่เลิกใช้ไปแล้ว — ทิ้งเงียบ ๆ ไม่วาดทับของใหม่กว่า
     if (resp && resp.status === 'ok') {
@@ -13990,6 +14196,13 @@ function loadReport() {
         qs('reportContent').innerHTML = '<div class="error-box">เซิร์ฟเวอร์ยังไม่รองรับรายงานรายไตรมาส (ต้อง deploy รอบ 30)</div>';
         return;
       }
+      // รอบ 120 (E4): ขอกรองวันแล้วเซิร์ฟเวอร์ไม่สะท้อน dayGroup กลับ ⇒ เซิร์ฟเวอร์รุ่นเก่าไม่กรอง · ห้ามแสดงตัวเลขไม่กรอง (บทเรียน W2 รอบ 30)
+      if (reqGroup !== 'all' && resp.dayGroup !== reqGroup) {
+        REPORT_SHOWN_GROUP_ = 'all';
+        qs('reportContent').innerHTML = '<div class="error-box">เซิร์ฟเวอร์ยังไม่รองรับการกรองวัน (ต้อง deploy รอบ 120)</div>';
+        return;
+      }
+      REPORT_SHOWN_GROUP_ = reqGroup;
       renderReport(resp.summary, period);
     } else {
       qs('reportContent').innerHTML = '<div class="error-box">โหลดรายงานไม่สำเร็จ' + (resp && resp.message ? ': ' + escHtml(resp.message) : '') + '</div>';
@@ -17358,6 +17571,7 @@ function showScreen(name) {
   }
 
   if (name === 'today') { todayViewCheckDayRollover_(); loadTodayScreen_(); if (typeof qcOnViewChange_ === 'function') qcOnViewChange_(); } // รอบ 74: คงวันที่ที่เลือกไว้เดิมเมื่อออกแล้วกลับมา (TODAY_VIEW_DATE ไม่ถูกรีเซ็ต) · รอบ 91: แผงปิดยอดคิว M (ถ้าเปิดค้าง) โหลดใหม่
+  if (name === 'report' && typeof resetReportDayGroup_ === 'function') resetReportDayGroup_(); // รอบ 120 (R3): เปิดหน้ารายงานเริ่มที่ "ทั้งหมด" เสมอ
   if (name === 'checkupTable') { ensureCuDateDefault(); loadCheckupTable('list'); } // รอบ 8 (B7)
   if (name === 'pending') { ensurePendingDateDefault(); loadPending(); } // รอบ 28 (W8)
   if (name === 'appt' && typeof apptOnShow_ === 'function') apptOnShow_(); // รอบ 87 (D10) · รอบ 88: + เลือกวัน + โหลดรายชื่อของวันที่เลือก
@@ -18175,6 +18389,13 @@ document.addEventListener('DOMContentLoaded', function () {
   if (labFollowupElInit) labFollowupElInit.addEventListener('input', onServiceFieldChange); // รอบ 91
   var labFreeBtnInit = qs('btnLabFree');
   if (labFreeBtnInit) labFreeBtnInit.addEventListener('click', onLabFreeClick_); // รอบ 108
+  // รอบ 120: แผงตรวจร่างกายไปต่างประเทศ
+  var abroadAmtInit = qs('abroadLabAmount');
+  if (abroadAmtInit) abroadAmtInit.addEventListener('input', onServiceFieldChange);
+  var abroadDfInit = qs('abroadLabFollowup');
+  if (abroadDfInit) abroadDfInit.addEventListener('input', onServiceFieldChange);
+  var abroadFreeBtnInit = qs('btnAbroadFree');
+  if (abroadFreeBtnInit) abroadFreeBtnInit.addEventListener('click', onAbroadFreeClick_);
   qs('vaccineSearch').addEventListener('input', applyVaccineFilter);
   qs('logForm').addEventListener('submit', onSubmitLog);
   qs('btnCancelEdit').addEventListener('click', function () { resetLogForm(); showToast('ยกเลิกการแก้ไขแล้ว'); showScreen('log'); });
@@ -18311,6 +18532,9 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnReportModeMonth').addEventListener('click', function () { setReportMode('month'); });
   qs('btnReportModeDay').addEventListener('click', function () { setReportMode('day'); });
   qs('btnReportModeQuarter').addEventListener('click', function () { setReportMode('quarter'); }); // รอบ 30 (W1)
+  document.querySelectorAll('#reportDayGroup button[data-day-group]').forEach(function (b) { // รอบ 120
+    b.addEventListener('click', function () { onReportDayGroupClick_(b.getAttribute('data-day-group')); });
+  });
   initReportMonthPicker();
   initReportDayPicker();
   initReportQuarterPicker();
