@@ -590,6 +590,13 @@
   .cu-note-gyn-date { flex: 0 0 auto; width: auto; min-width: 140px; font-size: 16px; }
   .cu-note-gyn-hint { display: block; font-size: 13px; color: #666; margin-top: 2px; }
   :is(#cuGynWrap, .gyn-capture) .gyn-head { margin: 14px 0 8px; font-size: 18px; }
+  /* รอบ 122b: กล่องแก้ผลตรวจภายในของ "ตรวจภายในอย่างเดียว" ใต้ตารางนรีเวช (no-print · ไม่ติดรูป PNG) — ใช้ .cu-note-box/.cu-note-grid เดิม */
+  #cuGynWrap .gyn-edit { margin-top: 16px; min-width: 0; }
+  #cuGynWrap .gyn-edit-title { font-size: 15px; margin: 0 0 8px; }
+  #cuGynWrap .gyn-edit-box { margin-bottom: 10px; min-width: 0; }
+  #cuGynWrap .gyn-edit-who { font-weight: 700; font-size: 14px; margin-bottom: 6px; overflow-wrap: anywhere; }
+  #cuGynWrap .gyn-edit-box select, #cuGynWrap .gyn-edit-box input[type=date] { max-width: 100%; font-size: 16px; }
+  #cuGynWrap .gyn-edit .cu-note-resend-row { flex-wrap: wrap; white-space: normal; max-width: 100%; } /* แถวส่งออกอีกครั้งเดิม nowrap กว้าง ~395px ล้นจอ 360-414 */
   :is(#cuGynWrap, .gyn-capture) table.gyn-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 15px; }
   :is(#cuGynWrap, .gyn-capture) .gyn-table th, :is(#cuGynWrap, .gyn-capture) .gyn-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
   :is(#cuGynWrap, .gyn-capture) .gyn-table th { background: var(--gray-pale); }
@@ -2300,7 +2307,7 @@
         <div class="row" style="margin-top:10px;">
           <button type="button" class="btn" id="btnCuLoad">ดูรายชื่อ</button>
           <!-- รอบ 119ช (G1): ปุ่ม "📋 แบบตาราง" เดิมไม่มีคนใช้ ⇒ แทนด้วยรายชื่อส่งนรีเวช (ปุ่มพิมพ์ 2 ปุ่มข้างล่างยังวาด #cuTableWrap เองตอนพิมพ์) -->
-          <button type="button" class="btn secondary" id="btnCuViewGyn">รายชื่อส่งนรีเวช</button>
+          <button type="button" class="btn secondary" id="btnCuViewGyn">รายชื่อตรวจนรีเวช</button>
         </div>
         <div class="row" style="margin-top:6px;">
           <button type="button" class="btn secondary small no-print" id="btnCuPrint">🖨 ใบเซ็นรับผลตรวจ</button>
@@ -11035,7 +11042,8 @@ function compareByQueue(a, b) {
    รอบ 28 (W5): เรียงตามคิวแล้วก่อนคืนค่า — checkupTableRows() ถูกเรียกเป็นจุดเดียวก่อนสร้าง rows ทั้ง 3 มุมมอง */
 function checkupTableRows(records) {
   return (records || []).filter(function (rec) {
-    return rec.status !== 'ยกเลิก' && !!rec.program;
+    // รอบ 122 (P1): ตรวจภายในอย่างเดียว (pelvicsun) ไม่อยู่ในหน้ารายชื่อตรวจสุขภาพเลย (ตาราง/ดูรายชื่อ/ใบเซ็นรับ/รายชื่อเก็บข้อมูล/ยอดรวม) ⇒ ไปอยู่ "รายชื่อตรวจนรีเวช"
+    return rec.status !== 'ยกเลิก' && !!rec.program && !isPelvicOnlyProgram_(rec.program);
   }).sort(compareByQueue);
 }
 
@@ -13733,9 +13741,9 @@ function gynShell_(dateStr) {
   var wrap = qs('cuGynWrap');
   if (!wrap) return null;
   GYN_SHOWN_DATE = dateStr;
-  // รอบ 121 (G1/G5): ปุ่มบันทึกรูป disabled ไว้ก่อนเสมอ — renderGynRows_ เปิดให้เมื่อมีแถวเท่านั้น (ยังไม่โหลด/ล้มเหลว/ว่าง/วันอาทิตย์ ⇒ ปิด)
+  // รอบ 121 (G1/G5): ปุ่มบันทึกรูป disabled ไว้ก่อนเสมอ — renderGynRows_ เปิดให้เมื่อมีแถวเท่านั้น (ยังไม่โหลด/ล้มเหลว/ว่าง ⇒ ปิด · รอบ 122: วันอาทิตย์โหลดตามปกติแล้ว ไม่ใช่กรณีปิดอีก)
   wrap.innerHTML = '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn secondary" id="btnGynImage" disabled>บันทึกเป็นรูปภาพ</button></div>' +
-    '<h2 class="gyn-head" id="cuGynHeading">รายชื่อส่งนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
+    '<h2 class="gyn-head" id="cuGynHeading">รายชื่อตรวจนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
     '<div id="cuGynBody"></div>';
   var ib = qs('btnGynImage');
   if (ib) ib.addEventListener('click', onGynImageClick_);
@@ -13761,7 +13769,7 @@ function loadHtml2canvas_() {
 }
 function gynImageFileName_(ymd) {
   var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
-  return m ? ('รายชื่อส่งนรีเวช_' + (+m[1] + 543) + '-' + m[2] + '-' + m[3] + '.png') : 'รายชื่อส่งนรีเวช.png';
+  return m ? ('รายชื่อตรวจนรีเวช_' + (+m[1] + 543) + '-' + m[2] + '-' + m[3] + '.png') : 'รายชื่อตรวจนรีเวช.png';
 }
 // สำเนาสำหรับถ่ายรูป: จาก DOM บนจอ ตัด .no-print/ปุ่ม/ช่องกรอก/id ออก
 function buildGynCaptureNode_() {
@@ -13820,40 +13828,180 @@ function renderGynRows_(dateStr, rows) {
   var sorted = sortGynRows_(rows);
   GYN_LAST_ROWS = sorted;
   if (!sorted.length) {
-    body.innerHTML = '<p class="muted">ไม่มีรายชื่อส่งนรีเวชวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
+    body.innerHTML = '<p class="muted">ไม่มีรายชื่อตรวจนรีเวชวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
     return;
   }
   var imgBtn = qs('btnGynImage');
   if (imgBtn) imgBtn.disabled = false; // รอบ 121 (G5): มีแถวแล้วถึงเปิด
   body.innerHTML = gynRowsTableHtml_(sorted) +
     '<p class="gyn-total" id="cuGynTotal">รวม ' + sorted.length + ' ราย</p>' +
-    '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อส่งนรีเวช</button></div>';
+    '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อตรวจนรีเวช</button></div>';
   var pb = qs('btnGynPrint');
   if (pb) pb.addEventListener('click', function () { try { window.print(); } catch (e) { /* ไม่มีหน้าต่างพิมพ์ (DOM จำลอง) */ } });
+  // รอบ 122b: กล่องแก้ผลตรวจภายในเฉพาะแถว pelvicsun (no-print ทั้งก้อน ⇒ ไม่ติดใบพิมพ์/รูป PNG)
+  var editRecs = sorted.map(function (r) { return GYN_PELVIC_RECS_[r.recordId]; }).filter(function (x) { return !!x; });
+  if (editRecs.length) {
+    var holder = document.createElement('div');
+    holder.innerHTML = gynPelvicEditHtml_(editRecs);
+    var editEl = holder.firstChild;
+    body.appendChild(editEl);
+    bindGynPelvicEdit_(editEl);
+  }
+}
+/* รอบ 122 (P2/P4): แถวตรวจภายในอย่างเดียว (pelvicsun) ของวันที่รับบริการ → รูปแถวเดียวกับ gynList · ฟังก์ชันล้วน
+   เอาเฉพาะ: ไม่ยกเลิก · โปรแกรม pelvicsun · เลือกชนิดตรวจภายแล้ว (isPelvicChosen_) · date ของ record (ถ้ามี) = dateStr */
+function gynPelvicOnlyRows_(records, dateStr) {
+  var out = [];
+  (records || []).forEach(function (rec) {
+    if (!rec || rec.status === 'ยกเลิก') return;
+    if (!isPelvicOnlyProgram_(rec.program) || !isPelvicChosen_(rec.pelvic)) return;
+    if (rec.date && String(rec.date) !== String(dateStr)) return;
+    out.push({
+      recordId: rec.recordId, queue: rec.queue || '', hn: rec.patientHn || '', prefix: rec.patientPrefix || '',
+      name: rec.patientName || '', pelvic: rec.pelvic, serviceDate: dateStr, otherDay: false
+    });
+  });
+  return out;
+}
+// รวมแถวจากเซิร์ฟเวอร์ (gynList) + pelvicsun โดยไม่ซ้ำ recordId — ซ้ำ ⇒ ใช้ของเซิร์ฟเวอร์
+function mergeGynRows_(serverRows, pelvicOnlyRows) {
+  var seen = {}, out = [];
+  (serverRows || []).forEach(function (r) { out.push(r); if (r && r.recordId) seen[r.recordId] = true; });
+  (pelvicOnlyRows || []).forEach(function (r) { if (r.recordId && seen[r.recordId]) return; out.push(r); });
+  return out;
+}
+/* รอบ 122b — กล่องแก้ "ผลตรวจมะเร็งปากมดลูก" ของแถว pelvicsun ในรายชื่อตรวจนรีเวช (เจ้าของสั่ง 2026-11-15 หลังผู้ตรวจ M1)
+   เหตุ: รอบ 122 (P1) เอา pelvicsun ออกจากหน้ารายชื่อตรวจสุขภาพ ⇒ การ์ดที่แก้ ช่องทางส่งผล/ส่งออกวันที่/ส่งออกอีกครั้ง หายไปด้วย
+   record เต็มมาจากคำตอบ today ที่ loadGynList ยิงอยู่แล้ว เก็บใน GYN_PELVIC_RECS_ (ไม่ใช่ CU_CACHE) · ไม่แตะ maybeSaveCuNote/cuNoteHtml/bindCuNoteEvents
+   ⚠ handleNoteUpdate_ เขียนชื่อแพทย์/consult ทุกครั้ง (ไม่มี doctorName = ล้าง · consult ไม่ใช่ true = ล้าง) ⇒ payload ต้องส่งค่าเดิมของ rec กลับไปเสมอ
+   (doctorName + doctorNameBefore เท่ากัน ⇒ เซิร์ฟเวอร์คงชื่อในชีต) · ห้ามส่ง sentDate/resendList/receivedDate/pickupDate/gynDate/labTrack (เขียนเฉพาะเมื่อมีคีย์) */
+var GYN_PELVIC_RECS_ = {};
+function isFocusInGynEdit_() {
+  var el = document.activeElement;
+  return !!(el && typeof el.closest === 'function' && el.closest('.gyn-edit'));
+}
+function gynPelvicEditBoxHtml_(rec) {
+  var recId = escHtml(rec.recordId);
+  var sentDate = rec.pelvicSentDate || '';
+  var list = Array.isArray(rec.pelvicResendList) ? rec.pelvicResendList : [];
+  var locked = !sentDate;
+  var rowsHtml = list.map(function (item, idx) { return cuNoteResendRowHtml(idx, item, locked); }).join('');
+  var who = [rec.queue || '', rec.patientHn || '', ((rec.patientPrefix || '') + (rec.patientName || ''))].filter(function (x) { return x; }).join(' · ');
+  return '<div class="cu-note-box gyn-edit-box" data-gyn-edit-box="' + recId + '">' +
+    '<div class="gyn-edit-who">' + escHtml(who) + ' <span class="cu-note-box-sub">' + escHtml(pelvicShortLabel_(rec.pelvic)) + '</span></div>' +
+    '<div class="cu-note-grid">' +
+    '<label class="field-label">ช่องทางส่งผล</label>' +
+    '<span class="cu-note-field"><select class="cu-note-pelvic-method">' + cuNotePelvicMethodOptionsHtml(rec.pelvicMethod || '') + '</select></span>' +
+    '<label class="field-label">ส่งออกวันที่</label>' +
+    '<span class="cu-date-cell"><input type="date" class="cu-note-pelvic-sentdate" value="' + escHtml(sentDate) + '"><span class="cu-date-err-msg"></span></span>' +
+    '<div class="cu-note-pelvic-resend">' +
+    '<label class="field-label">ส่งออกผลตรวจมะเร็งปากมดลูกอีกครั้ง</label>' + rowsHtml +
+    '<button type="button" class="btn secondary small cu-note-resend-add"' + (locked ? ' disabled' : '') + '>+ ส่งออกผลตรวจมะเร็งปากมดลูกอีกครั้ง</button>' +
+    '</div>' +
+    '</div>' +
+    '<span class="cu-note-state"></span>' +
+    '</div>';
+}
+function gynPelvicEditHtml_(recs) {
+  return '<div class="gyn-edit no-print"><h3 class="gyn-edit-title">แก้ไขผลตรวจภายใน (ตรวจภายในอย่างเดียว)</h3>' +
+    recs.map(gynPelvicEditBoxHtml_).join('') + '</div>';
+}
+// payload ของ noteUpdate จากกล่องนี้ — ฟังก์ชันล้วน · ค่าแพทย์/consult = ค่าเดิมของ rec เสมอ (ดูคอมเมนต์ด้านบน)
+function gynPelvicNotePayload_(rec, v) {
+  var consult = rec.consult === true;
+  var doctorName = rec.doctorName || '';
+  var payload = {
+    staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
+    doctorName: doctorName, doctorNameBefore: doctorName,
+    consult: consult, consultNote: consult ? (rec.consultNote || '') : '',
+    pelvicMethod: v.pelvicMethod, pelvicSentDate: v.pelvicSentDate, pelvicResendList: v.pelvicResendList
+  };
+  if (consult) payload.consultCount = (typeof rec.consultCount === 'number' && rec.consultCount >= 1) ? rec.consultCount : 1;
+  return payload;
+}
+function saveGynPelvicNote_(recordId, box) {
+  var rec = GYN_PELVIC_RECS_[recordId];
+  var stateEl = box.querySelector('.cu-note-state');
+  if (!rec) return null;
+  var methodSel = box.querySelector('.cu-note-pelvic-method');
+  var sentInput = box.querySelector('.cu-note-pelvic-sentdate');
+  var resendBox = box.querySelector('.cu-note-pelvic-resend');
+  var v = {
+    pelvicMethod: methodSel ? methodSel.value : '',
+    pelvicSentDate: sentInput ? sentInput.value : '',
+    pelvicResendList: readResendListFromDom(resendBox)
+  };
+  if (firstSendOrderError(v.pelvicSentDate, v.pelvicResendList)) {
+    if (stateEl) { stateEl.textContent = 'ยังไม่บันทึก — วันที่ส่งออกผิดลำดับ'; stateEl.className = 'cu-note-state err'; }
+    return null;
+  }
+  if ((rec.pelvicMethod || '') === v.pelvicMethod && (rec.pelvicSentDate || '') === v.pelvicSentDate &&
+      JSON.stringify(Array.isArray(rec.pelvicResendList) ? rec.pelvicResendList : []) === JSON.stringify(v.pelvicResendList)) {
+    return null; // ไม่เปลี่ยนจากค่าล่าสุดที่รู้ — ไม่ยิงซ้ำ
+  }
+  if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
+  return apiCall('noteUpdate', gynPelvicNotePayload_(rec, v)).then(function (resp) {
+    if (resp && resp.status === 'ok') {
+      // ค่าจริงในชีตจากคำตอบ (ไม่มี/ผิดรูป ⇒ ใช้ค่าที่ส่งไป)
+      rec.pelvicMethod = (typeof resp.pelvicMethod === 'string') ? resp.pelvicMethod : v.pelvicMethod;
+      rec.pelvicSentDate = (typeof resp.pelvicSentDate === 'string') ? resp.pelvicSentDate : v.pelvicSentDate;
+      rec.pelvicResendList = Array.isArray(resp.pelvicResendList) ? resp.pelvicResendList : v.pelvicResendList;
+      if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
+    } else {
+      // ล้มเหลว: ห้ามแตะค่าใน GYN_PELVIC_RECS_ (ครั้งถัดไปยังยิงซ้ำได้) · ไม่ล้างสิ่งที่ผู้ใช้กรอก
+      if (stateEl) { stateEl.textContent = '✗ บันทึกไม่สำเร็จ — ลองใหม่' + ((resp && resp.message) ? ' (' + String(resp.message) + ')' : ''); stateEl.className = 'cu-note-state err'; }
+    }
+  });
+}
+function bindGynPelvicEdit_(root) {
+  root.querySelectorAll('.gyn-edit-box').forEach(function (box) {
+    var recordId = box.getAttribute('data-gyn-edit-box');
+    var methodSel = box.querySelector('.cu-note-pelvic-method');
+    var sentInput = box.querySelector('.cu-note-pelvic-sentdate');
+    var resendBox = box.querySelector('.cu-note-pelvic-resend');
+    function trySave() { return saveGynPelvicNote_(recordId, box); }
+    var binding = bindResendBox(resendBox, null, trySave, function () { return sentInput ? sentInput.value : ''; });
+    if (methodSel) methodSel.addEventListener('change', trySave);
+    if (sentInput) sentInput.addEventListener('change', function () {
+      var locked = !sentInput.value; // ล้างวันที่ส่งออก ⇒ ล็อกบล็อก "ส่งออกอีกครั้ง" (ไม่ลบค่าที่กรอกไว้)
+      resendBox.querySelectorAll('.cu-note-resend-date, .cu-note-resend-method, .cu-note-resend-del').forEach(function (el) { el.disabled = locked; });
+      var addBtn = resendBox.querySelector('.cu-note-resend-add');
+      if (addBtn) addBtn.disabled = locked;
+      if (binding) { binding.syncMins(); binding.syncOrder(); }
+      trySave();
+    });
+  });
 }
 function loadGynList() {
+  if (isFocusInGynEdit_()) return; // รอบ 122b: กำลังพิมพ์/เลือกในกล่องแก้ ⇒ ไม่โหลดทับ (โหลดใหม่จะวาดกล่องทิ้ง)
   var seq = ++GYN_SEQ;
   var dateStr = qs('cuDate').value || todayStr();
   var body = gynShell_(dateStr);
   if (!body) return;
   GYN_LAST_ROWS = [];
-  if (ymdIsSunday_(dateStr)) { // G6: วันอาทิตย์ตรวจที่คลินิก ⇒ ไม่ยิงเซิร์ฟเวอร์
-    body.innerHTML = '<p class="muted">วันอาทิตย์ไม่มีรายชื่อส่งนรีเวช</p>';
-    return;
-  }
   body.innerHTML = '<p class="muted">กำลังโหลด...</p>';
-  apiCall('gynList', { staffKey: STATE.staffKey, date: dateStr }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+  // รอบ 122 (P4): แทนกติการอบ 119ช G6 (วันอาทิตย์ไม่ยิงเซิร์ฟเวอร์) — ยิง gynList + today (pelvicsun) คู่ขนาน รอทั้งคู่ · อันใดอันหนึ่งเสีย ⇒ กล่องโหลดไม่สำเร็จ (ห้ามแสดงครึ่งเดียว)
+  var pGyn = apiCall('gynList', { staffKey: STATE.staffKey, date: dateStr }, { timeoutMs: readTimeoutMs_() });
+  var pToday = apiCall('today', { staffKey: STATE.staffKey, point: STATE.point, date: dateStr, allPoints: true }, { timeoutMs: readTimeoutMs_() });
+  Promise.all([pGyn, pToday]).then(function (rs) {
     if (seq !== GYN_SEQ) return; // มีการโหลดใหม่/เปลี่ยนวันแทรก ⇒ ทิ้งคำตอบเก่า
-    if (isListResp_(resp, ['rows'])) {
-      renderGynRows_(dateStr, resp.rows);
+    var respG = rs[0], respT = rs[1];
+    if (isListResp_(respG, ['rows']) && isListResp_(respT, ['records'])) {
+      var pelvicRows = gynPelvicOnlyRows_(respT.records, dateStr);
+      GYN_PELVIC_RECS_ = {}; // รอบ 122b: record เต็มของ pelvicsun ที่แสดง (ใช้วาด/บันทึกกล่องแก้)
+      respT.records.forEach(function (rec) {
+        if (rec && rec.recordId && pelvicRows.some(function (r) { return r.recordId === rec.recordId; })) GYN_PELVIC_RECS_[rec.recordId] = rec;
+      });
+      renderGynRows_(dateStr, mergeGynRows_(respG.rows, pelvicRows));
     } else {
       var b = qs('cuGynBody');
-      if (b) renderLoadFailBox_(b, 'โหลดรายชื่อส่งนรีเวชไม่สำเร็จ', badListRespMessage_(resp), function () { loadGynList(); });
+      var bad = isListResp_(respG, ['rows']) ? respT : respG;
+      if (b) renderLoadFailBox_(b, 'โหลดรายชื่อตรวจนรีเวชไม่สำเร็จ', badListRespMessage_(bad), function () { loadGynList(); });
     }
   }).catch(function () {
     if (seq !== GYN_SEQ) return;
     var b2 = qs('cuGynBody');
-    if (b2) renderLoadFailBox_(b2, 'โหลดรายชื่อส่งนรีเวชไม่สำเร็จ', '', function () { loadGynList(); });
+    if (b2) renderLoadFailBox_(b2, 'โหลดรายชื่อตรวจนรีเวชไม่สำเร็จ', '', function () { loadGynList(); });
   });
 }
 function openGynView_() {
