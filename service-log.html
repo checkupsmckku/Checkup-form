@@ -1898,7 +1898,7 @@
                     <label class="opt-btn prog-btn prog-couple" data-progset="week"><input type="radio" name="program" value="couple"><span class="prog-check"></span> โปรแกรมคู่รัก <span class="opt-price" data-prog="couple"></span></label>
                     <label class="opt-btn prog-btn prog-btn-sun1" data-progset="sun"><input type="radio" name="program" value="1sun"><span class="prog-check"></span> โปรแกรม 1 วันอาทิตย์ <span class="opt-price" data-prog="1sun"></span></label>
                     <label class="opt-btn prog-btn prog-btn-sun2" data-progset="sun"><input type="radio" name="program" value="2sun"><span class="prog-check"></span> โปรแกรม 2 วันอาทิตย์ <span class="opt-price" data-prog="2sun"></span></label>
-                    <label class="opt-btn prog-btn" data-progset="sun"><input type="radio" name="program" value="pelvicsun"><span class="prog-check"></span> ตรวจภายในอย่างเดียว <span class="opt-price" data-prog="pelvicsun"></span></label>
+                    <label class="opt-btn prog-btn" data-progset="sun" hidden><input type="radio" name="program" value="pelvicsun"><span class="prog-check"></span> ตรวจภายในอย่างเดียว <span class="opt-price" data-prog="pelvicsun"></span></label>
                   </div>
 
                   <div id="pelvicSection" style="margin-top:10px;" hidden>
@@ -1974,6 +1974,8 @@
                   <span class="item-name">คิด PE แล้ว (คิดค่ายา + เข็ม + DF ไม่บวก PE/10%)</span>
                   <span class="sp-lock-note" id="vaccinePeChargedNote" hidden>มีโปรแกรมตรวจสุขภาพ ใช้เรตตรวจสุขภาพ</span>
                 </label>
+                <!-- รอบ 124 (G6/W4): จุดนับ vaccine ติ๊ก "คิด PE แล้ว" ⇒ เตือน (ไม่บล็อก) ว่าเคสใบรับรองแพทย์มี Lab ต้องบันทึกที่จุดคีย์ -->
+                <span id="vaccinePeChargedHint" class="muted" style="display:block;margin:2px 0 8px 4px;" hidden>ถ้าเป็นเคสใบรับรองแพทย์มี Lab ให้บันทึกที่จุดคีย์</span>
                 <div id="vaccinePriceBanner" class="price-banner banner-normal">ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)</div>
                 <details class="list-fold" open>
                   <summary>รายการวัคซีน (เลือกแล้ว <span id="vaccineCount">0</span> เข็ม) ▸</summary>
@@ -2079,6 +2081,7 @@
                     <label class="opt-btn" style="min-height:44px;"><input type="radio" name="medLabPelvic" value="thinprep"> Thinprep</label>
                     <label class="opt-btn" style="min-height:44px;"><input type="radio" name="medLabPelvic" value="thinprep_hpv"> Thinprep + HPV</label>
                   </div>
+                  <p class="muted" id="medLabPelvicSunHint" hidden style="margin-top:6px;">วันอาทิตย์: เติมราคาตรวจภายในอย่างเดียวให้แล้ว — มี Lab อื่นแก้ยอดเอง</p>
                 </div>
                 <!-- รอบ 87 (D16): "ส่งตรวจพิเศษ" = เงาของช่อง "ลงชื่อไว้" (sp_reg_<id>) ในแผงส่งตรวจพิเศษ — ติ๊กฝั่งไหนอีกฝั่งตาม (ค่าเดียว ลงชีตครั้งเดียว)
                      syncMedLabSpMirror_() สร้าง/ซิงก์จาก recalcTotals · เงาไม่ถูกส่งใน payload (อ่านจาก sp_reg_* เท่านั้น)
@@ -2112,6 +2115,20 @@
                   </div>
                 </div>
                 <button type="button" class="btn secondary small" id="btnAbroadFree" aria-pressed="false" style="margin-top:8px;min-height:44px;white-space:normal;">ไม่มีค่าใช้จ่าย (กรณี ชำระเงินครบแล้วนัดฟังผล)</button>
+                <!-- รอบ 124 (G11/W9): ตรวจเพิ่ม (นับยอด) ในแผงต่างประเทศ = เงาของช่องจริงใน #medLabSpecialList (ติ๊กฝั่งไหนอีกฝั่งตาม · ไม่อยู่ใน payload) -->
+                <p class="muted" style="margin-top:12px;">ตรวจเพิ่ม (นับยอด)</p>
+                <div id="abroadSpecialList"></div>
+                <!-- รอบ 124 (G10/W6): ตรวจมะเร็งปากมดลูกของเคสต่างประเทศ (หญิง) — ค่าตรวจรวมในยอด Lab ของแผงนี้ · แสดงเมื่อแผงต่างประเทศมีข้อมูล (isAbroadOn_) -->
+                <div id="abroadPelvicSection" hidden style="margin-top:10px;">
+                  <label class="field-label">ตรวจมะเร็งปากมดลูก<span class="muted" style="display:block;font-weight:400;font-size:0.9em;">ค่าตรวจรวมในยอดเงินที่กรอกเอง</span></label>
+                  <div class="row" id="abroadPelvicButtons">
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="abroadPelvic" value="no"> ไม่ตรวจมะเร็งปากมดลูก</label>
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="abroadPelvic" value="pap"> Pap smear</label>
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="abroadPelvic" value="thinprep"> Thinprep</label>
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="abroadPelvic" value="thinprep_hpv"> Thinprep + HPV</label>
+                  </div>
+                  <p class="muted" id="abroadPelvicSunHint" hidden style="margin-top:6px;">วันอาทิตย์: เติมราคาตรวจภายในอย่างเดียวให้แล้ว — มี Lab อื่นแก้ยอดเอง</p>
+                </div>
               </section>
             </div>
           </section>
@@ -3013,9 +3030,12 @@ var STATE = {
   pointTopics: {},
   labFollowupFree: false, // รอบ 108: กดปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab ที่จ่ายครบแล้ว) · ล้างเมื่อ resetLogForm
   abroadFree: false, // รอบ 120: ปุ่ม "ไม่มีค่าใช้จ่าย" ของแผงตรวจร่างกายไปต่างประเทศ · ล้างเมื่อ resetLogForm
+  keyVaxShown: false, // รอบ 124 (W1): แผงวัคซีนที่จุดคีย์ order แสดงอยู่ตอนเรียกครั้งก่อน (กางให้ครั้งแรกที่ขึ้น ไม่กางทับตอนผู้ใช้พับเอง)
+  sunFill: { medLabPelvic: null, abroadPelvic: null }, // รอบ 124 (W7): ยอดที่ระบบเติมให้ล่าสุดจากตัวเลือกตรวจภายในวันอาทิตย์ (null = ไม่มี) · ผู้ใช้พิมพ์เองแล้วไม่ทับ
   // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
   // preModeApplied = applyPreMode_() ทำงานในโหมดล่วงหน้าอยู่ไหม (ตรวจจับ "เปลี่ยนสถานะ") · serviceDateDay = วันที่ที่ใช้ตั้งขอบเขต #serviceDate ล่าสุด (ตรวจข้ามวัน)
   preEditId: '',
+  preEditProgram: '', // รอบ 124 (M1): โปรแกรมเดิมของรายการรอมาที่กำลังแก้ — ถ้าเป็น pelvicsun (แถวลงล่วงหน้าเก่า) ปุ่ม/ด่าน G7 ยอมให้แก้ต่อ
   preEditName: '',
   preModeApplied: false,
   serviceDateDay: '',
@@ -3738,6 +3758,39 @@ function buildMedLabSpMirror_() {
     });
   });
 }
+/* รอบ 124 (G11/W9): แผงตรวจร่างกายไปต่างประเทศ — "ตรวจเพิ่ม (นับยอด)" = เงาของช่องจริง sp_reg_<id> (EKG/ตรวจสายตา/ตาบอดสี/U/S ช่องท้อง = MEDLAB_SPECIAL_IDS)
+   id ไม่ซ้ำกับเงาแผง Lab: abroad_mirror_sp_<id> / abroad_mirror_row_<id> · เงาไม่อยู่ใน payload · ไม่ติดด่าน E2 (ไม่ใช่เงิน) */
+function buildAbroadSpMirror_() {
+  var wrap = qs('abroadSpecialList');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  SPECIAL_SENDS.filter(function (s) { return MEDLAB_SPECIAL_IDS.indexOf(s.id) !== -1; }).forEach(function (item) {
+    var row = document.createElement('label');
+    row.className = 'check-row';
+    row.id = 'abroad_mirror_row_' + item.id;
+    row.innerHTML = '<input type="checkbox" id="abroad_mirror_sp_' + escHtml(item.id) + '"><span class="item-name">' + escHtml(item.name) + '</span>';
+    wrap.appendChild(row);
+    var cb = row.querySelector ? row.querySelector('input') : null;
+    if (!cb) return;
+    cb.addEventListener('change', function () {
+      var real = qs('sp_reg_' + item.id);
+      if (!real || real.disabled) { cb.checked = !!(real && real.checked); return; }
+      real.checked = cb.checked;
+      real.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+}
+function syncAbroadSpMirror_() {
+  MEDLAB_SPECIAL_IDS.forEach(function (id) {
+    var m = qs('abroad_mirror_sp_' + id);
+    if (!m) return;
+    var real = qs('sp_reg_' + id);
+    m.checked = !!(real && real.checked);
+    m.disabled = !!(real && real.disabled);
+    var row = qs('abroad_mirror_row_' + id);
+    if (row && row.classList) row.classList.toggle('sp-row-locked', !!(real && real.disabled));
+  });
+}
 function syncMedLabSpMirror_() {
   if (typeof SP_BOARD_ITEMS === 'undefined') return;
   SP_BOARD_ITEMS.forEach(function (item) {
@@ -4226,6 +4279,7 @@ function buildSpecialSendsUI() {
     var regCb = qs('sp_reg_' + item.id);
     if (regCb) regCb.addEventListener('change', function () { onSpecialRegChange(item.id); });
   });
+  if (typeof buildAbroadSpMirror_ === 'function') buildAbroadSpMirror_(); // รอบ 124 (G11/W9)
   if (typeof buildMedLabSpMirror_ === 'function') buildMedLabSpMirror_(); // รอบ 87 (D16) — typeof guard: vm จำลองของเทสต์เก่าตัดมาเฉพาะบางฟังก์ชัน: เงา "ส่งตรวจพิเศษ" ในแผงใบรับรองมี Lab
   if (wrap && SP_COUNT_ONLY_ITEMS.length) {
     var heading = document.createElement('p');
@@ -4350,6 +4404,7 @@ function setProgramSet(set, opts) {
       if (radio) radio.checked = false;
     }
   });
+  applyPelvicsunBtn_(); // รอบ 124 (W5)
 
   document.querySelectorAll('#progSetButtons [data-progset]').forEach(function (btn) {
     btn.classList.toggle('is-active', btn.getAttribute('data-progset') === set);
@@ -4360,6 +4415,17 @@ function setProgramSet(set, opts) {
   }
 }
 
+// รอบ 124 (G7/W5): เลิกปุ่ม "ตรวจภายในอย่างเดียว" สำหรับบันทึกใหม่ — ซ่อนเสมอ ยกเว้นโหมดแก้ไขแถวเก่าที่ program = pelvicsun · ไม่ใช่โหมดนั้นแต่ติ๊กค้าง ⇒ ปลดติ๊ก
+// รอบ 124 (M1): กำลังแก้รายการรอมาที่โปรแกรมเดิมเป็น pelvicsun ⇒ ยอมเหมือนแก้แถวเก่า (รายการใหม่ยังบล็อก)
+function pelvicsunPreEdit_() { return !!(STATE.preEditId && isPelvicOnlyProgram_(STATE.preEditProgram)); }
+function applyPelvicsunBtn_() {
+  var radio = document.querySelector('#progButtons input[name="program"][value="pelvicsun"]');
+  if (!radio) return;
+  var keep = !!(STATE.editingId && typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.originalRec && isPelvicOnlyProgram_(EDIT_MODAL.originalRec.program)) || pelvicsunPreEdit_();
+  var lab = radio.closest ? radio.closest('label') : radio.parentNode;
+  if (lab) lab.hidden = !(keep && STATE.progSet === 'sun');
+  if (!keep && radio.checked) radio.checked = false;
+}
 function getSelectedProgram() {
   var el = document.querySelector('input[name="program"]:checked');
   return el ? el.value : '';
@@ -4380,19 +4446,72 @@ function getSelectedPelvic() {
   return el ? el.value : '';
 }
 // รอบ 123 (W1/W2): ตัวเลือกตรวจมะเร็งปากมดลูกในแผง "ใบรับรองแพทย์มี Lab" (name="medLabPelvic") — คนละกลุ่มกับ name="pelvic" ของแผงตรวจสุขภาพ
+// รอบ 124 (W6/G10): กลุ่มที่ "แสดงอยู่" = แผงต่างประเทศมีข้อมูล (isAbroadOn_) ⇒ abroadPelvic · ไม่งั้น medLabPelvic
+function medLabPelvicGroup_() {
+  var ab = false;
+  try { ab = (typeof isAbroadOn_ === 'function') && isAbroadOn_(); } catch (e) { ab = false; }
+  return ab ? 'abroadPelvic' : 'medLabPelvic';
+}
 function getMedLabPelvic_() {
   var el = null;
-  try { el = document.querySelector('input[name="medLabPelvic"]:checked'); } catch (e) { el = null; } // กัน DOM จำลองในเทสต์เก่า
+  try { el = document.querySelector('input[name="' + medLabPelvicGroup_() + '"]:checked'); } catch (e) { el = null; } // กัน DOM จำลองในเทสต์เก่า
   return (el && el.value) ? el.value : '';
 }
 function medLabPelvicChosen_() { return isPelvicChosen_(getMedLabPelvic_()); }
-function clearMedLabPelvic_() {
-  var list = document.querySelectorAll('input[name="medLabPelvic"]');
-  if (list && typeof list.forEach === 'function') list.forEach(function (r) { r.checked = false; });
+// group ไม่ระบุ ⇒ ล้างทั้งสองกลุ่ม + ล้างค่ายอดที่ระบบเคยเติม (ล้างร่าง/เข้าโหมดแก้ไข)
+function clearMedLabPelvic_(group) {
+  var names = group ? [group] : ['medLabPelvic', 'abroadPelvic'];
+  names.forEach(function (nm) {
+    var list = document.querySelectorAll('input[name="' + nm + '"]');
+    if (list && typeof list.forEach === 'function') list.forEach(function (r) { r.checked = false; });
+  });
+  if (!group && STATE.sunFill) STATE.sunFill = { medLabPelvic: null, abroadPelvic: null };
 }
-function setMedLabPelvic_(code) {
-  var list = document.querySelectorAll('input[name="medLabPelvic"]');
+function setMedLabPelvic_(code, abroad) {
+  var on = abroad ? 'abroadPelvic' : 'medLabPelvic', off = abroad ? 'medLabPelvic' : 'abroadPelvic';
+  var list = document.querySelectorAll('input[name="' + on + '"]');
   if (list && typeof list.forEach === 'function') list.forEach(function (r) { r.checked = (r.value === code); });
+  var other = document.querySelectorAll('input[name="' + off + '"]');
+  if (other && typeof other.forEach === 'function') other.forEach(function (r) { r.checked = false; });
+  if (STATE.sunFill) STATE.sunFill = { medLabPelvic: null, abroadPelvic: null };
+}
+// รอบ 124 (W7/G8): วันของฟอร์มเป็นอาทิตย์ไหม (แก้ไขแถว ⇒ วันของแถว)
+function formDayIsSunday_() {
+  var day = STATE.editingId ? (STATE.editingDate || serviceDateValue_()) : serviceDateValue_();
+  return isSundayYmd_(day);
+}
+function sunFillAmountEl_(group) { return qs(group === 'abroadPelvic' ? 'abroadLabAmount' : 'medCertLabAmount'); }
+// ซ่อนตัวเลือก/เลือกไม่ตรวจ ⇒ ยอดยังเท่าค่าที่ระบบเติมไว้ ⇒ คืนเป็น 0 (ไม่ recalc — ผู้เรียกจัดการ)
+function sunFillRevert_(group) {
+  var sf = STATE.sunFill;
+  if (!sf || typeof sf[group] !== 'number') return;
+  var el = sunFillAmountEl_(group);
+  if (el && (parseInt(el.value, 10) || 0) === sf[group]) el.value = '0';
+  sf[group] = null;
+}
+// เรียกจาก change ของตัวเลือก (ผู้ใช้เปลี่ยนชนิดเท่านั้น) · วันอาทิตย์: เติม pelvicOnlyPrice_(ชนิด) ลงช่องยอดของแผงนั้น
+// เติมเฉพาะเมื่อยอดว่าง/0 หรือยังเท่าค่าที่ระบบเติมครั้งก่อน · pelvicOnlyPrice_ คืน null ⇒ ไม่เติม (ห้ามเดา)
+function onMedLabPelvicChange_(group) {
+  var amtEl = sunFillAmountEl_(group);
+  if (amtEl && !amtEl.disabled && formDayIsSunday_()) {
+    var sf = STATE.sunFill = STATE.sunFill || { medLabPelvic: null, abroadPelvic: null };
+    var last = (typeof sf[group] === 'number') ? sf[group] : null;
+    var chosenEl = document.querySelector('input[name="' + group + '"]:checked');
+    var code = chosenEl ? chosenEl.value : '';
+    var cur = parseInt(amtEl.value, 10) || 0;
+    if (isPelvicChosen_(code)) {
+      var price = pelvicOnlyPrice_(code);
+      if (price !== null && (cur === 0 || (last !== null && cur === last))) {
+        amtEl.value = String(price);
+        sf[group] = price;
+      }
+    } else if (last !== null && cur === last) {
+      amtEl.value = '0';
+      sf[group] = null;
+    }
+  }
+  recalcTotals();
+  if (typeof syncQueuePrefix === 'function') syncQueuePrefix();
 }
 // W2: แสดงเมื่อ เพศ = หญิง + ไม่ได้เลือกโปรแกรม + แผงต่างประเทศไม่ได้ใช้ (และไม่ใช่โหมดล่วงหน้า) · ซ่อน ⇒ uncheck จริง
 function updateMedLabPelvicSection_(checkupOn) {
@@ -4401,9 +4520,22 @@ function updateMedLabPelvicSection_(checkupOn) {
   var abroad = false;
   try { abroad = !!getMedCertNums().abroad; } catch (err) { abroad = false; }
   var pre = (typeof isPreMode_ === 'function') && isPreMode_();
-  var show = !checkupOn && getSelectedGender() === 'female' && !abroad && !pre;
+  var female = !checkupOn && getSelectedGender() === 'female' && !pre;
+  var show = female && !abroad;
   section.hidden = !show;
-  if (!show) clearMedLabPelvic_();
+  if (!show) { sunFillRevert_('medLabPelvic'); clearMedLabPelvic_('medLabPelvic'); }
+  // รอบ 124 (W6/G10): เคสต่างประเทศ (หญิง) เลือกตรวจภายในได้ในแผงต่างประเทศ — กติกาเดียวกัน แต่ใช้เมื่อ isAbroadOn_()
+  var abSection = qs('abroadPelvicSection');
+  var showAb = false;
+  if (abSection) {
+    showAb = female && abroad;
+    abSection.hidden = !showAb;
+    if (!showAb) { sunFillRevert_('abroadPelvic'); clearMedLabPelvic_('abroadPelvic'); }
+  }
+  var sun = formDayIsSunday_();
+  var h1 = qs('medLabPelvicSunHint'), h2 = qs('abroadPelvicSunHint');
+  if (h1) h1.hidden = !(show && sun);
+  if (h2) h2.hidden = !(showAb && sun);
 }
 // คู่ขนานกับ isSundayProgram_ — whitelist ค่า pelvic ที่ถือว่า "เลือกตรวจภายในจริง" (ไม่รวม '' ที่ยังไม่เลือก
 // และไม่รวม 'no' ที่เลือกแล้วว่าไม่ตรวจ) ⇒ ห้ามเทียบ `pelvic !== 'no'` ตรง ๆ อีกต่อไปทั้งไฟล์ เพราะ '' ก็ !== 'no' เหมือนกัน
@@ -4650,6 +4782,11 @@ function applyVaccineCheckupRateLock(checkupOn) {
     cb.checked = true;
     cb.disabled = true;
     if (noteEl) noteEl.hidden = false;
+  } else if (typeof keyVaccineActive_ === 'function' && keyVaccineActive_() && !STATE.editingId) {
+    // รอบ 124 (G3): วัคซีนที่จุดคีย์ (ใบรับรองแพทย์มี Lab) ⇒ "มาตรวจสุขภาพด้วย" ไม่ติ๊ก + ล็อก
+    cb.checked = false;
+    cb.disabled = true;
+    if (noteEl) noteEl.hidden = true;
   } else {
     cb.disabled = false;
     if (noteEl) noteEl.hidden = true;
@@ -4657,6 +4794,8 @@ function applyVaccineCheckupRateLock(checkupOn) {
 }
 
 // รอบ 119ค: ตัวเลือก "คิด PE แล้ว" — มีโปรแกรมตรวจสุขภาพ ⇒ ปลดติ๊กและล็อก (เรตตรวจสุขภาพชนะเสมอ) · ไม่งั้นปลดล็อก ไม่แตะ checked
+var VAX_PE_NOTE_DEFAULT_ = 'มีโปรแกรมตรวจสุขภาพ ใช้เรตตรวจสุขภาพ';
+var VAX_PE_NOTE_KEY_ = 'ใบรับรองแพทย์มี Lab คิด PE แล้วอัตโนมัติ'; // รอบ 124 (G3)
 function applyVaccinePeChargedLock_(checkupOn) {
   var cb = qs('vaccinePeCharged');
   if (!cb) return;
@@ -4664,7 +4803,12 @@ function applyVaccinePeChargedLock_(checkupOn) {
   if (checkupOn) {
     cb.checked = false;
     cb.disabled = true;
-    if (noteEl) noteEl.hidden = false;
+    if (noteEl) { noteEl.textContent = VAX_PE_NOTE_DEFAULT_; noteEl.hidden = false; }
+  } else if (typeof keyVaccineActive_ === 'function' && keyVaccineActive_() && !STATE.editingId) {
+    // รอบ 124 (G3): วัคซีนที่จุดคีย์ ⇒ "คิด PE แล้ว" ติ๊ก + ล็อกเสมอ
+    cb.checked = true;
+    cb.disabled = true;
+    if (noteEl) { noteEl.textContent = VAX_PE_NOTE_KEY_; noteEl.hidden = false; }
   } else {
     cb.disabled = false;
     if (noteEl) noteEl.hidden = true;
@@ -5079,19 +5223,64 @@ function updatePointBanner() {
 // ⚠ ห้าม uncheck วัคซีนตอนแก้ไข/รวมแถว (STATE.editingId) — แถวเก่าที่มีวัคซีนต้องส่งวัคซีนเดิมกลับครบ ยอดคงเดิม · บันทึกใหม่ที่จุดนี้ ⇒ onSubmitLog บังคับ vaccines: [] อีกชั้น
 var VACCINE_HIDDEN_POINT_ = 'จุดคีย์ order';
 function vaccinePanelHiddenHere_() { return STATE.point === VACCINE_HIDDEN_POINT_; }
-function applyVaccinePanelVisibility_() {
+// รอบ 124 (G2): จุดคีย์ order แสดงแผงวัคซีนได้เฉพาะเมื่อ ไม่มีโปรแกรม และ (แผง Lab มียอด Lab/DF/ไม่มีค่าใช้จ่าย หรือ แผงต่างประเทศมีข้อมูล)
+// = เคสใบรับรองแพทย์มี Lab ที่ฉีดวัคซีนด้วย (แถวเดียวที่จุดคีย์) · กรณีอื่นซ่อนตาม D15 (รอบ 87)
+function keyVaccineAllowed_() {
+  if (isCheckupOn()) return false;
+  var l = labPanelRaw_();
+  return l.labAmount > 0 || l.labFollowup > 0 || l.labFree || isAbroadOn_();
+}
+function keyVaccineActive_() { return vaccinePanelHiddenHere_() && keyVaccineAllowed_(); }
+// วางแผงวัคซีนต่อจากแผงที่เป็นต้นเหตุ: ต่างประเทศเปิด ⇒ ต่อจากแผงต่างประเทศ · ไม่งั้นต่อจากแผงใบรับรองแพทย์มี Lab (ไม่เข้ากลุ่ม "บริการอื่น")
+function placeKeyVaccinePanel_() {
+  var vp = qs('panelVaccine');
+  if (!vp || !vp.parentNode) return;
+  var anchor = qs(isAbroadOn_() ? 'panelAbroad' : 'panelMedcertLab');
+  if (!anchor || !anchor.parentNode || anchor === vp) return;
+  if (anchor.nextSibling === vp) return;
+  anchor.parentNode.insertBefore(vp, anchor.nextSibling);
+}
+// รอบ 124 (G6/W4): จุดนับ vaccine ติ๊ก "คิด PE แล้ว" ⇒ ข้อความเตือนใต้ช่อง (ไม่บล็อก)
+function syncVaccinePeHint_() {
+  var h = qs('vaccinePeChargedHint');
+  if (!h) return;
+  var pe = qs('vaccinePeCharged');
+  h.hidden = !(STATE.point === VACCINE_COUNT_POINT_ && pe && pe.checked);
+}
+// fromRecalc = true (เรียกจาก recalcTotals): uncheck เฉพาะตอนแผงเพิ่งหายจากสถานะแสดง (เงื่อนไข G2 หายระหว่างกรอก) — ไม่ uncheck ค่าที่ไม่ได้ผ่านแผง (ทางเดิมของรอบ 87 uncheck ตอนจัดแผง/คืนร่างเท่านั้น)
+function applyVaccinePanelVisibility_(fromRecalc) {
   var vp = qs('panelVaccine');
   if (!vp) return;
-  var hide = vaccinePanelHiddenHere_();
+  var atKey = vaccinePanelHiddenHere_();
+  var allowed = atKey && keyVaccineAllowed_();
+  var hide = atKey && !allowed;
   if (hide) vp.setAttribute('hidden', ''); else if (vp.removeAttribute) vp.removeAttribute('hidden');
-  if (hide && !STATE.editingId) {
+  if (hide && !STATE.editingId && (!fromRecalc || STATE.keyVaxShown)) {
     // ร่างที่คืนกลับ/ค่าค้างจากจุดอื่นห้ามมีวัคซีนติดมาที่จุดนี้ (ไม่ใช่แถวแก้ไข)
     document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
     var vwc = qs('vaccineWithCheckup');
     if (vwc) vwc.checked = false;
     var vpe = qs('vaccinePeCharged');
     if (vpe) vpe.checked = false;
+    // รอบ 124: เคยล็อกตอนแสดง (G3) ⇒ ซ่อนแล้วปลดล็อกคืน (มีโปรแกรม ⇒ recalcTotals ล็อกเองตามเดิม)
+    if (!isCheckupOn()) { if (vwc) vwc.disabled = false; if (vpe) vpe.disabled = false; }
   }
+  if (allowed) {
+    placeKeyVaccinePanel_();
+    if (!STATE.keyVaxShown && vp.setAttribute) vp.setAttribute('data-collapsed', '0'); // ขึ้นครั้งแรก ⇒ กางให้เห็น
+    if (!STATE.editingId) {
+      // รอบ 124 (G3): คิด PE แล้ว ติ๊ก + ล็อก · มาตรวจสุขภาพด้วย ไม่ติ๊ก + ล็อก (แก้ไขแถวเดิม ⇒ ไม่บังคับค่า)
+      var lvpe = qs('vaccinePeCharged'), lvwc = qs('vaccineWithCheckup');
+      if (lvpe) { lvpe.checked = true; lvpe.disabled = true; }
+      if (lvwc) { lvwc.checked = false; lvwc.disabled = true; }
+      var lpn = qs('vaccinePeChargedNote');
+      if (lpn) { lpn.textContent = VAX_PE_NOTE_KEY_; lpn.hidden = false; }
+      var lwn = qs('vaccineWithCheckupNote');
+      if (lwn) lwn.hidden = true;
+    }
+  }
+  STATE.keyVaxShown = !!allowed;
+  syncVaccinePeHint_();
 }
 /* =========================================================================
    รอบ 119ฉ — จุดนับ vaccine: ซ่อนแผงผู้รับบริการ + แผงบริการอื่น · รายการ+สรุปของวันใต้แผงวัคซีน (SPEC_รอบ119ฉ_จุดนับvaccine.md V1-V9)
@@ -5215,7 +5404,8 @@ function computeVaxPointSummary_(records) {
 function vaxPointRows_(records) {
   var rows = [];
   (records || []).forEach(function (rec, i) {
-    if (!rec || rec.point !== VACCINE_COUNT_POINT_ || rec.status === 'ยกเลิก') return;
+    // รอบ 124 (G4): รวมแถวของจุดคีย์ order ที่มีวัคซีนด้วย (เคสใบรับรองแพทย์มี Lab) · ไม่ยกเลิก
+    if (!rec || (rec.point !== VACCINE_COUNT_POINT_ && rec.point !== VACCINE_HIDDEN_POINT_) || rec.status === 'ยกเลิก') return;
     if (vaxRecCodes_(rec).length === 0) return;
     rows.push({ rec: rec, i: i });
   });
@@ -5283,10 +5473,13 @@ function renderVaxPointBox_() {
       '<span class="vpr-name">' + escHtml(names) + '</span>' +
       '<span class="vpr-money">' + escHtml(money(Number(rec.totals && rec.totals.vaccine) || 0)) + ' บาท</span>' +
       '<span class="vpr-staff">ผู้บันทึก: ' + escHtml(rec.staffName || '-') + '</span>' +
-      '<span class="vpr-actions no-print">' +
+      (rec.point === VACCINE_HIDDEN_POINT_
+        // รอบ 124 (G5): แถวจากจุดคีย์ order แสดงอย่างเดียว — ไม่มีปุ่มแก้ไข/ยกเลิก
+        ? '<span class="vpr-staff vpr-keynote">บันทึกที่จุดคีย์ แก้ที่จุดคีย์</span>'
+        : ('<span class="vpr-actions no-print">' +
       '<button type="button" class="btn secondary small no-print" data-edit-id="' + escHtml(rec.recordId) + '">แก้ไข</button>' +
       '<button type="button" class="btn danger small no-print" data-record-id="' + escHtml(rec.recordId) + '">ยกเลิก</button>' +
-      '</span></div>';
+      '</span>')) + '</div>';
   }).join('');
   listEl.querySelectorAll('button[data-record-id]').forEach(function (btn) {
     btn.addEventListener('click', function () { onCancelRecord(btn.getAttribute('data-record-id'), btn); });
@@ -5411,6 +5604,7 @@ function applyPointLayout() {
   placeSvcBar_(); // รอบ 92: แถบปุ่มบริการต่อจาก #panelPerson (หลังแทรกแผงทั้งหมดแล้ว) · จุดคีย์ order: applyCheckupPanelDefault_ ข้างล่างจัดแผงตามปุ่มที่จำไว้
   // รอบ 64: จุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ แผงตรวจสุขภาพพับ ยกเว้นมีค่าในแผง/คิวปัจจุบันเป็นคิวตรวจสุขภาพ (ต้องอยู่หลังลูป data-collapsed='0' ข้างบน)
   applyCheckupPanelDefault_();
+  if (vaccinePanelHiddenHere_() && keyVaccineAllowed_()) placeKeyVaccinePanel_(); // รอบ 124 (W1): จัดแผงใหม่แล้ว ⇒ แผงวัคซีนของเคส Lab กลับมาอยู่ต่อจากแผง Lab
   applyVaxCountPointMode_(); // รอบ 119ฉ: ต้องหลังจัดแผง (ปลด hidden ของเส้นคั่น "บริการอื่น" ไปแล้วข้างบน)
 }
 
@@ -5525,6 +5719,9 @@ function validateForm(ctx) {
     msg = 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
   } else if (!hasAnything) {
     msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+  } else if (!STATE.editingId && !pelvicsunPreEdit_() && isPelvicOnlyProgram_(ctx.program)) {
+    // รอบ 124 (G7/W5): เลิกโปรแกรม pelvicsun สำหรับบันทึกใหม่ — ไปที่แผงใบรับรองแพทย์มี Lab (แก้แถวเก่าได้ตามเดิม)
+    msg = 'ตรวจภายในอย่างเดียวย้ายไปแผงใบรับรองแพทย์มี Lab แล้ว';
   } else if (!preM && !ctx.checkupOn && medLabPelvicOn_ && (getSelectedGender() === 'male' || isMalePrefix(qs('patientPrefix').value))) {
     // รอบ 123 (W2): ค่าที่ติ๊กค้างกับเพศชาย/คำนำหน้าชาย — ข้อความเดียวกับเซิร์ฟเวอร์
     msg = 'ตรวจมะเร็งปากมดลูกใช้ได้เฉพาะผู้หญิง';
@@ -5771,6 +5968,7 @@ function recalcTotals() {
   // รอบ 66: ต้องรันก่อนอ่านยอด Lab (getMedCertNums) ด้านล่าง — ถ้าตั้งยอดทีหลัง ยอดรวม/validate ของรอบนี้จะค้างค่าเก่า
   // (ต่อจาก applyMmgGenderLock เพราะล็อกเพศชายอาจปลดติ๊ก MMG ⇒ ต้องเห็นเป็น "ปลดติ๊ก" ใน sync นี้) · ทำงานจริงเฉพาะตอนสถานะ solo/คิวเปลี่ยน
   syncMedLabSoloPrice_();
+  if (typeof syncAbroadSpMirror_ === 'function') syncAbroadSpMirror_(); // รอบ 124 (G11/W9)
   if (typeof syncMedLabSpMirror_ === 'function') syncMedLabSpMirror_(); // รอบ 87 (D16): เงา "ส่งตรวจพิเศษ" ตามตัวจริง (หลังล็อกเพศ MMG/U/S + solo price)
   var pelvic = (checkupOn && gender === 'female') ? getSelectedPelvic() : 'no';
 
@@ -5785,6 +5983,7 @@ function recalcTotals() {
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่อีกแล้ว — extraIds มีค่าได้เฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่มมาก่อน
   var extraIds = STATE.editExtraIds || [];
 
+  if (typeof applyVaccinePanelVisibility_ === 'function') applyVaccinePanelVisibility_(true); // รอบ 124 (W1): จุดคีย์ order แสดง/ซ่อน/ล็อกแผงวัคซีนตามยอด Lab/ต่างประเทศ — ก่อนอ่านวัคซีน (ซ่อน ⇒ uncheck)
   var vaccineCodes = getCheckedVaccineCodes();
   var vaccineOn = vaccineCodes.length > 0;
   applyVaccineCheckupRateLock(checkupOn);
@@ -5997,6 +6196,7 @@ function resetLogForm() {
   qs('legacyExtraInfo').hidden = true;
   applyVaccineFilter();
   exitEditMode();
+  applyPelvicsunBtn_(); // รอบ 124 (W5)
   if (typeof clearHoArrive_ === 'function') clearHoArrive_(); // รอบ 84 (W4): ล้างร่าง ⇒ ล้างการผูกคนนัด + แถบหมายเหตุ HO (รอบ 87: รายการแนะนำใต้ช่อง HN/ชื่อ ถูกซ่อนผ่าน syncHoBar_ ใน recalcTotals)
   if (typeof hoCancelHnTimer_ === 'function') hoCancelHnTimer_();
   if (typeof hoSuggestHide_ === 'function') { hoSuggestHide_('hoHnSuggest'); hoSuggestHide_('hoNameSuggest'); }
@@ -6017,6 +6217,7 @@ function exitEditMode() {
   // รอบ 35 (2026-09-30): ล้าง originalRec ด้วย กัน validateForm() เผลอเอาแถวที่แก้ไขค้างจากรอบก่อนมา "grandfather"
   // ให้บันทึกรายใหม่ที่ไม่เกี่ยวข้องกันเลย (เช็คคู่กับ STATE.editingId อยู่แล้วก็จริง แต่ล้างทิ้งไปด้วยชัดเจนกว่า)
   if (typeof EDIT_MODAL !== 'undefined') EDIT_MODAL.originalRec = null;
+  if (typeof applyPelvicsunBtn_ === 'function') applyPelvicsunBtn_(); // รอบ 124 (W5): ออกจากโหมดแก้ไข ⇒ ซ่อนปุ่ม pelvicsun กลับ + ปลดติ๊กค้าง
   // รอบ 9 (ก้อน B, B6) — บันทึกรายใหม่ (ไม่ได้แก้ไข) ต้องส่ง array ว่างเสมอ ล้างสถานะส่งตรวจพิเศษที่แถวเก่าค้างไว้ทิ้ง
   STATE.editSpecialPrep = [];
   STATE.editSpecialSent = [];
@@ -6099,6 +6300,7 @@ function restoreFormDraft_(data) {
   updateHnHint();
   applyVaccineFilter();
   applyLogLocks();
+  if (typeof applyPelvicsunBtn_ === 'function') applyPelvicsunBtn_(); // รอบ 124 (W5): ร่างที่มี pelvicsun ติ๊กค้างต้องไม่ทำให้ปุ่มกลับมาตอนบันทึกใหม่
   if (!STATE.editingId && typeof applyVaccinePanelVisibility_ === 'function') applyVaccinePanelVisibility_(); // รอบ 87 (F3/D15): ร่างจากจุดอื่นห้ามมีวัคซีนติดมาที่จุดคีย์ order
   initMedLabSoloState_(); // รอบ 66: ตั้งธง/สถานะจากค่าที่คืน "ก่อน" recalcTotals — ไม่ให้ sync เข้าใจว่าเป็นการเปลี่ยนคิว/ติ๊กใหม่แล้วใส่ราคาเอง
   recalcTotals();
@@ -6300,7 +6502,7 @@ function enterEditMode(rec) {
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
   // รอบ 123 (W6): แถวไม่มีโปรแกรมที่ตรวจมะเร็งปากมดลูกจริง ⇒ ติ๊กตัวเลือกในแผง Lab · แถวอื่นล้าง
-  if (!hasCheckup && isPelvicChosen_(rec.pelvic)) setMedLabPelvic_(rec.pelvic); else clearMedLabPelvic_();
+  if (!hasCheckup && isPelvicChosen_(rec.pelvic)) setMedLabPelvic_(rec.pelvic, (rec.specialReg || []).indexOf('abroad') !== -1); else clearMedLabPelvic_(); // รอบ 124 (W6): แถว abroad ⇒ กลุ่มต่างประเทศ
   // รอบ 21 (2026-09-20): ต้องเซ็ตค่า "ก่อน" เรียก updatePickupDateVisibility ไม่งั้นค่าที่เพิ่งเติมโดนล้างทิ้ง
   var pickupEditEl = qs('pickupDate');
   if (pickupEditEl) pickupEditEl.value = rec.pickupDate || '';
@@ -6509,6 +6711,10 @@ function queueDupInfoFor_(queueValue) {
 }
 
 function mergeDraftIntoTodayRecord(rec, draft) {
+  if (isPelvicOnlyProgram_(draft.program) && !isPelvicOnlyProgram_(rec.program) && !pelvicsunPreEdit_()) { // รอบ 124 (W5): pelvicsun เลิกสำหรับรายใหม่ ⇒ ไม่รวมโปรแกรมของร่างเข้าแถว
+    var dcopy = {}; Object.keys(draft).forEach(function (k) { dcopy[k] = draft[k]; });
+    dcopy.program = ''; draft = dcopy;
+  }
   var preMergeDraft = captureFormDraft_(); // รอบ 31B: กด ✕ ในโมดัลแล้วร่างที่พิมพ์ไว้ต้องกลับมา
   enterEditMode(rec); // เติมค่าแถวเก่าทับฟอร์ม (ล้างร่างปัจจุบันไปก่อน) — STATE.editingId/editExtraIds/editSpecial* ถูกตั้งจาก rec แล้ว ณ จุดนี้
 
@@ -6542,7 +6748,7 @@ function mergeDraftIntoTodayRecord(rec, draft) {
       document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === draft.pelvic); });
     }
   } else if (isPelvicChosen_(draft.pelvic)) {
-    setMedLabPelvic_(draft.pelvic); // ทั้งคู่ไม่มีโปรแกรม ⇒ ร่างชนะ (ไม่ใช่ ⇒ ค่าของแถวเดิมที่ enterEditMode ติ๊กไว้คงอยู่)
+    setMedLabPelvic_(draft.pelvic, (draft.specialRegIds || []).indexOf('abroad') !== -1); // รอบ 124 (W6) · ทั้งคู่ไม่มีโปรแกรม ⇒ ร่างชนะ (ไม่ใช่ ⇒ ค่าของแถวเดิมที่ enterEditMode ติ๊กไว้คงอยู่)
   }
 
   // วัคซีน: union — ติ๊กของเก่าไว้ (มาจาก enterEditMode แล้ว) แล้วติ๊กของร่างเพิ่ม ห้ามปลดติ๊กของเก่า
@@ -6993,7 +7199,8 @@ function onSubmitLog(e) {
   var checkupAmount = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
   var vaccineCodes = getCheckedVaccineCodes();
   // รอบ 87 (D15): จุดคีย์ order ไม่มีแผงวัคซีน — บันทึกใหม่ (ไม่ใช่แก้ไข) บังคับ [] กันร่าง/ค่าค้างจากจุดอื่น · แก้ไข/รวมแถว ใช้ค่าที่โหลดมาตามเดิม (ยอดคงเดิม)
-  if (!STATE.editingId && vaccinePanelHiddenHere_()) vaccineCodes = [];
+  // รอบ 124 (W2): ล้างเฉพาะเมื่อแผงวัคซีนไม่ได้รับอนุญาต (ไม่ใช่เคส Lab/ต่างประเทศ)
+  if (!STATE.editingId && vaccinePanelHiddenHere_() && !keyVaccineAllowed_()) vaccineCodes = [];
   var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
   var peCharged = !withCheckupRate && !!(qs('vaccinePeCharged') && qs('vaccinePeCharged').checked); // รอบ 119ค
   // จุดคีย์ order บันทึกใหม่บังคับ vaccines [] ⇒ ไม่ส่ง PE ลอย ๆ
@@ -8829,6 +9036,8 @@ function startPreEdit_(item, opts) {
   syncPrefixButtons();
   updateHnHint();
   STATE.preEditId = item.preId;
+  STATE.preEditProgram = prog;
+  applyPelvicsunBtn_(); // รอบ 124 (M1): รายการรอมา pelvicsun ⇒ ปุ่มเห็น+ติ๊กค้างไว้
   STATE.preEditName = [qs('patientPrefix').value, qs('patientName').value].filter(function (x) { return String(x || '').trim(); }).join(' ');
   syncServiceDateBounds_();
   qs('serviceDate').value = (item.date && item.date >= todayStr()) ? item.date : todayStr(); // รายการ "ไม่มา" (วันนัดผ่านแล้ว) ⇒ เสนอวันนี้ให้เลื่อนวัน
@@ -10263,6 +10472,7 @@ function startPreArrive_(item, opts) {
   var prog = String(f.program != null && f.program !== '' ? f.program : (item.program || ''));
   setProgramSet(isSundayProgram_(prog) ? 'sun' : 'week', { silent: true });
   document.querySelectorAll('input[name="program"]').forEach(function (r) { r.checked = !!prog && (r.value === prog); });
+  applyPelvicsunBtn_(); // รอบ 124 (fix 2): นัดโปรแกรม pelvicsun มา ⇒ ปุ่มซ่อนอยู่ ต้องปลดติ๊กที่ค้าง (ไม่ยกเว้นการมาถึง · ยกเว้นเฉพาะ preEdit) — ผู้ใช้เลือกชนิดตรวจภายในในแผง Lab
   var g = genderFromThai(f.gender || item.gender);
   document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === g); });
   setGenderAutoHint(false);
@@ -18491,11 +18701,19 @@ document.addEventListener('DOMContentLoaded', function () {
   // แต่เจ้าของสั่งตอนที่เพศยังอยู่กล่องตรวจสุขภาพ ⇒ ยังรวมเพศด้วย) เรียกครั้งเดียวพอ ไม่ต้องก๊อปโค้ดซ้ำ 3 ชุด
   enableRadioToggleOff('input[name="program"]');
   enableRadioToggleOff('input[name="pelvic"]');
-  document.querySelectorAll('input[name="medLabPelvic"]').forEach(function (r) { r.addEventListener('change', function () { recalcTotals(); if (typeof syncQueuePrefix === 'function') syncQueuePrefix(); }); }); // รอบ 123 (W1/W5)
+  document.querySelectorAll('input[name="medLabPelvic"]').forEach(function (r) { r.addEventListener('change', function () { onMedLabPelvicChange_('medLabPelvic'); }); }); // รอบ 123 (W1/W5) · รอบ 124 (W7): + เติมราคาวันอาทิตย์
   enableRadioToggleOff('input[name="medLabPelvic"]');
+  document.querySelectorAll('input[name="abroadPelvic"]').forEach(function (r) { r.addEventListener('change', function () { onMedLabPelvicChange_('abroadPelvic'); }); }); // รอบ 124 (W6)
+  enableRadioToggleOff('input[name="abroadPelvic"]');
   enableRadioToggleOff('input[name="gender"]');
   // แก้ 2026-09-08: queueSelect เป็น <input list> แล้ว ต้องฟัง 'input' ด้วยไม่ใช่แค่ 'change' (ผู้ใช้พิมพ์เองได้)
   ['change', 'input'].forEach(function (ev) { qs('queueSelect').addEventListener(ev, recalcTotals); });
+  // รอบ 124 (G9/W8): วันอาทิตย์ + ไม่ใช่โหมดแก้ไข + คิวขึ้นต้น M ⇒ กางแผง "ใบรับรองแพทย์มี Lab" ให้เอง (กางอย่างเดียว ไม่พับ/ไม่ย้ายแผงอื่น)
+  ['change', 'input'].forEach(function (ev) { qs('queueSelect').addEventListener(ev, function () {
+    var qv = String(qs('queueSelect').value || '').trim();
+    var pl = qs('panelMedcertLab');
+    if (pl && !STATE.editingId && /^m/i.test(qv) && isSundayYmd_(serviceDateValue_()) && pl.removeAttribute) pl.removeAttribute('data-collapsed');
+  }); });
   // รอบ 60 ข้อ 2: ปุ่ม ◀ ▶ + ลูกศรซ้าย/ขวาที่ขอบช่อง + ปัดซ้าย/ขวาบนจอสัมผัส ⇒ stepQueue_() ตัวเดียว
   qs('queuePrev').addEventListener('click', function () { stepQueue_(-1); });
   qs('queueNext').addEventListener('click', function () { stepQueue_(1); });
