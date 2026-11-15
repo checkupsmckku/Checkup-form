@@ -2070,6 +2070,16 @@
                 <!-- รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายมาแผงนี้ (นับยอดอย่างเดียว) — บังคับแค่ HN · buildSpecialSendsUI() สร้างแถว -->
                 <p class="muted" style="margin-top:12px;">ตรวจเพิ่ม (นับยอด)</p>
                 <div id="medLabSpecialList"></div>
+                <!-- รอบ 123 (W1, เจ้าของสั่งตำแหน่ง "ตรงตรวจเพิ่ม"): ตรวจมะเร็งปากมดลูกในใบรับรองแพทย์มี Lab — ราคารวมในยอดที่กรอกเอง ไม่บวกเพิ่ม · แสดงเฉพาะหญิง + ไม่มีโปรแกรม + ไม่ใช่ต่างประเทศ (recalcTotals) -->
+                <div id="medLabPelvicSection" hidden style="margin-top:10px;">
+                  <label class="field-label">ตรวจมะเร็งปากมดลูก<span class="muted" style="display:block;font-weight:400;font-size:0.9em;">ค่าตรวจรวมในยอดเงินที่กรอกเอง</span></label>
+                  <div class="row" id="medLabPelvicButtons">
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="medLabPelvic" value="no"> ไม่ตรวจมะเร็งปากมดลูก</label>
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="medLabPelvic" value="pap"> Pap smear</label>
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="medLabPelvic" value="thinprep"> Thinprep</label>
+                    <label class="opt-btn" style="min-height:44px;"><input type="radio" name="medLabPelvic" value="thinprep_hpv"> Thinprep + HPV</label>
+                  </div>
+                </div>
                 <!-- รอบ 87 (D16): "ส่งตรวจพิเศษ" = เงาของช่อง "ลงชื่อไว้" (sp_reg_<id>) ในแผงส่งตรวจพิเศษ — ติ๊กฝั่งไหนอีกฝั่งตาม (ค่าเดียว ลงชีตครั้งเดียว)
                      syncMedLabSpMirror_() สร้าง/ซิงก์จาก recalcTotals · เงาไม่ถูกส่งใน payload (อ่านจาก sp_reg_* เท่านั้น)
                      รอบ 108: ถอดด่าน "ต้องติ๊กหรือกดไม่มีตรวจเพิ่ม" + ปุ่มนั้นออกแล้ว — เงานี้คงไว้ -->
@@ -3544,6 +3554,7 @@ function draftQueuePrefix() {
   if (isPelvicOnlyProgram_(getSelectedProgram())) return 'M'; // รอบ 117 (D4): ตรวจภายในอย่างเดียวใช้คิว M เท่านั้น — ก่อน isCheckupOn()
   if (isCheckupOn()) return 'C';
   if (isMedOn()) return 'M';
+  if (typeof medLabPelvicChosen_ === 'function' && medLabPelvicChosen_()) return 'M'; // รอบ 123 (W5): เลือกตรวจมะเร็งปากมดลูกในแผง Lab ก็เป็นแถวกลุ่มคิว M (ไม่ล้างคิว M เมื่อยอด Lab ยังเป็น 0)
   if (isMedLabSpecialOn()) return 'M'; // รอบ 91: ติ๊ก EKG/ตรวจสายตา/ตาบอดสี อย่างเดียวก็เป็นแถวกลุ่มคิว M (บังคับคิว M) — ไม่ให้ syncQueuePrefix ล้างคิว M ที่ใส่ไว้ก่อนติ๊ก
   if (isVaccineOn()) return 'V';
   return 'C';
@@ -4368,6 +4379,32 @@ function getSelectedPelvic() {
   var el = document.querySelector('input[name="pelvic"]:checked');
   return el ? el.value : '';
 }
+// รอบ 123 (W1/W2): ตัวเลือกตรวจมะเร็งปากมดลูกในแผง "ใบรับรองแพทย์มี Lab" (name="medLabPelvic") — คนละกลุ่มกับ name="pelvic" ของแผงตรวจสุขภาพ
+function getMedLabPelvic_() {
+  var el = null;
+  try { el = document.querySelector('input[name="medLabPelvic"]:checked'); } catch (e) { el = null; } // กัน DOM จำลองในเทสต์เก่า
+  return (el && el.value) ? el.value : '';
+}
+function medLabPelvicChosen_() { return isPelvicChosen_(getMedLabPelvic_()); }
+function clearMedLabPelvic_() {
+  var list = document.querySelectorAll('input[name="medLabPelvic"]');
+  if (list && typeof list.forEach === 'function') list.forEach(function (r) { r.checked = false; });
+}
+function setMedLabPelvic_(code) {
+  var list = document.querySelectorAll('input[name="medLabPelvic"]');
+  if (list && typeof list.forEach === 'function') list.forEach(function (r) { r.checked = (r.value === code); });
+}
+// W2: แสดงเมื่อ เพศ = หญิง + ไม่ได้เลือกโปรแกรม + แผงต่างประเทศไม่ได้ใช้ (และไม่ใช่โหมดล่วงหน้า) · ซ่อน ⇒ uncheck จริง
+function updateMedLabPelvicSection_(checkupOn) {
+  var section = qs('medLabPelvicSection');
+  if (!section) return;
+  var abroad = false;
+  try { abroad = !!getMedCertNums().abroad; } catch (err) { abroad = false; }
+  var pre = (typeof isPreMode_ === 'function') && isPreMode_();
+  var show = !checkupOn && getSelectedGender() === 'female' && !abroad && !pre;
+  section.hidden = !show;
+  if (!show) clearMedLabPelvic_();
+}
 // คู่ขนานกับ isSundayProgram_ — whitelist ค่า pelvic ที่ถือว่า "เลือกตรวจภายในจริง" (ไม่รวม '' ที่ยังไม่เลือก
 // และไม่รวม 'no' ที่เลือกแล้วว่าไม่ตรวจ) ⇒ ห้ามเทียบ `pelvic !== 'no'` ตรง ๆ อีกต่อไปทั้งไฟล์ เพราะ '' ก็ !== 'no' เหมือนกัน
 // แต่ความหมายคนละอย่าง ใช้ helper นี้แทนทุกจุดที่ต้องเช็คว่า "มีการเลือกตรวจภายในชนิดใดชนิดหนึ่งจริงไหม"
@@ -4700,7 +4737,7 @@ function isMedLabOn() {
   if (STATE.labFollowupFree) return true; // รอบ 108: ไม่มีค่าใช้จ่าย ⇒ ไม่พับแผง
   var lDf = Math.max(0, parseInt((qs('labFollowup') || {}).value, 10) || 0); // รอบ 91
   var lAmt = Math.max(0, parseInt((qs('medCertLabAmount') || {}).value, 10) || 0);
-  return lDf > 0 || lAmt > 0 || isMedLabSpecialOn();
+  return lDf > 0 || lAmt > 0 || isMedLabSpecialOn() || (typeof medLabPelvicChosen_ === 'function' && medLabPelvicChosen_()); // รอบ 123 (W5): เลือกตรวจมะเร็งปากมดลูกในแผง Lab ⇒ ไม่พับแผง/คิว M
 }
 // รอบ 8 (B1): specialReg (ลงชื่อไว้) ⊇ ทุกสถานะเสมอ (กติกาแม่บท) ⇒ ใช้ reg ตัวเดียวพอ ครอบคลุมของเดิมทั้งหมด
 // รอบ 70: isSpecialOn() นับเฉพาะ reg ที่ "ไม่ใช่" MEDLAB_SPECIAL_IDS (ใช้กับ needPerson ชื่อ+HN · ด่านชื่อ+HN · แผง panelSpecial · แถบร่าง)
@@ -5447,6 +5484,7 @@ function validateForm(ctx) {
   var msg = '';
   // รอบ 81 (W1): โหมดล่วงหน้า — ไม่บังคับคิว/HN/ช่องทางรับผล · ไม่เช็คคิวซ้ำกับรายการวันนี้ (recalcTotals ส่ง ctx.queue/deliveryMethod ว่าง และปิดแผงอื่นให้แล้ว)
   var preM = (typeof isPreMode_ === 'function') && isPreMode_();
+  var medLabPelvicOn_ = (typeof medLabPelvicChosen_ === 'function') && medLabPelvicChosen_(); // รอบ 123: เลือกตรวจมะเร็งปากมดลูกในแผง Lab
 
   // รอบ 27 (C3): sync กรอบแดง + ข้อความใต้ช่อง #pickupDate ทุกครั้งที่ validateForm ทำงาน (ครอบทั้งพิมพ์/วาง/
   // ตั้งค่าด้วยโค้ด/เลือกจากปฏิทิน เพราะ recalcTotals เรียก validateForm ทุกครั้งที่มีการเปลี่ยนแปลงอยู่แล้ว)
@@ -5455,7 +5493,7 @@ function validateForm(ctx) {
   setDateFieldError(qs('pickupDate'), pickupReasonForField);
 
   var hasAnything = ctx.checkupOn || ctx.vaccineOn || ctx.nCert > 0 ||
-                    ctx.labAmount > 0 || ctx.specialOn || ctx.medLabSpecialOn || ctx.labFollowup > 0 || ctx.labFree; // รอบ 108: + ไม่มีค่าใช้จ่าย · รอบ 70: นับ EKG/ตรวจสายตา/ตาบอดสี ด้วย · รอบ 91: นับฟังผล Lab ด้วย
+                    ctx.labAmount > 0 || ctx.specialOn || ctx.medLabSpecialOn || ctx.labFollowup > 0 || ctx.labFree || (!ctx.checkupOn && medLabPelvicOn_); // รอบ 123: เลือกตรวจมะเร็งปากมดลูกในแผง Lab นับเป็นรายการ (ด่าน W4 ด้านล่างจับกรณีไม่มียอด) · รอบ 108: + ไม่มีค่าใช้จ่าย · รอบ 70: นับ EKG/ตรวจสายตา/ตาบอดสี ด้วย · รอบ 91: นับฟังผล Lab ด้วย
 
   // รอบ 37 (W3, 2026-09-30): ห้ามคิวซ้ำในวันเดียวกัน — คำนวณไว้ก่อนเข้าเชนเงื่อนไขด้านล่าง (ต้องรู้ผลก่อนตัดสินใจ
   // ว่าจะขึ้นข้อความนี้หรือไม่) ดู queueDupInfoFor_ ด้านบน (เช็คเฉพาะเมื่อคิวเปลี่ยนจากคิวเดิมของแถวในโหมดแก้ไข)
@@ -5487,6 +5525,13 @@ function validateForm(ctx) {
     msg = 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
   } else if (!hasAnything) {
     msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+  } else if (!preM && !ctx.checkupOn && medLabPelvicOn_ && (getSelectedGender() === 'male' || isMalePrefix(qs('patientPrefix').value))) {
+    // รอบ 123 (W2): ค่าที่ติ๊กค้างกับเพศชาย/คำนำหน้าชาย — ข้อความเดียวกับเซิร์ฟเวอร์
+    msg = 'ตรวจมะเร็งปากมดลูกใช้ได้เฉพาะผู้หญิง';
+  } else if (!preM && !ctx.checkupOn && medLabPelvicOn_ &&
+             !(ctx.labAmount > 0 || ctx.labFollowup > 0 || ctx.labFree || ctx.medLabSpecialOn)) {
+    // รอบ 123 (W4): ต้องมีบริบท Lab (เงื่อนไขเดียวกับ medLabCtx_ ฝั่งเซิร์ฟเวอร์) — ราคาตรวจรวมอยู่ในยอดที่กรอกเอง
+    msg = 'ตรวจมะเร็งปากมดลูกในใบรับรองแพทย์มี Lab: กรุณากรอกยอดเงิน (รวมค่าตรวจ)';
   } else if (!preM && ctx.abroad && typeof isLabAndAbroadBoth_ === 'function' && isLabAndAbroadBoth_()) {
     // รอบ 120 (E2): แถวเดียวมีเงินทั้งแผง Lab และแผงตรวจร่างกายไปต่างประเทศไม่ได้ (ใช้คอลัมน์ยอด Lab/DF เดียวกัน)
     msg = 'ใบรับรองแพทย์มี Lab กับ ตรวจร่างกายไปต่างประเทศ ใส่ยอดในรายการเดียวกันไม่ได้ — เลือกอย่างใดอย่างหนึ่ง';
@@ -5714,6 +5759,7 @@ function recalcTotals() {
   var gender = checkupOn ? getSelectedGender() : '';
 
   updatePelvicSection(checkupOn, gender); // ซ่อน/แสดง + เคลียร์ให้ไม่มีตัวไหนถูกเลือกจริงเมื่อไม่ควรเลือกได้ (ชาย/ไม่ตรวจสุขภาพ)
+  updateMedLabPelvicSection_(checkupOn); // รอบ 123 (W2)
   // เจ้าของสั่ง 2026-09-11: ชายส่ง MMG ไม่ได้ — ต้องรันก่อน isSpecialOn()/getSpecialRegIds() ด้านล่าง
   // ⚠ ห้ามส่งตัวแปร gender ของ recalcTotals() เข้าไป — ตัวนั้นเป็น checkupOn ? getSelectedGender() : ''
   //   ⇒ เลือกเพศชายแต่ยังไม่เลือกโปรแกรม จะได้ '' ⇒ ช่อง MMG ไม่ถูกล็อก ติ๊กได้ แต่ validateForm()
@@ -5877,6 +5923,7 @@ function updatePanelSummaries(ctx) {
     getSpecialRegIds().forEach(function (id) {
       if (MEDLAB_SPECIAL_IDS.indexOf(id) !== -1) medLabBits.push(MEDLAB_SPECIAL_SHORT[id] || id);
     });
+    if (typeof medLabPelvicChosen_ === 'function' && medLabPelvicChosen_()) medLabBits.push('ตรวจมะเร็งปากมดลูก ' + pelvicShortLabel_(getMedLabPelvic_())); // รอบ 123 (W5)
     medLabSumEl.textContent = medLabBits.length ? medLabBits.join(' · ') : '—';
   }
 
@@ -5917,6 +5964,7 @@ function resetLogForm() {
   // ก้อน C (2026-09-21, เจ้าของสั่ง): ล้างร่างแล้วต้องไม่มีตัวไหนถูกเลือกเลย (ห้ามมีค่าตั้งต้นเป็น 'no' อีกต่อไป)
   // logForm.reset() ข้างบนพอแล้วจริง ๆ (ไม่มี attribute checked ค้างในไฟล์ HTML แล้วหลังก้อน C1) แต่เขียนชัด ๆ ไว้กันพลาด
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = false; });
+  clearMedLabPelvic_(); // รอบ 123 (W6)
   if (qs('pickupDate')) qs('pickupDate').value = ''; // รอบ 21 (2026-09-20)
   updatePickupDateVisibility(''); // ซ่อนช่องวันนัดกลับไปด้วย ไม่ใช่แค่ล้างค่า
   qs('queueSelect').value = '';
@@ -6251,6 +6299,8 @@ function enterEditMode(rec) {
 
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
+  // รอบ 123 (W6): แถวไม่มีโปรแกรมที่ตรวจมะเร็งปากมดลูกจริง ⇒ ติ๊กตัวเลือกในแผง Lab · แถวอื่นล้าง
+  if (!hasCheckup && isPelvicChosen_(rec.pelvic)) setMedLabPelvic_(rec.pelvic); else clearMedLabPelvic_();
   // รอบ 21 (2026-09-20): ต้องเซ็ตค่า "ก่อน" เรียก updatePickupDateVisibility ไม่งั้นค่าที่เพิ่งเติมโดนล้างทิ้ง
   var pickupEditEl = qs('pickupDate');
   if (pickupEditEl) pickupEditEl.value = rec.pickupDate || '';
@@ -6477,6 +6527,22 @@ function mergeDraftIntoTodayRecord(rec, draft) {
     updatePickupDateVisibility(draft.deliveryMethod || '');
     qs('checkupAmount').value = String(draft.checkupAmount || 0);
     qs('deliveryMethod').value = draft.deliveryMethod || '';
+  }
+
+  // รอบ 123 (W6): ตรวจมะเร็งปากมดลูกของแถวเดิม/ร่างต้องไม่หายตอนรวม — มีโปรแกรมหลังรวม ⇒ ใช้ตัวเลือกแผงตรวจสุขภาพ · ไม่มีโปรแกรม ⇒ ตัวเลือกในแผง Lab
+  var mergeRecPel = isPelvicChosen_(rec.pelvic) ? rec.pelvic : '';
+  if (draft.program) {
+    // แถวเดิมไม่มีโปรแกรมแต่ตรวจจริง · ร่างยังไม่ได้เลือกชนิด (ค่าว่าง) ⇒ คงชนิดของแถวเดิม
+    if (!rec.program && mergeRecPel && !draft.pelvic) {
+      document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === mergeRecPel); });
+    }
+  } else if (rec.program) {
+    // แถวเดิมมีโปรแกรมแต่ยังไม่ได้ตรวจ · ร่าง (ไม่มีโปรแกรม) เลือกตรวจจริง ⇒ ใช้ของร่างในแผงตรวจสุขภาพ
+    if (!mergeRecPel && isPelvicChosen_(draft.pelvic)) {
+      document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === draft.pelvic); });
+    }
+  } else if (isPelvicChosen_(draft.pelvic)) {
+    setMedLabPelvic_(draft.pelvic); // ทั้งคู่ไม่มีโปรแกรม ⇒ ร่างชนะ (ไม่ใช่ ⇒ ค่าของแถวเดิมที่ enterEditMode ติ๊กไว้คงอยู่)
   }
 
   // วัคซีน: union — ติ๊กของเก่าไว้ (มาจาก enterEditMode แล้ว) แล้วติ๊กของร่างเพิ่ม ห้ามปลดติ๊กของเก่า
@@ -6919,6 +6985,8 @@ function onSubmitLog(e) {
   var genderDom = getSelectedGender();
   var gender = genderToThai(genderDom); // ชีตต้องเก็บภาษาไทยเสมอ ('ชาย'/'หญิง') ไม่ใช่ 'male'/'female'
   var pelvic = (checkupOn && genderDom === 'female') ? getSelectedPelvic() : 'no';
+  // รอบ 123 (W3): ไม่มีโปรแกรม + เลือกตรวจมะเร็งปากมดลูกในแผง Lab จริง ⇒ ส่งค่านั้น (อย่างอื่นสูตรเดิม)
+  if (!checkupOn && medLabPelvicChosen_()) pelvic = getMedLabPelvic_();
   // แก้เพิ่ม (0.2.3): ไม่มี UI ตรวจเพิ่มให้ติ๊กใหม่แล้ว — ส่ง STATE.editExtraIds กลับไป (มีค่าเฉพาะตอนแก้ไขแถวเก่าที่เคยมีตรวจเพิ่ม)
   var extraIds = STATE.editExtraIds || [];
   var checkupAmountNum = getCheckupAmountNum();
@@ -7314,6 +7382,7 @@ function summarizeRecordParts(rec) {
   // ค่านี้มีเฉพาะแถวที่มีโปรแกรมตรวจสุขภาพ (เซิร์ฟเวอร์เก็บ '' เมื่อไม่มีโปรแกรม) จึงไม่ต้องเช็ค program ซ้ำ
   if (rec.deliveryMethod) parts.push('ช่องทางรับผล : ' + rec.deliveryMethod);
   else if (isPelvicOnlyProgram_(rec.program) && rec.pelvicMethod) parts.push('ช่องทางส่งผล : ' + rec.pelvicMethod); // รอบ 117
+  else if (!rec.program && isPelvicChosen_(rec.pelvic) && rec.pelvicMethod) parts.push('ช่องทางส่งผล : ' + rec.pelvicMethod); // รอบ 123 (W7): ใบรับรองแพทย์มี Lab ที่ตรวจมะเร็งปากมดลูก
   // รอบ 21 (2026-09-20): วันที่นัดรับ — ต่อท้ายช่องทางทันที (มีเฉพาะแถวที่ช่องทาง = 'นัดรับวันที่')
   if (rec.pickupDate) parts.push('นัดรับวันที่ ' + formatThaiDate(rec.pickupDate));
   if (rec.extraCount) parts.push('ตรวจเพิ่ม ' + rec.extraCount + ' รายการ');
@@ -13854,7 +13923,8 @@ function gynPelvicOnlyRows_(records, dateStr) {
   var out = [];
   (records || []).forEach(function (rec) {
     if (!rec || rec.status === 'ยกเลิก') return;
-    if (!isPelvicOnlyProgram_(rec.program) || !isPelvicChosen_(rec.pelvic)) return;
+    // รอบ 123 (W8): + แถวไม่มีโปรแกรมแต่ตรวจมะเร็งปากมดลูกจริง (ใบรับรองแพทย์มี Lab) — วันในรายชื่อ = วันรับบริการ เหมือน pelvicsun
+    if (!(isPelvicOnlyProgram_(rec.program) || !rec.program) || !isPelvicChosen_(rec.pelvic)) return;
     if (rec.date && String(rec.date) !== String(dateStr)) return;
     out.push({
       recordId: rec.recordId, queue: rec.queue || '', hn: rec.patientHn || '', prefix: rec.patientPrefix || '',
@@ -14765,7 +14835,7 @@ function renderPendingTable() {
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td class="pending-name">' + nameCell + '</td>' +
-      '<td>' + escHtml(programLabelForPrint(rec.program)) + '</td>' +
+      '<td>' + escHtml(rec.program ? programLabelForPrint(rec.program) : 'ใบรับรองแพทย์มี Lab') + '</td>' + // รอบ 123 (W9): แถวไม่มีโปรแกรม = ใบรับรองแพทย์มี Lab
       '<td>' + channel + '</td>' +
       '</tr>';
   });
@@ -18421,6 +18491,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // แต่เจ้าของสั่งตอนที่เพศยังอยู่กล่องตรวจสุขภาพ ⇒ ยังรวมเพศด้วย) เรียกครั้งเดียวพอ ไม่ต้องก๊อปโค้ดซ้ำ 3 ชุด
   enableRadioToggleOff('input[name="program"]');
   enableRadioToggleOff('input[name="pelvic"]');
+  document.querySelectorAll('input[name="medLabPelvic"]').forEach(function (r) { r.addEventListener('change', function () { recalcTotals(); if (typeof syncQueuePrefix === 'function') syncQueuePrefix(); }); }); // รอบ 123 (W1/W5)
+  enableRadioToggleOff('input[name="medLabPelvic"]');
   enableRadioToggleOff('input[name="gender"]');
   // แก้ 2026-09-08: queueSelect เป็น <input list> แล้ว ต้องฟัง 'input' ด้วยไม่ใช่แค่ 'change' (ผู้ใช้พิมพ์เองได้)
   ['change', 'input'].forEach(function (ev) { qs('queueSelect').addEventListener(ev, recalcTotals); });
