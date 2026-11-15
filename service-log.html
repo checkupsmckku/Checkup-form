@@ -13876,9 +13876,12 @@ function mergeGynRows_(serverRows, pelvicOnlyRows) {
    ⚠ handleNoteUpdate_ เขียนชื่อแพทย์/consult ทุกครั้ง (ไม่มี doctorName = ล้าง · consult ไม่ใช่ true = ล้าง) ⇒ payload ต้องส่งค่าเดิมของ rec กลับไปเสมอ
    (doctorName + doctorNameBefore เท่ากัน ⇒ เซิร์ฟเวอร์คงชื่อในชีต) · ห้ามส่ง sentDate/resendList/receivedDate/pickupDate/gynDate/labTrack (เขียนเฉพาะเมื่อมีคีย์) */
 var GYN_PELVIC_RECS_ = {};
+// รอบ 122c (ผู้ตรวจ m1): นับเฉพาะช่องกรอก (ไม่นับปุ่ม — Chrome ให้โฟกัสปุ่มที่เพิ่งกดค้างไว้ ⇒ โหลดใหม่ไม่ได้เลย)
 function isFocusInGynEdit_() {
   var el = document.activeElement;
-  return !!(el && typeof el.closest === 'function' && el.closest('.gyn-edit'));
+  if (!el || typeof el.closest !== 'function' || !el.closest('.gyn-edit')) return false;
+  var tag = String(el.tagName || '').toUpperCase();
+  return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
 }
 function gynPelvicEditBoxHtml_(rec) {
   var recId = escHtml(rec.recordId);
@@ -13913,9 +13916,13 @@ function gynPelvicNotePayload_(rec, v) {
   var payload = {
     staffKey: STATE.staffKey, staffName: STATE.staffName, recordId: rec.recordId,
     doctorName: doctorName, doctorNameBefore: doctorName,
-    consult: consult, consultNote: consult ? (rec.consultNote || '') : '',
-    pelvicMethod: v.pelvicMethod, pelvicSentDate: v.pelvicSentDate, pelvicResendList: v.pelvicResendList
+    consult: consult, consultNote: consult ? (rec.consultNote || '') : ''
   };
+  // รอบ 122c (ผู้ตรวจ m2): ส่งเฉพาะช่องที่ต่างจากค่าล่าสุดที่รู้ — ช่องที่ไม่ส่ง เซิร์ฟเวอร์คงค่าในชีต
+  // (กันเครื่องที่เปิดหน้าค้างไว้ไปล้างวันส่งออกที่อีกเครื่องเพิ่งบันทึก)
+  if (v.pelvicMethod !== (rec.pelvicMethod || '')) payload.pelvicMethod = v.pelvicMethod;
+  if (v.pelvicSentDate !== (rec.pelvicSentDate || '')) payload.pelvicSentDate = v.pelvicSentDate;
+  if (JSON.stringify(v.pelvicResendList) !== JSON.stringify(Array.isArray(rec.pelvicResendList) ? rec.pelvicResendList : [])) payload.pelvicResendList = v.pelvicResendList;
   if (consult) payload.consultCount = (typeof rec.consultCount === 'number' && rec.consultCount >= 1) ? rec.consultCount : 1;
   return payload;
 }
@@ -13940,12 +13947,14 @@ function saveGynPelvicNote_(recordId, box) {
     return null; // ไม่เปลี่ยนจากค่าล่าสุดที่รู้ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
-  return apiCall('noteUpdate', gynPelvicNotePayload_(rec, v)).then(function (resp) {
+  var payload = gynPelvicNotePayload_(rec, v);
+  return apiCall('noteUpdate', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
       // ค่าจริงในชีตจากคำตอบ (ไม่มี/ผิดรูป ⇒ ใช้ค่าที่ส่งไป)
-      rec.pelvicMethod = (typeof resp.pelvicMethod === 'string') ? resp.pelvicMethod : v.pelvicMethod;
-      rec.pelvicSentDate = (typeof resp.pelvicSentDate === 'string') ? resp.pelvicSentDate : v.pelvicSentDate;
-      rec.pelvicResendList = Array.isArray(resp.pelvicResendList) ? resp.pelvicResendList : v.pelvicResendList;
+      // รอบ 122c (ผู้ตรวจ n1): อัปเดตเฉพาะคีย์ที่ส่งไป — rec ต้องตรงกับค่าบนจอ ไม่งั้นแก้ครั้งถัดไปจะส่งค่าว่างบนจอไปล้างค่าที่เครื่องอื่นบันทึก
+      if ('pelvicMethod' in payload) rec.pelvicMethod = (typeof resp.pelvicMethod === 'string') ? resp.pelvicMethod : v.pelvicMethod;
+      if ('pelvicSentDate' in payload) rec.pelvicSentDate = (typeof resp.pelvicSentDate === 'string') ? resp.pelvicSentDate : v.pelvicSentDate;
+      if ('pelvicResendList' in payload) rec.pelvicResendList = Array.isArray(resp.pelvicResendList) ? resp.pelvicResendList : v.pelvicResendList;
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
     } else {
       // ล้มเหลว: ห้ามแตะค่าใน GYN_PELVIC_RECS_ (ครั้งถัดไปยังยิงซ้ำได้) · ไม่ล้างสิ่งที่ผู้ใช้กรอก
@@ -13973,9 +13982,10 @@ function bindGynPelvicEdit_(root) {
   });
 }
 function loadGynList() {
-  if (isFocusInGynEdit_()) return; // รอบ 122b: กำลังพิมพ์/เลือกในกล่องแก้ ⇒ ไม่โหลดทับ (โหลดใหม่จะวาดกล่องทิ้ง)
-  var seq = ++GYN_SEQ;
   var dateStr = qs('cuDate').value || todayStr();
+  // รอบ 122b: กำลังพิมพ์/เลือกในกล่องแก้ ⇒ ไม่โหลดทับ (โหลดใหม่จะวาดกล่องทิ้ง) · รอบ 122c (ผู้ตรวจ m1): วันที่เปลี่ยน ⇒ โหลดเสมอ (กันจอค้างวันเก่า)
+  if (dateStr === GYN_SHOWN_DATE && isFocusInGynEdit_()) return;
+  var seq = ++GYN_SEQ;
   var body = gynShell_(dateStr);
   if (!body) return;
   GYN_LAST_ROWS = [];
