@@ -286,6 +286,10 @@
     background: #fff;
   }
   .opt-btn input { margin: 0; }
+  /* รอบ 125: ปุ่ม "เพิ่ม Lab" — ข้อความ "มีแล้ว" ขึ้นบรรทัดล่างในปุ่ม ไม่ดันล้นจอแคบ */
+  .lab-add-item { max-width: 100%; flex-wrap: wrap; }
+  .lab-add-item .lab-add-have { flex-basis: 100%; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+  .lab-add-item input:disabled + span { opacity: .85; }
   .opt-btn:has(input:checked) { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
   .opt-price { font-size: 13px; color: var(--text-muted); }
 
@@ -1947,6 +1951,13 @@
                     </span>
                   </div>
 
+                  <!-- รอบ 125: "เพิ่ม Lab" — checkbox สร้างจาก LAB_TRACK_ITEMS ตอนเริ่มหน้า (buildLabAddUI_) · ซ่อน/แสดงโดย updateLabAddRow_() -->
+                  <div id="labAddRow" hidden>
+                    <label class="field-label">เพิ่ม Lab</label>
+                    <p class="muted">ติ๊ก Lab ที่ผลไม่ออกวันนี้ — ตามผลต่อที่ "ตามผล Lab" ในรายชื่อตรวจสุขภาพ</p>
+                    <div class="row" id="labAddButtons"></div>
+                  </div>
+
                   <p class="muted" id="legacyExtraInfo" hidden></p>
                 </section>
                 <div class="log-lock-overlay" id="checkupLockOverlay" hidden></div>
@@ -3411,6 +3422,7 @@ function enterAppScreen() {
   buildStaffSelect();
   buildVaccineList();
   buildSpecialSendsUI();
+  buildLabAddUI_(); // รอบ 125
   updateProgramLabels();
   recalcTotals();
   loadToday();
@@ -4735,6 +4747,68 @@ function updatePickupDateVisibility(deliveryMethod) {
     var input = qs('pickupDate');
     if (input) input.value = '';
   }
+}
+
+/* รอบ 125: "เพิ่ม Lab" ในฟอร์มบันทึก (SPEC_รอบ125) — เพิ่มอย่างเดียว ไม่ลบ · ส่ง payload.labTrackAdd (id ที่ติ๊กและไม่ disabled) ทุกครั้งที่บันทึก/แก้ไข
+   D4: แสดงเมื่อเลือกโปรแกรม + ไม่ใช่ pelvicsun + ไม่อยู่โหมดล่วงหน้า · ซ่อน ⇒ ปลดติ๊กจริง (ตัวที่ไม่ disabled)
+   D5: โหมดแก้ไข ตัวที่แถวมีแล้ว ⇒ ติ๊ก + disabled + ข้อความ "มีแล้ว" */
+function buildLabAddUI_() {
+  var wrap = qs('labAddButtons');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  LAB_TRACK_ITEMS.forEach(function (it) {
+    var lab = document.createElement('label');
+    lab.className = 'opt-btn lab-add-item';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'labAdd_' + it.id;
+    cb.value = it.id;
+    var nm = document.createElement('span');
+    nm.textContent = it.name;
+    var have = document.createElement('small');
+    have.className = 'lab-add-have';
+    have.hidden = true;
+    have.textContent = 'มีแล้ว — แก้/เอาออกที่รายชื่อตรวจสุขภาพ';
+    lab.appendChild(cb); lab.appendChild(nm); lab.appendChild(have);
+    wrap.appendChild(lab);
+  });
+}
+function labAddBoxes_() {
+  return Array.prototype.slice.call(document.querySelectorAll('#labAddButtons input[type="checkbox"]'));
+}
+function labAddResetState_() {
+  labAddBoxes_().forEach(function (cb) {
+    cb.checked = false; cb.disabled = false;
+    var have = cb.parentNode && cb.parentNode.querySelector ? cb.parentNode.querySelector('.lab-add-have') : null;
+    if (have) have.hidden = true;
+  });
+}
+function labAddApplyExisting_(rec) {
+  labTrackOfRec_(rec).forEach(function (it) {
+    var cb = qs('labAdd_' + it.id);
+    if (!cb) return;
+    cb.checked = true; cb.disabled = true;
+    var have = cb.parentNode.querySelector('.lab-add-have');
+    if (have) have.hidden = false;
+  });
+}
+function updateLabAddRow_() {
+  var row = qs('labAddRow');
+  if (!row) return;
+  var p = getSelectedProgram();
+  var show = !!p && !isPelvicOnlyProgram_(p) && !isPreMode_();
+  row.hidden = !show;
+  if (!show) labAddBoxes_().forEach(function (cb) { if (!cb.disabled) cb.checked = false; });
+}
+function getLabAddIds_() {
+  var out = [];
+  var labRow = qs('labAddRow');
+  if (labRow && labRow.hidden) return out; // ผู้ตรวจ m3: กลุ่มซ่อน ⇒ ไม่ส่ง (กันทางปลดโปรแกรมที่ไม่ผ่าน recalcTotals)
+  LAB_TRACK_ITEMS.forEach(function (it) {
+    var cb = qs('labAdd_' + it.id);
+    if (cb && cb.checked && !cb.disabled) out.push(it.id);
+  });
+  return out;
 }
 
 /* รอบ 27 (C2) — กติกา "วันปิด" ของ "นัดรับวันที่" เท่านั้น (คู่ขนานกับ isPickupClosedDay_ ฝั่งเซิร์ฟเวอร์ ห้ามแก้ให้ต่างกัน)
@@ -6065,6 +6139,7 @@ function recalcTotals() {
   var deliveryMethod = (qs('deliveryMethod') ? qs('deliveryMethod').value : '') || '';
   // รอบ 21 (2026-09-20): แสดง/ซ่อน+ล้างช่องวันนัดรับตามช่องทางล่าสุดเสมอ
   updatePickupDateVisibility(deliveryMethod);
+  updateLabAddRow_(); // รอบ 125 (W2)
   var pickupDateEl = qs('pickupDate');
   var pickupDate = (deliveryMethod === DELIVERY_PICKUP_APPOINTMENT) ? ((pickupDateEl && pickupDateEl.value) || '') : '';
   if (preM) { queue = ''; deliveryMethod = ''; pickupDate = ''; } // รอบ 81 (W1): ซ่อนคิว/ช่องทางรับผล/นัดรับ ⇒ ไม่เข้าด่าน (ค่าในช่องไม่ถูกแตะ)
@@ -6265,6 +6340,7 @@ function exitEditMode() {
   STATE.editSpecialPrep = [];
   STATE.editSpecialSent = [];
   STATE.editSpecialBack = [];
+  labAddResetState_(); // รอบ 125 (W5): ออกจากโหมดแก้ไข ⇒ ปลด disabled + ปลดติ๊กทั้งหมด
   setSubmitLabel('บันทึก');
   qs('editBanner').hidden = true;
   if (typeof applyVaxCountPointMode_ === 'function') applyVaxCountPointMode_(true); // รอบ 119ฉ (V4): ออกจากโหมดแก้ไข ⇒ จุดนับ vaccine ซ่อนแผงกลับ (ไม่ recalc — resetLogForm ทำต่อเอง)
@@ -6345,6 +6421,7 @@ function restoreFormDraft_(data) {
   applyLogLocks();
   if (typeof applyPelvicsunBtn_ === 'function') applyPelvicsunBtn_(); // รอบ 124 (W5): ร่างที่มี pelvicsun ติ๊กค้างต้องไม่ทำให้ปุ่มกลับมาตอนบันทึกใหม่
   if (!STATE.editingId && typeof applyVaccinePanelVisibility_ === 'function') applyVaccinePanelVisibility_(); // รอบ 87 (F3/D15): ร่างจากจุดอื่นห้ามมีวัคซีนติดมาที่จุดคีย์ order
+  updateLabAddRow_(); // รอบ 125 (W2): คืนร่างแล้วติ๊ก "เพิ่ม Lab" ต้องอยู่ครบ (ถ้ายังแสดงอยู่)
   initMedLabSoloState_(); // รอบ 66: ตั้งธง/สถานะจากค่าที่คืน "ก่อน" recalcTotals — ไม่ให้ sync เข้าใจว่าเป็นการเปลี่ยนคิว/ติ๊กใหม่แล้วใส่ราคาเอง
   recalcTotals();
   applyCheckupPanelDefault_(); // รอบ 64: คืนร่างหลังปิดโมดัลแก้ไข ⇒ สถานะแผงตรวจสุขภาพตามค่าของร่างที่คืน (ร่างเลือกโปรแกรมไว้ ⇒ กาง)
@@ -6620,6 +6697,7 @@ function enterEditMode(rec) {
   // แม้ prefix จะไม่ตรงกับกติกาปัจจุบัน (buildQueueOptions ตั้ง .value ตรงๆ ผ่าน forceValue — เป็น <input> พิมพ์ค่านอกช่วงได้เองอยู่แล้ว)
   buildQueueOptions(draftQueuePrefix(), rec.queue || '');
 
+  labAddResetState_(); labAddApplyExisting_(rec); // รอบ 125 (W5/D5): Lab ที่แถวมีแล้ว ⇒ ติ๊ก + disabled · ตัวอื่นติ๊กเพิ่มได้
   applyLogLocks(); // รอบ 9 (ก้อน B, B4) — แถวเก่ามี HN/ชื่ออยู่แล้วปกติ ⇒ ปลดล็อกทันที
   initMedLabSoloState_(); // รอบ 66 ข้อ 8: โหมดแก้ไข ⇒ ไม่ใส่ราคาเอง · solo ติ๊ก + คิวไม่ใช่ C + ยอด Lab = ราคา solo ⇒ ถือว่าระบบใส่ (ปลดติ๊กแล้วล้างได้)
   recalcTotals();
@@ -6825,6 +6903,12 @@ function mergeDraftIntoTodayRecord(rec, draft) {
   if (qs('abroadLabAmount')) qs('abroadLabAmount').value = mAb.a;
   if (qs('abroadLabFollowup')) qs('abroadLabFollowup').value = mAb.d;
   setAbroadFree_(mAb.free);
+
+  // รอบ 125 (W4): เพิ่ม Lab ของร่าง — ติ๊กตัวที่ยังไม่ disabled (union แบบวัคซีน)
+  (draft.labTrackAdd || []).forEach(function (id) {
+    var lcb = qs('labAdd_' + id);
+    if (lcb && !lcb.disabled) lcb.checked = true;
+  });
 
   // sp_reg_* (ลงชื่อไว้ รวม inbody): union
   (draft.specialRegIds || []).forEach(function (id) {
@@ -7287,7 +7371,8 @@ function onSubmitLog(e) {
     pickupDate: pickupDate, // รอบ 21 (2026-09-20)
     vaccineCodes: vaccineCodes, vaccinePeCharged: peCharged, medCert5: medCert5, medCertDriver: medCertDriver,
     medCertLabAmount: medCertLabAmount, labFollowup: labFollowup, labFollowupFree: labFollowupFree,
-    specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix
+    specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix,
+    labTrackAdd: getLabAddIds_() // รอบ 125 (W3)
   };
 
   // รอบ 28 (2026-09-23) W1 (ข้อ 1) — ห้ามชื่อ-สกุล/HN ซ้ำในวันเดียวกัน: เช็คกับ LAST_TODAY_RECORDS ก่อน (จุดบริการ
@@ -7351,7 +7436,8 @@ function onSubmitLog(e) {
     specialSent: specialSentIds,
     specialBack: specialBackIds,
     specialPrep: specialPrepIds,
-    specialReg: specialRegIds // รอบ 8 (B4)
+    specialReg: specialRegIds, // รอบ 8 (B4)
+    labTrackAdd: getLabAddIds_() // รอบ 125 (W3): เพิ่มอย่างเดียว · ส่งทุกครั้ง (อาจว่าง) ทั้ง log และ edit
   };
   // รอบ 117: ช่องทางจากฟอร์มของโปรแกรมนี้ = ช่องทางส่งผลตรวจภายใน · โปรแกรมอื่นต้องไม่มีคีย์ pelvicMethod เหมือนเดิม (รอบ 24)
   if (isPelvicOnlyProgram_(program)) payload.pelvicMethod = deliveryMethod;
