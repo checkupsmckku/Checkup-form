@@ -8094,7 +8094,10 @@ function drawTodayList_(records, dateStr) {
   var q = todayHnQuery();
   var rawQ0 = rawTodayQ_();
   var shown = 0;
-  records.forEach(function (rec) {
+  // เจ้าของสั่ง 2026-11-16: กรองคิว C / คิว M ⇒ เรียงตามเลขคิว (C1, C2 … แล้ว "ไม่นัด N" · คิวเดียวกันเรียงเวลาบันทึก) — "ทั้งหมด"/V เรียงเดิม
+  // เรียงสำเนาเสมอ ห้าม .sort() อาเรย์ในแคช (ดู compareByQueue)
+  var drawList = (TODAY_QGROUP === 'C' || TODAY_QGROUP === 'M') ? records.slice().sort(compareByQueue) : records;
+  drawList.forEach(function (rec) {
     var cancelled = rec.status === 'ยกเลิก';
     // รอบ 114 (เจ้าของสั่ง 2026-11-02): ค้นได้ทั้ง ชื่อ / HN / คิว (recordMatchesQuery ตัวเดียวกับหน้ารายชื่อตรวจสุขภาพ) · คง HN บางส่วนแบบเดิมไว้ด้วย
     if (!recordMatchesQuery(rec, rawQ0) && !(q && recordMatchesHn(rec, q))) return;
