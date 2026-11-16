@@ -556,6 +556,12 @@
   .cu-note-box { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-width: 0; }
   .cu-note-box-head { font-weight: 700; font-size: 13px; color: var(--primary-dark); margin-bottom: 6px; }
   .cu-note-box-sub { font-weight: 500; color: var(--text-muted); }
+  /* รอบ 119ง: กล่อง "ตามผล Lab" — แถวละ 1 รายการ ห่อบรรทัดบนจอแคบ (390px ไม่ล้น) */
+  .cu-lab-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .cu-lab-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
+  .cu-lab-row .cu-lab-check { min-width: 120px; margin: 0; }
+  .cu-lab-row select { max-width: 100%; min-height: 36px; }
+  .cu-lab-row .cu-lab-lock { font-size: 12px; }
   .cu-note-grid { display: grid; grid-template-columns: max-content 1fr; gap: 6px 10px; align-items: center; min-width: 0; }
   .cu-note-grid > label.field-label { margin: 0; font-size: 13px; }
   .cu-note-grid > * { min-width: 0; }
@@ -2368,6 +2374,8 @@
         <button type="button" class="btn small secondary" id="btnPendingKindPelvic" data-pending-kind="pelvic">มะเร็งปากมดลูก</button>
         <!-- รอบ 73 (เจ้าของสั่ง 2026-10-07): ปุ่มที่ 3 — ตารางรอรับ + ติ๊กหลายคนกด "รับผลแล้ว" ทีเดียว (kind 'pickup' ของ bulkSentDate) · รอบ 75: ชื่อ "รอรับ / นัดรับ" -->
         <button type="button" class="btn small secondary" id="btnPendingKindPickup" data-pending-kind="pickup">รอรับ / นัดรับ</button>
+        <!-- รอบ 119ง (L4): แท็บที่ 4 "ผล Lab" — 1 แถวต่อ 1 รายการ Lab ที่ยังไม่มีวันที่ส่งออก (ไม่ใช่ต่อคน) · ป้ายหน่วยแท็บนี้ใช้ "รายการ" -->
+        <button type="button" class="btn small secondary" id="btnPendingKindLab" data-pending-kind="lab">ผล Lab</button>
       </div>
 
       <!-- รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ — ว่าง = ทุกวัน · กรองฝั่งเว็บ (backend pending คืนทุกวันอยู่แล้ว)
@@ -4659,6 +4667,41 @@ var DELIVERY_PICKUP_APPOINTMENT = 'นัดรับวันที่';
    (กด "รับผลแล้ว" ถือว่ารับแล้ว) · ค่านอก 2 ชุดนี้ (ว่าง/ค่าแปลก) = 'noMethod' */
 var SEND_OUT_METHODS = ['ส่งทางไปรษณีย์', 'ส่งทาง E-mail', 'ส่งทาง Whatsapp'];
 var PICKUP_METHODS = ['รอรับด้วยตนเอง', DELIVERY_PICKUP_APPOINTMENT];
+
+/* รอบ 119ง — ตามผล Lab ที่ไม่ได้รับในวันตรวจ (SPEC_รอบ119ง_ตามผลLab.md)
+   ⚠ LAB_TRACK_ITEMS / LAB_TRACK_METHODS ประกาศ 2 ที่ (ที่นี่ + สถิติบริการ.js) id/ชื่อ/ลำดับต้องตรงกันเป๊ะ — มีเทสต์ parse เทียบ 2 ไฟล์
+   (ต้องเป็นอาร์เรย์ literal ล้วน ห้ามอ้างตัวแปรอื่นข้างใน) · ช่องทางไม่มี "นัดรับวันที่" (D4) */
+var LAB_TRACK_ITEMS = [
+  { id: 'hbtyping', name: 'Hb typing' },
+  { id: 'stool', name: 'Stool' },
+  { id: 'ua', name: 'UA' },
+  { id: 'bloodgroup', name: 'Blood group' },
+  { id: 'rubella', name: 'Rubella IgG' }
+];
+var LAB_TRACK_METHODS = ['รอรับด้วยตนเอง', 'ส่งทางไปรษณีย์', 'ส่งทาง E-mail', 'ส่งทาง Whatsapp'];
+function labTrackName_(id) {
+  for (var i = 0; i < LAB_TRACK_ITEMS.length; i++) if (LAB_TRACK_ITEMS[i].id === id) return LAB_TRACK_ITEMS[i].name;
+  return String(id || '');
+}
+// D5: แถวที่ติดตามผล Lab ได้ = มีโปรแกรม + ไม่ใช่ pelvicsun (แถวยกเลิกแสดงกล่องแต่ disabled)
+function labTrackAllowedRec_(rec) {
+  var p = String((rec && rec.program) || '').trim();
+  return !!p && p.toLowerCase() !== 'pelvicsun';
+}
+// รายการ labTrack ของ rec เรียงตาม L1 (ไม่แก้ rec)
+function labTrackOfRec_(rec) {
+  var src = (rec && Array.isArray(rec.labTrack)) ? rec.labTrack : [];
+  var out = [];
+  LAB_TRACK_ITEMS.forEach(function (it) {
+    for (var i = 0; i < src.length; i++) {
+      if (src[i] && src[i].id === it.id) {
+        out.push({ id: it.id, method: src[i].method || '', sentDate: src[i].sentDate || '' });
+        return;
+      }
+    }
+  });
+  return out;
+}
 
 // รอบ 29 (S5) W5 (ข้อ 5): ผลตรวจมะเร็งปากมดลูกค้างส่งออก = แถวที่ตรวจจริง (pap/thinprep/thinprep_hpv) และไม่มี
 // pelvicSentDate (ทุกช่องทาง) — นิยามเดียวกับ isPelvicExportPending_ ฝั่งเซิร์ฟเวอร์ (SPEC_รอบ28.md) แยกออกมาเป็น
@@ -12585,6 +12628,84 @@ function receivedPrintText(label, dateVal) {
   return dateVal ? (label + ' ' + formatThaiDate(dateVal)) : '';
 }
 
+/* รอบ 119ง (W1/W2): กล่อง "ตามผล Lab" ในรายชื่อตรวจสุขภาพ — no-print ทั้งกล่อง (L7) · เฉพาะแถวเข้า D5 (labTrackAllowedRec_)
+   checkbox 5 ตัวตาม L1 · ตัวที่ติ๊กมี select ช่องทาง + ช่องวันที่ส่งออก (ตัวที่ไม่ติ๊ก "ไม่มี" 2 ช่องนี้ใน DOM) ·
+   ตัวที่มีวันที่ส่งออก ⇒ checkbox disabled + ข้อความ (A3) · แถวยกเลิก ⇒ disabled ทั้งกล่อง · ค่าจากผู้ใช้เข้า innerHTML ผ่าน escHtml เท่านั้น */
+function cuLabInnerHtml_(recId, list, disabled) {
+  var byId = {};
+  (list || []).forEach(function (it) { byId[it.id] = it; });
+  var rows = LAB_TRACK_ITEMS.map(function (item) {
+    var cur = byId[item.id];
+    var ticked = !!cur;
+    var sent = ticked ? (cur.sentDate || '') : '';
+    var lockedBySent = !!sent;
+    var html = '<div class="cu-lab-row" data-lab-id="' + escHtml(item.id) + '">' +
+      '<label class="check-row cu-lab-check"><input type="checkbox" class="cu-lab-chk" data-lab-id="' + escHtml(item.id) + '"' +
+      (ticked ? ' checked' : '') + ((disabled || lockedBySent) ? ' disabled' : '') + '>' +
+      '<span class="item-name">' + escHtml(item.name) + '</span></label>';
+    if (ticked) {
+      var m = cur.method || '';
+      html += '<select class="cu-lab-method" data-lab-id="' + escHtml(item.id) + '" aria-label="ช่องทางส่ง ' + escHtml(item.name) + '"' + (disabled ? ' disabled' : '') + '>' +
+        '<option value="">เลือกช่องทาง</option>' +
+        LAB_TRACK_METHODS.map(function (mm) {
+          return '<option value="' + escHtml(mm) + '"' + (mm === m ? ' selected' : '') + '>' + escHtml(mm) + '</option>';
+        }).join('') + '</select>' +
+        '<span class="cu-date-cell"><input type="date" class="cu-lab-sent" data-lab-id="' + escHtml(item.id) + '" aria-label="ส่งออกวันที่ ' + escHtml(item.name) + '" value="' + escHtml(sent) + '"' + (disabled ? ' disabled' : '') + '>' +
+        '<span class="cu-date-err-msg"></span></span>' +
+        '<span class="cu-lab-lock muted"' + (lockedBySent ? '' : ' hidden') + '>ลบวันที่ส่งออกก่อนจึงเอาออกได้</span>';
+    }
+    return html + '</div>';
+  }).join('');
+  return '<div class="cu-note-box-head">ตามผล Lab</div><div class="cu-lab-list">' + rows + '</div>';
+}
+function cuLabBoxHtml_(rec) {
+  if (!labTrackAllowedRec_(rec)) return '';
+  var cancelled = rec && rec.status === 'ยกเลิก';
+  return '<div class="cu-note-box cu-note-lab no-print" data-note-lab="' + escHtml(rec && rec.recordId) + '" data-lab-disabled="' + (cancelled ? '1' : '0') + '">' +
+    cuLabInnerHtml_(escHtml(rec && rec.recordId), labTrackOfRec_(rec), !!cancelled) + '</div>';
+}
+// อ่านรายการปัจจุบันจาก DOM (เฉพาะตัวที่ติ๊ก · ลำดับ L1 ตาม DOM)
+function readCuLabFromDom_(labBox) {
+  var out = [];
+  if (!labBox) return out;
+  labBox.querySelectorAll('.cu-lab-row').forEach(function (row) {
+    var chk = row.querySelector('.cu-lab-chk');
+    if (!chk || !chk.checked) return;
+    var sel = row.querySelector('.cu-lab-method');
+    var dt = row.querySelector('.cu-lab-sent');
+    out.push({ id: row.getAttribute('data-lab-id'), method: sel ? sel.value : '', sentDate: dt ? dt.value : '' });
+  });
+  return out;
+}
+function renderCuLabBox_(labBox, list) {
+  labBox.innerHTML = cuLabInnerHtml_(labBox.getAttribute('data-note-lab'), list, labBox.getAttribute('data-lab-disabled') === '1');
+}
+function bindCuLabBox_(labBox, trySave) {
+  labBox.addEventListener('change', function (e) {
+    var t = e.target;
+    if (!t || !t.classList) return;
+    if (t.classList.contains('cu-lab-chk')) {
+      var id = t.getAttribute('data-lab-id');
+      var list = readCuLabFromDom_(labBox);
+      if (t.checked) {
+        // A2: ช่องทางตั้งต้น = ของตัวแรกตามลำดับ L1 ที่ติ๊กอยู่และมีช่องทาง (ไม่นับตัวที่เพิ่งติ๊ก) · ไม่มี ⇒ ''
+        var def = '';
+        for (var i = 0; i < list.length; i++) { if (list[i].id !== id && list[i].method) { def = list[i].method; break; } }
+        for (var j = 0; j < list.length; j++) { if (list[j].id === id) list[j].method = def; }
+      }
+      renderCuLabBox_(labBox, list);
+    } else if (t.classList.contains('cu-lab-sent')) {
+      // A3: มีวันที่ส่งออก ⇒ checkbox disabled + ข้อความ · ลบวันที่ ⇒ เปิดกลับ (ไม่วาดกล่องใหม่ กันปฏิทิน/โฟกัสหลุด)
+      var row = t.closest('.cu-lab-row');
+      var chk = row ? row.querySelector('.cu-lab-chk') : null;
+      var lk = row ? row.querySelector('.cu-lab-lock') : null;
+      if (chk) chk.disabled = !!t.value;
+      if (lk) lk.hidden = !t.value;
+    }
+    trySave();
+  });
+}
+
 function cuNoteHtml(rec) {
   var cancelled = rec && rec.status === 'ยกเลิก';
   var doctorName = (rec && rec.doctorName) || '';
@@ -12762,6 +12883,8 @@ function cuNoteHtml(rec) {
     '</div>' +
     '</div>')) +
 
+    cuLabBoxHtml_(rec) + // รอบ 119ง: ระหว่างกล่องผลตรวจสุขภาพกับกล่องมะเร็งปากมดลูก
+
     pelvicBlockHtml +
     '<span class="cu-note-state" data-note-state="' + recId + '"></span>' +
     '</div>';
@@ -12848,6 +12971,11 @@ function buildCuNotePayload_(recordId, values, flags, doctorNameBefore) {
   if (flags.hasPelvicMethod) payload.pelvicMethod = values.pelvicMethod;
   if (flags.hasPickupDate) payload.pickupDate = values.pickupDate;
   if (flags.hasGynDate) payload.gynDate = values.gynDate; // รอบ 119ช: ส่งเฉพาะแถวที่มีช่องนี้ และ maybeSaveCuNote ส่งต่อเมื่อเปลี่ยนจริงเท่านั้น
+  if (flags.hasLabTrack) {
+    payload.labTrack = values.labTrack; // รอบ 119ง: อาร์เรย์เต็มของแถว · ส่งเฉพาะเมื่อรายการเปลี่ยนจริง (ไม่มีคีย์ = เซิร์ฟเวอร์คงค่าเดิม)
+    // F1: labTrackBefore = ค่าที่หน้านี้รู้ก่อนแก้ — เซิร์ฟเวอร์ใช้เฉพาะส่วนที่เปลี่ยนจริง ทับลงค่าปัจจุบันในชีต
+    payload.labTrackBefore = Array.isArray(values.labTrackBefore) ? values.labTrackBefore : []; // อยู่ใน values (ไม่เพิ่มอาร์กิวเมนต์ — test_round41_web 5.3 นับ 4 ตัว)
+  }
   return payload;
 }
 
@@ -12885,6 +13013,9 @@ function describeCuNoteChanges_(oldValues, newValues, flags) {
   }
   if (flags.hasGynDate && oldValues.gynDate !== newValues.gynDate) {
     parts.push(newValues.gynDate ? ('ไปตรวจภายใน ' + formatThaiDateShort(newValues.gynDate)) : 'ล้างวันที่ไปตรวจภายใน');
+  }
+  if (flags.hasLabTrack && JSON.stringify(oldValues.labTrack) !== JSON.stringify(newValues.labTrack)) {
+    parts.push('ตามผล Lab');
   }
   return parts.join(' · ');
 }
@@ -12948,7 +13079,10 @@ function performCuNoteUndo_(recordId, oldValues, flags, label) {
   // รอบ 41 (W3): ก่อนเลิกทำ หน้านี้เห็นชื่อแพทย์ = ค่าในแคชตอนนี้ (หลังบันทึกครั้งก่อน) — ส่งเป็น doctorNameBefore
   var undoRecBefore = findCuRecord(recordId);
   var undoDoctorBefore = (undoRecBefore && undoRecBefore.doctorName) || '';
-  var payload = buildCuNotePayload_(recordId, oldValues, flags, undoDoctorBefore);
+  var undoValues = {};
+  Object.keys(oldValues).forEach(function (k) { undoValues[k] = oldValues[k]; });
+  undoValues.labTrackBefore = labTrackOfRec_(undoRecBefore); // F1: หน้านี้รู้ค่าอะไรตอนกดเลิกทำ
+  var payload = buildCuNotePayload_(recordId, undoValues, flags, undoDoctorBefore);
   return apiCall('noteUpdate', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
       var rec = findCuRecord(recordId);
@@ -12962,6 +13096,7 @@ function performCuNoteUndo_(recordId, oldValues, flags, label) {
         if (flags.hasPelvicMethod) rec.pelvicMethod = oldValues.pelvicMethod;
         if (flags.hasPickupDate) rec.pickupDate = oldValues.pickupDate;
         if (flags.hasGynDate) rec.gynDate = oldValues.gynDate;
+        if (flags.hasLabTrack) rec.labTrack = Array.isArray(resp.labTrack) ? resp.labTrack : oldValues.labTrack; // ค่าจริงในชีตหลัง merge (เครื่องอื่นอาจเพิ่ม/ใส่วันที่ไว้)
       }
       // รอบ 41 (W3): ให้ชื่อแพทย์ที่เซิร์ฟเวอร์คืนมา (อาจเป็นชื่อที่กัปตันเติมไว้) ชนะค่าที่เลิกทำถ้าต่างกัน — ก่อน rerender กล่อง
       applyCuNoteServerDoctor_(recordId, resp, oldValues.doctorName);
@@ -12979,7 +13114,7 @@ function performCuNoteUndo_(recordId, oldValues, flags, label) {
 }
 
 function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl, gynDateInput) {
+    pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl, gynDateInput, labBox) {
   var rec = findCuRecord(recordId);
   var doctorName = doctorInput.value.trim();
   var consult = !!consultChk.checked;
@@ -13003,6 +13138,11 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var hasGynDate = !!gynDateInput;
   var gynDate = hasGynDate ? gynDateInput.value : '';
   var recGynDate = (rec && rec.gynDate) || '';
+  // รอบ 119ง: labBox เป็น null ที่แถวไม่เข้า D5 ⇒ ไม่ส่งคีย์ labTrack · ส่งเฉพาะเมื่อรายการเปลี่ยนจริงจากค่าล่าสุดที่รู้
+  var hasLab = !!labBox;
+  var labList = hasLab ? readCuLabFromDom_(labBox) : [];
+  var recLabList = labTrackOfRec_(rec);
+  var labChanged = hasLab && JSON.stringify(labList) !== JSON.stringify(recLabList);
 
   var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
   var recSentDate = (rec && rec.sentDate) || '';
@@ -13051,31 +13191,39 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
       (!hasReceivedBtn || recReceivedDate === receivedDate) &&
       (!hasPelvicMethod || recPelvicMethod === pelvicMethod) &&
       (!hasPickupDate || recPickupDate === pickupDate) &&
-      (!hasGynDate || recGynDate === gynDate)) {
+      (!hasGynDate || recGynDate === gynDate) &&
+      !labChanged) {
     return; // ทุกช่องเท่ากับรอบล่าสุดที่บันทึกไว้เป๊ะ — ไม่ยิงซ้ำ
   }
   if (stateEl) { stateEl.textContent = 'กำลังบันทึก…'; stateEl.className = 'cu-note-state saving'; }
   // รอบ 31B ข้อ 4: flags/oldValues/newValues ใช้รูปร่างเดียวกับ buildCuNotePayload_()/performCuNoteUndo_() —
   // oldValues เก็บ snapshot จากแคช (rec.*) "ก่อน" บันทึกเสมอ (ตัวแปร recXxx ข้างบนอ่านจาก rec ไปแล้วตั้งแต่ต้นฟังก์ชัน
   // ก่อนจะแตะ rec.* บรรทัดไหนเลย) — ใช้เป็น payload ของปุ่ม "เลิกทำ" ได้ตรง ๆ
-  var cuNoteFlags_ = { hasSentDate: hasSentDate, hasReceivedBtn: hasReceivedBtn, hasPelvicMethod: hasPelvicMethod, hasPickupDate: hasPickupDate, hasGynDate: hasGynDate && gynDate !== recGynDate };
+  var cuNoteFlags_ = { hasSentDate: hasSentDate, hasReceivedBtn: hasReceivedBtn, hasPelvicMethod: hasPelvicMethod, hasPickupDate: hasPickupDate, hasGynDate: hasGynDate && gynDate !== recGynDate, hasLabTrack: labChanged };
   var cuNoteOldValues_ = {
     doctorName: (rec && rec.doctorName) || '', consult: !!(rec && rec.consult), consultCount: recConsultCount, consultNote: (rec && rec.consultNote) || '',
     pelvicSentDate: recPelvicSentDate, pelvicResendList: recPelvicResendList,
-    sentDate: recSentDate, resendList: recResendList, receivedDate: recReceivedDate, pelvicMethod: recPelvicMethod, pickupDate: recPickupDate, gynDate: recGynDate
+    sentDate: recSentDate, resendList: recResendList, receivedDate: recReceivedDate, pelvicMethod: recPelvicMethod, pickupDate: recPickupDate, gynDate: recGynDate, labTrack: recLabList
   };
   var cuNoteNewValues_ = {
     doctorName: doctorName, consult: consult, consultCount: consultCount, consultNote: consultNote,
     pelvicSentDate: pelvicSentDate, pelvicResendList: pelvicResendList,
-    sentDate: sentDate, resendList: resendList, receivedDate: receivedDate, pelvicMethod: pelvicMethod, pickupDate: pickupDate, gynDate: gynDate
+    sentDate: sentDate, resendList: resendList, receivedDate: receivedDate, pelvicMethod: pelvicMethod, pickupDate: pickupDate, gynDate: gynDate, labTrack: labList
   };
   // รอบ 41 (W3): doctorNameBefore = ชื่อแพทย์ที่หน้านี้เห็นก่อนแก้ (cuNoteOldValues_.doctorName = rec.doctorName ในแคช;
   // ไม่มี rec ในแคช ⇒ ใช้ค่าตั้งต้นของช่องตอนวาดกล่อง = attribute value ไม่ใช่ค่าที่เพิ่งพิมพ์)
   var doctorNameBefore_ = rec ? cuNoteOldValues_.doctorName : (doctorInput.getAttribute('value') || '');
+  cuNoteNewValues_.labTrackBefore = recLabList; // F1
   var payload = buildCuNotePayload_(recordId, cuNoteNewValues_, cuNoteFlags_, doctorNameBefore_);
   return apiCall('noteUpdate', payload).then(function (resp) {
     if (resp && resp.status === 'ok') {
-      if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
+      // F3: ส่งคีย์ labTrack แต่คำตอบไม่มี labTrack เป็นอาร์เรย์ (เว็บขึ้นก่อน Apps Script) ⇒ ส่วน Lab ถือว่าไม่สำเร็จ
+      var labFailed = labChanged && !(resp && Array.isArray(resp.labTrack));
+      if (labFailed) cuNoteFlags_.hasLabTrack = false; // ไม่ให้แถบแจ้ง/เลิกทำอ้างว่าบันทึก Lab แล้ว
+      if (stateEl) {
+        if (labFailed) { stateEl.textContent = '✗ บันทึกรายการ Lab ไม่สำเร็จ — รีโหลดหน้า'; stateEl.className = 'cu-note-state err'; }
+        else { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
+      }
       // อัปเดตค่าล่าสุดที่รู้ ให้ตรงกับที่บันทึกไปแล้ว (กัน blur/change ครั้งต่อไปที่ค่าไม่เปลี่ยนยิงซ้ำ)
       if (rec) {
         rec.doctorName = doctorName; rec.consult = consult; rec.consultCount = consultCount;
@@ -13087,6 +13235,13 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
         if (hasPelvicMethod) rec.pelvicMethod = pelvicMethod;
         if (hasPickupDate) rec.pickupDate = pickupDate;
         if (hasGynDate) rec.gynDate = (resp && typeof resp.gynDate === 'string') ? resp.gynDate : gynDate; // รอบ 119ช: ค่าจริงในชีต (อัปเดต CU_CACHE ผ่าน rec ตัวเดียวกัน)
+        // รอบ 119ง: ค่าจริงในชีตจากคำตอบ (ไม่มี/ผิดรูป ⇒ ใช้ค่าที่ส่งไป) · ต่างจากที่เห็นบนจอ ⇒ วาดกล่องใหม่ให้ตรงชีต
+        if (labFailed) {
+          renderCuLabBox_(labBox, recLabList); // F3: คืนกล่องเป็นค่าเดิม · ไม่แตะ rec.labTrack
+        } else if (labChanged) {
+          rec.labTrack = resp.labTrack;
+          if (JSON.stringify(labTrackOfRec_(rec)) !== JSON.stringify(labList)) renderCuLabBox_(labBox, labTrackOfRec_(rec));
+        }
       }
       // รอบ 41 (W3): แสดงผลจากค่าที่เซิร์ฟเวอร์คืนมา — ชื่อแพทย์ที่กัปตันเติมไว้ระหว่างที่หน้าเปิดค้างโผล่ทันที (ไม่ถูกค่าว่างของหน้านี้ทับ)
       applyCuNoteServerDoctor_(recordId, resp, doctorName);
@@ -13120,6 +13275,8 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
       // ล้มเหลว/reject: ห้ามล้างค่าที่ผู้ใช้พิมพ์ไว้ และห้ามอัปเดต LAST_CU_RECORDS
       // เพื่อให้ blur ครั้งต่อไป (ค่าเดิม) ยังยิงซ้ำได้ ไม่ใช่ถูกมองว่า "ไม่เปลี่ยน" แล้วเงียบไปเลย
       if (stateEl) { stateEl.textContent = '✗ บันทึกไม่สำเร็จ — ลองใหม่'; stateEl.className = 'cu-note-state err'; }
+      // รอบ 119ง (W3): ล้ม ⇒ คืนรายการ Lab บนจอเป็นค่าเดิม (rec.labTrack ไม่ถูกแตะ) — ไม่ปล่อยให้จอเห็นค่าที่ไม่ได้บันทึก
+      if (labChanged) renderCuLabBox_(labBox, recLabList);
     }
   });
 }
@@ -13258,6 +13415,7 @@ function bindCuNoteEvents(container) {
     // รอบ 25 (2026-09-22): "นัดรับวันที่" ของผลตรวจสุขภาพ — null สำหรับแถวที่ deliveryMethod ไม่ใช่ 'นัดรับวันที่'
     var pickupDateInput = box.querySelector('.cu-note-pickupdate');
     var gynDateInput = box.querySelector('.cu-note-gyn-date'); // รอบ 119ช: null ที่แถว pelvicsun/ไม่ตรวจภายใน
+    var labBox = box.querySelector('.cu-note-lab'); // รอบ 119ง: null ที่แถวไม่เข้า D5
     // รอบ 27: หัวกล่อง "ผลตรวจสุขภาพ · <ช่องทางแบบสั้น>" — อัปเดตทันทีเมื่อแก้วันนัดในกล่อง
     var checkupSubEl = box.querySelector('[data-note-checkup-sub]');
     var stateEl = box.querySelector('.cu-note-state');
@@ -13268,8 +13426,9 @@ function bindCuNoteEvents(container) {
 
     function trySave() {
       return maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, noteInput, sentDateInput, resendBox,
-        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl, gynDateInput);
+        pelvicSentDateInput, pelvicResendBox, receivedBtn, pelvicMethodSelect, pickupDateInput, stateEl, gynDateInput, labBox);
     }
+    if (labBox) bindCuLabBox_(labBox, trySave); // รอบ 119ง
 
     // ใบพิมพ์อ่านจาก <span> ไม่ใช่จาก <input> ⇒ ต้องอัปเดตทันทีที่ค่าบนจอเปลี่ยน
     // ไม่ใช่รอผลบันทึกจากเซิร์ฟเวอร์ ไม่งั้นกรอกแล้วสั่งพิมพ์เลยจะได้กระดาษที่ไม่ตรงกับหน้าจอ (WYSIWYG)
@@ -14793,7 +14952,7 @@ function loadReport() {
    (ยิง bulkSentDate kind:'pickup' → เซิร์ฟเวอร์เขียน RECEIVED_DATE) — ใช้ #pendingSentDate ตัวเดิม ป้ายเปลี่ยนเป็น "วันที่รับผล"
    ========================================================================= */
 var PENDING_RECORDS = [];
-var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic' | 'pickup' (รอบ 73)
+var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic' | 'pickup' (รอบ 73) | 'lab' (รอบ 119ง)
 var PENDING_SELECTED = {}; // recordId -> true — ตัดออกเองเมื่อแถวไม่อยู่ในชุดที่แสดงแล้ว (ค้นหา/สลับชนิดเปลี่ยน)
 // รอบ 75 (เจ้าของสั่ง 2026-10-08): หน้านี้ชื่อบนจอ "📮 ติดตามผล" · ตัวเลขอยู่บนแท็บ (แทนกล่องสรุป #pendingSummary ที่ถอดออกจากจอ) ·
 // chip กรองช่องทางใต้แถบกรอง (PENDING_METHOD: '' = ทั้งหมด · รีเซ็ตเมื่อสลับแท็บ) · แท็บ pickup ชื่อ-สกุลกดเปิดหน้าต่างแก้ไข ·
@@ -14831,7 +14990,30 @@ function pendingRowMatchesDate_(rec) {
   return !f || (rec && rec.date === f);
 }
 
+// รอบ 119ง: คีย์เลือกแถว — แท็บ lab = 'recordId|labId' (1 คนหลายแถว) · แท็บอื่น = recordId เดิม
+function pendingRowKey_(row) { return (row && row._pendingKey) || (row && row.recordId); }
+// รอบ 119ง: แท็บ lab = กระจาย rec ที่ pending.labExport เป็นรายการละแถว (เฉพาะตัวที่ยังไม่มี sentDate) — แถวเสมือนคัดลอกตื้นของ rec + _pendingKey/_labId/_labMethod
+function pendingLabRows_() {
+  var out = [];
+  PENDING_RECORDS.forEach(function (rec) {
+    var p = rec && rec.pending;
+    if (!p || !p.labExport) return;
+    if (!pendingRowMatchesDate_(rec)) return;
+    labTrackOfRec_(rec).forEach(function (it) {
+      if (it.sentDate) return;
+      var row = {};
+      Object.keys(rec).forEach(function (k) { row[k] = rec[k]; });
+      row._pendingKey = rec.recordId + '|' + it.id;
+      row._labId = it.id;
+      row._labMethod = it.method || '';
+      out.push(row);
+    });
+  });
+  return out;
+}
+
 function pendingRowsForKind(kind) {
+  if (kind === 'lab') return pendingLabRows_();
   return PENDING_RECORDS.filter(function (rec) {
     var p = rec && rec.pending;
     if (!p) return false;
@@ -14875,6 +15057,7 @@ function pendingRowsForChips_(kind) {
 
 // รอบ 75: ช่องทางของแถวตามชนิดแท็บ — checkup/pickup = deliveryMethod · pelvic = pelvicMethod (ว่าง ⇒ '__none')
 function pendingMethodKey_(rec, kind) {
+  if (kind === 'lab') return (rec && rec._labMethod) ? rec._labMethod : PENDING_METHOD_NONE_; // รอบ 119ง
   if (kind === 'pelvic') return (rec && rec.pelvicMethod) ? rec.pelvicMethod : PENDING_METHOD_NONE_;
   return (rec && rec.deliveryMethod) || '';
 }
@@ -14900,9 +15083,9 @@ function pendingMethodChipKeys_(kind) {
   if (kind === 'checkup') return SEND_OUT_METHODS.slice();
   if (kind === 'pickup') return PICKUP_METHODS.slice();
   var seen = {};
-  pendingRowsForKind('pelvic').forEach(function (rec) { seen[pendingMethodKey_(rec, 'pelvic')] = true; });
+  pendingRowsForKind(kind).forEach(function (rec) { seen[pendingMethodKey_(rec, kind)] = true; });
   if (PENDING_METHOD) seen[PENDING_METHOD] = true;
-  var known = SEND_OUT_METHODS.concat(PICKUP_METHODS);
+  var known = (kind === 'lab') ? LAB_TRACK_METHODS.slice() : SEND_OUT_METHODS.concat(PICKUP_METHODS); // รอบ 119ง: แท็บ lab = D4 ที่มีในข้อมูล + ยังไม่ระบุ
   var keys = known.filter(function (k) { return seen[k]; });
   Object.keys(seen).sort().forEach(function (k) {
     if (k !== PENDING_METHOD_NONE_ && known.indexOf(k) === -1) keys.push(k);
@@ -14934,7 +15117,7 @@ function setPendingMethod_(key) {
 
 // รอบ 75: ตัวเลขบนแท็บ = pendingRowsForKind(kind).length (ตัวกรองวันที่ — ไม่ผ่านค้นหา/chip) · hideNumbers = ยังไม่เคยโหลดสำเร็จ ⇒ ป้ายล้วนไม่มีเลข (ห้ามโชว์ 0 ปลอม ๆ)
 function updatePendingTabCounts_(hideNumbers) {
-  [['btnPendingKindCheckup', 'checkup', 'ผลตรวจสุขภาพ'], ['btnPendingKindPelvic', 'pelvic', 'มะเร็งปากมดลูก'], ['btnPendingKindPickup', 'pickup', 'รอรับ / นัดรับ']]
+  [['btnPendingKindCheckup', 'checkup', 'ผลตรวจสุขภาพ'], ['btnPendingKindPelvic', 'pelvic', 'มะเร็งปากมดลูก'], ['btnPendingKindPickup', 'pickup', 'รอรับ / นัดรับ'], ['btnPendingKindLab', 'lab', 'ผล Lab']]
     .forEach(function (d) {
       var b = qs(d[0]);
       if (!b) return;
@@ -14980,7 +15163,7 @@ function syncPendingSelectAll() {
   var rows = pendingShownRows();
   var selectAllChk = qs('pendingSelectAll');
   if (!selectAllChk) return;
-  var selectedCount = rows.filter(function (rec) { return PENDING_SELECTED[rec.recordId]; }).length;
+  var selectedCount = rows.filter(function (rec) { return PENDING_SELECTED[pendingRowKey_(rec)]; }).length;
   selectAllChk.checked = rows.length > 0 && selectedCount === rows.length;
   selectAllChk.indeterminate = selectedCount > 0 && selectedCount < rows.length;
 }
@@ -14988,7 +15171,7 @@ function syncPendingSelectAll() {
 function updatePendingSelectedCount() {
   var el = qs('pendingSelectedCount');
   if (!el) return;
-  el.textContent = 'เลือก ' + Object.keys(PENDING_SELECTED).length + ' ราย'; // รอบ 75: อยู่ในแถบล่าง "เลือก N ราย · ป้ายวันที่ [วันที่] [ปุ่ม]"
+  el.textContent = 'เลือก ' + Object.keys(PENDING_SELECTED).length + (PENDING_KIND === 'lab' ? ' รายการ' : ' ราย'); // รอบ 75 · รอบ 119ง: แท็บ lab หน่วย "รายการ": อยู่ในแถบล่าง "เลือก N ราย · ป้ายวันที่ [วันที่] [ปุ่ม]"
 }
 
 function updatePendingBulkButton() {
@@ -15002,7 +15185,7 @@ function updatePendingBulkButton() {
   var isPickup = (PENDING_KIND === 'pickup');
   var lbl = qs('pendingSentDateLabel');
   if (lbl) lbl.textContent = isPickup ? 'วันที่รับผล' : 'วันที่ส่งออก';
-  btn.textContent = isPickup ? ('บันทึกรับผลแล้ว (' + n + ' ราย)') : ('บันทึกวันที่ส่งออก (' + n + ' ราย)');
+  btn.textContent = isPickup ? ('บันทึกรับผลแล้ว (' + n + ' ราย)') : ('บันทึกวันที่ส่งออก (' + n + (PENDING_KIND === 'lab' ? ' รายการ)' : ' ราย)'));
 }
 
 function renderPendingTable() {
@@ -15014,12 +15197,12 @@ function renderPendingTable() {
 
   // เปลี่ยนคำค้น/สลับชนิด/เปลี่ยน chip -> ล้างการเลือกของแถวที่ไม่แสดงแล้ว
   var shownIds = {};
-  rows.forEach(function (rec) { shownIds[rec.recordId] = true; });
+  rows.forEach(function (rec) { shownIds[pendingRowKey_(rec)] = true; });
   Object.keys(PENDING_SELECTED).forEach(function (id) { if (!shownIds[id]) delete PENDING_SELECTED[id]; });
 
   if (rows.length === 0) {
     // รอบ 73: ชนิด pickup ใช้ข้อความของตัวเอง (รอบ 75: "ไม่มีรายการรอรับ / นัดรับ") · ชนิดอื่นข้อความเดิม
-    wrap.innerHTML = '<p class="muted">' + (PENDING_KIND === 'pickup' ? 'ไม่มีรายการรอรับ / นัดรับ' : 'ไม่มีรายการค้างส่งออกผล') + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
+    wrap.innerHTML = '<p class="muted">' + (PENDING_KIND === 'pickup' ? 'ไม่มีรายการรอรับ / นัดรับ' : (PENDING_KIND === 'lab' ? 'ไม่มีรายการ Lab ค้างส่งออก' : 'ไม่มีรายการค้างส่งออกผล')) + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
     updatePendingSelectedCount();
     updatePendingBulkButton();
     return;
@@ -15027,25 +15210,30 @@ function renderPendingTable() {
 
   var html = '<div class="scroll-x"><table class="report-table"><thead><tr>' +
     '<th><input type="checkbox" id="pendingSelectAll" class="no-print"></th>' +
-    '<th>วันที่มาตรวจ</th><th>คิว</th><th>HN</th><th class="pending-name">ชื่อ-สกุล</th><th>โปรแกรม</th><th>ช่องทาง</th>' +
+    '<th>วันที่มาตรวจ</th><th>คิว</th><th>HN</th><th class="pending-name">ชื่อ-สกุล</th>' +
+    (PENDING_KIND === 'lab' ? '<th>Lab</th>' : '<th>โปรแกรม</th>') + '<th>ช่องทาง</th>' +
     '</tr></thead><tbody>';
   rows.forEach(function (rec) {
-    var channel = (PENDING_KIND === 'pelvic')
+    var isLabTab = (PENDING_KIND === 'lab');
+    var channel = isLabTab
+      ? (rec._labMethod ? escHtml(shortDeliveryLabel(rec._labMethod)) : 'ยังไม่ระบุช่องทาง')
+      : (PENDING_KIND === 'pelvic')
       ? (escHtml(pelvicTypeLabel(rec)) + ' · ' + (rec.pelvicMethod ? escHtml(shortDeliveryLabel(rec.pelvicMethod)) : 'ยังไม่ระบุช่องทาง'))
       : escHtml(shortDeliveryLabel(rec.deliveryMethod, rec.pickupDate));
-    var checked = PENDING_SELECTED[rec.recordId] ? ' checked' : '';
+    var rowKey = pendingRowKey_(rec);
+    var checked = PENDING_SELECTED[rowKey] ? ' checked' : '';
     var fullName = (rec.patientPrefix ? (String(rec.patientPrefix).trim() + ' ') : '') + (rec.patientName || '');
     // รอบ 75: แท็บ pickup ชื่อ-สกุลเป็นปุ่มลิงก์ ⇒ เปิดหน้าต่างแก้ไขเดิม (onEditRecordClick) · ไม่ใช่ checkbox ไม่ไปติ๊กแถว · แท็บอื่นเป็นข้อความธรรมดา
     var nameCell = (PENDING_KIND === 'pickup')
       ? ('<button type="button" class="pending-name-link" data-pending-edit-id="' + escHtml(rec.recordId) + '">' + escHtml(fullName.trim() || rec.patientHn || '—') + '</button>')
       : escHtml(fullName);
     html += '<tr>' +
-      '<td><input type="checkbox" class="pending-row-chk no-print" data-pending-id="' + escHtml(rec.recordId) + '"' + checked + '></td>' +
+      '<td><input type="checkbox" class="pending-row-chk no-print" data-pending-id="' + escHtml(rowKey) + '"' + checked + '></td>' +
       '<td>' + escHtml(formatThaiDateShort(rec.date)) + '</td>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td class="pending-name">' + nameCell + '</td>' +
-      '<td>' + escHtml(rec.program ? programLabelForPrint(rec.program) : 'ใบรับรองแพทย์มี Lab') + '</td>' + // รอบ 123 (W9): แถวไม่มีโปรแกรม = ใบรับรองแพทย์มี Lab
+      '<td>' + (isLabTab ? escHtml(labTrackName_(rec._labId)) : escHtml(rec.program ? programLabelForPrint(rec.program) : 'ใบรับรองแพทย์มี Lab')) + '</td>' + // รอบ 123 (W9): แถวไม่มีโปรแกรม = ใบรับรองแพทย์มี Lab
       '<td>' + channel + '</td>' +
       '</tr>';
   });
@@ -15068,7 +15256,7 @@ function renderPendingTable() {
   if (selectAllChk) {
     selectAllChk.addEventListener('change', function () {
       rows.forEach(function (rec) {
-        if (selectAllChk.checked) PENDING_SELECTED[rec.recordId] = true; else delete PENDING_SELECTED[rec.recordId];
+        if (selectAllChk.checked) PENDING_SELECTED[pendingRowKey_(rec)] = true; else delete PENDING_SELECTED[pendingRowKey_(rec)];
       });
       renderPendingTable(); // วาดใหม่ให้ checkbox รายแถวตรงกับ selectAll (เลือก/ไม่เลือก "ทุกแถวที่แสดงอยู่หลังค้นหา")
       updatePendingSelectedCount();
@@ -15122,13 +15310,13 @@ function loadPendingRun_(isRetry) {
 }
 
 function setPendingKind(kind) {
-  PENDING_KIND = (kind === 'pelvic' || kind === 'pickup') ? kind : 'checkup'; // รอบ 73: รับ 'pickup' เพิ่ม
+  PENDING_KIND = (kind === 'pelvic' || kind === 'pickup' || kind === 'lab') ? kind : 'checkup'; // รอบ 73: รับ 'pickup' เพิ่ม · รอบ 119ง: 'lab'
   PENDING_SELECTED = {}; // สลับชนิด -> แถวที่แสดงเปลี่ยนชุดทั้งหมด ล้างการเลือกทิ้ง
   PENDING_METHOD = '';   // รอบ 75: สลับแท็บ ⇒ chip ช่องทางกลับเป็น "ทั้งหมด"
-  ['btnPendingKindCheckup', 'btnPendingKindPelvic', 'btnPendingKindPickup'].forEach(function (id) {
+  ['btnPendingKindCheckup', 'btnPendingKindPelvic', 'btnPendingKindPickup', 'btnPendingKindLab'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var kind2 = (id === 'btnPendingKindCheckup') ? 'checkup' : (id === 'btnPendingKindPelvic' ? 'pelvic' : 'pickup');
+    var kind2 = (id === 'btnPendingKindCheckup') ? 'checkup' : (id === 'btnPendingKindPelvic' ? 'pelvic' : (id === 'btnPendingKindLab' ? 'lab' : 'pickup'));
     b.className = 'btn small' + (PENDING_KIND === kind2 ? '' : ' secondary');
   });
   renderPendingTable();
@@ -15144,6 +15332,18 @@ function applyPendingUpdateToCaches_(recordId, kind, date) {
       if (kind === 'pelvic') rec.pelvicSentDate = date;
       else if (kind === 'pickup') rec.receivedDate = date;
       else rec.sentDate = date;
+    });
+  });
+}
+// รอบ 119ง: bulk lab สำเร็จ ⇒ ใส่ sentDate ให้รายการนั้นในทุกแคช (รวม PENDING_RECORDS) — แคชรายชื่อตรวจสุขภาพจะเห็นวันที่ + ล็อก checkbox ตาม A3
+function applyLabSentToCaches_(recordId, labId, date) {
+  var lists = [PENDING_RECORDS, LAST_CU_RECORDS, LAST_TODAY_RECORDS, CU_CACHE.records || []];
+  lists.forEach(function (list) {
+    (list || []).forEach(function (rec) {
+      if (!rec || rec.recordId !== recordId || !Array.isArray(rec.labTrack)) return;
+      rec.labTrack = rec.labTrack.map(function (it) {
+        return (it && it.id === labId) ? { id: it.id, method: it.method || '', sentDate: date } : it;
+      });
     });
   });
 }
@@ -15165,11 +15365,11 @@ function onPendingBulkSave() {
   var dateEl = qs('pendingSentDate');
   var date = dateEl ? dateEl.value : '';
   if (ids.length === 0 || !date) return;
-  var label = (PENDING_KIND === 'pelvic') ? 'ผลตรวจมะเร็งปากมดลูก' : 'ผลตรวจสุขภาพ';
+  var label = (PENDING_KIND === 'pelvic') ? 'ผลตรวจมะเร็งปากมดลูก' : (PENDING_KIND === 'lab' ? 'ผล Lab' : 'ผลตรวจสุขภาพ');
   // รอบ 73: ชนิด pickup ใช้ข้อความยืนยันของ "รับผลแล้ว" · ชนิดอื่นข้อความเดิมเป๊ะ
   var confirmMsg = (PENDING_KIND === 'pickup')
     ? ('บันทึกรับผลตรวจสุขภาพแล้ว ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' ราย ใช่ไหม?')
-    : ('บันทึกวันที่ส่งออก' + label + ' ' + formatThaiDate(date) + ' ให้ ' + ids.length + ' ราย ใช่ไหม?');
+    : ('บันทึกวันที่ส่งออก' + label + ' ' + formatThaiDate(date) + ' ให้ ' + ids.length + (PENDING_KIND === 'lab' ? ' รายการ' : ' ราย') + ' ใช่ไหม?');
   if (!window.confirm(confirmMsg)) return;
 
   var btn = qs('btnPendingBulkSave');
@@ -15183,6 +15383,7 @@ function onPendingBulkSave() {
   // เก็บชื่อ/HN ไว้ล่วงหน้าก่อนเริ่มตัดแถวออกจาก PENDING_RECORDS ทีละชุด — ใช้ประกอบข้อความรายการที่ข้าม (skipped) ตอนจบ
   var nameById = {};
   PENDING_RECORDS.forEach(function (rec) { nameById[rec.recordId] = rec.patientName || rec.patientHn || rec.recordId; });
+  var unit = (kind === 'lab') ? 'รายการ' : 'ราย'; // รอบ 119ง
 
   function setProgress(text) {
     var el = qs('pendingBulkProgress');
@@ -15193,18 +15394,34 @@ function onPendingBulkSave() {
     if (el) { el.hidden = true; el.textContent = ''; }
   }
   function applyChunkResult(updated) {
+    if (kind === 'lab') {
+      // รอบ 119ง: updated = [{recordId, labId}] — แถวคนยังอยู่ใน PENDING_RECORDS (อาจมี Lab อื่นค้าง) แค่ตั้ง sentDate ของรายการนั้น
+      updated.forEach(function (u) {
+        if (!u) return;
+        delete PENDING_SELECTED[u.recordId + '|' + u.labId];
+        applyLabSentToCaches_(u.recordId, u.labId, date);
+      });
+      renderPendingTable();
+      return;
+    }
     var updatedSet = {};
     updated.forEach(function (id) {
       updatedSet[id] = true;
       delete PENDING_SELECTED[id];
       applyPendingUpdateToCaches_(id, kind, date);
     });
-    PENDING_RECORDS = PENDING_RECORDS.filter(function (rec) { return !updatedSet[rec.recordId]; });
+    // F2: แถวที่ยังค้าง Lab (pending.labExport) ไม่ตัดออก — แค่ปิดธงของแท็บนี้ · ไม่มี labExport ⇒ ตัดออกเหมือนเดิม
+    var flagOfKind = (kind === 'pelvic') ? 'pelvicExport' : (kind === 'pickup' ? 'checkupPickup' : 'checkupExport');
+    PENDING_RECORDS = PENDING_RECORDS.filter(function (rec) {
+      if (!updatedSet[rec.recordId]) return true;
+      if (rec.pending && rec.pending.labExport) { rec.pending[flagOfKind] = false; return true; }
+      return false;
+    });
     renderPendingTable(); // รอบ 75: ตัวเลขบนแท็บ + chip ลดตามที่บันทึกสำเร็จ
   }
   function showSkippedBox() {
     var skippedLabels = allSkipped.map(function (s) {
-      return (nameById[s.recordId] || s.recordId) + ': ' + s.reason;
+      return (nameById[s.recordId] || s.recordId) + (s.labId ? (' ' + labTrackName_(s.labId)) : '') + ': ' + s.reason;
     });
     var skipEl = qs('pendingSkippedBox');
     if (!skipEl) return;
@@ -15222,18 +15439,29 @@ function onPendingBulkSave() {
     updatePendingBulkButton();
     showSkippedBox();
     if (errorMessage) {
-      showToast('❌ บันทึกไม่สำเร็จ: ' + errorMessage + ' (บันทึกไปแล้ว ' + allUpdated.length + ' รายก่อนหยุด)');
+      showToast('❌ บันทึกไม่สำเร็จ: ' + errorMessage + ' (บันทึกไปแล้ว ' + allUpdated.length + ' ' + unit + 'ก่อนหยุด)');
     } else {
-      showToast('บันทึกแล้ว ' + allUpdated.length + ' ราย');
+      showToast('บันทึกแล้ว ' + allUpdated.length + ' ' + unit);
     }
+    if (kind === 'lab') loadPending(); // รอบ 119ง (W4): สำเร็จ/หยุดกลางทาง ⇒ โหลด pending ใหม่ให้ตรงชีต
   }
 
-  if (chunks.length > 1) setProgress('กำลังบันทึก 0/' + ids.length + ' ราย');
+  if (chunks.length > 1) setProgress('กำลังบันทึก 0/' + ids.length + ' ' + unit);
 
   function runChunk(i) {
     if (i >= chunks.length) { finish(null); return; }
     var chunk = chunks[i];
-    apiCall('bulkSentDate', { staffKey: STATE.staffKey, kind: kind, date: date, recordIds: chunk }).then(function (resp) {
+    var bulkPayload = { staffKey: STATE.staffKey, kind: kind, date: date };
+    if (kind === 'lab') {
+      // รอบ 119ง: items [{recordId, labId}] (ไม่ใช้ recordIds) · ตัดคีย์ที่ lastIndexOf('|') — labId ไม่มี '|'
+      bulkPayload.items = chunk.map(function (key) {
+        var cut = key.lastIndexOf('|');
+        return { recordId: key.slice(0, cut), labId: key.slice(cut + 1) };
+      });
+    } else {
+      bulkPayload.recordIds = chunk;
+    }
+    apiCall('bulkSentDate', bulkPayload).then(function (resp) {
       if (!resp || resp.status !== 'ok') {
         finish((resp && resp.message) || 'บันทึกไม่สำเร็จ');
         return;
@@ -15242,7 +15470,7 @@ function onPendingBulkSave() {
       allUpdated = allUpdated.concat(updated);
       allSkipped = allSkipped.concat(resp.skipped || []);
       doneCount += chunk.length;
-      if (chunks.length > 1) setProgress('กำลังบันทึก ' + doneCount + '/' + ids.length + ' ราย');
+      if (chunks.length > 1) setProgress('กำลังบันทึก ' + doneCount + '/' + ids.length + ' ' + unit);
       applyChunkResult(updated);
       runChunk(i + 1); // ทีละชุดตามลำดับ — ยิงชุดถัดไปหลังชุดนี้ตอบสำเร็จแล้วเท่านั้น ห้ามยิงพร้อมกัน
     });
@@ -19083,6 +19311,7 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnPendingKindCheckup').addEventListener('click', function () { setPendingKind('checkup'); });
   qs('btnPendingKindPelvic').addEventListener('click', function () { setPendingKind('pelvic'); });
   qs('btnPendingKindPickup').addEventListener('click', function () { setPendingKind('pickup'); }); // รอบ 73
+  qs('btnPendingKindLab').addEventListener('click', function () { setPendingKind('lab'); }); // รอบ 119ง
   var pendingChipsEl = qs('pendingMethodChips');
   if (pendingChipsEl) pendingChipsEl.addEventListener('click', function (e) { // รอบ 75: chip ช่องทาง (วาดใหม่ทุกครั้ง ⇒ ผูก delegate ที่กล่อง)
     var cb = e.target && e.target.closest ? e.target.closest('[data-pending-method]') : null;
