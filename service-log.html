@@ -8046,10 +8046,20 @@ function renderTodayList(records) {
 var TODAY_QGROUP = 'all';
 function recQueueGroup_(rec) {
   var q = String((rec && rec.queue) || '').trim();
-  if (!q) return '';
+  if (!q) return isVaccineOnlyRec_(rec) ? 'V' : ''; // เจ้าของสั่ง 2026-11-16: วัคซีนอย่างเดียว (ไม่มีคิว) นับเป็นกลุ่มคิว V
   if (isWalkInQueue(q)) return 'C';
   var p = queuePrefixOf(q.replace(/\s+/g, ''));
   return (p === 'C' || p === 'M' || p === 'V') ? p : '';
+}
+// แถวที่มีแต่วัคซีน: มีวัคซีน · ไม่มีโปรแกรม/ตรวจเพิ่ม/ใบรับรอง/Lab/DF/ไม่มีค่าใช้จ่าย/ส่งตรวจพิเศษ/ตรวจภายใน
+// และไม่ใช่แถววัคซีนของคนตรวจสุขภาพ (vaccineWithCheckup = แถวนั้นเป็นของกลุ่มคิว C)
+function isVaccineOnlyRec_(rec) {
+  if (!rec || !(rec.vaccineCount > 0 || (rec.vaccineCodes || []).length)) return false;
+  if (rec.program || rec.vaccineWithCheckup) return false;
+  if (rec.extraCount || rec.medCertCount || rec.medCertLabAmount || rec.labFollowup || rec.labFollowupFree) return false;
+  if ((rec.specialReg || []).length || (rec.specialSent || []).length || (rec.specialPrep || []).length) return false;
+  if (isPelvicChosen_(rec.pelvic)) return false;
+  return true;
 }
 function renderTodayQGroupBar_() {
   var bar = qs('todayQGroup');
