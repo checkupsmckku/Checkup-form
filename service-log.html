@@ -7642,8 +7642,10 @@ function summarizeRecordParts(rec) {
     // รอบ 120 (F8): แถวต่างประเทศขึ้นต้นด้วยชื่อหมวดนี้แทน "ใบรับรองมี lab" (ไม่ขึ้นในการ์ดส่งตรวจพิเศษ)
     parts.push('ตรวจร่างกายไปต่างประเทศ' + (rec.medCertLabAmount ? (' ' + money(rec.medCertLabAmount) + ' บาท') : ''));
   } else if (rec.medCertLabAmount) parts.push('ใบรับรองมี lab ' + money(rec.medCertLabAmount) + ' บาท');
-  if (rec.labFollowup) parts.push('ฟังผล Lab DF ' + money(rec.labFollowup) + ' บาท'); // รอบ 91
-  if (rec.labFollowupFree) parts.push('ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
+  // m5 (รอบ 120 ค้าง): แถวต่างประเทศใช้ป้ายของแผงต่างประเทศ ("ค่า DF พบแพทย์") ไม่ใช่ "ฟังผล Lab"
+  var abroadRow = (rec.specialReg || []).indexOf('abroad') !== -1;
+  if (rec.labFollowup) parts.push((abroadRow ? 'DF พบแพทย์ ' : 'ฟังผล Lab DF ') + money(rec.labFollowup) + ' บาท'); // รอบ 91
+  if (rec.labFollowupFree) parts.push(abroadRow ? 'ไม่มีค่าใช้จ่าย' : 'ฟังผล Lab ไม่มีค่าใช้จ่าย'); // รอบ 108
   if (rec.specialPrepItems) parts.push('คีย์ consult/ส่ง line: ' + rec.specialPrepItems);
   if (rec.specialSentItems) {
     var sentText = 'ส่งตรวจ: ' + rec.specialSentItems;
