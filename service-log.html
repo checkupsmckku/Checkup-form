@@ -290,6 +290,11 @@
   .lab-add-item { max-width: 100%; flex-wrap: wrap; }
   .lab-add-item .lab-add-have { flex-basis: 100%; font-size: 12px; font-weight: 400; color: var(--text-muted); }
   .lab-add-item input:disabled + span { opacity: .85; }
+  /* รอบ 128: ช่องพิมพ์ชื่อ Lab "อื่นๆ" (ฟอร์มบันทึก + กล่องตามผล Lab) — ≥16px กัน iOS ซูม · ไม่ล้นจอแคบ */
+  #labAddOtherText, .cu-lab-text { font-size: 16px; min-height: 44px; max-width: 100%; box-sizing: border-box; }
+  #labAddOtherText { width: 100%; margin-top: 8px; }
+  .cu-lab-text { width: 240px; }
+  .cu-lab-need { color: var(--danger, #c0392b); font-size: 13px; }
   .opt-btn:has(input:checked) { border-color: var(--primary); background: var(--teal-pale, #EEEFFE); font-weight: 700; }
   .opt-price { font-size: 13px; color: var(--text-muted); }
 
@@ -1971,6 +1976,7 @@
                     <label class="field-label">เพิ่ม Lab</label>
                     <p class="muted">ติ๊ก Lab ที่ผลไม่ออกวันนี้ — ตามผลต่อที่ "ตามผล Lab" ในรายชื่อตรวจสุขภาพ</p>
                     <div class="row" id="labAddButtons"></div>
+                    <input type="text" id="labAddOtherText" maxlength="60" placeholder="ชื่อ Lab เช่น Anti-HBs" aria-label="ชื่อ Lab อื่นๆ" autocomplete="off" hidden>
                   </div>
 
                   <p class="muted" id="legacyExtraInfo" hidden></p>
@@ -4706,12 +4712,32 @@ var LAB_TRACK_ITEMS = [
   { id: 'stool', name: 'Stool' },
   { id: 'ua', name: 'UA' },
   { id: 'bloodgroup', name: 'Blood group' },
-  { id: 'rubella', name: 'Rubella IgG' }
+  { id: 'rubella', name: 'Rubella IgG' },
+  { id: 'other', name: 'อื่นๆ' }
 ];
 var LAB_TRACK_METHODS = ['รอรับด้วยตนเอง', 'ส่งทางไปรษณีย์', 'ส่งทาง E-mail', 'ส่งทาง Whatsapp'];
+// รอบ 129 O2: ช่องทาง Lab ที่ตามช่องทางรับผลตรวจสุขภาพ (คู่ขนานกับ labMethodFromDelivery_ ฝั่ง Apps Script) · อยู่ใน LAB_TRACK_METHODS ⇒ ตัวเดิม · นัดรับวันที่ ⇒ รอรับด้วยตนเอง · อื่น ⇒ ''
+function labMethodFromDelivery_(dm) {
+  var d = String(dm == null ? '' : dm).trim();
+  if (LAB_TRACK_METHODS.indexOf(d) !== -1) return d;
+  if (d === DELIVERY_PICKUP_APPOINTMENT) return 'รอรับด้วยตนเอง';
+  return '';
+}
 function labTrackName_(id) {
   for (var i = 0; i < LAB_TRACK_ITEMS.length; i++) if (LAB_TRACK_ITEMS[i].id === id) return LAB_TRACK_ITEMS[i].name;
   return String(id || '');
+}
+// รอบ 128 D3: ทำความสะอาดชื่อ Lab "อื่นๆ" — สูตรเดียวกับ cleanLabOtherText_ ฝั่ง Apps Script (ตัด | ; ขึ้นบรรทัดใหม่/tab ⇒ เว้นวรรค · ยุบ · trim · ยาวสุด 60)
+function cleanLabOtherText_(s) {
+  if (typeof s !== 'string') return '';
+  var t = s.replace(/[|;\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (t.length > 60) t = t.slice(0, 60).trim();
+  return t;
+}
+// รอบ 128 D7: ชื่อแสดงของรายการ Lab (รับ item {id, text}) — other ⇒ `อื่นๆ: <text>` · ผู้เรียกต้องผ่าน escHtml เองเมื่อเข้า innerHTML
+function labTrackLabel_(item) {
+  if (item && item.id === 'other') return 'อื่นๆ: ' + String(item.text || '');
+  return labTrackName_(item && item.id);
 }
 // D5: แถวที่ติดตามผล Lab ได้ = มีโปรแกรม + ไม่ใช่ pelvicsun (แถวยกเลิกแสดงกล่องแต่ disabled)
 function labTrackAllowedRec_(rec) {
@@ -4725,7 +4751,9 @@ function labTrackOfRec_(rec) {
   LAB_TRACK_ITEMS.forEach(function (it) {
     for (var i = 0; i < src.length; i++) {
       if (src[i] && src[i].id === it.id) {
-        out.push({ id: it.id, method: src[i].method || '', sentDate: src[i].sentDate || '' });
+        var o = { id: it.id, method: src[i].method || '', sentDate: src[i].sentDate || '' };
+        if (it.id === 'other') o.text = String(src[i].text || ''); // รอบ 128
+        out.push(o);
         return;
       }
     }
@@ -4783,6 +4811,8 @@ function buildLabAddUI_() {
     cb.value = it.id;
     var nm = document.createElement('span');
     nm.textContent = it.name;
+    nm.className = 'lab-add-name';
+    cb.addEventListener('change', function () { syncLabAddOther_(); recalcTotals(); }); // รอบ 128: ติ๊ก/เอาออก "อื่นๆ" ⇒ ช่องชื่อโผล่/ซ่อน + ตรวจด่านบันทึกใหม่
     var have = document.createElement('small');
     have.className = 'lab-add-have';
     have.hidden = true;
@@ -4790,6 +4820,26 @@ function buildLabAddUI_() {
     lab.appendChild(cb); lab.appendChild(nm); lab.appendChild(have);
     wrap.appendChild(lab);
   });
+  var otherInp = qs('labAddOtherText');
+  if (otherInp) otherInp.addEventListener('input', function () { recalcTotals(); });
+}
+// รอบ 128: ช่องชื่อ Lab "อื่นๆ" โผล่เมื่อติ๊ก (และไม่ disabled) · ไม่ติ๊ก ⇒ ซ่อนและล้างค่า (กันค่าที่มองไม่เห็นหลุดไปกับร่าง)
+function syncLabAddOther_() {
+  var cb = qs('labAdd_other');
+  var inp = qs('labAddOtherText');
+  if (!inp) return;
+  var show = !!(cb && cb.checked && !cb.disabled);
+  inp.hidden = !show;
+  if (!cb || !cb.checked) inp.value = '';
+}
+// ชื่อ other ที่ทำความสะอาดแล้ว (ว่างถ้าไม่ได้ติ๊กเพิ่ม) · other ติ๊กแต่ชื่อว่าง ⇒ ด่านบันทึก
+function getLabAddOtherText_() {
+  if (getLabAddIds_().indexOf('other') === -1) return '';
+  var inp = qs('labAddOtherText');
+  return cleanLabOtherText_(inp ? inp.value : '');
+}
+function labAddOtherMissing_() {
+  return getLabAddIds_().indexOf('other') !== -1 && !getLabAddOtherText_();
 }
 function labAddBoxes_() {
   return Array.prototype.slice.call(document.querySelectorAll('#labAddButtons input[type="checkbox"]'));
@@ -4799,7 +4849,11 @@ function labAddResetState_() {
     cb.checked = false; cb.disabled = false;
     var have = cb.parentNode && cb.parentNode.querySelector ? cb.parentNode.querySelector('.lab-add-have') : null;
     if (have) have.hidden = true;
+    var nmEl = cb.parentNode && cb.parentNode.querySelector ? cb.parentNode.querySelector('.lab-add-name') : null;
+    if (nmEl) nmEl.textContent = labTrackName_(cb.value); // รอบ 128: คืนชื่อ "อื่นๆ" (โหมดแก้ไขเคยเปลี่ยนเป็น อื่นๆ: <text>)
   });
+  var oInp = qs('labAddOtherText');
+  if (oInp) { oInp.value = ''; oInp.hidden = true; }
 }
 function labAddApplyExisting_(rec) {
   labTrackOfRec_(rec).forEach(function (it) {
@@ -4808,7 +4862,10 @@ function labAddApplyExisting_(rec) {
     cb.checked = true; cb.disabled = true;
     var have = cb.parentNode.querySelector('.lab-add-have');
     if (have) have.hidden = false;
+    var nmEl = cb.parentNode.querySelector('.lab-add-name');
+    if (nmEl) nmEl.textContent = labTrackLabel_(it); // รอบ 128 D7: textContent ล้วน (ไม่เข้า innerHTML)
   });
+  syncLabAddOther_();
 }
 function updateLabAddRow_() {
   var row = qs('labAddRow');
@@ -4817,6 +4874,7 @@ function updateLabAddRow_() {
   var show = !!p && !isPelvicOnlyProgram_(p) && !isPreMode_();
   row.hidden = !show;
   if (!show) labAddBoxes_().forEach(function (cb) { if (!cb.disabled) cb.checked = false; });
+  syncLabAddOther_(); // รอบ 128
 }
 function getLabAddIds_() {
   var out = [];
@@ -5859,6 +5917,9 @@ function validateForm(ctx) {
     msg = 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
   } else if (!hasAnything) {
     msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
+  } else if (labAddOtherMissing_()) {
+    // รอบ 128 (K1): ติ๊ก "อื่นๆ" ใน เพิ่ม Lab แล้วต้องพิมพ์ชื่อ Lab (ฝั่งเซิร์ฟเวอร์ตรวจซ้ำ)
+    msg = 'กรุณาระบุชื่อ Lab อื่นๆ';
   } else if (!STATE.editingId && !pelvicsunPreEdit_() && isPelvicOnlyProgram_(ctx.program)) {
     // รอบ 124 (G7/W5): เลิกโปรแกรม pelvicsun สำหรับบันทึกใหม่ — ไปที่แผงใบรับรองแพทย์มี Lab (แก้แถวเก่าได้ตามเดิม)
     msg = 'ตรวจภายในอย่างเดียวย้ายไปแผงใบรับรองแพทย์มี Lab แล้ว';
@@ -7116,6 +7177,9 @@ function mergeDraftIntoTodayRecord(rec, draft) {
     var lcb = qs('labAdd_' + id);
     if (lcb && !lcb.disabled) lcb.checked = true;
   });
+  // รอบ 128: ชื่อ other ของร่าง (ช่องว่างอยู่ ⇒ ใช้ของร่าง) แล้ว sync การโผล่ของช่อง
+  if ((draft.labTrackAdd || []).indexOf('other') !== -1 && qs('labAddOtherText') && !qs('labAddOtherText').value) qs('labAddOtherText').value = draft.labTrackOtherText || '';
+  syncLabAddOther_();
 
   // sp_reg_* (ลงชื่อไว้ รวม inbody): union
   (draft.specialRegIds || []).forEach(function (id) {
@@ -7580,7 +7644,8 @@ function onSubmitLog(e) {
     vaccineCodes: vaccineCodes, vaccinePeCharged: peCharged, medCert5: medCert5, medCertDriver: medCertDriver,
     medCertLabAmount: medCertLabAmount, labFollowup: labFollowup, labFollowupFree: labFollowupFree,
     specialRegIds: specialRegIds, queue: queue, patientName: patientName, patientPrefix: patientPrefix,
-    labTrackAdd: getLabAddIds_() // รอบ 125 (W3)
+    labTrackAdd: getLabAddIds_(), // รอบ 125 (W3)
+    labTrackOtherText: getLabAddOtherText_() // รอบ 128
   };
 
   // รอบ 28 (2026-09-23) W1 (ข้อ 1) — ห้ามชื่อ-สกุล/HN ซ้ำในวันเดียวกัน: เช็คกับ LAST_TODAY_RECORDS ก่อน (จุดบริการ
@@ -7645,7 +7710,8 @@ function onSubmitLog(e) {
     specialBack: specialBackIds,
     specialPrep: specialPrepIds,
     specialReg: specialRegIds, // รอบ 8 (B4)
-    labTrackAdd: getLabAddIds_() // รอบ 125 (W3): เพิ่มอย่างเดียว · ส่งทุกครั้ง (อาจว่าง) ทั้ง log และ edit
+    labTrackAdd: getLabAddIds_(), // รอบ 125 (W3): เพิ่มอย่างเดียว · ส่งทุกครั้ง (อาจว่าง) ทั้ง log และ edit
+    labTrackOtherText: getLabAddOtherText_() // รอบ 128 (D4): ชื่อ Lab อื่นๆ (ทำความสะอาดแล้ว · '' เมื่อไม่ได้ติ๊ก other)
   };
   // รอบ 117: ช่องทางจากฟอร์มของโปรแกรมนี้ = ช่องทางส่งผลตรวจภายใน · โปรแกรมอื่นต้องไม่มีคีย์ pelvicMethod เหมือนเดิม (รอบ 24)
   if (isPelvicOnlyProgram_(program)) payload.pelvicMethod = deliveryMethod;
@@ -12954,12 +13020,18 @@ function cuLabInnerHtml_(recId, list, disabled) {
       '<span class="item-name">' + escHtml(item.name) + '</span></label>';
     if (ticked) {
       var m = cur.method || '';
-      html += '<select class="cu-lab-method" data-lab-id="' + escHtml(item.id) + '" aria-label="ช่องทางส่ง ' + escHtml(item.name) + '"' + (disabled ? ' disabled' : '') + '>' +
+      var itemLabel = labTrackLabel_({ id: item.id, text: cur.text }); // รอบ 128 D7
+      if (item.id === 'other') {
+        // รอบ 128: ช่องพิมพ์ชื่อ Lab (ก่อน select ช่องทาง) · มีวันที่ส่งออกแล้ว ⇒ disabled เหมือน checkbox (A3) · maxlength 60 · escHtml ทุกค่า
+        html += '<input type="text" class="cu-lab-text" data-lab-id="other" maxlength="60" placeholder="ชื่อ Lab เช่น Anti-HBs" aria-label="ชื่อ Lab อื่นๆ" autocomplete="off" value="' + escHtml(cur.text || '') + '"' + ((disabled || lockedBySent) ? ' disabled' : '') + '>' +
+          '<span class="cu-lab-need" hidden>ระบุชื่อ Lab ก่อน</span>';
+      }
+      html += '<select class="cu-lab-method" data-lab-id="' + escHtml(item.id) + '" aria-label="ช่องทางส่ง ' + escHtml(itemLabel) + '"' + (disabled ? ' disabled' : '') + '>' +
         '<option value="">เลือกช่องทาง</option>' +
         LAB_TRACK_METHODS.map(function (mm) {
           return '<option value="' + escHtml(mm) + '"' + (mm === m ? ' selected' : '') + '>' + escHtml(mm) + '</option>';
         }).join('') + '</select>' +
-        '<span class="cu-date-cell"><input type="date" class="cu-lab-sent" data-lab-id="' + escHtml(item.id) + '" aria-label="ส่งออกวันที่ ' + escHtml(item.name) + '" value="' + escHtml(sent) + '"' + (disabled ? ' disabled' : '') + '>' +
+        '<span class="cu-date-cell"><input type="date" class="cu-lab-sent" data-lab-id="' + escHtml(item.id) + '" aria-label="ส่งออกวันที่ ' + escHtml(itemLabel) + '" value="' + escHtml(sent) + '"' + (disabled ? ' disabled' : '') + '>' +
         '<span class="cu-date-err-msg"></span></span>' +
         '<span class="cu-lab-lock muted"' + (lockedBySent ? '' : ' hidden') + '>ลบวันที่ส่งออกก่อนจึงเอาออกได้</span>';
     }
@@ -12982,7 +13054,10 @@ function readCuLabFromDom_(labBox) {
     if (!chk || !chk.checked) return;
     var sel = row.querySelector('.cu-lab-method');
     var dt = row.querySelector('.cu-lab-sent');
-    out.push({ id: row.getAttribute('data-lab-id'), method: sel ? sel.value : '', sentDate: dt ? dt.value : '' });
+    var rid = row.getAttribute('data-lab-id');
+    var entry = { id: rid, method: sel ? sel.value : '', sentDate: dt ? dt.value : '' };
+    if (rid === 'other') { var tx = row.querySelector('.cu-lab-text'); entry.text = cleanLabOtherText_(tx ? tx.value : ''); } // รอบ 128
+    out.push(entry);
   });
   return out;
 }
@@ -12997,9 +13072,9 @@ function bindCuLabBox_(labBox, trySave) {
       var id = t.getAttribute('data-lab-id');
       var list = readCuLabFromDom_(labBox);
       if (t.checked) {
-        // A2: ช่องทางตั้งต้น = ของตัวแรกตามลำดับ L1 ที่ติ๊กอยู่และมีช่องทาง (ไม่นับตัวที่เพิ่งติ๊ก) · ไม่มี ⇒ ''
-        var def = '';
-        for (var i = 0; i < list.length; i++) { if (list[i].id !== id && list[i].method) { def = list[i].method; break; } }
+        // รอบ 129 (C1/C2/O7): ช่องทางตั้งต้น = ช่องทางรับผลตรวจสุขภาพของแถว (นัดรับวันที่ ⇒ รอรับด้วยตนเอง) แม้ไม่มี Lab ตัวอื่น · แทนการลอกจาก Lab ตัวอื่น (รอบ 119ง A2)
+        var cuRecForLab = findCuRecord(labBox.getAttribute('data-note-lab'));
+        var def = labMethodFromDelivery_(cuRecForLab && cuRecForLab.deliveryMethod);
         for (var j = 0; j < list.length; j++) { if (list[j].id === id) list[j].method = def; }
       }
       renderCuLabBox_(labBox, list);
@@ -13009,6 +13084,8 @@ function bindCuLabBox_(labBox, trySave) {
       var chk = row ? row.querySelector('.cu-lab-chk') : null;
       var lk = row ? row.querySelector('.cu-lab-lock') : null;
       if (chk) chk.disabled = !!t.value;
+      var txIn = row ? row.querySelector('.cu-lab-text') : null; // รอบ 128: ช่องชื่อ other ล็อกตามวันที่ส่งออกเหมือน checkbox
+      if (txIn) txIn.disabled = !!t.value || labBox.getAttribute('data-lab-disabled') === '1';
       if (lk) lk.hidden = !t.value;
     }
     trySave();
@@ -13452,6 +13529,12 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
   var labList = hasLab ? readCuLabFromDom_(labBox) : [];
   var recLabList = labTrackOfRec_(rec);
   var labChanged = hasLab && JSON.stringify(labList) !== JSON.stringify(recLabList);
+  // รอบ 128 (K1/D5): ติ๊ก "อื่นๆ" แต่ชื่อว่าง ⇒ แสดง "ระบุชื่อ Lab ก่อน" ในแถว และไม่ยิง noteUpdate (ด้านล่าง) จนกว่าชื่อไม่ว่าง
+  var labNeedName = hasLab && labList.some(function (it) { return it.id === 'other' && !it.text; });
+  if (hasLab) {
+    var needEl = labBox.querySelector('.cu-lab-need');
+    if (needEl) needEl.hidden = !labNeedName;
+  }
 
   var recConsultCount = (rec && typeof rec.consultCount === 'number') ? rec.consultCount : 0;
   var recSentDate = (rec && rec.sentDate) || '';
@@ -13489,6 +13572,11 @@ function maybeSaveCuNote(recordId, doctorInput, consultChk, consultCountInput, n
       if (stateEl) { stateEl.textContent = 'ยังไม่บันทึก — ' + pickupBlockReason; stateEl.className = 'cu-note-state err'; }
       return;
     }
+  }
+
+  if (labNeedName) {
+    if (stateEl) { stateEl.textContent = 'ยังไม่บันทึก — ระบุชื่อ Lab ก่อน'; stateEl.className = 'cu-note-state err'; }
+    return;
   }
 
   if (rec && (rec.doctorName || '') === doctorName && !!rec.consult === consult && (rec.consultNote || '') === consultNote &&
@@ -15328,6 +15416,7 @@ function pendingLabRows_(skipFilter) {
       row._pendingKey = rec.recordId + '|' + it.id;
       row._labId = it.id;
       row._labMethod = it.method || '';
+      row._labText = it.text || ''; // รอบ 128: ชื่อ Lab อื่นๆ
       out.push(row);
     });
   });
@@ -15596,7 +15685,7 @@ function renderPendingTable() {
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td class="pending-name">' + nameCell + '</td>' +
-      '<td>' + (isLabTab ? escHtml(labTrackName_(rec._labId)) : escHtml(rec.program ? programLabelForPrint(rec.program) : 'ใบรับรองแพทย์มี Lab')) + '</td>' + // รอบ 123 (W9): แถวไม่มีโปรแกรม = ใบรับรองแพทย์มี Lab
+      '<td>' + (isLabTab ? escHtml(labTrackLabel_({ id: rec._labId, text: rec._labText })) : escHtml(rec.program ? programLabelForPrint(rec.program) : 'ใบรับรองแพทย์มี Lab')) + '</td>' + // รอบ 123 (W9): แถวไม่มีโปรแกรม = ใบรับรองแพทย์มี Lab
       '<td>' + channel + '</td>' +
       '</tr>';
   });
@@ -15700,6 +15789,17 @@ function applyPendingUpdateToCaches_(recordId, kind, date) {
     });
   });
 }
+// รอบ 128 D6/D7: ชื่อ Lab ของรายการในแถวคนนั้น (other ⇒ `อื่นๆ: <text>`) — ใช้ข้อความ skipped
+function labTrackLabelByRec_(recordId, labId) {
+  for (var i = 0; i < PENDING_RECORDS.length; i++) {
+    var rec = PENDING_RECORDS[i];
+    if (rec && rec.recordId === recordId) {
+      var l = labTrackOfRec_(rec);
+      for (var j = 0; j < l.length; j++) if (l[j].id === labId) return labTrackLabel_(l[j]);
+    }
+  }
+  return labTrackName_(labId);
+}
 // รอบ 119ง: bulk lab สำเร็จ ⇒ ใส่ sentDate ให้รายการนั้นในทุกแคช (รวม PENDING_RECORDS) — แคชรายชื่อตรวจสุขภาพจะเห็นวันที่ + ล็อก checkbox ตาม A3
 function applyLabSentToCaches_(recordId, labId, date) {
   var lists = [PENDING_RECORDS, LAST_CU_RECORDS, LAST_TODAY_RECORDS, CU_CACHE.records || []];
@@ -15707,7 +15807,10 @@ function applyLabSentToCaches_(recordId, labId, date) {
     (list || []).forEach(function (rec) {
       if (!rec || rec.recordId !== recordId || !Array.isArray(rec.labTrack)) return;
       rec.labTrack = rec.labTrack.map(function (it) {
-        return (it && it.id === labId) ? { id: it.id, method: it.method || '', sentDate: date } : it;
+        if (!(it && it.id === labId)) return it;
+        var upd = { id: it.id, method: it.method || '', sentDate: date, follow: false }; // รอบ 129: ส่งแล้วไม่ตาม (เซิร์ฟเวอร์ตรึงช่องทางที่ใช้จริงแล้ว)
+        if (it.text !== undefined) upd.text = it.text; // รอบ 128: คงชื่อ other
+        return upd;
       });
     });
   });
@@ -15786,7 +15889,7 @@ function onPendingBulkSave() {
   }
   function showSkippedBox() {
     var skippedLabels = allSkipped.map(function (s) {
-      return (nameById[s.recordId] || s.recordId) + (s.labId ? (' ' + labTrackName_(s.labId)) : '') + ': ' + s.reason;
+      return (nameById[s.recordId] || s.recordId) + (s.labId ? (' ' + labTrackLabelByRec_(s.recordId, s.labId)) : '') + ': ' + s.reason;
     });
     var skipEl = qs('pendingSkippedBox');
     if (!skipEl) return;
