@@ -756,6 +756,7 @@
   .pending-chip { border: 1px solid var(--border); background: #fff; color: var(--text); border-radius: 16px; padding: 4px 12px; min-height: 32px; font-size: 14px; cursor: pointer; }
   .pending-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   .pending-chip.is-zero { opacity: .5; }
+  .pending-chips-label { align-self: center; font-size: 14px; font-weight: 700; color: var(--text-muted); margin-right: 2px; } /* รอบ 127: ป้าย "เดือน" นำแถวปุ่มเดือน */
   #pendingTableWrap table.report-table th.pending-name, #pendingTableWrap table.report-table td.pending-name { text-align: left; }
   .pending-name-link { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: var(--primary); text-decoration: underline; text-align: left; cursor: pointer; }
   .pending-bulk-bar {
@@ -2417,6 +2418,9 @@
           <input type="search" id="pendingSearch" autocomplete="off" placeholder="ค้นหา HN หรือชื่อ-สกุล">
         </div>
       </div>
+
+      <!-- รอบ 127: ปุ่มเดือนที่มีค้าง + จำนวน (เลือกได้หลายเดือน · วาดโดย renderPendingMonthChips_) -->
+      <div class="no-print pending-chips pending-month-chips" id="pendingMonthChips" hidden></div>
 
       <!-- รอบ 75: chip กรองช่องทาง (วาดโดย renderPendingMethodChips_ ตาม PENDING_KIND) -->
       <div class="no-print pending-chips" id="pendingMethodChips"></div>
@@ -15263,6 +15267,9 @@ var PENDING_SELECTED = {}; // recordId -> true — ตัดออกเอง�
 // chip กรองช่องทางใต้แถบกรอง (PENDING_METHOD: '' = ทั้งหมด · รีเซ็ตเมื่อสลับแท็บ) · แท็บ pickup ชื่อ-สกุลกดเปิดหน้าต่างแก้ไข ·
 // แก้ไขสำเร็จ ⇒ โหลด pending ใหม่ · แถบบันทึกติดล่างจอ
 var PENDING_METHOD = '';
+// รอบ 127 (เจ้าของสั่ง 2026-11-17): กรองเป็นเดือน เลือกได้หลายเดือน — คีย์ 'yyyy-MM' -> true · อยู่ในหน่วยความจำ คงอยู่ข้ามการสลับแท็บ/โหลด pending ใหม่
+// ⚠ ห้ามให้ตัวเช็คข้ามวัน/ensureAutoToday_ แตะตัวแปรนี้ (ค่าว่าง = ทุกเดือน ไม่ใช่เดือนนี้)
+var PENDING_MONTHS = {};
 var PENDING_METHOD_NONE_ = '__none'; // chip "ยังไม่ระบุ" ของแท็บตรวจภายใน (pelvicMethod ว่าง) — '' สงวนไว้เป็น "ทั้งหมด"
 
 // รอบ 55: "วันที่ส่งออก" ถูกเขียนลงชีตตอนกดบันทึก ⇒ ค้างเป็นเมื่อวานเงียบ ๆ = ลงวันที่ผิด · ใช้กติกาเดียวกับ #cuDate
@@ -15290,20 +15297,30 @@ function pendingFilterDate_() {
   return el ? String(el.value || '').trim() : '';
 }
 // ทุกจุดที่นับ/แสดงรายการค้างส่งออก (ตาราง + ตัวเลขสรุป) ต้องผ่านตัวกรองวันที่นี้ที่เดียว — rec.date === ค่าที่เลือก
-function pendingRowMatchesDate_(rec) {
+// รอบ 127: เลือกเดือนได้หลายเดือน (PENDING_MONTHS) — วันที่ชนะเดือน (สองอย่างใช้ร่วมกันไม่ได้ ตัวคลิกล้างอีกฝั่งให้เอง) ·
+// skipFilter = ใช้นับปุ่มเดือน (ต้องเห็นยอดทุกเดือนเสมอ ไม่ผ่านตัวกรองวันที่/เดือน)
+function pendingRowMatchesDate_(rec, skipFilter) {
+  if (skipFilter) return true;
   var f = pendingFilterDate_();
-  return !f || (rec && rec.date === f);
+  if (f) return !!rec && rec.date === f;
+  var months = (typeof PENDING_MONTHS === 'undefined') ? null : PENDING_MONTHS;
+  if (months) {
+    var any = false, k;
+    for (k in months) { if (Object.prototype.hasOwnProperty.call(months, k) && months[k]) { any = true; break; } }
+    if (any) return !!rec && months[String(rec.date || '').slice(0, 7)] === true;
+  }
+  return true;
 }
 
 // รอบ 119ง: คีย์เลือกแถว — แท็บ lab = 'recordId|labId' (1 คนหลายแถว) · แท็บอื่น = recordId เดิม
 function pendingRowKey_(row) { return (row && row._pendingKey) || (row && row.recordId); }
 // รอบ 119ง: แท็บ lab = กระจาย rec ที่ pending.labExport เป็นรายการละแถว (เฉพาะตัวที่ยังไม่มี sentDate) — แถวเสมือนคัดลอกตื้นของ rec + _pendingKey/_labId/_labMethod
-function pendingLabRows_() {
+function pendingLabRows_(skipFilter) {
   var out = [];
   PENDING_RECORDS.forEach(function (rec) {
     var p = rec && rec.pending;
     if (!p || !p.labExport) return;
-    if (!pendingRowMatchesDate_(rec)) return;
+    if (!pendingRowMatchesDate_(rec, skipFilter)) return;
     labTrackOfRec_(rec).forEach(function (it) {
       if (it.sentDate) return;
       var row = {};
@@ -15317,12 +15334,12 @@ function pendingLabRows_() {
   return out;
 }
 
-function pendingRowsForKind(kind) {
-  if (kind === 'lab') return pendingLabRows_();
+function pendingRowsForKind(kind, skipDateFilter) {
+  if (kind === 'lab') return pendingLabRows_(skipDateFilter);
   return PENDING_RECORDS.filter(function (rec) {
     var p = rec && rec.pending;
     if (!p) return false;
-    if (!pendingRowMatchesDate_(rec)) return false;
+    if (!pendingRowMatchesDate_(rec, skipDateFilter)) return false;
     if (kind === 'pickup') return !!p.checkupPickup; // รอบ 73: รอมารับ — ตัวกรองวันที่ + ค้นหาใช้ชุดเดียวกับชนิดอื่น
     return kind === 'pelvic' ? !!p.pelvicExport : !!p.checkupExport;
   });
@@ -15331,6 +15348,7 @@ function pendingRowsForKind(kind) {
 // รอบ 60 ข้อ 6: เปลี่ยนวันที่ที่กรอง ⇒ ล้างการเลือก + วาดตาราง/ตัวเลขสรุปใหม่ (ไม่ยิง API)
 function onPendingFilterDateChange() {
   PENDING_SELECTED = {};
+  if (pendingFilterDate_()) PENDING_MONTHS = {}; // รอบ 127: เลือกวันที่ ⇒ ล้างเดือน (ใช้ร่วมกันไม่ได้)
   renderPendingTable(); // รอบ 75: วาดตาราง + ตัวเลขบนแท็บ + chip ใหม่ในทีเดียว (กล่องสรุปถอดออกจากจอแล้ว)
 }
 
@@ -15397,6 +15415,45 @@ function pendingMethodChipKeys_(kind) {
   });
   if (seen[PENDING_METHOD_NONE_]) keys.push(PENDING_METHOD_NONE_);
   return keys;
+}
+
+// รอบ 127: ปุ่มเดือน — เดือนที่มีแถวของแท็บปัจจุบัน (ไม่ผ่านตัวกรองวันที่/เดือน · ผ่านช่องค้นหา) + เดือนที่เลือกค้างแต่ไม่มีแถว (0) · เก่า → ใหม่
+function renderPendingMonthChips_() {
+  var box = qs('pendingMonthChips');
+  if (!box) return;
+  var q = pendingSearchQuery_();
+  var counts = {};
+  pendingRowsForKind(PENDING_KIND, true).forEach(function (rec) {
+    if (!pendingRowMatchesSearch_(rec, q)) return;
+    var d = String((rec && rec.date) || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    var k = d.slice(0, 7);
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  Object.keys(PENDING_MONTHS).forEach(function (k) { if (PENDING_MONTHS[k] && counts[k] === undefined) counts[k] = 0; });
+  var keys = Object.keys(counts).sort();
+  if (!keys.length) { box.innerHTML = ''; box.hidden = true; return; }
+  var html = '<span class="pending-chips-label">เดือน</span>'; // Opus ตรวจรับ: แถวนี้หน้าตาเหมือน chip ช่องทางทุกอย่าง ⇒ ต้องมีป้ายบอก
+  keys.forEach(function (k) {
+    var y = parseInt(k.slice(0, 4), 10), m = parseInt(k.slice(5, 7), 10);
+    var label = (m >= 1 && m <= 12) ? THAI_MONTH_ABBR_CU[m - 1] + ' ' + String(y + 543).slice(-2) : k;
+    var on = PENDING_MONTHS[k] === true;
+    html += '<button type="button" class="pending-chip' + (on ? ' active' : '') + (counts[k] === 0 ? ' is-zero' : '') + '" data-pending-month="' + escHtml(k) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+      escHtml(label) + ' <span class="pending-chip-n">' + counts[k] + '</span></button>';
+  });
+  box.innerHTML = html;
+  box.hidden = false;
+}
+
+// รอบ 127: กดปุ่มเดือน = สลับเปิด/ปิดเดือนนั้น · ล้างช่องวันที่ · ล้างการเลือก
+function togglePendingMonth_(key) {
+  key = String(key || '');
+  if (!/^\d{4}-\d{2}$/.test(key)) return;
+  if (PENDING_MONTHS[key]) delete PENDING_MONTHS[key]; else PENDING_MONTHS[key] = true;
+  var el = qs('pendingFilterDate');
+  if (el && el.value) el.value = '';
+  PENDING_SELECTED = {};
+  renderPendingTable();
 }
 
 function renderPendingMethodChips_() {
@@ -15497,6 +15554,7 @@ function renderPendingTable() {
   var wrap = qs('pendingTableWrap');
   if (!wrap) return;
   updatePendingTabCounts_(false); // รอบ 75: ตัวเลขบนแท็บ + chip อัปเดตทุกครั้งที่วาดตาราง (ข้อมูลโหลด/ตัวกรองวันที่/ค้นหา/บันทึกสำเร็จ ผ่านที่นี่หมด)
+  renderPendingMonthChips_();
   renderPendingMethodChips_();
   var rows = pendingShownRows();
 
@@ -15601,6 +15659,8 @@ function loadPendingRun_(isRetry) {
         updatePendingTabCounts_(true); // รอบ 75: ยังไม่เคยมีข้อมูล ⇒ แท็บไม่มีตัวเลข (ห้ามโชว์ 0 ปลอม) · ไม่มี chip
         var chipBox = qs('pendingMethodChips');
         if (chipBox) chipBox.innerHTML = '';
+        var monthBox = qs('pendingMonthChips');
+        if (monthBox) { monthBox.innerHTML = ''; monthBox.hidden = true; }
         if (wrap) wrap.innerHTML = '';
         showErrWithRetry_(errEl, 'โหลดหน้าติดตามผลไม่สำเร็จ (' + pmsg + ')', function () { loadPendingRun_(false); });
       }
@@ -19618,6 +19678,11 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnPendingKindPelvic').addEventListener('click', function () { setPendingKind('pelvic'); });
   qs('btnPendingKindPickup').addEventListener('click', function () { setPendingKind('pickup'); }); // รอบ 73
   qs('btnPendingKindLab').addEventListener('click', function () { setPendingKind('lab'); }); // รอบ 119ง
+  var pendingMonthChipsEl = qs('pendingMonthChips');
+  if (pendingMonthChipsEl) pendingMonthChipsEl.addEventListener('click', function (e) { // รอบ 127: ปุ่มเดือน (delegate เหมือน chip ช่องทาง)
+    var mb = e.target && e.target.closest ? e.target.closest('[data-pending-month]') : null;
+    if (mb) togglePendingMonth_(mb.getAttribute('data-pending-month'));
+  });
   var pendingChipsEl = qs('pendingMethodChips');
   if (pendingChipsEl) pendingChipsEl.addEventListener('click', function (e) { // รอบ 75: chip ช่องทาง (วาดใหม่ทุกครั้ง ⇒ ผูก delegate ที่กล่อง)
     var cb = e.target && e.target.closest ? e.target.closest('[data-pending-method]') : null;
@@ -19639,6 +19704,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (pendingFilterAllEl) pendingFilterAllEl.addEventListener('click', function () {
     var el = qs('pendingFilterDate');
     if (el) el.value = '';
+    PENDING_MONTHS = {}; // รอบ 127: "ทุกวัน" ล้างทั้งวันที่และเดือน
     onPendingFilterDateChange();
   });
   qs('btnPendingBulkSave').addEventListener('click', onPendingBulkSave);
