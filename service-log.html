@@ -2004,16 +2004,16 @@
               <section id="svcVaccine">
                 <label class="check-row" id="vaccineWithCheckupRow">
                   <input type="checkbox" id="vaccineWithCheckup">
-                  <span class="item-name">มาตรวจสุขภาพด้วย (คิดวัคซีนเรตตรวจสุขภาพ ไม่บวก DF/PE/10%)</span>
+                  <span class="item-name">มาตรวจสุขภาพด้วย<small class="muted vax-opt-desc" style="display:block;font-weight:normal;">(คิดวัคซีนเรตตรวจสุขภาพ ไม่บวก DF/PE/10%)</small></span>
                   <span class="sp-lock-note" id="vaccineWithCheckupNote" hidden>เลือกโปรแกรมแล้ว คิดให้อัตโนมัติ</span>
                 </label>
                 <label class="check-row" id="vaccinePeChargedRow">
                   <input type="checkbox" id="vaccinePeCharged">
-                  <span class="item-name">คิด PE แล้ว (คิดค่ายา + เข็ม + DF ไม่บวก PE/10%)</span>
+                  <span class="item-name">คิดค่าบริการคลินิกแล้ว<small class="muted vax-opt-desc" style="display:block;font-weight:normal;">(คิดค่ายา + เข็ม + DF ไม่บวก PE/10%)</small></span>
                   <span class="sp-lock-note" id="vaccinePeChargedNote" hidden>มีโปรแกรมตรวจสุขภาพ ใช้เรตตรวจสุขภาพ</span>
                 </label>
-                <!-- รอบ 124 (G6/W4): จุดนับ vaccine ติ๊ก "คิด PE แล้ว" ⇒ เตือน (ไม่บล็อก) ว่าเคสใบรับรองแพทย์มี Lab ต้องบันทึกที่จุดคีย์ -->
-                <span id="vaccinePeChargedHint" class="muted" style="display:block;margin:2px 0 8px 4px;" hidden>ถ้าเป็นเคสใบรับรองแพทย์มี Lab ให้บันทึกที่จุดคีย์</span>
+                <!-- รอบ 130 (L5/W3): จุดนับ vaccine ติ๊ก "คิดค่าบริการคลินิกแล้ว" ⇒ คำอธิบาย (ไม่บล็อก) — ไม่นับเป็นผู้รับบริการเพิ่ม -->
+                <span id="vaccinePeChargedHint" class="muted" style="display:block;margin:2px 0 8px 4px;" hidden>ใช้กับคนที่คิดค่าบริการคลินิกในแถวอื่นแล้ว เช่น ใบรับรองแพทย์มี Lab / MMG — ไม่นับเป็นผู้รับบริการเพิ่ม</span>
                 <div id="vaccinePriceBanner" class="price-banner banner-normal">ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)</div>
                 <details class="list-fold" open>
                   <summary>รายการวัคซีน (เลือกแล้ว <span id="vaccineCount">0</span> เข็ม) ▸</summary>
@@ -3073,7 +3073,7 @@ var STATE = {
   pointTopics: {},
   labFollowupFree: false, // รอบ 108: กดปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab ที่จ่ายครบแล้ว) · ล้างเมื่อ resetLogForm
   abroadFree: false, // รอบ 120: ปุ่ม "ไม่มีค่าใช้จ่าย" ของแผงตรวจร่างกายไปต่างประเทศ · ล้างเมื่อ resetLogForm
-  keyVaxShown: false, // รอบ 124 (W1): แผงวัคซีนที่จุดคีย์ order แสดงอยู่ตอนเรียกครั้งก่อน (กางให้ครั้งแรกที่ขึ้น ไม่กางทับตอนผู้ใช้พับเอง)
+  editHadVaccine: false, // รอบ 130 (W1): แถวที่กำลังแก้ไขมีวัคซีนมาตั้งแต่ต้น ⇒ จุดคีย์ order ยังเห็นแผงวัคซีน (ตั้งใน enterEditMode · ล้างใน exitEditMode)
   sunFill: { medLabPelvic: null, abroadPelvic: null }, // รอบ 124 (W7): ยอดที่ระบบเติมให้ล่าสุดจากตัวเลือกตรวจภายในวันอาทิตย์ (null = ไม่มี) · ผู้ใช้พิมพ์เองแล้วไม่ทับ
   // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
   // preModeApplied = applyPreMode_() ทำงานในโหมดล่วงหน้าอยู่ไหม (ตรวจจับ "เปลี่ยนสถานะ") · serviceDateDay = วันที่ที่ใช้ตั้งขอบเขต #serviceDate ล่าสุด (ตรวจข้ามวัน)
@@ -4956,7 +4956,7 @@ function updateVaccinePriceBanner(checkupOn, peCharged) {
     banner.textContent = 'ราคาวัคซีน: ชุดมาตรวจสุขภาพ (ไม่มี DF/PE/10%)';
     banner.className = 'price-banner banner-alt';
   } else if (peCharged) {
-    banner.textContent = 'ราคาวัคซีน: คิด PE แล้ว (ค่ายา + เข็ม + DF)';
+    banner.textContent = 'ราคาวัคซีน: คิดค่าบริการคลินิกแล้ว (ค่ายา + เข็ม + DF)';
     banner.className = 'price-banner banner-alt';
   } else {
     banner.textContent = 'ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)';
@@ -4975,11 +4975,6 @@ function applyVaccineCheckupRateLock(checkupOn) {
     cb.checked = true;
     cb.disabled = true;
     if (noteEl) noteEl.hidden = false;
-  } else if (typeof keyVaccineActive_ === 'function' && keyVaccineActive_() && !STATE.editingId) {
-    // รอบ 124 (G3): วัคซีนที่จุดคีย์ (ใบรับรองแพทย์มี Lab) ⇒ "มาตรวจสุขภาพด้วย" ไม่ติ๊ก + ล็อก
-    cb.checked = false;
-    cb.disabled = true;
-    if (noteEl) noteEl.hidden = true;
   } else {
     cb.disabled = false;
     if (noteEl) noteEl.hidden = true;
@@ -4988,7 +4983,6 @@ function applyVaccineCheckupRateLock(checkupOn) {
 
 // รอบ 119ค: ตัวเลือก "คิด PE แล้ว" — มีโปรแกรมตรวจสุขภาพ ⇒ ปลดติ๊กและล็อก (เรตตรวจสุขภาพชนะเสมอ) · ไม่งั้นปลดล็อก ไม่แตะ checked
 var VAX_PE_NOTE_DEFAULT_ = 'มีโปรแกรมตรวจสุขภาพ ใช้เรตตรวจสุขภาพ';
-var VAX_PE_NOTE_KEY_ = 'ใบรับรองแพทย์มี Lab คิด PE แล้วอัตโนมัติ'; // รอบ 124 (G3)
 function applyVaccinePeChargedLock_(checkupOn) {
   var cb = qs('vaccinePeCharged');
   if (!cb) return;
@@ -4997,11 +4991,6 @@ function applyVaccinePeChargedLock_(checkupOn) {
     cb.checked = false;
     cb.disabled = true;
     if (noteEl) { noteEl.textContent = VAX_PE_NOTE_DEFAULT_; noteEl.hidden = false; }
-  } else if (typeof keyVaccineActive_ === 'function' && keyVaccineActive_() && !STATE.editingId) {
-    // รอบ 124 (G3): วัคซีนที่จุดคีย์ ⇒ "คิด PE แล้ว" ติ๊ก + ล็อกเสมอ
-    cb.checked = true;
-    cb.disabled = true;
-    if (noteEl) { noteEl.textContent = VAX_PE_NOTE_KEY_; noteEl.hidden = false; }
   } else {
     cb.disabled = false;
     if (noteEl) noteEl.hidden = true;
@@ -5419,64 +5408,30 @@ function updatePointBanner() {
 // ⚠ ห้าม uncheck วัคซีนตอนแก้ไข/รวมแถว (STATE.editingId) — แถวเก่าที่มีวัคซีนต้องส่งวัคซีนเดิมกลับครบ ยอดคงเดิม · บันทึกใหม่ที่จุดนี้ ⇒ onSubmitLog บังคับ vaccines: [] อีกชั้น
 var VACCINE_HIDDEN_POINT_ = 'จุดคีย์ order';
 function vaccinePanelHiddenHere_() { return STATE.point === VACCINE_HIDDEN_POINT_; }
-// รอบ 124 (G2): จุดคีย์ order แสดงแผงวัคซีนได้เฉพาะเมื่อ ไม่มีโปรแกรม และ (แผง Lab มียอด Lab/DF/ไม่มีค่าใช้จ่าย หรือ แผงต่างประเทศมีข้อมูล)
-// = เคสใบรับรองแพทย์มี Lab ที่ฉีดวัคซีนด้วย (แถวเดียวที่จุดคีย์) · กรณีอื่นซ่อนตาม D15 (รอบ 87)
-function keyVaccineAllowed_() {
-  if (isCheckupOn()) return false;
-  var l = labPanelRaw_();
-  return l.labAmount > 0 || l.labFollowup > 0 || l.labFree || isAbroadOn_();
-}
-function keyVaccineActive_() { return vaccinePanelHiddenHere_() && keyVaccineAllowed_(); }
-// วางแผงวัคซีนต่อจากแผงที่เป็นต้นเหตุ: ต่างประเทศเปิด ⇒ ต่อจากแผงต่างประเทศ · ไม่งั้นต่อจากแผงใบรับรองแพทย์มี Lab (ไม่เข้ากลุ่ม "บริการอื่น")
-function placeKeyVaccinePanel_() {
-  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return; // รอบ 126 (O5)
-  var vp = qs('panelVaccine');
-  if (!vp || !vp.parentNode) return;
-  var anchor = qs(isAbroadOn_() ? 'panelAbroad' : 'panelMedcertLab');
-  if (!anchor || !anchor.parentNode || anchor === vp) return;
-  if (anchor.nextSibling === vp) return;
-  anchor.parentNode.insertBefore(vp, anchor.nextSibling);
-}
-// รอบ 124 (G6/W4): จุดนับ vaccine ติ๊ก "คิด PE แล้ว" ⇒ ข้อความเตือนใต้ช่อง (ไม่บล็อก)
+// รอบ 130 (L1/W1): เลิกแผงวัคซีนที่จุดคีย์ order ของรอบ 124 — เคส Lab/MMG + วัคซีน ⇒ จุดนับ vaccine บันทึกแถววัคซีนใหม่ ติ๊ก "คิดค่าบริการคลินิกแล้ว" เอง
+// ยกเว้นโหมดแก้ไขแถวเก่าที่มีวัคซีนอยู่แล้ว (STATE.editHadVaccine ตั้งตอน enterEditMode) ⇒ แผงวัคซีนต้องเห็น + แก้/เอาออกได้ (ไม่ซ่อนข้อมูลที่อยู่ในแถว)
+// รอบ 124 (G6) → รอบ 130 (W3): จุดนับ vaccine ติ๊ก "คิดค่าบริการคลินิกแล้ว" ⇒ ข้อความอธิบายใต้ช่อง (ไม่บล็อก)
 function syncVaccinePeHint_() {
   var h = qs('vaccinePeChargedHint');
   if (!h) return;
   var pe = qs('vaccinePeCharged');
   h.hidden = !(STATE.point === VACCINE_COUNT_POINT_ && pe && pe.checked);
 }
-// fromRecalc = true (เรียกจาก recalcTotals): uncheck เฉพาะตอนแผงเพิ่งหายจากสถานะแสดง (เงื่อนไข G2 หายระหว่างกรอก) — ไม่ uncheck ค่าที่ไม่ได้ผ่านแผง (ทางเดิมของรอบ 87 uncheck ตอนจัดแผง/คืนร่างเท่านั้น)
+// fromRecalc = true (เรียกจาก recalcTotals): แค่แสดง/ซ่อนแผง ไม่ uncheck (uncheck เฉพาะตอนจัดแผง/คืนร่างเหมือนก่อนรอบ 124)
 function applyVaccinePanelVisibility_(fromRecalc) {
   var vp = qs('panelVaccine');
   if (!vp) return;
   var atKey = vaccinePanelHiddenHere_();
-  var allowed = atKey && keyVaccineAllowed_();
-  var hide = atKey && !allowed;
+  var hide = atKey && !(STATE.editingId && STATE.editHadVaccine);
   if (hide) vp.setAttribute('hidden', ''); else if (vp.removeAttribute) vp.removeAttribute('hidden');
-  if (hide && !STATE.editingId && (!fromRecalc || STATE.keyVaxShown)) {
+  if (hide && !STATE.editingId && !fromRecalc) {
     // ร่างที่คืนกลับ/ค่าค้างจากจุดอื่นห้ามมีวัคซีนติดมาที่จุดนี้ (ไม่ใช่แถวแก้ไข)
     document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
     var vwc = qs('vaccineWithCheckup');
     if (vwc) vwc.checked = false;
     var vpe = qs('vaccinePeCharged');
     if (vpe) vpe.checked = false;
-    // รอบ 124: เคยล็อกตอนแสดง (G3) ⇒ ซ่อนแล้วปลดล็อกคืน (มีโปรแกรม ⇒ recalcTotals ล็อกเองตามเดิม)
-    if (!isCheckupOn()) { if (vwc) vwc.disabled = false; if (vpe) vpe.disabled = false; }
   }
-  if (allowed) {
-    placeKeyVaccinePanel_();
-    if (!STATE.keyVaxShown && vp.setAttribute) vp.setAttribute('data-collapsed', '0'); // ขึ้นครั้งแรก ⇒ กางให้เห็น
-    if (!STATE.editingId) {
-      // รอบ 124 (G3): คิด PE แล้ว ติ๊ก + ล็อก · มาตรวจสุขภาพด้วย ไม่ติ๊ก + ล็อก (แก้ไขแถวเดิม ⇒ ไม่บังคับค่า)
-      var lvpe = qs('vaccinePeCharged'), lvwc = qs('vaccineWithCheckup');
-      if (lvpe) { lvpe.checked = true; lvpe.disabled = true; }
-      if (lvwc) { lvwc.checked = false; lvwc.disabled = true; }
-      var lpn = qs('vaccinePeChargedNote');
-      if (lpn) { lpn.textContent = VAX_PE_NOTE_KEY_; lpn.hidden = false; }
-      var lwn = qs('vaccineWithCheckupNote');
-      if (lwn) lwn.hidden = true;
-    }
-  }
-  STATE.keyVaxShown = !!allowed;
   syncVaccinePeHint_();
 }
 /* =========================================================================
@@ -5802,7 +5757,6 @@ function applyPointLayout() {
   placeSvcBar_(); // รอบ 92: แถบปุ่มบริการต่อจาก #panelPerson (หลังแทรกแผงทั้งหมดแล้ว) · จุดคีย์ order: applyCheckupPanelDefault_ ข้างล่างจัดแผงตามปุ่มที่จำไว้
   // รอบ 64: จุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ แผงตรวจสุขภาพพับ ยกเว้นมีค่าในแผง/คิวปัจจุบันเป็นคิวตรวจสุขภาพ (ต้องอยู่หลังลูป data-collapsed='0' ข้างบน)
   applyCheckupPanelDefault_();
-  if (vaccinePanelHiddenHere_() && keyVaccineAllowed_()) placeKeyVaccinePanel_(); // รอบ 124 (W1): จัดแผงใหม่แล้ว ⇒ แผงวัคซีนของเคส Lab กลับมาอยู่ต่อจากแผง Lab
   applyVaxCountPointMode_(); // รอบ 119ฉ: ต้องหลังจัดแผง (ปลด hidden ของเส้นคั่น "บริการอื่น" ไปแล้วข้างบน)
 }
 
@@ -6415,6 +6369,7 @@ function resetLogForm() {
    ========================================================================= */
 function exitEditMode() {
   STATE.editingId = '';
+  STATE.editHadVaccine = false; // รอบ 130 (W1)
   STATE.editingDate = ''; // รอบ 110
   // รอบ 35 (2026-09-30): ล้าง originalRec ด้วย กัน validateForm() เผลอเอาแถวที่แก้ไขค้างจากรอบก่อนมา "grandfather"
   // ให้บันทึกรายใหม่ที่ไม่เกี่ยวข้องกันเลย (เช็คคู่กับ STATE.editingId อยู่แล้วก็จริง แต่ล้างทิ้งไปด้วยชัดเจนกว่า)
@@ -6926,6 +6881,7 @@ function enterEditMode(rec) {
 
   var vaccineCodes = rec.vaccineCodes || [];
   var vaccineOn = vaccineCodes.length > 0;
+  STATE.editHadVaccine = vaccineOn; // รอบ 130 (W1): แถวเก่ามีวัคซีน ⇒ จุดคีย์ order เห็นแผงวัคซีนตอนแก้ไข (recalcTotals ด้านล่างปลด hidden ให้)
   document.querySelectorAll('#vaccineList input[type="checkbox"]').forEach(function (cb) {
     cb.checked = vaccineCodes.indexOf(cb.value) !== -1;
   });
@@ -7598,8 +7554,8 @@ function onSubmitLog(e) {
   var checkupAmount = (checkupOn && checkupAmountNum !== null) ? checkupAmountNum : 0;
   var vaccineCodes = getCheckedVaccineCodes();
   // รอบ 87 (D15): จุดคีย์ order ไม่มีแผงวัคซีน — บันทึกใหม่ (ไม่ใช่แก้ไข) บังคับ [] กันร่าง/ค่าค้างจากจุดอื่น · แก้ไข/รวมแถว ใช้ค่าที่โหลดมาตามเดิม (ยอดคงเดิม)
-  // รอบ 124 (W2): ล้างเฉพาะเมื่อแผงวัคซีนไม่ได้รับอนุญาต (ไม่ใช่เคส Lab/ต่างประเทศ)
-  if (!STATE.editingId && vaccinePanelHiddenHere_() && !keyVaccineAllowed_()) vaccineCodes = [];
+  // รอบ 130 (L1/W1): กลับเป็นแบบก่อนรอบ 124 — จุดคีย์ order บันทึกใหม่ล้างวัคซีนทุกกรณี (ไม่มีทางผ่านเคส Lab)
+  if (!STATE.editingId && vaccinePanelHiddenHere_()) vaccineCodes = [];
   var withCheckupRate = checkupOn || (qs('vaccineWithCheckup') && qs('vaccineWithCheckup').checked);
   var peCharged = !withCheckupRate && !!(qs('vaccinePeCharged') && qs('vaccinePeCharged').checked); // รอบ 119ค
   // จุดคีย์ order บันทึกใหม่บังคับ vaccines [] ⇒ ไม่ส่ง PE ลอย ๆ
@@ -8193,8 +8149,24 @@ function applySavedRecord(record) {
    (inbody ไม่ได้ "ถูกส่งไปที่อื่น" แบบรายการอื่น ๆ จึงไม่ควรโผล่ในบล็อกนี้ เหมือนเดิม) */
 // รอบ 60 ข้อ 5.1: นับ/ยอดเงิน 5 หมวดของแถบสรุป — ตรรกะเดิมจาก renderTodayList ทุกตัวอักษร แค่ย้ายออกมาเป็นฟังก์ชันล้วน (ไม่แตะ DOM)
 // เพื่อให้ (1) วาดแถบสรุปได้แม้ไม่มีรายการเลย (แสดง 0 ทุกหมวด) (2) computeSupOpd_ ใช้ตัวเลข "มีหัตถการ" ชุดเดียวกับแถบ ไม่คำนวณซ้ำคนละสูตร
+// รอบ 130 (L4): "แถววัคซีนคิดค่าบริการคลินิกแล้วล้วน" — vaccinePeCharged + มีวัคซีน + ไม่มีบริการอื่นในแถวเลย
+// ⚠ ต้องตรงกับ isPeChargedVaccineOnlyRow_ ใน สถิติบริการ.js · ใช้ที่ computeTodayStats_ (st.totalPeople) ที่เดียว · แถวเก่าที่จุดคีย์ (Lab + วัคซีน) มีบริการอื่น ⇒ ยังนับคน
+function isPeChargedVaccineOnly_(rec) {
+  if (!rec || rec.vaccinePeCharged !== true) return false;
+  if (!((rec.vaccineCount || 0) > 0 || (rec.vaccineCodes || []).length > 0)) return false;
+  if (rec.program) return false;
+  if (rec.extraCount || (rec.extraIds || []).length) return false;
+  if (rec.medCert5 || rec.medCertDriver || rec.medCertCount || rec.medCertLabAmount) return false;
+  if (rec.labFollowup || rec.labFollowupFree) return false;
+  if ((rec.specialReg || []).length || (rec.specialSent || []).length || (rec.specialPrep || []).length || (rec.specialBack || []).length) return false;
+  if (rec.pelvic && rec.pelvic !== 'no') return false; // ตรวจภายในชนิดใดก็ได้ (ไม่พึ่ง isPelvicChosen_ — ให้เทสต์ที่สกัด computeTodayStats_ เดี่ยว ๆ ยังรันได้)
+  if ((rec.labTrack || []).length) return false;
+  var t = rec.totals || {};
+  if ((Number(t.checkup) || 0) > 0 || (Number(t.extra) || 0) > 0 || (Number(t.medcert) || 0) > 0) return false;
+  return true;
+}
 function computeTodayStats_(records) {
-  var st = { totalPeople: 0, totalMoney: 0, cntCheckup: 0, cntVaccine: 0, cntVaccineCu: 0, cntMedGen: 0, cntMedLab: 0,
+  var st = { totalPeople: 0, totalMoney: 0, cntCheckup: 0, cntVaccine: 0, cntVaccineProc: 0, cntVaccineCu: 0, cntMedGen: 0, cntMedLab: 0,
     sumCheckup: 0, sumVaccine: 0, sumVaccineCu: 0, sumMedGen: 0, sumMedLab: 0, sumOther: 0,
     // รอบ 91 (G): พบแพทย์ฟังผล Lab — cnt = แถวที่ labFollowup > 0 · sum = ยอด DF (บาท) ในแถว ที่รวมอยู่ใน totals.medcert แล้ว
     // sumLabFollowup ถูกบวกเข้าหมวด "ใบรับรองแพทย์มี lab" บนแถบ (และหักออกจากหมวดทั่วไป) ⇒ 5 หมวดรวมกันยังเท่ายอดรวม
@@ -8207,7 +8179,8 @@ function computeTodayStats_(records) {
   var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
   (records || []).forEach(function (rec) {
     if (!rec || rec.status === 'ยกเลิก') return;
-    st.totalPeople++; st.totalMoney += recordGrandTotal(rec);
+    if (!isPeChargedVaccineOnly_(rec)) st.totalPeople++; // รอบ 130 (L4): แถววัคซีนคิดค่าบริการคลินิกแล้วล้วน ไม่นับเป็นผู้รับบริการเพิ่ม (เงิน/เข็มนับตามเดิม)
+    st.totalMoney += recordGrandTotal(rec);
     var t = rec.totals || {};
     var labAmt = numOf(rec.medCertLabAmount);
     var lfN = Math.max(0, Math.floor(numOf(rec.labFollowup)));
@@ -8231,7 +8204,7 @@ function computeTodayStats_(records) {
     if (rec.program) { st.cntCheckup++; st.sumCheckup += numOf(t.checkup); }
     if ((rec.vaccineCount || 0) > 0) {
       if (rec.vaccineWithCheckup) { st.cntVaccineCu++; st.sumVaccineCu += numOf(t.vaccine); }
-      else { st.cntVaccine++; st.sumVaccine += numOf(t.vaccine); }
+      else { st.cntVaccine++; st.sumVaccine += numOf(t.vaccine); if (!isPeChargedVaccineOnly_(rec)) st.cntVaccineProc++; } // รอบ 130: cntVaccineProc = วัคซีนเดี่ยวที่ไม่ใช่แถวคิดค่าบริการคลินิกแล้วล้วน (ใช้ใน withProc ของ SUP OPD) · cntVaccine (แถบ "วัคซีนเดี่ยว") นับครบตามเดิม
     }
     if (((rec.medCert5 || 0) + (rec.medCertDriver || 0)) > 0) { st.cntMedGen++; st.sumMedGen += (numOf(t.medcert) - labAmt - lfAmt); }
     if (labAmt > 0) { st.cntMedLab++; st.sumMedLab += labAmt; }
@@ -8247,7 +8220,7 @@ function computeTodayStats_(records) {
 function computeSupOpd_(records, dateStr) {
   var st = computeTodayStats_(records);
   // รอบ 91: + แถวฟังผล Lab ที่ยังไม่ถูกนับจากตรวจสุขภาพ/มี Lab/วัคซีนเดี่ยว (เจ้าของยืนยัน 2026-10-20: สูตรเดิมถูกแล้ว เพิ่มเฉพาะส่วนนี้)
-  var r = { withProc: st.cntCheckup + st.cntMedLab + st.cntVaccine + st.cntLabFollowupExtra, noProc: st.cntMedGen,
+  var r = { withProc: st.cntCheckup + st.cntMedLab + st.cntVaccineProc + st.cntLabFollowupExtra, noProc: st.cntMedGen,
     vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, usAbdomen: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, abroad: 0, isSunday: false, total: 0 };
   var m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(String(dateStr || ''));
   if (m) r.isSunday = (new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0);
