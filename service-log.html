@@ -838,6 +838,20 @@
     #editModalBox { max-width: none; width: 100%; height: 100%; max-height: none; border-radius: 0; }
   }
 
+  /* รอบ 126 (O1): หน้าต่างแก้ไขจัดแผงตามข้อมูลของแถว — กลไกแยกจากหน้าบันทึก (data-edit-collapsed / data-edit-locked ตั้งเฉพาะตอนโมดัลเปิด)
+     specificity (1,x,0)+!important ชนะกฎพับเดิมทุกตัว (data-collapsed · data-user-collapsed · .log-panel-other · จอกว้าง ≥1100 !important) */
+  #editModal .log-panel[data-svc] .log-panel-body { display: block !important; }
+  #editModal .log-panel[data-svc][data-edit-collapsed="1"] .log-panel-body { display: none !important; }
+  #editModal .log-panel[data-svc][data-edit-collapsed="1"] .log-panel-arrow { display: inline-block; transform: rotate(-90deg); }
+  #editModal .log-panel[data-svc][data-edit-locked="1"] .log-panel-arrow { display: none !important; }
+  #editModal .log-panel[data-svc][data-edit-locked="1"] .log-panel-head { cursor: default; }
+  #editModal #svcBar, #editModal #otherServicesDivider { display: none !important; } /* O3: ระหว่างโมดัลเปิดไม่ใช้แถบปุ่มบริการ/เส้นคั่นเดิม */
+  #editModal #editMoreHead { margin: 4px 2px 0; font-size: 14px; font-weight: 700; }
+  /* รอบ 126 (Opus ตรวจรับ): #panelTotals ลอย fixed ชิดล่างจอทับท้ายโมดัล (สูง ≈ 66–110px เมื่อมีคำเตือน) — แถบแผงว่างอยู่ท้ายสุดจึงจมใต้กล่อง
+     กดไม่ได้ (คลิกโดนปุ่มบันทึกร่าง) ⇒ เผื่อที่ท้าย body ให้เลื่อนพ้นกล่องได้เสมอ */
+  #editModalBody { padding-bottom: 124px; }
+  @media (min-width: 1100px) { #editModal .log-grid.point-layout-custom { grid-template-columns: repeat(3, 1fr) !important; } } /* จุดที่มีหัวข้อแผงบังคับ 1 คอลัมน์ — ในโมดัลต้องมี 3 คอลัมน์ (E2) */
+
   #gateScreen .gate-wrap { max-width: 420px; margin: 40px auto; padding: 12px; }
   #gateScreen .card { text-align: center; }
 
@@ -5111,6 +5125,7 @@ function isCheckupPanelCollapsed_() {
 // ตั้งสถานะตั้งต้นตามค่าปัจจุบัน (ไม่ใช่การเปลี่ยนแปลง) — เรียกจาก applyPointLayout() / enterEditMode() / restoreFormDraft_()
 // กาง ⇔ มีค่าในแผง หรือคิวปัจจุบันเป็นคิวตรวจสุขภาพ · STATE.checkupAutoExpanded = กางเพราะคิวอย่างเดียว (พับกลับได้เมื่อคิวหาย)
 function applyCheckupPanelDefault_() {
+  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return; // รอบ 126 (O5)
   if (typeof svcBarActive_ === 'function' && svcBarActive_()) { applySvcBarDefault_(); return; } // รอบ 92: จุดคีย์ order ใช้แถบปุ่มบริการคุมแผงแทน
   if (!pointHasCheckupTopic_()) return;
   var qNow = currentQueueIsCheckup_(), dNow = checkupPanelHasInput_();
@@ -5217,6 +5232,7 @@ function renderSvcBar_() {
   });
 }
 function applySvcBarKey_(key) {
+  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return; // รอบ 126 (O5)
   if (SVC_BAR_KEYS_.indexOf(key) === -1) key = 'checkup';
   STATE.svcBarShown = key;
   var open = SVC_BAR_PANELS_[key];
@@ -5262,6 +5278,7 @@ function updateSvcBar_() {
 }
 // applyPointLayout(): วางแถบต่อจาก #panelPerson ทุกครั้ง (แผงถูกแทรกต่อจาก person ไปแล้ว) แล้ว render
 function placeSvcBar_() {
+  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return; // รอบ 126 (O5)
   var bar = qs('svcBar'), person = qs('panelPerson');
   if (bar && person && person.parentNode) person.parentNode.insertBefore(bar, person.nextSibling);
   svcBarSyncPoint_();
@@ -5350,6 +5367,7 @@ function keyVaccineAllowed_() {
 function keyVaccineActive_() { return vaccinePanelHiddenHere_() && keyVaccineAllowed_(); }
 // วางแผงวัคซีนต่อจากแผงที่เป็นต้นเหตุ: ต่างประเทศเปิด ⇒ ต่อจากแผงต่างประเทศ · ไม่งั้นต่อจากแผงใบรับรองแพทย์มี Lab (ไม่เข้ากลุ่ม "บริการอื่น")
 function placeKeyVaccinePanel_() {
+  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return; // รอบ 126 (O5)
   var vp = qs('panelVaccine');
   if (!vp || !vp.parentNode) return;
   var anchor = qs(isAbroadOn_() ? 'panelAbroad' : 'panelMedcertLab');
@@ -5607,6 +5625,7 @@ function renderVaxPointBox_() {
 }
 
 function applyPointLayout() {
+  if (typeof EDIT_MODAL !== 'undefined' && EDIT_MODAL.open) return; // รอบ 126 (O5): ระหว่างหน้าต่างแก้ไขเปิด ห้ามย้าย/พับแผง — ปิดโมดัลแล้วคืนตำแหน่งเดิมเอง
   capturePanelHomePositions_();
   updatePointBanner();
   if (typeof syncApptNavBtn_ === 'function') syncApptNavBtn_(); // รอบ 88 (E1): ปุ่ม 📅 ตามจุด
@@ -6432,11 +6451,189 @@ function isFormDirtyVsSnapshot_() {
   return JSON.stringify(captureFormDraft_()) !== JSON.stringify(snap);
 }
 
+/* =========================================================================
+   รอบ 126 — หน้าต่างแก้ไข (✏) จัดแผงตามข้อมูลของแถว (SPEC_รอบ126 · E1–E8 · O1–O5)
+   แผงมีข้อมูล ⇒ คอลัมน์ 2 (ล้นไปบนสุดคอลัมน์ 3) กางล็อก · แผงว่าง ⇒ แถบพับท้ายคอลัมน์ 3 ใต้ "เพิ่มบริการอื่น" (กดกางอยู่กับที่)
+   จัดครั้งเดียวตอนเปิด · ปิด ⇒ คืน parent/ลำดับ/attribute เดิมเป๊ะ · หน้าบันทึกปกติไม่เปลี่ยน
+   ========================================================================= */
+var EDIT_LAYOUT_ = null; // { cols: [{el, kids:[nodes]}], attrs: {id: {...}}, applied: bool }
+var EDIT_LAYOUT_ATTRS_ = ['data-collapsed', 'data-user-collapsed', 'hidden', 'class'];
+var EDIT_LAYOUT_NODE_IDS_ = MOVABLE_PANEL_IDS_.concat(['svcBar', 'otherServicesDivider']);
+// ลำดับตั้งต้นของแผงที่มีข้อมูล (E3): ตรวจสุขภาพ > ใบรับรองมี Lab > ต่างประเทศ > ใบรับรองทั่วไป > ส่งตรวจพิเศษ > วัคซีน
+var EDIT_PANEL_ORDER_ = ['panelCheckup', 'panelMedcertLab', 'panelAbroad', 'panelMedcertGen', 'panelSpecial', 'panelVaccine'];
+function editModalLayoutOn_() { return typeof EDIT_MODAL !== 'undefined' && !!EDIT_MODAL.open; }
+// "มีข้อมูล" ตามค่าในฟอร์ม ณ ตอนจัด (E7) — ครอบ "ไม่มีค่าใช้จ่าย" ของแผง Lab/ต่างประเทศผ่าน isMedLabOn()/isAbroadOn_() อยู่แล้ว
+function editPanelHasData_(id) {
+  if (id === 'panelCheckup') return svcKeyHasData_('checkup');
+  if (id === 'panelMedcertLab') {
+    // เจ้าของ 2026-11-17: แถวต่างประเทศ (isAbroadOn_) — ตรวจเพิ่ม (นับยอด) 4 ตัว + ตรวจมะเร็งปากมดลูก เป็นของแผงต่างประเทศ (รอบ 124 เงา/abroadPelvic)
+    // isMedLabOn() นับของชุดนี้ให้แผง Lab ⇒ นับเฉพาะยอดของแผง Lab เอง ไม่งั้นแผง Lab กางล็อก (และนำคิว M) ผิดแผง
+    if (isAbroadOn_()) { var l = labPanelRaw_(); return l.labAmount > 0 || l.labFollowup > 0 || l.labFree; }
+    return svcKeyHasData_('medLab');
+  }
+  if (id === 'panelAbroad') return svcKeyHasData_('abroad');
+  if (id === 'panelMedcertGen') return svcKeyHasData_('medGen');
+  if (id === 'panelSpecial') return svcKeyHasData_('special');
+  if (id === 'panelVaccine') return getCheckedVaccineCodes().length > 0;
+  return false;
+}
+function editLayoutSnapshot_() {
+  if (EDIT_LAYOUT_) return;
+  var cols = [], seen = [];
+  function addCol(el) { if (el && seen.indexOf(el) === -1) { seen.push(el); cols.push({ el: el, kids: Array.prototype.slice.call(el.childNodes) }); } }
+  ['logCol1', 'logCol2', 'logCol3'].forEach(function (id) { addCol(qs(id)); });
+  var attrs = {};
+  EDIT_LAYOUT_NODE_IDS_.forEach(function (id) {
+    var el = qs(id);
+    if (!el) return;
+    addCol(el.parentNode);
+    var a = {};
+    EDIT_LAYOUT_ATTRS_.forEach(function (n) { a[n] = el.hasAttribute(n) ? el.getAttribute(n) : null; });
+    attrs[id] = a;
+  });
+  EDIT_LAYOUT_ = { cols: cols, attrs: attrs, applied: false };
+}
+// คืนตำแหน่งลูกของคอลัมน์ตามที่จำไว้ + ลบหัวข้อ/data-edit-* · withAttrs = true ⇒ คืน attribute เดิมด้วย (ตอนปิด) · false ⇒ ปล่อย attribute ปัจจุบัน (ตอนจัดใหม่)
+function editLayoutPutBack_(L, withAttrs) {
+  var more = qs('editMoreHead');
+  if (more && more.parentNode) more.parentNode.removeChild(more);
+  L.cols.forEach(function (c) {
+    var cur = c.el.childNodes, same = cur.length === c.kids.length;
+    for (var i = 0; same && i < cur.length; i++) if (cur[i] !== c.kids[i]) same = false;
+    if (!same) c.kids.forEach(function (k) { c.el.appendChild(k); }); // เรียงลูกใหม่ตามลำดับที่จำไว้ (node เดิม ไม่ clone)
+  });
+  Object.keys(L.attrs).forEach(function (id) {
+    var el = qs(id);
+    if (!el) return;
+    if (withAttrs) {
+      var a = L.attrs[id];
+      EDIT_LAYOUT_ATTRS_.forEach(function (n) {
+        if (a[n] === null) { if (el.hasAttribute(n)) el.removeAttribute(n); } else if (el.getAttribute(n) !== a[n]) el.setAttribute(n, a[n]);
+      });
+    }
+    el.removeAttribute('data-edit-collapsed');
+    el.removeAttribute('data-edit-locked');
+  });
+}
+function editLayoutRestore_() {
+  var L = EDIT_LAYOUT_;
+  if (!L) return false;
+  EDIT_LAYOUT_ = null;
+  editLayoutPutBack_(L, true);
+  return L.applied;
+}
+// จัดแผงใหม่จากค่าในฟอร์มตอนนี้ (ไม่ทิ้ง snapshot ก่อนเปิด) — ใช้เมื่อค่าถูกเติมทับหลังเปิดโมดัลแล้ว เช่น "แก้แล้วบันทึกใหม่" (restoreFormDraft_ หลัง openEditModalForRecord)
+function editLayoutRelayout_() {
+  var L = EDIT_LAYOUT_;
+  if (!L || !L.applied || !editModalLayoutOn_()) return;
+  editLayoutPutBack_(L, false);
+  L.applied = false;
+  editLayoutApply_();
+}
+// ความสูงที่มองเห็นของ #editModalBody เมื่อเต็มที่ (กล่องโมดัลยืดตามเนื้อหา ⇒ body.clientHeight ตอนวัดยังไม่ใช่เพดานจริง): max-height ของกล่อง − หัว − padding ของ body
+function editBodyVisibleHeight_() {
+  var box = qs('editModalBox'), head = qs('editModalHead'), body = qs('editModalBody');
+  if (!box || !body) return 0;
+  var mh = parseFloat(getComputedStyle(box).maxHeight);
+  var full = isNaN(mh) ? window.innerHeight : Math.min(mh, window.innerHeight);
+  var cs = getComputedStyle(body);
+  return Math.max(body.clientHeight, full - (head ? head.offsetHeight : 0) - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0));
+}
+function editColContentHeight_(col) {
+  var top = null, bottom = null;
+  Array.prototype.forEach.call(col.children, function (el) {
+    var r = el.getBoundingClientRect();
+    if (!r.height) return;
+    if (top === null || r.top < top) top = r.top;
+    if (bottom === null || r.bottom > bottom) bottom = r.bottom;
+  });
+  return top === null ? 0 : (bottom - top);
+}
+function editLayoutApply_() {
+  var L = EDIT_LAYOUT_;
+  if (!L || L.applied) return;
+  var col1 = qs('logCol1'), col2 = qs('logCol2'), col3 = qs('logCol3'), body = qs('editModalBody');
+  if (!col2 || !col3) return;
+  L.applied = true;
+  var ids = MOVABLE_PANEL_IDS_.filter(function (id) { var el = qs(id); return el && !el.hasAttribute('hidden'); }); // O4: แผงที่ hidden คงเดิม ไม่เป็นแถบ
+  var withData = [], empty = [];
+  EDIT_PANEL_ORDER_.forEach(function (id) {
+    if (ids.indexOf(id) === -1) return;
+    (editPanelHasData_(id) ? withData : empty).push(id);
+  });
+  // E3: แผงที่ตรงกลุ่มคิวนำก่อน (เฉพาะที่มีข้อมูล)
+  var qv = qs('queueSelect'), pre = queuePrefixOf(qv ? qv.value : ''), lead = '';
+  if (pre === 'C') lead = 'panelCheckup';
+  else if (pre === 'V') lead = 'panelVaccine';
+  else if (pre === 'M') lead = ['panelMedcertLab', 'panelAbroad', 'panelMedcertGen'].filter(function (id) { return withData.indexOf(id) !== -1; })[0] || '';
+  if (lead && withData.indexOf(lead) > 0) { withData.splice(withData.indexOf(lead), 1); withData.unshift(lead); }
+  // O1: attribute ของโมดัล (ตั้งก่อนวัดความสูง)
+  withData.forEach(function (id) { qs(id).setAttribute('data-edit-locked', '1'); });
+  empty.forEach(function (id) { qs(id).setAttribute('data-edit-collapsed', '1'); });
+  // O4 + m1: แผงวัคซีนที่ hidden (จุดคีย์ order) ⇒ เตรียมเป็นแถบท้ายกลุ่ม "เพิ่มบริการอื่น" ล่วงหน้า (hidden ยังชนะ) — ถ้าถูกปลด hidden ระหว่างเปิด จะโผล่เป็นแถบ ไม่ใช่แผงกางที่คอลัมน์ 2
+  var hiddenVax = qs('panelVaccine');
+  if (hiddenVax && !hiddenVax.hasAttribute('hidden')) hiddenVax = null;
+  if (hiddenVax) hiddenVax.setAttribute('data-edit-collapsed', '1');
+  // วาง: ตัวแรกลง col2 เสมอ · ตัวถัดไปลง col2 ถ้าไม่เกิน max(สูง col1, สูงส่วนที่มองเห็นของโมดัล) ไม่งั้นบนสุด col3 · จอแคบ ⇒ col2 ทั้งหมด
+  var wide = isWideScreen_();
+  var limit = 0;
+  var els = {}; // เก็บ node ไว้ก่อน — แผงที่ถูกถอดจาก DOM ชั่วคราวหา getElementById ไม่เจอ
+  withData.concat(empty).forEach(function (id) { els[id] = qs(id); });
+  if (hiddenVax) els.panelVaccine = hiddenVax;
+  if (wide) {
+    // วัดความสูง col1 หลังยกแผงที่จะย้ายออกจาก col1 ทั้งหมด (col ถูกยืดเท่าคอลัมน์สูงสุด จึงวัดจากลูก ๆ)
+    withData.concat(empty).forEach(function (id) { var el = els[id]; if (el && el.parentNode === col1) col1.removeChild(el); });
+    if (hiddenVax && hiddenVax.parentNode === col1) col1.removeChild(hiddenVax);
+    limit = Math.max(col1 ? editColContentHeight_(col1) : 0, editBodyVisibleHeight_());
+  }
+  var mv = {};
+  withData.concat(empty).forEach(function (id) { mv[id] = true; });
+  var overflow = [], spilled = false;
+  withData.forEach(function (id, i) {
+    var el = els[id];
+    if (!wide || i === 0) { col2.appendChild(el); return; }
+    if (!spilled) {
+      col2.appendChild(el);
+      if (editColContentHeight_(col2) > limit) { spilled = true; overflow.push(el); }
+      return;
+    }
+    overflow.push(el);
+  });
+  if (overflow.length) {
+    var ref = col3.firstChild;
+    while (ref && (mv[ref.id] || overflow.indexOf(ref) !== -1)) ref = ref.nextSibling;
+    overflow.forEach(function (el) { col3.insertBefore(el, ref); });
+  }
+  // แผงว่าง ⇒ ท้าย col3 (ก่อนกล่องยอดรวมถ้ามี) ใต้หัวข้อ "เพิ่มบริการอื่น" · ไม่มีแผงว่างเลย ⇒ ไม่มีหัวข้อ
+  if (empty.length || hiddenVax) {
+    var tot = qs('panelTotals');
+    var tail = (tot && tot.parentNode === col3) ? tot : null;
+    var head = document.createElement('p');
+    head.id = 'editMoreHead';
+    head.className = 'muted no-print';
+    head.textContent = 'เพิ่มบริการอื่น';
+    col3.insertBefore(head, tail);
+    empty.forEach(function (id) { col3.insertBefore(els[id], tail); });
+    if (hiddenVax) col3.insertBefore(hiddenVax, tail); // หัวข้อมีเสมอเมื่อมีแผงนี้ ⇒ ถ้าโผล่ขึ้นมาจะไม่เป็นแถบไร้หัวข้อ
+  }
+  if (body) body.scrollTop = 0;
+}
+// คลิกหัวแผงในโมดัล (E4/E5): คืน true = จัดการแล้ว (ไม่ต้องไปต่อ handler เดิม)
+function editModalPanelHeadClick_(panel) {
+  if (!editModalLayoutOn_() || !panel || MOVABLE_PANEL_IDS_.indexOf(panel.id) === -1) return false;
+  if (panel.getAttribute('data-edit-locked') === '1') return true;
+  if (panel.getAttribute('data-edit-collapsed') === '1') { panel.removeAttribute('data-edit-collapsed'); return true; }
+  if (editPanelHasData_(panel.id)) return true; // มีข้อมูลแล้ว (กางเองแล้วกรอก) ⇒ พับไม่ได้
+  panel.setAttribute('data-edit-collapsed', '1');
+  return true;
+}
+
 function moveFormIntoModal_() {
   var form = qs('logForm'), body = qs('editModalBody');
   if (!form || !body) return;
   EDIT_MODAL.formOriginalParent = form.parentNode;
   EDIT_MODAL.formOriginalNext = form.nextSibling;
+  try { editLayoutSnapshot_(); } catch (eLy) { EDIT_LAYOUT_ = null; } // รอบ 126 (O2) · จัดแผงเป็นเรื่องหน้าตา — พังแล้วต้องไม่ขวางการเปิด/ปิดโมดัล: จำตำแหน่ง/attribute ของแผงก่อนเปิด (ก่อน enterEditMode จัดแผงตามแถวเก่า)
   body.appendChild(form); // appendChild ของ node ที่มีอยู่แล้ว = ย้าย ไม่ใช่ clone (listener/state เดิมรอดหมด)
 }
 function moveFormBackHome_() {
@@ -6502,8 +6699,10 @@ function finishOpenEditModal_(rec) {
   if (editBannerEl) editBannerEl.hidden = true;
   setSubmitLabel('บันทึกการแก้ไขของ ' + (rec.queue || '—') + ' · ' + (rec.patientName || ''));
   EDIT_MODAL.open = true;
-  EDIT_MODAL.dirtySnapshot = captureFormDraft_();
   if (modal) modal.hidden = false;
+  try { editLayoutApply_(); } catch (eLy) { /* ดู editLayoutSnapshot_ */ } // รอบ 126 (O2): จัดแผงตามข้อมูลของแถวครั้งเดียว (ต้องหลังโมดัลแสดงแล้ว — วัดความสูงจริง)
+  // ⚠ ต้องจำ dirtySnapshot หลังจัดแผงเสมอ — captureFormDraft_() คีย์ช่องที่ไม่มี id ด้วยลำดับ DOM (การย้ายแผงเปลี่ยนลำดับ ⇒ ปิดโดยไม่แก้อะไรก็ถูกมองว่า dirty)
+  EDIT_MODAL.dirtySnapshot = captureFormDraft_();
   bindEditModalFocusTrap_();
   var closeBtn = qs('editModalClose');
   if (closeBtn && typeof closeBtn.focus === 'function') closeBtn.focus();
@@ -6540,6 +6739,8 @@ function closeEditModal_(opts) {
   opts = opts || {};
   var modal = qs('editModal');
   var savedRec = opts.savedRecord || null;
+  var layoutWasApplied = false;
+  try { layoutWasApplied = editLayoutRestore_(); } catch (eLy) { EDIT_LAYOUT_ = null; } // รอบ 126 (O2): คืนตำแหน่ง/attribute ของแผงก่อนย้ายฟอร์มกลับ
   moveFormBackHome_();
   if (modal) modal.hidden = true;
   unbindEditModalFocusTrap_();
@@ -6549,6 +6750,8 @@ function closeEditModal_(opts) {
   EDIT_MODAL.draft = null;
   EDIT_MODAL.dirtySnapshot = null;
   EDIT_MODAL.viaMerge = false;
+  // บันทึกสำเร็จ: resetLogForm() ถูกเรียกตอนโมดัลยังเปิด (applyPointLayout เป็น no-op ตาม O5) ⇒ จัดแผงตามจุดใหม่หลังคืนตำแหน่งแล้ว
+  if (opts.afterSave) applyPointLayout(); // open เป็น false แล้ว ⇒ ทำงานจริงเสมอ (แม้ layout ไม่ได้ถูกจัด)
 
   if (!opts.afterSave) {
     resetLogForm();
@@ -7246,6 +7449,7 @@ function onSaveQueueRetry_(id) {
     }
     applyLogLocks();
     recalcTotals();
+    try { editLayoutRelayout_(); } catch (eLy) { /* หน้าตาเท่านั้น */ } // รอบ 126 (M1): จัดแผงใหม่จากค่าที่คืนแล้ว (E7) — ตอนเปิดจัดจาก origRec
   }
 }
 
@@ -19340,6 +19544,7 @@ document.addEventListener('DOMContentLoaded', function () {
     head.addEventListener('click', function () {
       var panel = qs(head.getAttribute('data-panel'));
       if (!panel) return;
+      if (editModalPanelHeadClick_(panel)) return; // รอบ 126 (E4/E5): แผงในหน้าต่างแก้ไข — สลับอยู่กับที่ ไม่แตะกลไกพับเดิม
       // รอบ 60 ข้อ 1: จอกว้าง (>=1100px) + แผงที่ไม่ใช่ .log-panel-other (CSS บังคับกางอยู่) ⇒ สลับ data-user-collapsed แทน
       // data-collapsed (CSS ฝั่งจอกว้างมองเฉพาะ attribute นี้) · นอกนั้นพฤติกรรมเดิมทุกประการ
       // รอบ 64: แผงตรวจสุขภาพของจุดที่มีหัวข้อ 'ตรวจสุขภาพ' ⇒ สลับผ่าน helper เดียวที่ตั้งทั้ง data-collapsed + data-user-collapsed ให้สอดคล้อง
