@@ -5102,6 +5102,17 @@ function currentPointTopics() {
   return (STATE.pointTopics && STATE.point && STATE.pointTopics[STATE.point]) || [];
 }
 
+// รอบ 134 (K1): จุดที่ใช้หน้าบันทึกแบบจุดคีย์ order = ทุกจุดที่เลือกแล้ว ยกเว้นจุดนับ vaccine (เจ้าของ 2026-11-18)
+function keyLayoutPoint_() { return !!STATE.point && STATE.point !== VACCINE_COUNT_POINT_; }
+// รอบ 134 (K2): หัวข้อที่ใช้จัดแผงเท่านั้น (applyPointLayout/pointHasCheckupTopic_) — จุดแบบจุดคีย์ใช้หัวข้อแผงของจุดคีย์ order · ค่าตั้งต้นถ้าไม่มี/ว่าง
+// ⚠ แถบหัวจุด (updatePointBanner) · หน้าหลักของจุด (pointMainScreenFor_) ยังใช้ currentPointTopics() หัวข้อจริงของจุด
+var KEY_LAYOUT_DEFAULT_TOPICS_ = ['ตรวจสุขภาพ', 'ใบรับรองมี Lab', 'ใบรับรองทั่วไป'];
+function layoutTopics_() {
+  if (!keyLayoutPoint_()) return currentPointTopics();
+  var src = (STATE.pointTopics && STATE.pointTopics[SVC_BAR_POINT_]) || [];
+  var out = src.filter(function (t) { return POINT_TOPIC_PANEL_MAP_.hasOwnProperty(t); });
+  return out.length ? out : KEY_LAYOUT_DEFAULT_TOPICS_.slice();
+}
 // คำหัวข้อหลัก -> id ของแผงที่ตรงกัน ('รายชื่อ' ไม่ใช่แผง — เป็นตัวสั่งเปิดหน้ารายชื่อ ดู A-W5/maybeAutoOpenListForPoint)
 var POINT_TOPIC_PANEL_MAP_ = {
   'ตรวจสุขภาพ': 'panelCheckup',
@@ -5158,7 +5169,7 @@ function isCheckupQueueValue_(v) {
   return /^C\d+$/i.test(s.replace(/\s+/g, ''));
 }
 function pointHasCheckupTopic_() {
-  return currentPointTopics().indexOf('ตรวจสุขภาพ') !== -1;
+  return layoutTopics_().indexOf('ตรวจสุขภาพ') !== -1; // รอบ 134 (K2)
 }
 // panelHasDraftData_('panelCheckup') = isCheckupOn() = เลือกโปรแกรมแล้ว เท่านั้น — ไม่ครอบช่องอื่นของแผงนี้ (ช่องทางรับผล · ราคา ·
 // ตรวจมะเร็งปากมดลูก · วันนัดรับ) ซึ่งกรอก/เลือกได้ทั้งที่ยังไม่เลือกโปรแกรม ⇒ ถ้าพับกลับโดยดูแค่โปรแกรม ค่าเหล่านั้นจะหายจากสายตา
@@ -5234,7 +5245,7 @@ function expandCheckupPanelIfBlocking_() {
 }
 
 /* =========================================================================
-   รอบ 92 — แถบปุ่มบริการ #svcBar (เฉพาะ STATE.point === 'จุดคีย์ order' · โหมดล่วงหน้าซ่อนแถบ ใช้พฤติกรรมแผงเดิม)
+   รอบ 92 — แถบปุ่มบริการ #svcBar (รอบ 134: ทุกจุดยกเว้นจุดนับ vaccine — keyLayoutPoint_() · โหมดล่วงหน้าซ่อนแถบ ใช้พฤติกรรมแผงเดิม)
    ปุ่ม → แผงที่กาง: checkup = panelCheckup + panelSpecial · medGen = panelMedcertGen · medLab = panelMedcertLab · special = panelSpecial
    แผงอื่นใน 4 แผงนี้พับ (เหลือหัวแผง) ยกเว้นแผงที่มีข้อมูลในร่าง ⇒ กางเสมอ · ตั้งทั้ง data-collapsed + data-user-collapsed (จอกว้าง/แคบเหมือนกัน)
    ========================================================================= */
@@ -5245,7 +5256,7 @@ var SVC_BAR_PANELS_ = { checkup: ['panelCheckup', 'panelSpecial'], medGen: ['pan
 var SVC_PANEL_IDS_ = ['panelCheckup', 'panelSpecial', 'panelMedcertGen', 'panelMedcertLab', 'panelAbroad'];
 var SVC_PANEL_KEY_ = { panelCheckup: 'checkup', panelSpecial: 'special', panelMedcertGen: 'medGen', panelMedcertLab: 'medLab', panelAbroad: 'abroad' };
 function svcBarActive_() {
-  if (STATE.point !== SVC_BAR_POINT_) return false;
+  if (!keyLayoutPoint_()) return false; // รอบ 134 (K3): ทุกจุดยกเว้นจุดนับ vaccine
   return !((typeof isPreMode_ === 'function') && isPreMode_());
 }
 function setPanelCollapsed_(id, collapsed) {
@@ -5425,7 +5436,7 @@ function updatePointBanner() {
 // รอบ 87 (D15): จุดคีย์ order ไม่แสดงแผงวัคซีนเลย (ไม่อยู่ใต้ "บริการอื่น") — ใช้ attribute hidden (กฎ [hidden]{display:none!important} มีอยู่แล้ว)
 // ⚠ ห้าม uncheck วัคซีนตอนแก้ไข/รวมแถว (STATE.editingId) — แถวเก่าที่มีวัคซีนต้องส่งวัคซีนเดิมกลับครบ ยอดคงเดิม · บันทึกใหม่ที่จุดนี้ ⇒ onSubmitLog บังคับ vaccines: [] อีกชั้น
 var VACCINE_HIDDEN_POINT_ = 'จุดคีย์ order';
-function vaccinePanelHiddenHere_() { return STATE.point === VACCINE_HIDDEN_POINT_; }
+function vaccinePanelHiddenHere_() { return keyLayoutPoint_(); } // รอบ 134 (K4): ทุกจุดยกเว้นจุดนับ vaccine (VACCINE_HIDDEN_POINT_ ยังใช้ที่ vaxPointRows_ — แถวจากจุดคีย์ในกล่องจุดนับ vaccine)
 // รอบ 130 (L1/W1): เลิกแผงวัคซีนที่จุดคีย์ order ของรอบ 124 — เคส Lab/MMG + วัคซีน ⇒ จุดนับ vaccine บันทึกแถววัคซีนใหม่ ติ๊ก "คิดค่าบริการคลินิกแล้ว" เอง
 // ยกเว้นโหมดแก้ไขแถวเก่าที่มีวัคซีนอยู่แล้ว (STATE.editHadVaccine ตั้งตอน enterEditMode) ⇒ แผงวัคซีนต้องเห็น + แก้/เอาออกได้ (ไม่ซ่อนข้อมูลที่อยู่ในแถว)
 // รอบ 124 (G6) → รอบ 130 (W3): จุดนับ vaccine ติ๊ก "คิดค่าบริการคลินิกแล้ว" ⇒ ข้อความอธิบายใต้ช่อง (ไม่บล็อก)
@@ -5678,7 +5689,7 @@ function applyPointLayout() {
     if (el && el.classList) el.classList.remove('log-panel-other');
   });
 
-  var topics = currentPointTopics();
+  var topics = layoutTopics_(); // รอบ 134 (K2)
   var mainIds = [];
   topics.forEach(function (w) {
     var id = POINT_TOPIC_PANEL_MAP_[w];
@@ -5883,10 +5894,11 @@ function validateForm(ctx) {
     msg = queueDupMessage_(queueDupInfo);
   } else if (!STATE.point || !STATE.staffName) {
     msg = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
-  } else if (STATE.point === VACCINE_HIDDEN_POINT_ && /^v/i.test(String(ctx.queue || '').trim()) &&
+  } else if (vaccinePanelHiddenHere_() && /^v/i.test(String(ctx.queue || '').trim()) &&
              !(STATE.editingId && EDIT_MODAL.originalRec && queueDupKey_(EDIT_MODAL.originalRec.queue) === queueDupKey_(ctx.queue))) {
     // รอบ 118 (เจ้าของ 2026-11-09): จุดคีย์ order บันทึกใหม่ด้วยคิว V ไม่ได้ — วัคซีนบันทึกที่จุดนับ vaccine · แถวเก่าที่คิวคงเดิมแก้ได้ (แพตเทิร์นเดียวกับรอบ 101)
-    msg = 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
+    // รอบ 134 (K5): จุดคีย์ order ข้อความเดิมเป๊ะ · จุดอื่นที่ใช้หน้าแบบเดียวกันใช้ข้อความกลาง
+    msg = STATE.point === VACCINE_HIDDEN_POINT_ ? 'จุดคีย์ order ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine' : 'จุดนี้ไม่บันทึกคิว V — ให้บันทึกที่จุดนับ vaccine';
   } else if (!hasAnything) {
     msg = preM ? 'ลงล่วงหน้าได้เฉพาะตรวจสุขภาพ — เลือกโปรแกรมก่อนบันทึก' : 'กรุณาเลือกอย่างน้อย 1 รายการก่อนบันทึก';
   } else if (labAddOtherMissing_()) {
@@ -7315,7 +7327,7 @@ function saveQueueItemHtml_(it) {
 // ⚠ ทดสอบจริงแล้ว: offsetParent ของ element ที่เป็น position:fixed เป็น null เสมอในเบราว์เซอร์ (ไม่ใช่แค่ตอนซ่อน)
 // ⇒ ใช้ getClientRects().length ตรวจ "แสดงอยู่จริงไหม" แทน (คืน 0 ก็ต่อเมื่อตัวเองหรือบรรพบุรุษเป็น display:none จริง ๆ
 // ทำงานถูกทั้ง position:fixed และ position:sticky ต่างจาก offsetParent ที่ใช้ไม่ได้กับ fixed)
-// รอบ 82 (ก้อน B): ปุ่ม ⬆/⬇ — แสดงเมื่ออยู่หน้าบันทึก (#svcFormWrap) และ STATE.point === 'จุดคีย์ order' เท่านั้น · ⬆ ซ่อนเมื่อ scrollY ≤ 40 · ⬇ ซ่อนเมื่อห่างล่างสุด ≤ 40
+// รอบ 82 (ก้อน B): ปุ่ม ⬆/⬇ — แสดงเมื่ออยู่หน้าบันทึก (#svcFormWrap) และ keyLayoutPoint_() (รอบ 134: ทุกจุดยกเว้นจุดนับ vaccine) · ⬆ ซ่อนเมื่อ scrollY ≤ 40 · ⬇ ซ่อนเมื่อห่างล่างสุด ≤ 40
 // bottom = เหนือกล่องยอดรวมลอย #panelTotals (ถ้าแสดงอยู่ · ความสูงจริง) + 8 · เรียกจาก syncSaveQueuePanelPos_ (scroll/resize/showScreen) และตอนเปลี่ยนจุด
 var LOG_SCROLL_POINT_ = 'จุดคีย์ order';
 function syncLogScrollNav_() {
@@ -7323,7 +7335,7 @@ function syncLogScrollNav_() {
   var nav = qs('logScrollNav');
   if (!nav) return;
   var wrap = qs('svcFormWrap');
-  var show = !!wrap && wrap.style.display === 'block' && STATE.point === LOG_SCROLL_POINT_;
+  var show = !!wrap && wrap.style.display === 'block' && keyLayoutPoint_(); // รอบ 134 (K6)
   nav.hidden = !show;
   if (!show) return;
   var y = window.pageYOffset || (document.documentElement && document.documentElement.scrollTop) || 0;
@@ -9170,7 +9182,8 @@ function isBackdateMode_() {
 }
 // ข้อความยืนยันก่อนบันทึกย้อนหลัง (B3) + เตือนข้ามเดือน (B4) — ไม่มีข้อมูลผู้ป่วย
 function backdateConfirmMsg_(ymd) {
-  var msg = 'บันทึกย้อนหลังเป็นของ ' + formatThaiDateFull_(ymd) + ' ไม่ใช่วันนี้\nยอดและรายงานจะนับเข้าวันที่นี้';
+  // รอบ 134 (เจ้าของ 2026-11-18 "อ่านแล้วยังงงอยู่"): ข้อความเดิม "…ไม่ใช่วันนี้ ยอดและรายงานจะนับเข้าวันที่นี้" กำกวม ⇒ บอกตรง ๆ ว่ารายการลงวันไหน ยอดไปอยู่วันไหน
+  var msg = 'ยืนยันบันทึกย้อนหลัง\n\nรายการนี้จะลงเป็นของ ' + formatThaiDateFull_(ymd);
   if (String(ymd).slice(0, 7) !== todayStr().slice(0, 7)) {
     var p = thdParseDate(ymd);
     var monthLabel = p ? (THAI_MONTH_NAMES_CU[p.m - 1] + ' ' + (p.y + 543)) : String(ymd).slice(0, 7);
