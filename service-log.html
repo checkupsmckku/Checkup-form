@@ -7736,7 +7736,7 @@ function onSubmitLog(e) {
   // closeEditModal_() แตะ EDIT_MODAL (เหมือนเดิม แค่ย้ายมาทำทันทีแทนรอ resp ตอบ)
   var wasModalEdit = isEdit && EDIT_MODAL.open;
   resetLogForm(); // กลับเป็นโหมดบันทึกรายใหม่เสมอ (รวมถึงออกจากโหมดแก้ไขถ้ากำลังแก้ไขอยู่)
-  backdateAfterSave_(); // รอบ 119: บันทึกย้อนหลังแล้วช่องวันที่กลับเป็นวันนี้ (ปลอดภัยกว่าค้างวันเก่า) · payload ในคิวคงวันที่เลือกไว้
+  backdateAfterSave_(); // รอบ 133: บันทึกย้อนหลังแล้วช่องวันที่คงวันที่เลือกไว้ (ลงหลายรายของวันเดียวกันต่อได้) · payload ในคิวคงวันที่เลือกไว้
   if (wasModalEdit) {
     // savedRecord: null — ยังไม่รู้ผลจากเซิร์ฟเวอร์ ⇒ closeEditModal_() จะไม่โชว์ "✓ บันทึกให้..."/เลื่อนจอ/ไฮไลต์
     // ตอนนี้ (ของจริงเกิดทีหลังใน .then() ข้างล่างเมื่อรู้ผลแล้ว — ไม่ใช่ที่นี่)
@@ -9259,11 +9259,14 @@ function invalidateBackdateDay_() {
 }
 // ล้างแล้วโหลดใหม่ (ไม่ได้อยู่โหมดย้อนหลัง ⇒ loadBackdateDay_ ไม่ยิง) — ใช้หลังยกเลิกแถว: ทางแก้ลงผิดคือยกเลิกแล้วลงใหม่ ต้องไม่เห็นแถวที่ยกเลิกแล้วเป็นของซ้ำ
 function refreshBackdateDay_() { invalidateBackdateDay_(); loadBackdateDay_(); }
-// หลังกดบันทึก (ถัดจาก resetLogForm): ช่องวันที่เป็นอดีตและไม่ได้แก้รายการรอมา ⇒ กลับวันนี้ + ซิงก์ + ล้างแคชนัดล่วงหน้า (เป็นของวันเก่า)
+// หลังกดบันทึก (ถัดจาก resetLogForm): ช่องวันที่เป็นอดีตและไม่ได้แก้รายการรอมา
+// รอบ 133 (เจ้าของ 2026-11-18 "วันที่ให้เป็นวันที่เลือกไว้เลย ไม่ต้อง switch กลับมาปัจจุบัน"): ยังย้อนหลังได้ ⇒ คงวันที่เลือก (ซิงก์ชุดโปรแกรม/รายการปิดวันอาทิตย์ใหม่หลังล้างฟอร์ม)
+// · กันลงผิดวันด้วยแถบแดง + กล่องยืนยันวันเต็มทุกครั้งที่กดบันทึก · วันนั้นหลุดช่วงแล้ว (เช่นข้ามเที่ยงคืนจนเกิน 31 วัน) ⇒ กลับวันนี้แบบเดิม
 function backdateAfterSave_() {
   var el = qs('serviceDate');
   if (!el || STATE.preEditId) return;
   if (serviceDateValue_() >= todayStr()) return;
+  if (backdateAllowed_(serviceDateValue_())) { syncAfterServiceDateSet_(); return; }
   el.value = todayStr();
   PRE_FUTURE_.date = ''; PRE_FUTURE_.items = []; PRE_FUTURE_.busy = false; PRE_FUTURE_.busyDate = ''; PRE_FUTURE_SEQ_++;
   syncAfterServiceDateSet_();
