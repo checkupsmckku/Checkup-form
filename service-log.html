@@ -2167,6 +2167,10 @@
                   </div>
                   <p class="muted" id="abroadPelvicSunHint" hidden style="margin-top:6px;">วันอาทิตย์: เติมราคาตรวจภายในอย่างเดียวให้แล้ว — มี Lab อื่นแก้ยอดเอง</p>
                 </div>
+                <!-- รอบ 131 (เจ้าของ 2026-11-17 "เคสต่างประเทศก็เหมือนใบรับรองแพทย์มี lab · มีส่งตรวจพิเศษ"): เงาเดียวกับ #medLabSpMirror
+                     (sp_reg_<id> ตัวจริง · id abroad_spm_<id> · ไม่อยู่ใน payload) — สร้าง/ซิงก์ใน buildMedLabSpMirror_/syncMedLabSpMirror_ -->
+                <p class="muted" style="margin-top:12px;font-weight:700;">ส่งตรวจพิเศษ</p>
+                <div id="abroadSpMirror"></div>
               </section>
             </div>
           </section>
@@ -3073,6 +3077,7 @@ var STATE = {
   pointTopics: {},
   labFollowupFree: false, // รอบ 108: กดปุ่ม "ไม่มีค่าใช้จ่าย" (ฟังผล Lab ที่จ่ายครบแล้ว) · ล้างเมื่อ resetLogForm
   abroadFree: false, // รอบ 120: ปุ่ม "ไม่มีค่าใช้จ่าย" ของแผงตรวจร่างกายไปต่างประเทศ · ล้างเมื่อ resetLogForm
+  editAbroadPelvicOrig: '', // รอบ 131: แถวต้นฉบับที่กำลังแก้ไขเป็น abroad + เลือกตรวจภายในไว้ ⇒ ค่านั้น (ล้างใน exitEditMode) — กัน "ยอดต่างประเทศถูกลบชั่วคราวระหว่างพิมพ์ใหม่" ทำค่าตรวจภายในหาย
   editHadVaccine: false, // รอบ 130 (W1): แถวที่กำลังแก้ไขมีวัคซีนมาตั้งแต่ต้น ⇒ จุดคีย์ order ยังเห็นแผงวัคซีน (ตั้งใน enterEditMode · ล้างใน exitEditMode)
   sunFill: { medLabPelvic: null, abroadPelvic: null }, // รอบ 124 (W7): ยอดที่ระบบเติมให้ล่าสุดจากตัวเลือกตรวจภายในวันอาทิตย์ (null = ไม่มี) · ผู้ใช้พิมพ์เองแล้วไม่ทับ
   // รอบ 81 (W1/W5): preEditId = preId ของรายการรอมาที่กำลังแก้ในฟอร์มบันทึก ('' = ไม่ได้แก้) · preEditName = ชื่อที่โชว์บนแถบส้ม ·
@@ -3782,15 +3787,22 @@ function onSpecialRegChange(id) {
    · syncMedLabSpMirror_() เรียกจาก recalcTotals — ซิงก์ checked/disabled (ล็อกเพศ MMG/U/S ตามตัวจริง)
    · รอบ 108: ถอดปุ่ม "ไม่มีตรวจเพิ่ม" + ด่านลืมติ๊ก — พิมพ์ยอด Lab แล้วบันทึกได้เลย
    · เงาไม่ถูกส่งใน payload — payload อ่านจาก sp_reg_* เท่านั้น */
+// รอบ 131: เงาชุดเดียวกันในแผงต่างประเทศ (#abroadSpMirror) — คู่ [wrapId, คำนำหน้า id ช่อง, คำนำหน้า id แถว]
+// ตัวที่ 4 = id ที่ไม่แสดง · เจ้าของ: "ต่างประเทศไม่มีตรวจภายใน mmg u/s" (U/S = U/S Breast) · "ไม่มี bmd"
+var SP_MIRROR_SETS_ = [['medLabSpMirror', 'mirror_sp_', 'mirror_row_', []], ['abroadSpMirror', 'abroad_spm_', 'abroad_spm_row_', ['mmg', 'us_breast', 'bmd']]];
 function buildMedLabSpMirror_() {
-  var wrap = qs('medLabSpMirror');
+  SP_MIRROR_SETS_.forEach(function (set) { buildSpMirrorInto_(set[0], set[1], set[2], set[3]); });
+}
+function buildSpMirrorInto_(wrapId, cbPfx, rowPfx, skipIds) {
+  var wrap = qs(wrapId);
   if (!wrap) return;
   wrap.innerHTML = '';
   spDisplayOrder_(SP_BOARD_ITEMS).forEach(function (item) {
+    if ((skipIds || []).indexOf(item.id) !== -1) return;
     var row = document.createElement('label');
     row.className = 'check-row';
-    row.id = 'mirror_row_' + item.id;
-    row.innerHTML = '<input type="checkbox" id="mirror_sp_' + escHtml(item.id) + '"><span class="item-name">' + escHtml(item.name) + '</span>';
+    row.id = rowPfx + item.id;
+    row.innerHTML = '<input type="checkbox" id="' + cbPfx + escHtml(item.id) + '"><span class="item-name">' + escHtml(item.name) + '</span>';
     wrap.appendChild(row);
     var cb = row.querySelector ? row.querySelector('input') : null;
     if (!cb) return;
@@ -3837,14 +3849,16 @@ function syncAbroadSpMirror_() {
 }
 function syncMedLabSpMirror_() {
   if (typeof SP_BOARD_ITEMS === 'undefined') return;
-  SP_BOARD_ITEMS.forEach(function (item) {
-    var m = qs('mirror_sp_' + item.id);
-    if (!m) return;
-    var real = qs('sp_reg_' + item.id);
-    m.checked = !!(real && real.checked);
-    m.disabled = !!(real && real.disabled);
-    var row = qs('mirror_row_' + item.id);
-    if (row && row.classList) row.classList.toggle('sp-row-locked', !!(real && real.disabled));
+  SP_MIRROR_SETS_.forEach(function (set) {
+    SP_BOARD_ITEMS.forEach(function (item) {
+      var m = qs(set[1] + item.id);
+      if (!m) return;
+      var real = qs('sp_reg_' + item.id);
+      m.checked = !!(real && real.checked);
+      m.disabled = !!(real && real.disabled);
+      var row = qs(set[2] + item.id);
+      if (row && row.classList) row.classList.toggle('sp-row-locked', !!(real && real.disabled));
+    });
   });
 }
 
@@ -4572,9 +4586,13 @@ function updateMedLabPelvicSection_(checkupOn) {
   var abSection = qs('abroadPelvicSection');
   var showAb = false;
   if (abSection) {
-    showAb = female && abroad;
+    // รอบ 131 (เจ้าของ 2026-11-17 "ต่างประเทศไม่มีตรวจภายใน"): เลิกเลือกใหม่ · แสดงเฉพาะตอนแก้ไขแถวเก่าที่เลือกไว้แล้ว (ไม่ล้างข้อมูลเดิมเงียบ ๆ)
+    // แก้ไขแถวต้นฉบับ abroad + ตรวจภายใน (editAbroadPelvicOrig): ตัวเลือกคงเห็นเมื่อ abroad เปิดอยู่ (แม้เลือก "ไม่ตรวจ"/ยกเลิกติ๊ก) · abroad หายชั่วคราว (ลบยอดเพื่อพิมพ์ใหม่/ไม่มีค่าใช้จ่าย) ⇒ ซ่อนแต่ไม่ล้างค่า
+    var abPicked = document.querySelector ? document.querySelector('input[name="abroadPelvic"]:checked') : null;
+    var abKeep = !!STATE.editingId && !!STATE.editAbroadPelvicOrig;
+    showAb = female && abroad && !!STATE.editingId && ((!!abPicked && isPelvicChosen_(abPicked.value)) || abKeep);
     abSection.hidden = !showAb;
-    if (!showAb) { sunFillRevert_('abroadPelvic'); clearMedLabPelvic_('abroadPelvic'); }
+    if (!showAb && !(abKeep && female && !abroad)) { sunFillRevert_('abroadPelvic'); clearMedLabPelvic_('abroadPelvic'); }
   }
   var sun = formDayIsSunday_();
   var h1 = qs('medLabPelvicSunHint'), h2 = qs('abroadPelvicSunHint');
@@ -6369,6 +6387,7 @@ function resetLogForm() {
    ========================================================================= */
 function exitEditMode() {
   STATE.editingId = '';
+  STATE.editAbroadPelvicOrig = ''; // รอบ 131
   STATE.editHadVaccine = false; // รอบ 130 (W1)
   STATE.editingDate = ''; // รอบ 110
   // รอบ 35 (2026-09-30): ล้าง originalRec ด้วย กัน validateForm() เผลอเอาแถวที่แก้ไขค้างจากรอบก่อนมา "grandfather"
@@ -6845,7 +6864,8 @@ function enterEditMode(rec) {
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
   // รอบ 123 (W6): แถวไม่มีโปรแกรมที่ตรวจมะเร็งปากมดลูกจริง ⇒ ติ๊กตัวเลือกในแผง Lab · แถวอื่นล้าง
-  if (!hasCheckup && isPelvicChosen_(rec.pelvic)) setMedLabPelvic_(rec.pelvic, (rec.specialReg || []).indexOf('abroad') !== -1); else clearMedLabPelvic_(); // รอบ 124 (W6): แถว abroad ⇒ กลุ่มต่างประเทศ
+  if (!hasCheckup && isPelvicChosen_(rec.pelvic)) setMedLabPelvic_(rec.pelvic, (rec.specialReg || []).indexOf('abroad') !== -1); else clearMedLabPelvic_();
+  STATE.editAbroadPelvicOrig = (!hasCheckup && isPelvicChosen_(rec.pelvic) && (rec.specialReg || []).indexOf('abroad') !== -1) ? rec.pelvic : ''; // รอบ 131: ดู updateMedLabPelvicSection_ // รอบ 124 (W6): แถว abroad ⇒ กลุ่มต่างประเทศ
   // รอบ 21 (2026-09-20): ต้องเซ็ตค่า "ก่อน" เรียก updatePickupDateVisibility ไม่งั้นค่าที่เพิ่งเติมโดนล้างทิ้ง
   var pickupEditEl = qs('pickupDate');
   if (pickupEditEl) pickupEditEl.value = rec.pickupDate || '';
