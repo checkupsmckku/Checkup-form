@@ -2009,7 +2009,7 @@
                 </label>
                 <label class="check-row" id="vaccinePeChargedRow">
                   <input type="checkbox" id="vaccinePeCharged">
-                  <span class="item-name">คิดค่าบริการคลินิกแล้ว<small class="muted vax-opt-desc" style="display:block;font-weight:normal;">(คิดค่ายา + เข็ม + DF ไม่บวก PE/10%)</small></span>
+                  <span class="item-name">คิดค่าบริการคลินิกแล้ว<small class="muted vax-opt-desc" style="display:block;font-weight:normal;">(คิดค่ายา + เข็ม ไม่บวก DF/PE/10%)</small></span>
                   <span class="sp-lock-note" id="vaccinePeChargedNote" hidden>มีโปรแกรมตรวจสุขภาพ ใช้เรตตรวจสุขภาพ</span>
                 </label>
                 <!-- รอบ 130 (L5/W3): จุดนับ vaccine ติ๊ก "คิดค่าบริการคลินิกแล้ว" ⇒ คำอธิบาย (ไม่บล็อก) — ไม่นับเป็นผู้รับบริการเพิ่ม -->
@@ -2987,8 +2987,8 @@ function calcVaccineTotal(vaccineCodes, checkupChecked, vaccinesData, priceConst
   if (regularCount === 0) return alwaysTotal;
   if (checkupChecked) return sumBareNeedle + alwaysTotal;
   var df = (priceConsts && typeof priceConsts.DF === 'number') ? priceConsts.DF : PRICE_DEFAULTS.DF;
-  // รอบ 119ค (เจ้าของ 2026-11-10): "คิด PE แล้ว" ⇒ ยา+เข็ม + DF ครั้งเดียว ไม่คิด PE ไม่คิด 10% · ต้องตรงกับ สถิติบริการ.js
-  if (peCharged) return sumBareNeedle + df + alwaysTotal;
+  // รอบ 119ค (เจ้าของ 2026-11-10): "คิด PE แล้ว" ⇒ ยา+เข็ม (รอบ 132: ไม่มี DF แล้ว) ไม่คิด PE ไม่คิด 10% · ต้องตรงกับ สถิติบริการ.js
+  if (peCharged) return sumBareNeedle + alwaysTotal; // รอบ 132 K5: ตัด DF (เจ้าของ 2026-11-18)
   var pe = (priceConsts && typeof priceConsts.PE === 'number') ? priceConsts.PE : PRICE_DEFAULTS.PE;
   var markup = (priceConsts && typeof priceConsts.MARKUP_PERCENT === 'number') ? priceConsts.MARKUP_PERCENT : PRICE_DEFAULTS.MARKUP_PERCENT;
   var base = df + pe + sumBareNeedle;
@@ -4974,7 +4974,7 @@ function updateVaccinePriceBanner(checkupOn, peCharged) {
     banner.textContent = 'ราคาวัคซีน: ชุดมาตรวจสุขภาพ (ไม่มี DF/PE/10%)';
     banner.className = 'price-banner banner-alt';
   } else if (peCharged) {
-    banner.textContent = 'ราคาวัคซีน: คิดค่าบริการคลินิกแล้ว (ค่ายา + เข็ม + DF)';
+    banner.textContent = 'ราคาวัคซีน: คิดค่าบริการคลินิกแล้ว (ค่ายา + เข็ม)';
     banner.className = 'price-banner banner-alt';
   } else {
     banner.textContent = 'ราคาวัคซีน: ชุดปกติ (รวม DF+PE+10%)';
@@ -8185,6 +8185,17 @@ function isPeChargedVaccineOnly_(rec) {
   if ((Number(t.checkup) || 0) > 0 || (Number(t.extra) || 0) > 0 || (Number(t.medcert) || 0) > 0) return false;
   return true;
 }
+// รอบ 132 (K1): แถววัคซีนล้วนที่ "คนนั้นนับแล้วที่แถวอื่น" = isPeChargedVaccineOnly_ หรือ (วัคซีนล้วน + มาตรวจสุขภาพด้วย vaccineWithCheckup === true)
+// ⚠ ต้องตรงกับ isCountedElsewhereVaccineOnlyRow_ ใน สถิติบริการ.js · ใช้ที่ st.totalPeople ที่เดียว (cntVaccineProc ยังใช้ isPeChargedVaccineOnly_ เดิม)
+function isCountedElsewhereVaccineOnly_(rec) {
+  if (!rec) return false;
+  if (rec.vaccinePeCharged !== true && rec.vaccineWithCheckup !== true) return false;
+  // นิยามวัคซีนล้วนเดียวกับ isPeChargedVaccineOnly_ (ทดสอบโดยสมมุติ vaccinePeCharged = true)
+  var copy = {};
+  for (var k in rec) { if (Object.prototype.hasOwnProperty.call(rec, k)) copy[k] = rec[k]; }
+  copy.vaccinePeCharged = true;
+  return isPeChargedVaccineOnly_(copy);
+}
 function computeTodayStats_(records) {
   var st = { totalPeople: 0, totalMoney: 0, cntCheckup: 0, cntVaccine: 0, cntVaccineProc: 0, cntVaccineCu: 0, cntMedGen: 0, cntMedLab: 0,
     sumCheckup: 0, sumVaccine: 0, sumVaccineCu: 0, sumMedGen: 0, sumMedLab: 0, sumOther: 0,
@@ -8199,7 +8210,7 @@ function computeTodayStats_(records) {
   var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
   (records || []).forEach(function (rec) {
     if (!rec || rec.status === 'ยกเลิก') return;
-    if (!isPeChargedVaccineOnly_(rec)) st.totalPeople++; // รอบ 130 (L4): แถววัคซีนคิดค่าบริการคลินิกแล้วล้วน ไม่นับเป็นผู้รับบริการเพิ่ม (เงิน/เข็มนับตามเดิม)
+    if (!isCountedElsewhereVaccineOnly_(rec)) st.totalPeople++; // รอบ 132 (K1): + แถว 'ใช่' วัคซีนล้วน · รอบ 130 (L4): แถววัคซีนคิดค่าบริการคลินิกแล้วล้วน ไม่นับเป็นผู้รับบริการเพิ่ม (เงิน/เข็มนับตามเดิม)
     st.totalMoney += recordGrandTotal(rec);
     var t = rec.totals || {};
     var labAmt = numOf(rec.medCertLabAmount);
@@ -8257,8 +8268,8 @@ function computeSupOpd_(records, dateStr) {
     if (has('ent')) r.ent++;
     if (has('ent_hearing')) r.entAudio++;
     if (has('vision3d')) r.vision++;
-    var prog = String(rec.program == null ? '' : rec.program);
-    if (prog === '2' || prog === '3' || prog === '4' || has('ekg')) r.ekg++; // คนเดียวนับครั้งเดียว
+    var prog = String(rec.program == null ? '' : rec.program).trim().toLowerCase(); // รอบ 132 (m3): เทียบแบบเดียวกับเซิร์ฟเวอร์
+    if (EKG_PROGRAMS.indexOf(prog) !== -1 || has('ekg')) r.ekg++; // คนเดียวนับครั้งเดียว · รอบ 132 K2: + 1sun/2sun
     if (CU_US_PROGRAMS.indexOf(prog) !== -1 || has('us_abdomen')) r.usAbdomen++; // รอบ 111: คนเดียวนับครั้งเดียว (CU_US_PROGRAMS อ่านอย่างเดียว)
     if (has('inbody')) r.inbody++;
     if (has('eye_test') || has('color_blind')) r.eyeTest++; // คนเดียวนับครั้งเดียว
@@ -8281,7 +8292,7 @@ function renderSupOpdSummary(records, dateStr) {
   var rows = [
     ['มีหัตถการ', r.withProc, 'ราย', 1], ['ไม่มีหัตถการ', r.noProc, 'ราย', 1], ['ยอดรวมหัตถการ', r.total, 'ราย', 1], null,
     ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'ราย'], ['MMG + U/S Breast', r.mmgUs, 'ราย'], ['ENT', r.ent, 'ราย'],
-    ['ENT + Audio', r.entAudio, 'ราย'], ['ห้องตรวจตา', r.vision, 'ราย'], ['EKG', r.ekg, 'ราย'], ['U/S ช่องท้อง', r.usAbdomen, 'ราย'], ['Inbody', r.inbody, 'ราย'],
+    ['ENT + Audio', r.entAudio, 'ราย'], ['ห้องตรวจตา', r.vision, 'ราย'], ['U/S ช่องท้อง', r.usAbdomen, 'ราย'], ['EKG', r.ekg, 'ราย'], ['Inbody', r.inbody, 'ราย'],
     ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'ราย'], ['PPD test', r.ppd, 'ราย']
   ];
   if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'ราย']);
@@ -8785,7 +8796,7 @@ function qcRender_() {
   rows.forEach(function (r) {
     var q = escHtml(r.queue || ('M' + r.n));
     var attrs = ' data-qc-n="' + escHtml(String(r.n)) + '" data-qc-state="' + escHtml(String(r.state)) + '"';
-    var recBtn = (isToday || backdateAllowed_(d.date)) // รอบ 119 (Q1): ย้อนหลังภายใน 7 วัน ไม่ใช่เสาร์ ⇒ ปุ่ม ＋ บันทึกด้วย
+    var recBtn = (isToday || backdateAllowed_(d.date)) // รอบ 119 (Q1): ย้อนหลังภายใน 31 วัน ไม่ใช่เสาร์ ⇒ ปุ่ม ＋ บันทึกด้วย
       ?'<button type="button" class="btn small" data-qc-act="record" data-qc-n="' + escHtml(String(r.n)) + '">＋ บันทึก</button>'
       : '<span class="muted">ย้อนวัน: แก้ในชีตหรือแจ้งผู้ดูแล</span>';
     if (r.state === 'ok') {
@@ -8810,7 +8821,7 @@ function qcRender_() {
 // ＋ บันทึก: ไปหน้าบันทึก ฟอร์มว่าง ใส่คิว M<n> ให้ (เป็นการกดของคน — ไม่ขัดกติการอบ 60) · มีร่างค้าง ⇒ ถามก่อน
 function qcStartRecord_(n) {
   if (!(n >= 1)) return;
-  // รอบ 119 (Q1): วันนี้ ⇒ แกนเดิม · วันที่ผ่านมาภายใน 7 วันและไม่ใช่เสาร์ ⇒ เปิดฟอร์มพร้อมวันนั้น + คิว M นั้น · นอกนั้นไม่ทำอะไร
+  // รอบ 119 (Q1): วันนี้ ⇒ แกนเดิม · วันที่ผ่านมาภายใน 31 วันและไม่ใช่เสาร์ ⇒ เปิดฟอร์มพร้อมวันนั้น + คิว M นั้น · นอกนั้นไม่ทำอะไร
   var day = qcViewDate_();
   if (day === todayStr()) { qcStartRecordToday_(n); return; }
   if (!backdateAllowed_(day)) return;
@@ -9140,14 +9151,14 @@ function isPreMode_() {
   return serviceDateValue_() > todayStr();
 }
 /* ---------- รอบ 119: บันทึกย้อนหลัง (วันที่รับบริการ < วันนี้) ---------- */
-var BACKDATE_MAX_DAYS = 7; // ต้องตรงกับ BACKDATE_MAX_DAYS_ ฝั่งเซิร์ฟเวอร์ (เซิร์ฟเวอร์ตรวจช่วงเอง ไม่เชื่อเว็บ)
+var BACKDATE_MAX_DAYS = 31; // รอบ 132 K3: 7 → 31 วัน · ต้องตรงกับ BACKDATE_MAX_DAYS_ ฝั่งเซิร์ฟเวอร์ (เซิร์ฟเวอร์ตรวจช่วงเอง ไม่เชื่อเว็บ)
 function backdateMinDate_() { return addDaysYmd_(todayStr(), -BACKDATE_MAX_DAYS); }
 function isSaturdayYmd_(ymd) {
   var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
   if (!m) return false;
   return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 6;
 }
-// ย้อนหลังได้: ก่อนวันนี้ · ไม่เกิน 7 วัน · ไม่ใช่วันเสาร์ (ไม่รวมวันนี้)
+// ย้อนหลังได้: ก่อนวันนี้ · ไม่เกิน 31 วัน (BACKDATE_MAX_DAYS) · ไม่ใช่วันเสาร์ (ไม่รวมวันนี้)
 function backdateAllowed_(ymd) {
   var v = String(ymd || '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
@@ -11961,6 +11972,8 @@ function checkupFootText(rows, totalMoney) {
    ให้กล่องนั้นเสมอ ⇒ checkupFootText() เดิมข้างบนไม่ต้องแก้อะไรเลย ยังพิมพ์ขึ้นกระดาษแบบเดิมทุกตัวอักษร */
 // รอบ 63: โปรแกรมคู่รัก ไม่มี U/S และไม่มี EKG (เจ้าของยืนยัน) ⇒ ไม่เติม 'couple' ที่นี่ และไม่อยู่ในเงื่อนไข ekg ของ computeSupOpd_
 // เจ้าของสั่ง 2026-10-25: วันอาทิตย์ U/S = โปรแกรม 2 วันอาทิตย์ ('2sun') ⇒ เติมเข้าชุดนี้ (เดิมยอด U/S วันอาทิตย์ขึ้น 0)
+// รอบ 132 (K2): โปรแกรมที่มี EKG = 2 · 3 · 4 + P1/P2 วันอาทิตย์ · ต้องตรงกับ EKG_PROGRAMS ใน สถิติบริการ.js
+var EKG_PROGRAMS = ['2', '3', '4', '1sun', '2sun'];
 var CU_US_PROGRAMS = ['3', '4', '2sun']; // U/S = อัลตราซาวด์ อยู่ในโปรแกรม 3 · 4 · 2 วันอาทิตย์ ⚠ ถ้าโปรแกรมที่มี U/S เปลี่ยน แก้ที่ตัวแปรนี้ที่เดียว
 
 // นับแถวที่โปรแกรมอยู่ใน CU_US_PROGRAMS — ⚠ String() ก่อนเทียบเสมอ เพราะชีต/records อาจคืน program เป็นตัวเลข (3)
@@ -15086,11 +15099,22 @@ function formatThaiMonthYear(monthStr) {
 // รอบ 71: ลำดับช่องทางของการ์ด 6 — ต้องตรงกับ DELIVERY_METHODS ฝั่งเซิร์ฟเวอร์ (ไม่รวมค่าว่าง) และตัวเลือกใน select#deliveryMethod
 // (หน้านี้ไม่มีค่าคงที่ของรายการช่องทางรับผล มีแค่ <option> ใน HTML จึงประกาศแยกไว้ที่นี่ — เพิ่มช่องทางใหม่ต้องแก้ 3 ที่)
 var REPORT_DELIVERY_ORDER = ['รอรับด้วยตนเอง', 'ส่งทางไปรษณีย์', 'ส่งทาง E-mail', 'ส่งทาง Whatsapp', 'นัดรับวันที่'];
+// รอบ 132 (K4): id ส่งตรวจพิเศษที่วันอาทิตย์ไม่มีบริการ — มุมมองอาทิตย์ล้วนไม่แสดงแถว · มุมมองรวมแสดง '—' เมื่ออาทิตย์ = 0 (ถ้า > 0 แสดงเลขจริง)
+var SUNDAY_NO_SP_IDS_ = ['bmd', 'mmg', 'us_breast', 'ent', 'ent_hearing', 'vision3d'];
+// รอบ 132 (K4): มุมมองของรายงาน 'sun' | 'week' | 'all' — รายวัน: ตามวันที่ (UTC เหมือน isSundayYmd_) · รายเดือน/ไตรมาส: ตาม dayGroup
+function reportViewKind_(period) {
+  if (!period) return 'all';
+  if (period.mode === 'day') return isSundayYmd_(period.value) ? 'sun' : 'week';
+  if (period.dayGroup === 'sun') return 'sun';
+  if (period.dayGroup === 'week') return 'week';
+  return 'all';
+}
 function renderReport(summary, period) {
   var el = qs('reportContent');
   if (!summary) { el.innerHTML = '<p class="muted">ไม่มีข้อมูล</p>'; return; }
   var isDay = !!(period && period.mode === 'day');
   var isQuarter = !!(period && period.mode === 'quarter'); // รอบ 30 (W1)
+  var viewKind = reportViewKind_(period); // รอบ 132 (K4)
 
   var html = '';
   // 1 สรุปรวม
@@ -15112,8 +15136,9 @@ function renderReport(summary, period) {
   // 2 ตรวจสุขภาพ — summary.checkup.programs[p] = { ชาย, หญิง } (คีย์ภาษาไทย, p เป็นสตริง '1'..'4')
   var checkup = summary.checkup || {};
   var programs = checkup.programs || {};
-  html += '<div class="card"><h2>2 ตรวจสุขภาพ</h2>' +
-    '<div class="line" style="font-weight:700;">จันทร์–ศุกร์</div>' +
+  html += '<div class="card"><h2>2 ตรวจสุขภาพ</h2>';
+  if (viewKind !== 'sun') { // รอบ 132 (K4): มุมมองอาทิตย์ล้วนไม่แสดงตารางจันทร์–ศุกร์
+  html += '<div class="line" style="font-weight:700;">จันทร์–ศุกร์</div>' +
     '<div class="scroll-x"><table class="report-table"><thead><tr>' +
     '<th>โปรแกรม</th><th>ชาย</th><th>หญิง</th></tr></thead><tbody>';
   [1, 2, 3, 4].forEach(function (p) {
@@ -15126,12 +15151,14 @@ function renderReport(summary, period) {
   var coupleRow = programs['couple'] || {};
   html += '<tr><td>โปรแกรมคู่รัก</td><td>' + numOr0(coupleRow['ชาย']) + '</td><td>' + numOr0(coupleRow['หญิง']) + '</td></tr>';
   html += '</tbody></table></div>';
+  } // /รอบ 132 viewKind !== 'sun'
 
   // รอบ 22 (2026-09-21, เจ้าของสั่ง): ชุดโปรแกรมวันอาทิตย์ — ตารางแยกต่างหาก ห้ามรวมแถวกับโปรแกรม 1/2 วันจันทร์-ศุกร์
   // (คนละบริการกันโดยสิ้นเชิง บังเอิญเลขซ้ำกันเฉย ๆ)
   var sun1Row = programs['1sun'] || {};
   var sun2Row = programs['2sun'] || {};
   var sunPelvicRow = programs[PELVIC_ONLY_PROGRAM] || {};
+  if (viewKind !== 'week') // รอบ 132 (K4): มุมมองจันทร์–ศุกร์ล้วนไม่แสดงตารางวันอาทิตย์
   html += '<div class="line" style="font-weight:700;margin-top:10px;">วันอาทิตย์</div>' +
     '<div class="scroll-x"><table class="report-table"><thead><tr>' +
     '<th>โปรแกรม</th><th>ชาย</th><th>หญิง</th></tr></thead><tbody>' +
@@ -15142,8 +15169,8 @@ function renderReport(summary, period) {
 
   // รอบ 22: สรุปยอด "จันทร์-ศุกร์" กับ "วันอาทิตย์" แยกกัน — ถ้า backend ยังไม่มี bySet (ยังไม่ deploy) ต้องไม่ crash/ไม่โชว์เลข 0 ปลอม ๆ
   if (checkup.bySet && checkup.bySet.week && checkup.bySet.sun) {
-    html += '<div class="line" style="margin-top:8px;">จันทร์–ศุกร์: ' + numOr0(checkup.bySet.week.people) + ' ราย · ' + money(numOr0(checkup.bySet.week.money)) + ' บาท</div>' +
-      '<div class="line">วันอาทิตย์: ' + numOr0(checkup.bySet.sun.people) + ' ราย · ' + money(numOr0(checkup.bySet.sun.money)) + ' บาท</div>';
+    if (viewKind !== 'sun') html += '<div class="line" style="margin-top:8px;">จันทร์–ศุกร์: ' + numOr0(checkup.bySet.week.people) + ' ราย · ' + money(numOr0(checkup.bySet.week.money)) + ' บาท</div>';
+    if (viewKind !== 'week') html += '<div class="line"' + (viewKind === 'sun' ? ' style="margin-top:8px;"' : '') + '>วันอาทิตย์: ' + numOr0(checkup.bySet.sun.people) + ' ราย · ' + money(numOr0(checkup.bySet.sun.money)) + ' บาท</div>';
   }
 
   // รอบ 26 (2026-09-22): "ตรวจภายใน" -> "ตรวจมะเร็งปากมดลูก" ในข้อความที่ผู้ใช้เห็น — แยกตามชนิด
@@ -15229,14 +15256,33 @@ function renderReport(summary, period) {
   //    ฝั่ง Apps Script ยังส่ง prep/sent/back มาเหมือนเดิม (ไม่ได้แตะ backend) — สถานะรายคนดูที่กระดานส่งตรวจพิเศษ
   var special = summary.special || { items: {} };
   var specialItems = special.items || {};
-  html += '<div class="card"><h2>5 ส่งตรวจพิเศษ</h2><div class="scroll-x"><table class="report-table"><thead><tr>' +
-    '<th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
-  spDisplayOrder_(SPECIAL_SENDS).forEach(function (item) {
-    var row = specialItems[item.id] || { reg: 0 };
-    if (item.id === 'abroad') return; // รอบ 120 (F8): ต่างประเทศมีบรรทัดของตัวเองในการ์ด 4 ไม่ขึ้นการ์ด 5
-    html += '<tr><td>' + escHtml(item.name) + '</td><td>' + numOr0(row.reg) + '</td></tr>';
+  // รอบ 132 (K4): เซิร์ฟเวอร์ใหม่ส่ง week/sun (ราย แยกตามวันรับบริการ) · รุ่นเก่าไม่มี ⇒ คอลัมน์เดียว reg แบบเดิม
+  var hasWeekSun = Object.keys(specialItems).some(function (k) {
+    var it = specialItems[k];
+    return it && (typeof it.week === 'number' || typeof it.sun === 'number');
   });
-  html += '</tbody></table></div></div>';
+  var spMode = hasWeekSun ? viewKind : 'legacy';
+  // รอบ 132 (K4, เจ้าของยืนยัน): 2 ตารางแยก (เหมือนการ์ด 2) — หัวตัวหนา "จันทร์–ศุกร์" / "วันอาทิตย์" แล้วตาราง รายการ | จำนวน
+  // ตารางอาทิตย์ไม่แสดง id ใน SUNDAY_NO_SP_IDS_ เว้นแต่ sun > 0 (ไม่ซ่อนข้อมูลจริง) · เซิร์ฟเวอร์เก่าไม่มี week/sun ⇒ ตารางเดียวจาก reg
+  var spTableHtml = function (field, hideNoSun, headLine) {
+    var t = (headLine || '') + '<div class="scroll-x"><table class="report-table"><thead><tr><th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
+    spDisplayOrder_(SPECIAL_SENDS).forEach(function (item) {
+      if (item.id === 'abroad') return; // รอบ 120 (F8): ต่างประเทศมีบรรทัดของตัวเองในการ์ด 4 ไม่ขึ้นการ์ด 5
+      var row = specialItems[item.id] || { reg: 0 };
+      var n = numOr0(row[field]);
+      if (hideNoSun && SUNDAY_NO_SP_IDS_.indexOf(item.id) !== -1 && !n) return;
+      t += '<tr><td>' + escHtml(item.name) + '</td><td>' + n + '</td></tr>';
+    });
+    return t + '</tbody></table></div>';
+  };
+  html += '<div class="card"><h2>5 ส่งตรวจพิเศษ</h2>';
+  if (spMode === 'legacy') {
+    html += spTableHtml('reg', false, '');
+  } else {
+    if (spMode !== 'sun') html += spTableHtml('week', false, '<div class="line" style="font-weight:700;">จันทร์–ศุกร์</div>');
+    if (spMode !== 'week') html += spTableHtml('sun', true, '<div class="line" style="font-weight:700;' + (spMode === 'all' ? 'margin-top:10px;' : '') + '">วันอาทิตย์</div>');
+  }
+  html += '</div>';
 
   // 6 การส่งผลตรวจสุขภาพ แยกช่องทาง — รอบ 71 (เจ้าของสั่ง 2026-10-07 "เพิ่มรายงานสถิติรายเดือนการส่งผลออก แต่ละช่องทาง")
   // อ่านจาก summary.results.checkup.byMethod { <ช่องทาง>: {total, delivered, pending} } (เซิร์ฟเวอร์รอบ 71) ·
