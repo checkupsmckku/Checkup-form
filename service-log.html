@@ -6872,6 +6872,16 @@ function enterEditMode(rec) {
   // (กติกา 2026-09-21 ข้อ 3: enterEditMode() ห้ามเดาเพศให้เอง — ห้ามเรียก autoGenderFromPrefix() จากที่นี่ —
   //  ถ้าเจ้าหน้าที่แตะคำนำหน้าเองระหว่างแก้ไขแถวนี้ทีหลัง คำนำหน้าจะชนะตามปกติผ่าน listener ของ #patientPrefix)
   setGenderAutoHint(false);
+  // รอบ 135 (เจ้าของ 2026-11-19 แก้ M2 ของ 8 พ.ย.: "คำนำหน้า แล้วเติมเพศ auto ไม่ทำงาน"): แทนกติกาข้อ 3 เฉพาะแถวที่ "ไม่มีเพศในชีต"
+  // (แถวไม่มีโปรแกรม เซิร์ฟเวอร์ล้างเพศทิ้ง ⇒ ใบรับรองมี Lab เปิดแก้แล้วไม่เห็นตัวเลือกตรวจมะเร็งปากมดลูกเพราะยังไม่มีเพศ)
+  // ⇒ เติมเพศจากคำนำหน้าให้ + ป้าย "ระบบเลือกให้" · แถวที่มีเพศอยู่แล้วห้ามทับ
+  // ⚠ อ่านจาก rec.patientPrefix ตรง ๆ — ช่อง #patientPrefix ถูกเติมทีหลัง (~บรรทัดล่าง) ตอนนี้ยังเป็นค่าของฟอร์มก่อนหน้า
+  var prefixGender = !genderVal ? genderFromPrefix_(rec.patientPrefix || '') : '';
+  if (prefixGender) {
+    document.querySelectorAll('input[name="gender"]').forEach(function (r) { r.checked = (r.value === prefixGender); });
+    genderVal = prefixGender;
+    setGenderAutoHint(true);
+  }
 
   updatePelvicSection(hasCheckup, genderVal);
   document.querySelectorAll('input[name="pelvic"]').forEach(function (r) { r.checked = (r.value === (rec.pelvic || 'no')); });
