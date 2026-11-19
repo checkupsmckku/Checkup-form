@@ -15242,16 +15242,23 @@ function renderReport(summary, period) {
   var vaccine = summary.vaccine || {};
   var vaccineItems = itemsMapToSortedArray(vaccine.items);
   var vaccineSplit = (vaccine.split && typeof vaccine.split === 'object') ? vaccine.split : null;
-  var vaccineColspan = vaccineSplit ? 3 : 2;
+  // รอบ 140 (เจ้าของ 2026-11-19 "แยก"): เซิร์ฟเวอร์รุ่นใหม่ส่ง moneyBy + split[].lab/people.lab (lab ⊂ alone) ⇒ ตาราง C/M/V · V = alone − lab · รุ่นเก่า ⇒ ตาราง 3 คอลัมน์เดิม
+  var vaccineCmv = !!(vaccineSplit && vaccine.moneyBy && typeof vaccine.moneyBy === 'object');
+  var vaccineColspan = vaccineCmv ? 4 : (vaccineSplit ? 3 : 2);
   html += '<div class="card"><h2>3 วัคซีน</h2><div class="scroll-x"><table class="report-table"><thead><tr>';
-  html += vaccineSplit
+  html += vaccineCmv
+    ? '<th>วัคซีน</th><th>C (ตรวจสุขภาพ)</th><th>M (ใบรับรองแพทย์ lab)</th><th>V (วัคซีนเดี่ยว)</th></tr></thead><tbody>'
+    : vaccineSplit
     ? '<th>วัคซีน</th><th>จำนวนผู้ที่ฉีดพร้อมตรวจสุขภาพ</th><th>จำนวนผู้ที่ฉีดวัคซีนอย่างเดียว</th></tr></thead><tbody>'
     : '<th>วัคซีน</th><th>จำนวนรายที่ฉีด</th></tr></thead><tbody>';
   if (vaccineItems.length === 0) {
     html += '<tr><td colspan="' + vaccineColspan + '">ไม่มีข้อมูล</td></tr>';
   } else {
     vaccineItems.forEach(function (it) {
-      if (vaccineSplit) {
+      if (vaccineCmv) {
+        var sc = vaccineSplit[it.name] || { withCheckup: 0, alone: 0, lab: 0 };
+        html += '<tr><td>' + escHtml(it.name) + '</td><td>' + numOr0(sc.withCheckup) + '</td><td>' + numOr0(sc.lab) + '</td><td>' + (numOr0(sc.alone) - numOr0(sc.lab)) + '</td></tr>';
+      } else if (vaccineSplit) {
         var s = vaccineSplit[it.name] || { withCheckup: 0, alone: 0 };
         html += '<tr><td>' + escHtml(it.name) + '</td><td>' + numOr0(s.withCheckup) + '</td><td>' + numOr0(s.alone) + '</td></tr>';
       } else {
@@ -15261,7 +15268,11 @@ function renderReport(summary, period) {
   }
   // รอบ 115 (S5): บรรทัดจำนวนผู้รับวัคซีนรวม (นับคน/แถว ไม่ใช่เข็ม) — เซิร์ฟเวอร์รุ่นเก่าไม่มี people ⇒ ไม่แสดง (ไม่โชว์ 0 ปลอม)
   var vaccinePeople = (vaccine.people && typeof vaccine.people === 'object') ? vaccine.people : null;
-  var vaccinePeopleLine = vaccinePeople
+  var vpLab = vaccinePeople ? numOr0(vaccinePeople.lab) : 0, vMb = vaccine.moneyBy || {};
+  var vaccinePeopleLine = (vaccinePeople && vaccineCmv)
+    ? '<div class="line">จำนวนผู้รับวัคซีนรวม: <b>' + escHtml(String(numOr0(vaccinePeople.total))) + '</b> ราย (C ' + escHtml(String(numOr0(vaccinePeople.withCheckup))) + ' · M ' + escHtml(String(vpLab)) + ' · V ' + escHtml(String(numOr0(vaccinePeople.alone) - vpLab)) + ')</div>' +
+      '<div class="line">ค่าบริการวัคซีน: C ' + money(numOr0(vMb.c)) + ' บาท · M ' + money(numOr0(vMb.m)) + ' บาท · V ' + money(numOr0(vMb.v)) + ' บาท</div>' // รอบ 140
+    : vaccinePeople
     ? '<div class="line">จำนวนผู้รับวัคซีนรวม: <b>' + escHtml(String(numOr0(vaccinePeople.total))) + '</b> ราย (ฉีดพร้อมตรวจสุขภาพ ' + escHtml(String(numOr0(vaccinePeople.withCheckup))) + ' · ฉีดวัคซีนอย่างเดียว ' + escHtml(String(numOr0(vaccinePeople.alone))) + ')</div>'
     : '';
   html += '</tbody></table></div>' + vaccinePeopleLine + '<div class="line" style="margin-top:8px;">ยอดค่าบริการรวมทั้งหมด: ' + money(numOr0(vaccine.money)) + ' บาท</div></div>';
