@@ -2274,7 +2274,7 @@
 
       <!-- รอบ 81 (W3): #todayListBlock ห่อหัวข้อ+ค้นหา HN+รายการ เพื่อซ่อนทั้งก้อนเมื่อดูวันในอนาคต (applyFutureViewState_) -->
       <div id="todayListBlock">
-      <h2 style="margin-top:18px;"><span id="todayListTitle">รายการวันนี้</span><span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
+      <h2 style="margin-top:18px;"><span id="todayListTitle">ยอดบริการประจำวัน</span><span class="muted no-print refresh-hint" id="todayRefreshHint" hidden></span></h2>
       <div class="today-search no-print">
         <input type="search" id="todayHnSearch" autocomplete="off" placeholder="ค้นหา ชื่อ / HN / คิว">
         <button type="button" class="btn secondary small" id="todayHnClear">ล้าง</button>
@@ -8472,7 +8472,7 @@ function onTodayQGroupClick_(g) {
 function drawTodayList_(records, dateStr) {
   var dayWord = (dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr));
   var titleEl = qs('todayListTitle');
-  if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'รายการวันนี้' : ('รายการวันที่ ' + formatThaiDateShort(dateStr));
+  if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'ยอดบริการประจำวัน' : ('ยอดบริการวันที่ ' + formatThaiDateShort(dateStr));
   var noteEl = qs('todaySupNote');
   if (noteEl) noteEl.textContent = 'นับจากรายการทุกจุด ' + dayWord + ' (ไม่นับที่ยกเลิก)';
   renderSupOpdSummary(records, dateStr);
@@ -8605,7 +8605,7 @@ function loadTodayScreen_() {
 // สถานะว่างระหว่างรอโหลดวันใหม่ (ยังไม่มีแคชของวันนั้น) — ห้ามปล่อยแถบสรุป/รายการของวันก่อนหน้าค้างอยู่ใต้ป้ายวันใหม่
 function resetTodayDisplayLoading_(dateStr) {
   var titleEl = qs('todayListTitle');
-  if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'รายการวันนี้' : ('รายการวันที่ ' + formatThaiDateShort(dateStr));
+  if (titleEl) titleEl.textContent = (dateStr === todayStr()) ? 'ยอดบริการประจำวัน' : ('ยอดบริการวันที่ ' + formatThaiDateShort(dateStr));
   var noteEl = qs('todaySupNote');
   if (noteEl) noteEl.textContent = 'นับจากรายการทุกจุด ' + ((dateStr === todayStr()) ? 'วันนี้' : ('วันที่ ' + formatThaiDateShort(dateStr))) + ' (ไม่นับที่ยกเลิก)';
   var sumBar = qs('todaySummaryBar');
