@@ -1758,7 +1758,7 @@
     <!-- รอบ 9 (ก้อน B) — แถบลิงก์บนสุด แทนที่เมนูการ์ดที่ถูกยกเลิก (SPEC_รอบ9.md หัวข้อ 4.1/4.2) -->
     <div class="wrap no-print" style="padding-top:0;">
       <div class="row" style="gap:6px;flex-wrap:wrap;">
-        <button type="button" class="btn secondary small nav-link" data-target="today">📋 ยอดบริการประจำวัน</button>
+        <button type="button" class="btn secondary small nav-link" data-target="today">📋 ยอดบริการ</button>
         <button type="button" class="btn secondary small nav-link" data-target="checkupTable">🩺 รายชื่อตรวจสุขภาพ</button>
         <button type="button" class="btn secondary small nav-link" data-target="pending">📮 ติดตามผล</button>
         <button type="button" class="btn secondary small nav-link" data-target="report">📊 สถิติ</button>
@@ -5406,7 +5406,7 @@ function placeBreastCtRows_() {
 // A-W4: แถบหัวจุด #pointBanner — <ชื่อจุด> · <หัวข้อ...> · ไม่ได้เลือกจุด = ซ่อน · ไม่มีหัวข้อ = แค่ชื่อจุด สีกลาง
 // รอบ 74.1: ป้ายบนจอของหัวข้อจุดบริการ — ใช้แสดงในแถบหัวจุดเท่านั้น (ค่าในชีต/POINT_TOPICS/topics ที่คิดสีและแผงห้ามเปลี่ยน)
 // รอบ 75 (เจ้าของสั่ง 2026-10-08): 'ค้างส่งออก' ⇒ แสดง "ติดตามผล" (ค่าในชีต/POINT_TOPICS/topics ไม่เปลี่ยน — หน้า #pendingScreen เปลี่ยนชื่อบนจอเป็น "ติดตามผล")
-var POINT_TOPIC_DISPLAY_ = { 'รายการวันนี้': 'ยอดบริการประจำวัน', 'ค้างส่งออก': 'ติดตามผล' };
+var POINT_TOPIC_DISPLAY_ = { 'รายการวันนี้': 'ยอดบริการ', 'ค้างส่งออก': 'ติดตามผล' };
 function updatePointBanner() {
   var banner = qs('pointBanner');
   if (!banner) return;
@@ -7842,7 +7842,7 @@ function checkLogStatusThenSettle_(qid, reqId, attempt, firstErrorMessage) {
       if (oldServer) {
         // เซิร์ฟเวอร์เก่า (ไม่มี logStatus และไม่มีกันซ้ำ) ⇒ ใช้ข้อความเดิมรอบ 34 + ไม่มีปุ่ม "ส่งอีกครั้ง" (ส่งซ้ำอาจเกิดแถวซ้ำ)
         saveQueueMarkFailed_(queued, (firstErrorMessage || 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่') +
-          ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ายอดบริการประจำวันก่อนบันทึกใหม่', false);
+          ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ายอดบริการก่อนบันทึกใหม่', false);
       } else {
         saveQueueMarkFailed_(queued, LOG_STATUS_UNCHECKABLE_MSG_, true);
       }
@@ -7908,7 +7908,7 @@ function sendQueuedSave_(qid) {
         // รอบ 81 (W6): log+preId แต่รายการลงล่วงหน้าไม่อยู่ในสถานะรอมาแล้ว (มีคนเติมคิวไปก่อน) — ไม่เขียนอะไรลงชีต · ร่างอยู่ในแผงนี้ ("แก้แล้วบันทึกใหม่" คืนฟอร์ม)
         if (resp && resp.code === 'preNotWaiting') msg = 'รายการลงล่วงหน้านี้ถูกเติมคิวไปแล้ว — ตรวจรายการวันนี้ก่อน';
         if (resp && resp.networkError) {
-          msg += ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ายอดบริการประจำวันก่อนบันทึกใหม่';
+          msg += ' — ไม่แน่ใจว่าบันทึกเข้าไปแล้วหรือยัง ตรวจในหน้ายอดบริการก่อนบันทึกใหม่';
         }
         queued.status = 'failed';
         queued.message = msg;
@@ -8577,7 +8577,7 @@ function onEditRecordClick(recordId, src) {
       if (PENDING_RECORDS[q].recordId === recordId) { rec = PENDING_RECORDS[q]; break; }
     }
   }
-  if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชหน้ายอดบริการประจำวัน'); return; }
+  if (!rec) { showToast('ไม่พบรายการนี้ในหน้าจอ กรุณารีเฟรชหน้ายอดบริการ'); return; }
   // รอบ 31B ข้อ 5: ปุ่ม "แก้ไข" ของทั้งหน้ารายการวันนี้และมุมมองรายการ ⇒ เปิดหน้าต่างลอย ไม่เปลี่ยน screen อีกต่อไป
   // (เดิมเรียก enterEditMode(rec) แล้วเปลี่ยนไปหน้าบันทึกต่อจากตรงนี้ — ทั้ง 2 อย่างย้ายเข้า openEditModalForRecord() แทน)
   openEditModalForRecord(rec);
@@ -8681,7 +8681,7 @@ function loadTodayViewRun_(isRetry) {
     if (haveData) {
       setRefreshHint('todayRefreshHint', 'error');
     } else {
-      renderLoadFailBox_(qs('todayList'), 'โหลดหน้ายอดบริการประจำวัน (วันที่ ' + formatThaiDateShort(dateStr) + ') ไม่สำเร็จ', failMsg, function () { loadTodayViewRun_(false); });
+      renderLoadFailBox_(qs('todayList'), 'โหลดหน้ายอดบริการ (วันที่ ' + formatThaiDateShort(dateStr) + ') ไม่สำเร็จ', failMsg, function () { loadTodayViewRun_(false); });
     }
     if (!isRetry && seq === TODAY_VIEW_SEQ) {
       setTimeout(function () {
@@ -9083,7 +9083,7 @@ function loadTodayRun_(isRetry) {
     } else if (haveData) {
       setRefreshHint('todayRefreshHint', 'error'); // คงของเดิมบนจอ แค่เตือนว่าอัปเดตไม่สำเร็จ (ห้ามกลืนเงียบ)
     } else {
-      renderLoadFailBox_(qs('todayList'), 'โหลดหน้ายอดบริการประจำวันไม่สำเร็จ', failMsg, function () { loadToday(); });
+      renderLoadFailBox_(qs('todayList'), 'โหลดหน้ายอดบริการไม่สำเร็จ', failMsg, function () { loadToday(); });
     }
     // ลองโหลดใหม่เอง 1 ครั้ง: เฉพาะการเรียกที่ยังเป็นครั้งล่าสุด และไม่ใช่ retry อยู่แล้ว
     if (!isRetry && seq === TODAY_LOAD_SEQ) {
