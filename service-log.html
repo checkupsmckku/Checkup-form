@@ -313,6 +313,7 @@
   .check-row input { width: 18px; height: 18px; flex-shrink: 0; }
   .check-row span.item-name { flex: 1; }
   .check-row span.opt-price { white-space: nowrap; }
+  #vaccineWithCheckupRow, #vaccinePeChargedRow { min-height: 44px; box-sizing: border-box; } /* รอบ 139: ป้ายเหลือบรรทัดเดียว (เอาวงเล็บออก) ⇒ คงพื้นที่แตะ ≥ 44px */
   .check-row.special-row { flex-wrap: wrap; }
   .check-row .sp-check { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
   .check-row .sp-check input { width: 16px; height: 16px; }
@@ -2004,12 +2005,12 @@
               <section id="svcVaccine">
                 <label class="check-row" id="vaccineWithCheckupRow">
                   <input type="checkbox" id="vaccineWithCheckup">
-                  <span class="item-name">มาตรวจสุขภาพด้วย<small class="muted vax-opt-desc" style="display:block;font-weight:normal;">(คิดวัคซีนเรตตรวจสุขภาพ ไม่บวก DF/PE/10%)</small></span>
+                  <span class="item-name">C (ตรวจสุขภาพ)</span>
                   <span class="sp-lock-note" id="vaccineWithCheckupNote" hidden>เลือกโปรแกรมแล้ว คิดให้อัตโนมัติ</span>
                 </label>
                 <label class="check-row" id="vaccinePeChargedRow">
                   <input type="checkbox" id="vaccinePeCharged">
-                  <span class="item-name">คิดค่าบริการคลินิกแล้ว<small class="muted vax-opt-desc" style="display:block;font-weight:normal;">(คิดค่ายา + เข็ม ไม่บวก DF/PE/10%)</small></span>
+                  <span class="item-name">M (ใบรับรองแพทย์ lab)</span>
                   <span class="sp-lock-note" id="vaccinePeChargedNote" hidden>มีโปรแกรมตรวจสุขภาพ ใช้เรตตรวจสุขภาพ</span>
                 </label>
                 <!-- รอบ 130 (L5/W3): จุดนับ vaccine ติ๊ก "คิดค่าบริการคลินิกแล้ว" ⇒ คำอธิบาย (ไม่บล็อก) — ไม่นับเป็นผู้รับบริการเพิ่ม -->
@@ -8228,7 +8229,10 @@ function computeTodayStats_(records) {
     cntLabFollowup: 0, sumLabFollowup: 0, cntMedLabAny: 0, cntLabFollowupExtra: 0,
     // รอบ 120 (B1/B2): ตัวแปรสำหรับ "แถบสรุปรายวัน" เท่านั้น — แถวต่างประเทศแยกออกจากหมวดมี lab (ทั้งคนและเงิน) · ⚠ cntMedLab/cntLabFollowupExtra/cntMedLabAny (SUP OPD ใช้) คงนิยามเดิม ห้ามแก้
     // cntMedLabBar/sumMedLabBar = หมวดมี lab (หักแถวต่างประเทศ) · cntAbroad = แถวต่างประเทศที่ (ยอด Lab > 0 หรือ DF > 0 หรือไม่มีค่าใช้จ่าย) · sumAbroad = ยอด Lab + DF
-    cntMedLabBar: 0, sumMedLabBar: 0, cntAbroad: 0, sumAbroad: 0 };
+    cntMedLabBar: 0, sumMedLabBar: 0, cntAbroad: 0, sumAbroad: 0,
+    // รอบ 139 (เจ้าของ 2026-11-19 "แยกเป็น vaccine c,m,v"): แถบรายวันแยกวัคซีนนอกเรตตรวจสุขภาพเป็น M (ติ๊กคิดค่าบริการคลินิกแล้ว = คนเดียวกับคิว M มี lab) กับ V (ที่เหลือ)
+    // ⚠ cntVaccine/sumVaccine (SUP OPD ใช้) คงนิยามเดิม = M + V · C = cntVaccineCu เดิม
+    cntVaccineM: 0, sumVaccineM: 0, cntVaccineV: 0, sumVaccineV: 0 };
   var numOf = function (v) { return (typeof v === 'number' && isFinite(v)) ? v : 0; };
   (records || []).forEach(function (rec) {
     if (!rec || rec.status === 'ยกเลิก') return;
@@ -8257,7 +8261,9 @@ function computeTodayStats_(records) {
     if (rec.program) { st.cntCheckup++; st.sumCheckup += numOf(t.checkup); }
     if ((rec.vaccineCount || 0) > 0) {
       if (rec.vaccineWithCheckup) { st.cntVaccineCu++; st.sumVaccineCu += numOf(t.vaccine); }
-      else { st.cntVaccine++; st.sumVaccine += numOf(t.vaccine); if (!isPeChargedVaccineOnly_(rec)) st.cntVaccineProc++; } // รอบ 130: cntVaccineProc = วัคซีนเดี่ยวที่ไม่ใช่แถวคิดค่าบริการคลินิกแล้วล้วน (ใช้ใน withProc ของ SUP OPD) · cntVaccine (แถบ "วัคซีนเดี่ยว") นับครบตามเดิม
+      else { st.cntVaccine++; st.sumVaccine += numOf(t.vaccine);
+        if (rec.vaccinePeCharged === true) { st.cntVaccineM++; st.sumVaccineM += numOf(t.vaccine); } else { st.cntVaccineV++; st.sumVaccineV += numOf(t.vaccine); } // รอบ 139
+        if (!isPeChargedVaccineOnly_(rec)) st.cntVaccineProc++; } // รอบ 130: cntVaccineProc = วัคซีนเดี่ยวที่ไม่ใช่แถวคิดค่าบริการคลินิกแล้วล้วน (ใช้ใน withProc ของ SUP OPD) · cntVaccine (แถบ "วัคซีนเดี่ยว") นับครบตามเดิม
     }
     if (((rec.medCert5 || 0) + (rec.medCertDriver || 0)) > 0) { st.cntMedGen++; st.sumMedGen += (numOf(t.medcert) - labAmt - lfAmt); }
     if (labAmt > 0) { st.cntMedLab++; st.sumMedLab += labAmt; }
@@ -8393,8 +8399,10 @@ function renderTodaySummaryBar_(st) {
   if (!sumBar) return;
   var breakdown = [
     ['ตรวจสุขภาพ', st.cntCheckup, st.sumCheckup],
-    ['วัคซีนเดี่ยว', st.cntVaccine, st.sumVaccine],
-    ['วัคซีนตรวจสุขภาพ', st.cntVaccineCu, st.sumVaccineCu],
+    // รอบ 139 (เจ้าของ 2026-11-19 "แยกเป็น vaccine c,m,v"): C = เรตตรวจสุขภาพ · M = คิดค่าบริการคลินิกแล้ว (เคสคิว M มี lab) · V = วัคซีนเดี่ยว · st เก่าไม่มีตัวแปรใหม่ ⇒ V = ยอดเดิม
+    ['วัคซีน C (+ ตรวจสุขภาพ)', st.cntVaccineCu, st.sumVaccineCu],
+    ['วัคซีน M (+ lab)', st.cntVaccineM || 0, st.sumVaccineM || 0],
+    ['วัคซีน V (วัคซีนเดี่ยว)', (st.cntVaccineV !== undefined ? st.cntVaccineV : st.cntVaccine), (st.sumVaccineV !== undefined ? st.sumVaccineV : st.sumVaccine)],
     ['ใบรับรองแพทย์ทั่วไป', st.cntMedGen, st.sumMedGen],
     // รอบ 91: หมวด Lab รวมแถวฟังผล Lab (จำนวนคน = ยอด Lab > 0 หรือ ฟังผล Lab > 0 · เงิน = ยอด Lab + DF ฟังผล Lab)
     // รอบ 120 (B1): หมวดมี lab หักแถวต่างประเทศ · เพิ่มหมวด "ตรวจร่างกายไปต่างประเทศ" ต่อจากมี lab · ทุกหมวดรวมกัน = ยอดรวม · st เก่าที่ไม่มีตัวแปรใหม่ ⇒ ใช้นิยามเดิม
