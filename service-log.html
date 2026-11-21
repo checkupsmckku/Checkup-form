@@ -1047,6 +1047,12 @@
   }
   .sp-board-pill.sp-pill-warn { background: #FDECEA; color: var(--danger); }
   .sp-board-pill.sp-pill-ok { background: var(--green-pale); color: var(--success); }
+  /* รอบ 141: ช่องค้นหา ชื่อ-สกุล / HN + ปุ่มบันทึกรูปของรายชื่อแท็บ (ชั้น 2) — ช่องเต็มกว้าง · ปุ่ม ≥ 44px · 390px ไม่ล้น */
+  .sp-board-search-wrap { margin-top: 10px; }
+  .sp-board-search-wrap input[type=search] { width: 100%; min-height: 44px; box-sizing: border-box; font-size: 16px; }
+  #spBoardSearchInfo { margin-top: 6px; }
+  #spBoardImageRow { margin-top: 8px; }
+  #btnSpBoardImage { min-height: 44px; max-width: 100%; box-sizing: border-box; }
 
   /* รอบ 9 (ก้อน B) — หน้าบันทึกแผงเดียว (SPEC_รอบ9.md หัวข้อ 4) — ⚠ ห้ามแก้ .wrap ตัวกลาง หน้าอื่นยังใช้อยู่
      รอบ 17 (2026-09-17): padding-bottom เผื่อที่ท้ายหน้าไม่ให้ #panelTotals (ลอยอยู่แล้ว) บังช่องกรอกสุดท้าย —
@@ -1276,6 +1282,18 @@
     /* เส้นเซ็นเดิม min-width 35mm กว้างกว่าช่อง ⇒ ล้นขอบขวาของตาราง — บนกระดาษให้กว้างเท่าช่องพอดี */
     table.cu-table .cu-sig-line { min-width: 0; width: 100%; }
     table.cu-table tr.cu-cancelled-row td { color: #555; } /* รอบ 67: แถวคิวยกเลิกบนกระดาษ — เทาเข้มพอให้อ่านได้ */
+    /* รอบ 141 (A3 · P1-P3, เจ้าของ 2026-11-21 "ห้ามตกขอบ ต้องเป็นช่อง · แต่ละรายชื่อช่องเท่ากัน · หลุดขอบให้ไปแผ่นใหม่"):
+       P2 แถวรายชื่อไม่ถูกตัดข้ามหน้า (ย้ายไปหน้าใหม่ทั้งแถว) · P1 แถวคิวยกเลิกสูงเท่าแถวรายชื่อ (12 mm เท่าช่องเซ็นรับ) · ชื่อแพทย์ยาวในแบบกว้างตัดบรรทัดได้ แถวนั้นสูงกว่าได้ (P1b)
+       P3 ใช้ border-collapse: separate (ขอบแต่ละช่องเป็นของช่องเอง) — แบบ collapse เส้นล่างของแถวสุดท้ายในหน้าเป็นของ "ขอบบนแถวถัดไป" แล้วหายตอนขึ้นหน้าใหม่ ·
+       เส้นบน/ซ้ายของตารางมาจาก border ของ table · หัวตารางยังซ้ำทุกหน้า (thead เดิม) · ไม่แตะความกว้าง/ฟอนต์ */
+    /* ตัวตารางเองไม่มีเส้น (เส้นของ table ลากค้างในที่ว่างของแต่ละหน้า) — เส้นล่าง/ขวาอยู่ที่ทุกช่อง · เส้นซ้ายที่ช่องแรกของทุกแถว (รวมแถวยกเลิก/แถวสรุป) · เส้นบนที่ th ทุกตัว (หัวซ้ำทุกหน้าจึงมีเส้นบน) */
+    table.cu-table { border-collapse: separate; border-spacing: 0; border: 0; }
+    table.cu-table th, table.cu-table td { border-width: 0 1px 1px 0; }
+    table.cu-table th:first-child, table.cu-table td:first-child { border-left-width: 1px; }
+    table.cu-table thead th { border-top-width: 1px; }
+    table.cu-table tbody tr:not(.sp-total) { break-inside: avoid; page-break-inside: avoid; }
+    table.cu-table tbody tr:not(.sp-total) td { break-inside: avoid; page-break-inside: avoid; }
+    table.cu-table:not(.cu-table-data) tr.cu-cancelled-row td { height: 12mm; } /* P1c: แบบรายชื่อเก็บข้อมูล (.cu-table-data) สูงตามข้อความ ไม่บังคับ */
     /* รอบ 103: ใบพิมพ์แบบ B "รายชื่อเก็บข้อมูล" (.cu-table-data) 9 คอลัมน์ · ค่าสำรองเมื่อ JS ไม่ทำงาน รวม 100%:
        รอบ 118 (เจ้าของ 2026-11-09): ถอดคอลัมน์ชื่อแพทย์ + เพิ่ม "ช่องทางการส่ง" ถัดจากมะเร็งปากมดลูก
        คิว 5 · HN 8 · ชื่อ 29 · โปรแกรม 7 · มะเร็ง 11 · ช่องทางการส่ง 11 · ราคา 8 · ช่องทางสุขภาพ 14 · Consult 7 (cuFitNamesForPrint ตั้งความกว้างจริงตามชื่อ)
@@ -2479,6 +2497,13 @@
         <button type="button" class="btn secondary small" id="spBoardBackBtn">← กลับ</button>
         <div class="row" id="spBoardSwitchBar" style="margin-top:8px;"></div>
         <div id="spBoardHeading" class="sp-board-heading" role="heading" aria-level="2"></div>
+        <div class="sp-board-search-wrap no-print">
+          <input type="search" id="spBoardSearch" class="no-print" autocomplete="off" placeholder="ค้นหา ชื่อ-สกุล / HN">
+        </div>
+        <div class="muted no-print" id="spBoardSearchInfo" hidden></div>
+        <div class="row no-print" id="spBoardImageRow">
+          <button type="button" class="btn secondary" id="btnSpBoardImage" disabled>บันทึกเป็นรูปภาพ</button>
+        </div>
         <div class="row" id="spBoardBulkRow">
           <button type="button" class="btn small" id="btnSpBoardBulkPrep">✔ ติ๊กว่าส่งรายชื่อแล้วทั้งชุด</button>
         </div>
@@ -11195,6 +11220,7 @@ function closeSpBoardCategory() {
   var l1 = qs('spBoardLayer1'), l2 = qs('spBoardLayer2');
   if (l2) l2.hidden = true;
   if (l1) l1.hidden = false;
+  spBoardClearSearch_(); // รอบ 141: กด ← กลับ ⇒ ล้างคำค้น (เข้าใหม่ช่องว่าง)
 }
 
 function renderSpBoardSwitchBar() {
@@ -11312,12 +11338,137 @@ function renderSpPeopleCardsMmgCapSplit_(dateStr) {
 
   var allRows = spBoardPeopleForActive(SP_BOARD_RECORDS, 'mmg');
   // รอบ 60 ข้อ 4: รายชื่อเดียว เรียงตามเวลาที่บันทึก (เดิมแยกกลุ่ม MMG → U/S only แล้วเรียงด้วย spBoardSortPeople)
-  var rows = spBoardSortByTime_(allRows);
+  var rows = spBoardFilterBySearch_(spBoardSortByTime_(allRows)); // รอบ 141: กรองด้วยคำค้นหลังเรียงแล้ว (เลขลำดับ 1..k มาจาก idx ของ appendSpPeopleCards_)
+  spBoardSyncSearchUi_(rows.length);
   if (!rows.length) {
-    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้ลงชื่อของประเภทนี้วันนี้</p>';
+    spBoardSetEmptyMsg_(wrap, allRows.length);
     return;
   }
   appendSpPeopleCards_(wrap, rows, 'mmg');
+}
+
+// ===================== รอบ 141 — ค้นหา ชื่อ-สกุล / HN ในรายชื่อแท็บ (ชั้น 2) + บันทึกเป็นรูปภาพ =====================
+// คำค้น = ค่าในช่อง #spBoardSearch ณ ตอนวาดเสมอ (ไม่เก็บสำเนา) · ตรรกะจับคู่ = pendingRowMatchesSearch_ (substring ไม่สนตัวพิมพ์ HN/ชื่อ)
+function spBoardSearchRaw_() {
+  var el = qs('spBoardSearch');
+  return el ? String(el.value || '').trim() : '';
+}
+function spBoardFilterBySearch_(rows) {
+  var q = spBoardSearchRaw_().toLowerCase();
+  if (!q) return rows;
+  return rows.filter(function (r) { return pendingRowMatchesSearch_(r, q); });
+}
+// อัปเดตบรรทัด "พบ k ราย" + ปุ่มรูป (disabled เมื่อไม่มีการ์ดแสดงอยู่) — เรียกทุกครั้งที่วาดรายชื่อ
+function spBoardSyncSearchUi_(k) {
+  var info = qs('spBoardSearchInfo');
+  var raw = spBoardSearchRaw_();
+  if (info) {
+    if (raw) { info.textContent = 'พบ ' + k + ' ราย'; info.hidden = false; }
+    else { info.textContent = ''; info.hidden = true; }
+  }
+  var ib = qs('btnSpBoardImage');
+  if (ib) ib.disabled = !(k > 0);
+  // S13: มีคำค้น ⇒ ซ่อนแถว "✔ ติ๊กว่าส่งรายชื่อแล้วทั้งชุด" (ปุ่มนั้นทำทั้งแท็บ ไม่ใช่เฉพาะที่กรอง) · ล้างคำค้น ⇒ กลับมา (ปกติแถวนี้ไม่เคยถูกซ่อนในแท็บใด)
+  var bulkRow = qs('spBoardBulkRow');
+  if (bulkRow) bulkRow.hidden = !!raw;
+}
+// รายชื่อว่าง: แท็บว่างจริง ⇒ ข้อความเดิม · มีคนแต่คำค้นไม่ตรงใคร ⇒ "ไม่พบ ..." (textContent ล้วน ไม่ผ่าน innerHTML)
+function spBoardSetEmptyMsg_(wrap, totalInTab) {
+  var p = document.createElement('p');
+  p.className = 'muted';
+  var raw = spBoardSearchRaw_();
+  p.textContent = (raw && totalInTab > 0) ? ('ไม่พบ "' + raw + '" ในรายชื่อนี้') : 'ยังไม่มีผู้ลงชื่อของประเภทนี้วันนี้';
+  wrap.appendChild(p);
+}
+function spBoardSearchInput_() {
+  if (SP_BOARD_ACTIVE_ID) renderSpPeopleCards(SP_BOARD_ACTIVE_ID); // วาดใหม่ทันที ไม่ยิง API
+}
+function spBoardClearSearch_() {
+  var el = qs('spBoardSearch');
+  if (el) el.value = '';
+}
+// ล้างคำค้นเมื่อเปลี่ยนวันที่ แล้วค่อยโหลด (ต้องล้างก่อน loadSpBoard เพราะแคชวาดทันที)
+function onSpBoardDateChange_() {
+  spBoardClearSearch_();
+  var l2 = qs('spBoardLayer2');
+  if (l2 && !l2.hidden && SP_BOARD_ACTIVE_ID) renderSpPeopleCards(SP_BOARD_ACTIVE_ID);
+  loadSpBoard();
+}
+
+/* รอบ 141: บันทึกรายชื่อแท็บที่เปิดอยู่เป็นรูป PNG (แบบเดียวกับรอบ 121 นรีเวช — ใช้ loadHtml2canvas_/HTML2CANVAS_URL_/SRI เดิม) ·
+   รูป = สำเนาหัวแท็บ + บรรทัดคำค้น (ถ้ามี) + การ์ดรายคนที่แสดงอยู่ · ตัดปุ่ม/ช่องกรอก/.no-print/.sp-saving/id · วางนอกจอกว้างคงที่ · ไม่ส่งข้อมูลไปไหน ไม่เก็บ storage */
+var SP_IMG_BUSY_ = false;
+function spBoardImageFileName_(tabId, ymd) {
+  var item = SPECIAL_SEND_BY_ID[tabId];
+  var label = SP_BOARD_TAB_NAME[tabId] || SP_BOARD_SHORT_LABEL[tabId] || (item ? item.name : '') || String(tabId || '');
+  label = String(label).replace(/[\\\/:*?"<>|\s]/g, '_');
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+  return 'ส่งตรวจพิเศษ_' + label + (m ? ('_' + (+m[1] + 543) + '-' + m[2] + '-' + m[3]) : '') + '.png';
+}
+function spBoardImageState_() {
+  var d = qs('spBoardDate');
+  return [SP_BOARD_ACTIVE_ID, (d && d.value) || todayStr(), spBoardSearchRaw_()].join('\u0001');
+}
+function buildSpBoardCaptureNode_() {
+  var head = qs('spBoardHeading'), people = qs('spBoardPeopleWrap');
+  if (!head || !people) return null;
+  var box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:-10000px;top:0;width:820px;background:#fff;padding:16px;color:#000;';
+  var inner = document.createElement('div');
+  inner.style.cssText = 'padding:16px;background:#fff;';
+  inner.appendChild(head.cloneNode(true));
+  var raw = spBoardSearchRaw_();
+  var pc = people.cloneNode(true);
+  if (raw) {
+    var line = document.createElement('div');
+    line.className = 'muted';
+    line.style.marginTop = '8px';
+    line.textContent = 'ค้นหา "' + raw + '" — พบ ' + pc.querySelectorAll('.sp-board-person-card').length + ' ราย';
+    inner.appendChild(line);
+  }
+  inner.appendChild(pc);
+  Array.prototype.slice.call(inner.querySelectorAll('.no-print, button, input, select, textarea, .sp-saving, .sp-board-status-btns')).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+  Array.prototype.slice.call(inner.querySelectorAll('[id]')).forEach(function (n) { n.removeAttribute('id'); });
+  box.appendChild(inner);
+  return box;
+}
+function onSpBoardImageClick_() {
+  var btn = qs('btnSpBoardImage');
+  if (SP_IMG_BUSY_ || !btn || btn.disabled) return;
+  var tabId = SP_BOARD_ACTIVE_ID;
+  var stateAtClick = spBoardImageState_();
+  var dEl = qs('spBoardDate');
+  var ymd = (dEl && dEl.value) || todayStr();
+  SP_IMG_BUSY_ = true;
+  var box = null;
+  function done_() { SP_IMG_BUSY_ = false; if (box && box.parentNode) box.parentNode.removeChild(box); box = null; }
+  var STALE_ = {};
+  loadHtml2canvas_().then(function (h2c) {
+    // ระหว่างรอโหลดสคริปต์ แท็บ/วันที่/คำค้นเปลี่ยน หรือปุ่มกลายเป็น disabled ⇒ ไม่ถ่าย ไม่ toast
+    var b2 = qs('btnSpBoardImage');
+    if (b2 !== btn || b2.disabled || spBoardImageState_() !== stateAtClick) throw STALE_;
+    box = buildSpBoardCaptureNode_();
+    if (!box) throw new Error('no node');
+    document.body.appendChild(box);
+    return h2c(box.firstChild, { backgroundColor: '#ffffff', scale: 2, useCORS: false, logging: false });
+  }).then(function (canvas) {
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(function (blob) { if (!blob) { reject(new Error('toBlob')); return; } resolve(blob); }, 'image/png');
+    });
+  }).then(function (blob) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = spBoardImageFileName_(tabId, ymd); a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    done_();
+  }).catch(function (err) {
+    done_();
+    if (err === STALE_) return;
+    showToast(GYN_IMG_FAIL_MSG_);
+  });
 }
 
 function renderSpPeopleCards(id) {
@@ -11332,14 +11483,16 @@ function renderSpPeopleCards(id) {
 
   var item = SPECIAL_SEND_BY_ID[id];
   // รอบ 60 ข้อ 4: แท็บ mmg ปกติก็เรียงตามเวลาที่บันทึกล้วน ๆ · แท็บอื่นใช้ spBoardSortPeople เดิม
-  var rows = (id === 'mmg')
+  var rowsAll = (id === 'mmg')
     ? spBoardSortByTime_(spBoardPeopleForActive(SP_BOARD_RECORDS, id))
     : spBoardSortPeople(spBoardPeopleForActive(SP_BOARD_RECORDS, id), id);
+  var rows = spBoardFilterBySearch_(rowsAll); // รอบ 141: กรองด้วยคำค้นหลังเรียงแล้ว · เม็ด/เลขลำดับนับจากชุดที่กรอง
   var headingEl = qs('spBoardHeading');
   var dateStr = (qs('spBoardDate') && qs('spBoardDate').value) || todayStr();
   // รอบ 9.2 — เพิ่ม "ไปตรวจแล้ว X / N คน" ต่อท้ายหัวข้อ (นับจาก specialSent ของแถวที่ยังไม่ยกเลิก/อยู่หมวดนี้)
   // รอบ 29 (S7) W7: เช็คด้วย id เฉพาะคน (spBoardIdForPerson) ไม่ใช่ id ของแท็บตรง ๆ
-  var sentCount = rows.filter(function (r) { return (r.specialSent || []).indexOf(spBoardIdForPerson(r, id)) !== -1; }).length;
+  // รอบ 141: เม็ดสถิติ (รวม N / ไปตรวจแล้ว X / N) นับทั้งแท็บ ไม่เปลี่ยนตามคำค้น (C1) — ใช้ rowsAll ไม่ใช่ rows ที่กรองแล้ว
+  var sentCount = rowsAll.filter(function (r) { return (r.specialSent || []).indexOf(spBoardIdForPerson(r, id)) !== -1; }).length;
   // รอบ 26 (2026-09-22, ข้อ 11): เดิมยัดทุกอย่างเป็น textContent บรรทัดเดียว ยาวจนตัดคำกลางวลีบนจอแคบ — สร้าง 3 ชั้น
   // ด้วย createElement/textContent ล้วน (ไม่ใช้ innerHTML กับข้อมูลผู้ใช้เลย แม้ item.name จะมาจากค่าคงที่ในไฟล์เองก็ตาม
   // — กันพลาดถ้าใครเผลอเปลี่ยนที่มาในอนาคต): ชื่อรายการ(ใหญ่/หนา) · วันที่(เล็ก/จาง) · เม็ดสถิติ 2 เม็ด(ไม่ตัดคำ)
@@ -11356,13 +11509,13 @@ function renderSpPeopleCards(id) {
     hPills.className = 'sp-board-heading-pills';
     var pillTotal = document.createElement('span');
     pillTotal.className = 'sp-board-pill';
-    pillTotal.textContent = 'รวม ' + rows.length + ' ราย';
+    pillTotal.textContent = 'รวม ' + rowsAll.length + ' ราย';
     var pillSent = document.createElement('span');
     // สี: N=0 -> เป็นกลาง · X<N -> เตือน (ยังไปไม่ครบ) · X===N && N>0 -> สำเร็จ (ไปครบแล้ว)
     var pillClass = 'sp-board-pill';
-    if (rows.length > 0) pillClass += (sentCount < rows.length) ? ' sp-pill-warn' : ' sp-pill-ok';
+    if (rowsAll.length > 0) pillClass += (sentCount < rowsAll.length) ? ' sp-pill-warn' : ' sp-pill-ok';
     pillSent.className = pillClass;
-    pillSent.textContent = 'ไปตรวจแล้ว ' + sentCount + ' / ' + rows.length + ' ราย';
+    pillSent.textContent = 'ไปตรวจแล้ว ' + sentCount + ' / ' + rowsAll.length + ' ราย';
     hPills.appendChild(pillTotal);
     hPills.appendChild(pillSent);
     headingEl.appendChild(hTitle);
@@ -11373,8 +11526,9 @@ function renderSpPeopleCards(id) {
   var wrap = qs('spBoardPeopleWrap');
   if (!wrap) return;
   wrap.innerHTML = '';
+  spBoardSyncSearchUi_(rows.length);
   if (!rows.length) {
-    wrap.innerHTML = '<p class="muted">ยังไม่มีผู้ลงชื่อของประเภทนี้วันนี้</p>';
+    spBoardSetEmptyMsg_(wrap, rowsAll.length);
     return;
   }
   appendSpPeopleCards_(wrap, rows, id);
@@ -11900,6 +12054,7 @@ function updateCuHnHint(totalCount, shownCount) {
   } else {
     hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shownCount + ' จาก ' + totalCount + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
   }
+  if (CU_VIEW === 'gyn') hint.hidden = true; // รอบ 141 (N4): มุมมองนรีเวชไม่โชว์ตัวเลขของรายชื่อตรวจสุขภาพ (ข้อความคงไว้ ⇒ กลับมุมมองอื่นแล้วโชว์ต่อ)
 }
 
 /* รอบ 31B ข้อ 2: ไฮไลต์กล่องที่กำลังแก้ — focusin ในกล่อง .cu-person ใดๆ ⇒ กล่องนั้นได้ .cu-person-active
@@ -14098,7 +14253,7 @@ function renderCheckupList(records, dateStr) {
     }
     var hintEl = qs('cuHnHint');
     if (hintEl) {
-      hintEl.hidden = false;
+      hintEl.hidden = (CU_VIEW === 'gyn'); // รอบ 141 (N4)
       hintEl.innerHTML = 'แสดง 1 จาก ' + rows.length + ' ราย · <a href="#" id="cuSearchClearLink" class="no-print">ล้างการค้นหา</a>';
     }
   }
@@ -14113,7 +14268,14 @@ var CU_LOADED_DATE = ''; // วันที่ที่โหลดข้อม�
 function setCuView(view) {
   // รอบ 60 ข้อ 6: ถอดมุมมอง 'pending' ออก — ทุกเส้นทางที่เคยตั้ง CU_VIEW='pending' (ค่าเก่า/ผู้เรียกเก่า) ตกไปเป็นมุมมองตาราง
   // รอบ 119ช: เพิ่มมุมมอง 'gyn' (รายชื่อส่งนรีเวช) · 'table' ยังใช้เป็นพื้นที่พิมพ์ของปุ่มพิมพ์ 2 ปุ่ม (cuPrintAs_)
+  var prevView_ = CU_VIEW;
   CU_VIEW = (view === 'list') ? 'list' : (view === 'gyn' ? 'gyn' : 'table');
+  // รอบ 141 (N4): #cuHnHint เป็นของรายชื่อตรวจสุขภาพ — ซ่อนในมุมมองนรีเวช · ออกจากนรีเวช ⇒ โชว์ต่อถ้ามีข้อความ
+  var hintEl_ = qs('cuHnHint');
+  if (hintEl_) {
+    if (CU_VIEW === 'gyn') hintEl_.hidden = true;
+    else if (prevView_ === 'gyn') hintEl_.hidden = !hintEl_.textContent;
+  }
   var tableEl = qs('cuTableWrap'), listEl = qs('cuListWrap'), gynEl = qs('cuGynWrap');
   if (tableEl) tableEl.hidden = (CU_VIEW !== 'table');
   if (listEl) listEl.hidden = (CU_VIEW !== 'list');
@@ -14617,11 +14779,9 @@ function gynShell_(dateStr) {
   if (!wrap) return null;
   GYN_SHOWN_DATE = dateStr;
   // รอบ 121 (G1/G5): ปุ่มบันทึกรูป disabled ไว้ก่อนเสมอ — renderGynRows_ เปิดให้เมื่อมีแถวเท่านั้น (ยังไม่โหลด/ล้มเหลว/ว่าง ⇒ ปิด · รอบ 122: วันอาทิตย์โหลดตามปกติแล้ว ไม่ใช่กรณีปิดอีก)
-  wrap.innerHTML = '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn secondary" id="btnGynImage" disabled>บันทึกเป็นรูปภาพ</button></div>' +
-    '<h2 class="gyn-head" id="cuGynHeading">รายชื่อตรวจนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
+  // รอบ 141 (N9): ปุ่มรูป (#btnGynImage) ย้ายไปอยู่แถวเดียวกับปุ่มพิมพ์ใน renderGynFiltered_ — วาดเฉพาะเมื่อมีแถวที่แสดงอยู่ (ไม่มีแถวปุ่มว่างด้านบน · แทน G5 disabled)
+  wrap.innerHTML = '<h2 class="gyn-head" id="cuGynHeading">รายชื่อตรวจนรีเวช — ' + escHtml(cuHeadingDate_(dateStr)) + '</h2>' +
     '<div id="cuGynBody"></div>';
-  var ib = qs('btnGynImage');
-  if (ib) ib.addEventListener('click', onGynImageClick_);
   return qs('cuGynBody');
 }
 /* รอบ 121 (G1-G6): บันทึกรายชื่อส่งนรีเวชที่แสดงอยู่เป็นรูป PNG · html2canvas 1.4.1 โหลดตอนกดครั้งแรกเท่านั้น
@@ -14666,6 +14826,7 @@ function onGynImageClick_() {
   var btn = qs('btnGynImage');
   if (GYN_IMG_BUSY_ || !btn || btn.disabled) return;
   var ymd = GYN_SHOWN_DATE;
+  var qAtClick = cuSearchQuery(); // รอบ 141 (N6): คำค้นตอนกด
   GYN_IMG_BUSY_ = true;
   var box = null;
   function done_() { GYN_IMG_BUSY_ = false; if (box && box.parentNode) box.parentNode.removeChild(box); box = null; }
@@ -14673,7 +14834,7 @@ function onGynImageClick_() {
   loadHtml2canvas_().then(function (h2c) {
     // ระหว่างรอโหลดสคริปต์ ผู้ใช้อาจเปลี่ยนวัน/รายชื่อยังโหลดไม่เสร็จ ⇒ ไม่ถ่ายรูป (กันรูปผิดวัน/รูป "กำลังโหลด...")
     var b2 = qs('btnGynImage');
-    if (b2 !== btn || b2.disabled || GYN_SHOWN_DATE !== ymd) throw STALE_;
+    if (b2 !== btn || b2.disabled || GYN_SHOWN_DATE !== ymd || cuSearchQuery() !== qAtClick) throw STALE_;
     box = buildGynCaptureNode_();
     if (!box) throw new Error('no node');
     document.body.appendChild(box);
@@ -14697,20 +14858,46 @@ function onGynImageClick_() {
     showToast(GYN_IMG_FAIL_MSG_);
   });
 }
+/* รอบ 141 (N1-N7): ค้นหาในรายชื่อนรีเวชด้วยช่อง #cuHnSearch เดิม · เก็บแถวที่เรียงแล้วแต่ยังไม่กรองไว้ใน GYN_ALL_ROWS_ แล้ววาดใหม่จากนี้ (ไม่ยิง gynList ซ้ำ)
+   จับคู่ด้วย recordMatchesQuery() โดยแปลงแถวนรีเวชเป็นรูป record (ชื่อไม่รวมคำนำหน้า · แถววันอื่นไม่มีคิว) */
+var GYN_ALL_ROWS_ = [];
+var GYN_ROWS_READY_ = false; // true = มีรายชื่อที่โหลดสำเร็จแล้วบนจอ (กำลังโหลด/โหลดล้ม ⇒ false ห้ามวาดทับ)
+function gynRowToRecord_(r) {
+  return { queue: r.otherDay ? '' : r.queue, patientHn: r.hn, patientName: r.name };
+}
+function gynFilterRows_(rows) {
+  var q = cuSearchQuery();
+  if (!q) return rows;
+  return rows.filter(function (r) { return recordMatchesQuery(gynRowToRecord_(r), q); });
+}
 function renderGynRows_(dateStr, rows) {
-  var body = gynShell_(dateStr);
-  if (!body) return;
   var sorted = sortGynRows_(rows);
   GYN_LAST_ROWS = sorted;
-  if (!sorted.length) {
+  GYN_ALL_ROWS_ = sorted;
+  GYN_ROWS_READY_ = true;
+  renderGynFiltered_(dateStr);
+}
+function renderGynFiltered_(dateStr) {
+  var body = gynShell_(dateStr);
+  if (!body) return;
+  var all = GYN_ALL_ROWS_;
+  if (!all.length) {
     body.innerHTML = '<p class="muted">ไม่มีรายชื่อตรวจนรีเวชวันที่ ' + escHtml(formatThaiDate(dateStr)) + '</p>';
     return;
   }
-  var imgBtn = qs('btnGynImage');
-  if (imgBtn) imgBtn.disabled = false; // รอบ 121 (G5): มีแถวแล้วถึงเปิด
+  var q = cuSearchQuery();
+  var sorted = gynFilterRows_(all); // รอบ 141: แถวที่แสดง (กรองแล้ว) — ตาราง/รูป/พิมพ์/กล่องแก้ใช้ชุดนี้
+  if (!sorted.length) {
+    body.innerHTML = '<p class="muted">ไม่พบ "' + escHtml(q) + '" ในรายชื่อตรวจนรีเวช</p>'; // ไม่มีปุ่มพิมพ์/ปุ่มรูป (ห้ามทำรูป/ใบเปล่า)
+    return;
+  }
+  // รอบ 141 (N9): ปุ่มรูปอยู่แถวเดียวกับปุ่มพิมพ์ (ขวาของปุ่มพิมพ์) · วาดเฉพาะเมื่อมีแถว
   body.innerHTML = gynRowsTableHtml_(sorted) +
-    '<p class="gyn-total" id="cuGynTotal">รวม ' + sorted.length + ' ราย</p>' +
-    '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อตรวจนรีเวช</button></div>';
+    '<p class="gyn-total" id="cuGynTotal">' + (q ? ('พบ ' + sorted.length + ' จาก ' + all.length + ' ราย') : ('รวม ' + sorted.length + ' ราย')) + '</p>' +
+    '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อตรวจนรีเวช</button>' +
+    '<button type="button" class="btn secondary" id="btnGynImage">บันทึกเป็นรูปภาพ</button></div>';
+  var ib = qs('btnGynImage');
+  if (ib) ib.addEventListener('click', onGynImageClick_);
   var pb = qs('btnGynPrint');
   if (pb) pb.addEventListener('click', function () { try { window.print(); } catch (e) { /* ไม่มีหน้าต่างพิมพ์ (DOM จำลอง) */ } });
   // รอบ 122b: กล่องแก้ผลตรวจภายในเฉพาะแถว pelvicsun (no-print ทั้งก้อน ⇒ ไม่ติดใบพิมพ์/รูป PNG)
@@ -14834,8 +15021,13 @@ function saveGynPelvicNote_(recordId, box) {
       if (stateEl) { stateEl.textContent = '✓ บันทึกแล้ว'; stateEl.className = 'cu-note-state ok'; }
     } else {
       // ล้มเหลว: ห้ามแตะค่าใน GYN_PELVIC_RECS_ (ครั้งถัดไปยังยิงซ้ำได้) · ไม่ล้างสิ่งที่ผู้ใช้กรอก
-      if (stateEl) { stateEl.textContent = '✗ บันทึกไม่สำเร็จ — ลองใหม่' + ((resp && resp.message) ? ' (' + String(resp.message) + ')' : ''); stateEl.className = 'cu-note-state err'; }
+      var failMsg = '✗ บันทึกไม่สำเร็จ — ลองใหม่' + ((resp && resp.message) ? ' (' + String(resp.message) + ')' : '');
+      if (stateEl) { stateEl.textContent = failMsg; stateEl.className = 'cu-note-state err'; }
+      if (!box.isConnected) showToast(failMsg); // รอบ 141 (M1): กล่องเดิมถูกวาดทิ้งแล้ว ข้อความในกล่องมองไม่เห็น
     }
+    // รอบ 141 (M1): ระหว่างรอผลบันทึก ผู้ใช้พิมพ์ค้นหา ⇒ กล่องถูกวาดใหม่จาก rec ค่าเก่า · พอผลกลับมา rec อัปเดตแล้วแต่จอยังโชว์ค่าเก่า ⇒ วาดใหม่จาก rec ปัจจุบัน
+    // (ไม่งั้นการแก้ครั้งถัดไปเห็นจอ ≠ rec แล้วส่งค่าเก่าไปทับค่าที่เพิ่งบันทึก) · กล่องเดิมยังอยู่ ⇒ ไม่ทำอะไร
+    if (!box.isConnected && CU_VIEW === 'gyn' && GYN_ROWS_READY_) renderGynFiltered_(GYN_SHOWN_DATE);
   });
 }
 function bindGynPelvicEdit_(root) {
@@ -14865,6 +15057,7 @@ function loadGynList() {
   var body = gynShell_(dateStr);
   if (!body) return;
   GYN_LAST_ROWS = [];
+  GYN_ROWS_READY_ = false; // รอบ 141: ระหว่างโหลดห้ามวาดใหม่จากช่องค้นหา
   body.innerHTML = '<p class="muted">กำลังโหลด...</p>';
   // รอบ 122 (P4): แทนกติการอบ 119ช G6 (วันอาทิตย์ไม่ยิงเซิร์ฟเวอร์) — ยิง gynList + today (pelvicsun) คู่ขนาน รอทั้งคู่ · อันใดอันหนึ่งเสีย ⇒ กล่องโหลดไม่สำเร็จ (ห้ามแสดงครึ่งเดียว)
   var pGyn = apiCall('gynList', { staffKey: STATE.staffKey, date: dateStr }, { timeoutMs: readTimeoutMs_() });
@@ -18928,6 +19121,7 @@ function showScreen(name) {
     var spL1 = qs('spBoardLayer1'), spL2 = qs('spBoardLayer2');
     if (spL1) spL1.hidden = false;
     if (spL2) spL2.hidden = true;
+    spBoardClearSearch_(); // รอบ 141: เข้าหน้ากระดานใหม่ ⇒ ชั้น 2 ถูกซ่อน ล้างคำค้นเช่นเดียวกับ ← กลับ
     loadSpBoard();
   }
 
@@ -19841,7 +20035,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // รอบ 31B: ดึงมาเป็น rerenderCuViews() เดียว ใช้ร่วมกับลิงก์ "ล้างการค้นหา" ของ hint ผลเดียว (ข้อ 3) ด้วย
   var cuHnEl = qs('cuHnSearch');
   if (cuHnEl) {
-    cuHnEl.addEventListener('input', rerenderCuViews);
+    cuHnEl.addEventListener('input', function () { // รอบ 141 (N1): + มุมมองนรีเวชวาดใหม่จากแถวที่โหลดไว้ (ไม่ยิง gynList)
+      rerenderCuViews();
+      if (CU_VIEW === 'gyn' && GYN_ROWS_READY_) renderGynFiltered_(GYN_SHOWN_DATE);
+    });
     cuHnEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
   }
   // รอบ 23 (2026-09-21): ตัวกรอง "ยังไม่รับผล" — re-render จาก LAST_CU_RECORDS เหมือนช่องค้นหาข้างบน ไม่ยิง API ใหม่
@@ -19912,8 +20109,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // รอบ 9 (ก้อน A) — กระดานงานค้าง + รายชื่อส่งตรวจพิเศษของ manager
   qs('btnSpBoardRefresh').addEventListener('click', loadSpBoard);
-  qs('spBoardDate').addEventListener('change', loadSpBoard);
+  qs('spBoardDate').addEventListener('change', onSpBoardDateChange_); // รอบ 141: ล้างคำค้นก่อนโหลด
   qs('spBoardBackBtn').addEventListener('click', closeSpBoardCategory);
+  qs('spBoardSearch').addEventListener('input', spBoardSearchInput_); // รอบ 141
+  qs('btnSpBoardImage').addEventListener('click', onSpBoardImageClick_); // รอบ 141
   qs('btnSpBoardBulkPrep').addEventListener('click', function () { bulkMarkPrep(SP_BOARD_ACTIVE_ID); });
   // รอบ 82 (ก้อน B): ปุ่มเลื่อนจอหน้าบันทึก (จุดคีย์ order) — ⬆ = บนสุด · ⬇ = ล่างสุดของหน้า (smooth) · อัปเดตการซ่อน/วางตำแหน่งเมื่อเลื่อน/ปรับขนาด
   [['logScrollTop', false], ['logScrollBottom', true]].forEach(function (cfg) {
