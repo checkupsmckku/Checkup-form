@@ -752,6 +752,8 @@
   }
   table.report-table th { background: var(--gray-pale); text-align: center; }
   table.report-table td:first-child, table.report-table th:first-child { text-align: left; white-space: normal; }
+  /* รอบ 145: การ์ดเวลาตรวจรายแพทย์ — พิมพ์ไม่ตัดแถวข้ามหน้า */
+  table.doctor-time-table tr { break-inside: avoid; page-break-inside: avoid; }
 
   /* รอบ 75 (เจ้าของสั่ง 2026-10-08): หน้า "ติดตามผล" (#pendingScreen) — แท็บมีตัวเลข · แถบกรองแถวเดียว (ห่อบรรทัดบนจอแคบ) ·
      chip ช่องทาง · ชื่อ-สกุลชิดซ้าย (เฉพาะตารางนี้ ผ่าน #pendingTableWrap — ห้ามแก้กฎ table.report-table รวมข้างบน) · แถบบันทึกติดล่างจอ */
@@ -2772,7 +2774,7 @@ var SPECIAL_SENDS = [
   { id: 'mmg', name: 'MMG (แมมโมแกรม)', group: 'checkup', prepLabel: 'ส่ง line แล้ว' },
   { id: 'vision3d', name: 'ห้องตรวจตา', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' }, // รอบ 6 (0.2.2): เปลี่ยนป้ายจาก 'ตรวจสายตาสามมิติ' — id/ลำดับ/group/prepLabel คงเดิม
   { id: 'ent', name: 'ตรวจหูคอจมูก', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
-  { id: 'ent_hearing', name: 'ตรวจหูคอจมูก + การได้ยิน', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
+  { id: 'ent_hearing', name: 'Audiogram', group: 'medcert', prepLabel: 'คีย์ consult แล้ว' },
   // รอบ 26 (2026-09-22, เจ้าของสั่ง): CT Low dose — "นับยอดอย่างเดียว" เหมือน inbody ต่อท้ายสุดเท่านั้น
   // ห้ามแก้/ลบ/เรียงใหม่ของเดิม 6 ตัวข้างบน — ต้องตรงกับ สถิติบริการ.js เป๊ะ (test_special_sends.js เทียบ)
   { id: 'ct_lowdose', name: 'CT Low dose', group: 'checkup', prepLabel: null },
@@ -2850,9 +2852,9 @@ function spBoardTabDisplayName_(id) {
 // ⚠ ใช้กับแผงติ๊กของฟอร์ม (buildSpecialSendsUI) และสรุป "รายการวันนี้" (renderSpecialTodaySummary) — ต้องมี us_breast
 // อยู่ในนี้ด้วย (มีช่องติ๊กของตัวเองในฟอร์ม แค่ไม่มีแท็บของตัวเองในกระดาน spBoard — ดู SP_BOARD_TAB_ITEMS ด้านล่าง)
 var SP_BOARD_ITEMS = SPECIAL_SENDS.filter(function (s) { return s.prepLabel != null; });
-// รอบ 36 (W1, เจ้าของสั่ง): ปุ่มสลับแท็บ = BMD · CA BREAST · EYE · ENT · ENT+AUDIO (ตาม id bmd/mmg/vision3d/ent/ent_hearing)
+// รอบ 36 (W1, เจ้าของสั่ง): ปุ่มสลับแท็บ = BMD · CA BREAST · EYE · ENT · AUDIOGRAM (ตาม id bmd/mmg/vision3d/ent/ent_hearing)
 // mmg ใช้ SP_BOARD_TAB_NAME แทนอยู่แล้ว (ชนะป้ายย่อยนี้เสมอ) — ent_hearing/vision3d เปลี่ยนป้ายย่อ (เดิม 'ENT+ยิน'/'ตา')
-var SP_BOARD_SHORT_LABEL = { mmg: 'MMG', bmd: 'BMD', ent: 'ENT', ent_hearing: 'ENT+AUDIO', vision3d: 'EYE' };
+var SP_BOARD_SHORT_LABEL = { mmg: 'MMG', bmd: 'BMD', ent: 'ENT', ent_hearing: 'AUDIOGRAM', vision3d: 'EYE' };
 
 // รอบ 29 (S7) W7 (ข้อ 7): แท็บของกระดานส่งตรวจพิเศษ (spBoard) เท่านั้น — us_breast ไม่มีแท็บของตัวเอง
 // (รวมอยู่ในแท็บ mmg แทน) ใช้เฉพาะ renderSpBoardCards/renderSpBoardSwitchBar/spBoardCounts (เมนู+แถบสลับของกระดาน)
@@ -5852,7 +5854,8 @@ var POINT_MAIN_SCREEN_TOPICS_ = [
   { topic: 'คิวพบแพทย์', screen: 'dq' },
   { topic: 'ค้างส่งออก', screen: 'pending' },
   { topic: 'รายการวันนี้', screen: 'today' },
-  { topic: 'นำเข้ารายชื่อนัด', screen: 'appt' } // รอบ 87 (D10): จุดทำนัดหมาย ⇒ หน้ารายชื่อนัดล่วงหน้า
+  { topic: 'นำเข้ารายชื่อนัด', screen: 'appt' }, // รอบ 87 (D10): จุดทำนัดหมาย ⇒ หน้ารายชื่อนัดล่วงหน้า
+  { topic: 'ส่งตรวจพิเศษ', screen: 'spBoard' } // รอบ 144b (เจ้าของ 2026-11-23): จุด Manager ⇒ หน้า 📣 ส่งตรวจพิเศษ
 ];
 // ชื่อหน้าหลักของจุดตามหัวข้อ (ไม่มีคำพิเศษ ⇒ '') — ใช้ทั้ง maybeAutoOpenListForPoint() และตัวฟังเปลี่ยนจุด
 function pointMainScreenFor_(topics) {
@@ -8332,6 +8335,7 @@ function computeSupOpd_(records, dateStr) {
   var st = computeTodayStats_(records);
   // รอบ 91: + แถวฟังผล Lab ที่ยังไม่ถูกนับจากตรวจสุขภาพ/มี Lab/วัคซีนเดี่ยว (เจ้าของยืนยัน 2026-10-20: สูตรเดิมถูกแล้ว เพิ่มเฉพาะส่วนนี้)
   var r = { withProc: st.cntCheckup + st.cntMedLab + st.cntVaccineProc + st.cntLabFollowupExtra, noProc: st.cntMedGen,
+    totalPeople: st.totalPeople, cntCheckup: st.cntCheckup, medCertAll: st.cntMedGen + (st.cntMedLabBar !== undefined ? st.cntMedLabBar : st.cntMedLabAny), // รอบ 144 (S1/S2): แถวแสดงผลเพิ่ม ไม่บวกเข้า total
     vaccineShots: 0, bmd: 0, mmgUs: 0, ent: 0, entAudio: 0, vision: 0, ekg: 0, usAbdomen: 0, inbody: 0, eyeTest: 0, ppd: 0, pap: 0, abroad: 0, isSunday: false, total: 0 };
   var m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(String(dateStr || ''));
   if (m) r.isSunday = (new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() === 0);
@@ -8369,17 +8373,18 @@ function renderSupOpdSummary(records, dateStr) {
   var body = qs('specialTodaySummaryBody');
   if (!body) return;
   var r = computeSupOpd_(records, dateStr || todayStr()); // รอบ 74: แถว PAP วันอาทิตย์ตัดสินตามวันที่ดูอยู่
+  // รอบ 144 (S1/S4): ลำดับแถวตามเจ้าของสั่ง · แถว 1/ตรวจสุขภาพ/ใบรับรองแพทย์รวม เป็นการแสดงผลเพิ่ม (ไม่บวกเข้า "ยอดรวมหัตถการ")
   var rows = [
-    ['มีหัตถการ', r.withProc, 'ราย', 1], ['ไม่มีหัตถการ', r.noProc, 'ราย', 1], ['ยอดรวมหัตถการ', r.total, 'ราย', 1], null,
-    ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'ราย'], ['MMG + U/S Breast', r.mmgUs, 'ราย'], ['ENT', r.ent, 'ราย'],
-    ['ENT + Audio', r.entAudio, 'ราย'], ['ห้องตรวจตา', r.vision, 'ราย'], ['U/S ช่องท้อง', r.usAbdomen, 'ราย'], ['EKG', r.ekg, 'ราย'], ['Inbody', r.inbody, 'ราย'],
+    ['รวมยอดผู้รับบริการ', r.totalPeople, 'ราย', 1], ['มีหัตถการ', r.withProc, 'ราย', 1], ['ไม่มีหัตถการ', r.noProc, 'ราย', 1], ['ยอดรวมหัตถการ', r.total, 'ราย', 1], null,
+    ['ตรวจสุขภาพ', r.cntCheckup, 'ราย'], ['ตรวจร่างกายไปต่างประเทศ', r.abroad, 'ราย'], ['ใบรับรองแพทย์รวม', r.medCertAll, 'ราย'],
+    ['วัคซีน', r.vaccineShots, 'เข็ม'], ['BMD', r.bmd, 'ราย'], ['MMG + U/S Breast', r.mmgUs, 'ราย'], ['U/S ช่องท้อง', r.usAbdomen, 'ราย'], ['EKG', r.ekg, 'ราย'], ['Inbody', r.inbody, 'ราย'],
     ['ตรวจสายตา / ตาบอดสี', r.eyeTest, 'ราย'], ['PPD test', r.ppd, 'ราย']
   ];
   if (r.isSunday) rows.push(['PAP วันอาทิตย์', r.pap, 'ราย']);
-  rows.push(['ตรวจร่างกายไปต่างประเทศ', r.abroad, 'ราย']); // รอบ 120 (S1): ต่อท้ายรายการ · หน่วย ราย
-  // รอบ 115 R4: วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG+U/S Breast / ENT / ENT+Audio / ห้องตรวจตา ⇒ ซ่อนแถวเมื่อจำนวน 0 (ไม่ใช่ 0 ⇒ ยังแสดง · ยอดรวมไม่เปลี่ยน)
+  rows.push(['ENT', r.ent, 'ราย'], ['Audiogram', r.entAudio, 'ราย'], ['ห้องตรวจตา', r.vision, 'ราย']);
+  // รอบ 115 R4: วันอาทิตย์ไม่มีส่งตรวจ BMD / MMG+U/S Breast / ENT / Audiogram / ห้องตรวจตา ⇒ ซ่อนแถวเมื่อจำนวน 0 (ไม่ใช่ 0 ⇒ ยังแสดง · ยอดรวมไม่เปลี่ยน)
   if (r.isSunday) {
-    var sundayHide = ['BMD', 'MMG + U/S Breast', 'ENT', 'ENT + Audio', 'ห้องตรวจตา'];
+    var sundayHide = ['BMD', 'MMG + U/S Breast', 'ENT', 'Audiogram', 'ห้องตรวจตา'];
     rows = rows.filter(function (x) { return !(x && sundayHide.indexOf(x[0]) !== -1 && !x[1]); });
   }
   body.innerHTML = '<div class="sum-grid sup-opd-grid">' + rows.map(function (x) {
@@ -8976,11 +8981,16 @@ var QCA_KEY_POINT_ = 'จุดคีย์ order';
 var QCA_SALES_POINT_ = 'จุดขายโปรแกรม';
 var QCA_DISPENSE_POINT_ = 'จุดจำหน่าย'; // รอบ 142 (D3): ชิปเลขคิวอย่างเดียว ไม่มีปุ่ม (เหมือนจุดขายโปรแกรม)
 var QCA_ = { mode: '', queues: [], unrecorded: [], seq: 0, inflight: false }; // รอบ 115b: unrecorded = M ที่ข้ามไปกลางกลุ่ม (ไม่มีบันทึก/ไม่ได้พบแพทย์)
+// รอบ 144 (A1): จุดกัปตัน = จุดที่มีหัวข้อ 'คิวพบแพทย์' (กลไกเดียวกับ POINT_MAIN_SCREEN_TOPICS_ / maybeAutoOpenListForPoint) — ไม่มีแถบเตือนเลย
+function isCaptainPoint_() { return currentPointTopics().indexOf('คิวพบแพทย์') !== -1; }
+// รอบ 144 (A1): หน้าบันทึกเปิดอยู่ ⇒ ทุกจุดที่ keyLayoutPoint_() (ยกเว้นกัปตัน) ใช้แถบแบบจุดคีย์ order (2 กลุ่ม + ปุ่ม บันทึก/ไม่ต้องบันทึก)
+function qcaFormOpen_() { var w = qs('svcFormWrap'); return !!(w && w.style.display === 'block'); }
 function qcaMode_() {
+  if (!keyLayoutPoint_() || isCaptainPoint_()) return ''; // รอบ 144: จุดนับ vaccine / ไม่ได้เลือกจุด / จุดกัปตัน ⇒ ไม่มีแถบ ไม่ยิง
   if (STATE.point === QCA_KEY_POINT_) return 'key';
   if (STATE.point === QCA_SALES_POINT_) return 'sales';
   if (STATE.point === QCA_DISPENSE_POINT_) return 'dispense'; // รอบ 142
-  return '';
+  return 'other'; // รอบ 144: จุดอื่น ๆ (เปิดสิทธิ์/ส่งออก/ทำนัดหมาย/…) — แสดงเฉพาะหน้าบันทึก
 }
 // รอบ 142: host ของแถบที่จุดจำหน่าย — หน้าหลักของจุดนี้ (หัวข้อ 'รายชื่อ') = 📋 รายชื่อตรวจสุขภาพ (#checkupTableScreen) เฉพาะตอนดูวันนี้ ·
 // หน้าบันทึก (#svcFormWrap · จุดจำหน่ายใช้เลย์เอาต์จุดคีย์ ⇒ keyLayoutPoint_) ก็แสดง · หน้าอื่น/ดูวันอื่น ⇒ '' (ซ่อน)
@@ -8996,8 +9006,8 @@ function qcaDispenseHostSel_() {
   return '';
 }
 function qcaPageOpen_(mode) {
-  if (mode === 'key') { var w = qs('svcFormWrap'); return !!(w && w.style.display === 'block'); }
-  if (mode === 'sales') return isTodayScreenVisible_() && isViewingToday_();
+  if (mode === 'key' || mode === 'other') return qcaFormOpen_();
+  if (mode === 'sales') return qcaFormOpen_() || (isTodayScreenVisible_() && isViewingToday_()); // รอบ 144: หน้าบันทึกของจุดขายโปรแกรม ⇒ แบบมีปุ่ม
   if (mode === 'dispense') return qcaDispenseHostSel_() !== ''; // รอบ 142
   return false;
 }
@@ -9008,9 +9018,10 @@ function qcaRender_() {
   var list = QCA_.queues || [];
   var unrec = QCA_.unrecorded || [];
   if (!mode || !qcaPageOpen_(mode) || !(list.length || unrec.length)) { bar.hidden = true; return; }
-  var host = document.querySelector(mode === 'key' ? '#svcFormWrap > .wrap-log' : (mode === 'dispense' ? qcaDispenseHostSel_() : '#todayScreen > .wrap'));
+  var withBtns = qcaFormOpen_(); // รอบ 144 (A1/A2): หน้าบันทึก ⇒ ปุ่ม · หน้าหลักของจุดขายโปรแกรม/จุดจำหน่าย ⇒ ชิปเดิม
+  var host = document.querySelector(withBtns ? '#svcFormWrap > .wrap-log' : (mode === 'dispense' ? qcaDispenseHostSel_() : '#todayScreen > .wrap'));
   if (host && bar.parentNode !== host) host.insertBefore(bar, host.firstChild);
-  var sig = mode + '|' + list.join(',') + '|' + unrec.join(',');
+  var sig = mode + (withBtns ? '+b' : '') + '|' + list.join(',') + '|' + unrec.join(',');
   if (bar.getAttribute('data-sig') !== sig) {
     bar.setAttribute('data-sig', sig);
     bar.textContent = '';
@@ -9029,7 +9040,7 @@ function qcaRender_() {
       var b = document.createElement('b');
       b.textContent = q;
       chip.appendChild(b);
-      if (mode === 'key') {
+      if (withBtns) {
         var rec = document.createElement('button');
         rec.type = 'button'; rec.className = 'btn small'; rec.setAttribute('data-qca-act', 'record'); rec.setAttribute('data-qca-n', String(n));
         rec.textContent = 'บันทึก';
@@ -12093,7 +12104,7 @@ function updateCuHnHint(totalCount, shownCount) {
   if (!rawQ) { hint.hidden = true; hint.textContent = ''; return; }
   hint.hidden = false;
   if (shownCount === 0) {
-    hint.textContent = 'ไม่พบ HN "' + rawQ + '" ในรายชื่อวันนี้ (ทั้งวันมี ' + totalCount + ' รายการ)';
+    hint.textContent = 'ไม่พบ "' + rawQ + '" ในรายชื่อวันนี้ (ทั้งวันมี ' + totalCount + ' รายการ)'; // รอบ 145b (เจ้าของ 2026-11-23): ค้นได้ทั้งคิว/HN/ชื่อ ⇒ ไม่เขียนคำว่า HN
   } else {
     hint.textContent = 'กำลังกรองด้วย HN "' + rawQ + '" — แสดง ' + shownCount + ' จาก ' + totalCount + ' รายการ (ยอดสรุปด้านบนยังเป็นของทั้งวัน)';
   }
@@ -12886,7 +12897,7 @@ function renderCheckupTable(records, dateStr) {
   if (showCancelled) cancelledSlots.forEach(function (q) { tableItems.push({ queue: q, _cuCancelled: true }); });
   tableItems.sort(compareByQueue);
 
-  if (shownRows.length === 0) html += '<tr><td colspan="' + cuCols + '" class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</td></tr>';
+  if (shownRows.length === 0) html += '<tr><td colspan="' + cuCols + '" class="muted">ไม่พบรายการที่ค้นในรายชื่อวันนี้</td></tr>'; // รอบ 145b
   tableItems.forEach(function (rec) {
     if (rec._cuCancelled) {
       html += '<tr class="cu-cancelled-row"><td>' + escHtml(rec.queue) + '</td><td colspan="' + (cuCols - 1) + '" class="cu-cancelled-cell">ยกเลิก</td></tr>';
@@ -14303,7 +14314,7 @@ function renderCheckupList(records, dateStr) {
   var shownRows = cuFilterRows(rows);
   var html = '<div class="summary-bar">รวม ' + rows.length + ' ราย · ยอดเงินตรวจสุขภาพรวม ' + money(totalMoney) + ' บาท</div>';
   html += checkupExtraSummaryHtml(rows); // ต่อจาก .summary-bar ก่อนการ์ดใบแรก (no-print)
-  if (shownRows.length === 0) html += '<p class="muted">ไม่พบ HN ที่ค้นในรายชื่อวันนี้</p>';
+  if (shownRows.length === 0) html += '<p class="muted">ไม่พบรายการที่ค้นในรายชื่อวันนี้</p>'; // รอบ 145b
   // รอบ 29 (S4) W4 (ข้อ 4): ห่อแต่ละคนด้วย .cu-person + แถบหัว (คิว/HN/ชื่อ-สกุล/โปรแกรม) ให้แยกคนได้ชัดเจนขึ้น
   // — หน้าตาอย่างเดียว เนื้อหาข้างใน (recordItemHtml + cuNoteHtml) เหมือนเดิมทุกประการ · เรียงตาม compareByQueue แล้ว (checkupTableRows)
   shownRows.forEach(function (rec, idx) {
@@ -15524,6 +15535,26 @@ function renderReport(summary, period) {
   html += '</tbody></table></div><div class="line" style="margin-top:8px;">ยอดเงินหมวดตรวจเพิ่ม: ' + money(numOr0(extra.money)) + ' บาท</div>' +
     '</div>'; // ปิดการ์ด "2 ตรวจสุขภาพ"
 
+  // รอบ 145: การ์ด "เวลาตรวจรายแพทย์" (มีชื่อแพทย์ — เจ้าของสั่ง · ไม่มีชื่อ/HN ผู้ป่วย) · เซิร์ฟเวอร์เก่าไม่มี doctorTime ⇒ ไม่แสดงการ์ด · ชื่อผ่าน escHtml
+  var dt = summary.doctorTime;
+  if (dt && typeof dt === 'object' && Array.isArray(dt.rows)) {
+    var dtAvg = function (v) { return (typeof v === 'number' && isFinite(v)) ? v.toFixed(1) : '—'; };
+    html += '<div class="card" data-report-doctor-time="1"><h2>เวลาตรวจรายแพทย์</h2>';
+    if (dt.rows.length === 0) {
+      html += '<div class="line">ไม่มีข้อมูลคิวพบแพทย์ในช่วงนี้</div>';
+    } else {
+      html += '<div class="scroll-x"><table class="report-table doctor-time-table"><thead><tr>' +
+        '<th>แพทย์</th><th>วันที่ออกตรวจ</th><th>คิว</th><th>เฉลี่ย (นาที/ราย)</th><th>DF ไม่ได้พบแพทย์ (ราย)</th></tr></thead><tbody>';
+      dt.rows.forEach(function (r) {
+        html += '<tr><td>' + escHtml(r.name) + '</td><td>' + numOr0(r.days) + '</td><td>' + numOr0(r.count) + '</td><td>' + dtAvg(r.avg) + '</td><td>' + numOr0(r.noDoctor) + '</td></tr>';
+      });
+      var dtTot = dt.total || {};
+      html += '<tr class="doctor-time-total"><td><b>รวม</b></td><td>—</td><td><b>' + numOr0(dtTot.count) + '</b></td><td><b>' + dtAvg(dtTot.avg) + '</b></td><td><b>' + numOr0(dtTot.noDoctor) + '</b></td></tr>';
+      html += '</tbody></table></div>';
+    }
+    html += '</div>';
+  }
+
   // 3 วัคซีน — รอบ 30 (S2/W3, เจ้าของสั่งตาม Vaccine.pdf): ตัดคอลัมน์ราคา/คนทั้ง 2 คอลัมน์ทิ้ง (เหตุผล: ค่า DF+PE
   // ของคนฉีดอย่างเดียวคิดครั้งเดียวต่อคน แบ่งรายวัคซีนไม่ได้) เหลือ วัคซีน · จำนวนผู้ที่ฉีดพร้อมตรวจสุขภาพ ·
   // จำนวนผู้ที่ฉีดวัคซีนอย่างเดียว จาก summary.vaccine.split (เซิร์ฟเวอร์รุ่นเก่าไม่มี split ⇒ fallback ตาราง
@@ -16345,6 +16376,13 @@ var dqDefaultRooms = [
   // รอบ 52: ช่องชื่อแพทย์เป็น select แล้ว ⇒ ตั้งต้นด้วย "ชื่อ active ตัวแรกในรายชื่อที่แกนชื่อขึ้นต้นด้วย เฉลิมชัย" (defaultDoctorPrefix) · ไม่มี ⇒ ไม่ระบุแพทย์
   { room: '5', doctor: '', start: '09:30', end: '', defaultDoctorPrefix: 'เฉลิมชัย' }
 ];
+// รอบ 144c (เจ้าของ 2026-11-23): วันอาทิตย์ไม่มีห้องล็อกขาย/ห้อง 5 ⇒ ห้องตั้งต้น + ตัวเลือกห้องเหลือ 1/8 (ตัดสินจากวันของผัง)
+var dqSundayRooms_ = ['1', '8'];
+function dqSetupDate_() { return (dqState.today && dqState.today.date) || todayStr(); }
+function dqRoomChoicesFor_(dateStr) {
+  if (!isSundayYmd_(dateStr)) return dqRoomChoices.slice();
+  return dqRoomChoices.filter(function (r) { return dqSundayRooms_.indexOf(r) !== -1; });
+}
 var dqSendQueue = [];     // งานที่ยังไม่ได้ response — ส่งทีละงานตามลำดับที่กด
 var dqSendActive = false;
 var dqPendingSeq = 0;
@@ -18835,7 +18873,8 @@ function dqOpenSetup() {
   // ห้องตั้งต้น 1/8/ล็อกขาย/5 (เจ้าของสั่งลำดับ 2026-10-02) เฉพาะวันที่ยังไม่มีผัง — มีผังแล้วใช้ของเดิม ห้ามทับ
   var list = rooms.length > 0
     ? rooms.map(function (r) { return { room: r.room, doctor: r.doctor, start: r.start, end: r.end }; })
-    : dqDefaultRooms.map(function (r) { return Object.assign({}, r); });
+    : dqDefaultRooms.filter(function (r) { return dqRoomChoicesFor_(dqSetupDate_()).indexOf(r.room) !== -1; })
+        .map(function (r) { return Object.assign({}, r); });
   var container = qs('dqSetupRooms');
   if (container) container.innerHTML = '';
   list.forEach(function (item) { dqAddSetupRow(item); });
@@ -18926,12 +18965,13 @@ function dqAddSetupRow(item) {
   var optBlank = document.createElement('option');
   optBlank.value = ''; optBlank.textContent = 'เลือกห้อง';
   roomSel.appendChild(optBlank);
-  dqRoomChoices.forEach(function (rm) {
+  var roomChoices = dqRoomChoicesFor_(dqSetupDate_()); // รอบ 144c
+  roomChoices.forEach(function (rm) {
     var o = document.createElement('option');
     o.value = rm; o.textContent = rm;
     roomSel.appendChild(o);
   });
-  if (wantRoom.trim() !== '' && dqRoomChoices.indexOf(wantRoom) < 0) {
+  if (wantRoom.trim() !== '' && roomChoices.indexOf(wantRoom) < 0) {
     var oOld = document.createElement('option');
     oOld.value = wantRoom; oOld.textContent = wantRoom + ' (ไม่อยู่ในรายการ — เลือกใหม่)';
     roomSel.appendChild(oOld);
@@ -19231,9 +19271,10 @@ function dqOnSaveRoomsClick() {
   var trimmed = rows.map(function (r) { return (r.room || '').trim(); });
   if (trimmed.some(function (r) { return r === ''; })) { dqShowSetupMsg('กรุณาเลือกห้องให้ครบทุกแถว', true); return; }
   // รอบ 96: ห้องต้องอยู่ใน dqRoomChoices (ผังเก่าที่มีห้องนอกรายการต้องเลือกใหม่) — ไม่ยิง request
+  var saveChoices = dqRoomChoicesFor_(dqSetupDate_()); // รอบ 144c: วันอาทิตย์เลือกได้แค่ 1/8
   for (var ri = 0; ri < trimmed.length; ri++) {
-    if (dqRoomChoices.indexOf(trimmed[ri]) < 0) {
-      dqShowSetupMsg('ห้อง "' + trimmed[ri] + '" ไม่อยู่ในรายการ — เลือกได้เฉพาะห้อง ' + dqRoomChoices.join(' / '), true);
+    if (saveChoices.indexOf(trimmed[ri]) < 0) {
+      dqShowSetupMsg('ห้อง "' + trimmed[ri] + '" ไม่อยู่ในรายการ — เลือกได้เฉพาะห้อง ' + saveChoices.join(' / '), true);
       return;
     }
   }
