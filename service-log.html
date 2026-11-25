@@ -782,6 +782,8 @@
   .pending-bulk-bar .thd-btn { width: auto; min-width: 120px; padding: 6px 10px; font-size: 14px; }
   .pending-bulk-count { font-weight: 700; }
   .pending-bulk-label { font-weight: 600; white-space: nowrap; margin: 0; }
+  /* รอบ 147 (W1 · เจ้าของสั่ง 2026-11-24 "ไม่ต้องการเลื่อนแบบนี้ ต้องการเห็นเต็ม"): หน้า ติดตามผล กว้างเต็มจอคอม (แบบเดียวกับ #dqScreen) — ห้ามแก้ .wrap ตัวรวม (ใช้ร่วมทุกหน้า) · จอแคบยังเลื่อนใน .scroll-x ตามเดิม */
+  #pendingScreen > .wrap { max-width: 1200px; }
 
   /* ใบรายชื่อผู้รับบริการตรวจสุขภาพ (.cu-table) — เจ้าของสั่ง 2026-09-11 "ให้ตัวอักษรอยู่ตรงกลาง"
      report-table ปกติชิดขวาเพราะเป็นตารางตัวเลขของรายงานรายเดือน แต่ใบนี้เป็นรายชื่อคน ไม่ใช่ตารางตัวเลข
@@ -2453,13 +2455,15 @@
         <button type="button" class="btn small secondary" id="btnPendingKindPickup" data-pending-kind="pickup">รอรับ / นัดรับ</button>
         <!-- รอบ 119ง (L4): แท็บที่ 4 "ผล Lab" — 1 แถวต่อ 1 รายการ Lab ที่ยังไม่มีวันที่ส่งออก (ไม่ใช่ต่อคน) · ป้ายหน่วยแท็บนี้ใช้ "รายการ" -->
         <button type="button" class="btn small secondary" id="btnPendingKindLab" data-pending-kind="lab">ผล Lab</button>
+        <!-- รอบ 147 (W2): แท็บที่ 5 "ส่งออกแล้ว" — ดูอย่างเดียว (ไม่มีช่องติ๊ก/แถบบันทึก) · 1 แถว = 1 คน × 1 ผลที่ส่งแล้ว · ข้อมูลจาก action sentList -->
+        <button type="button" class="btn small secondary" id="btnPendingKindSent" data-pending-kind="sent">ส่งออกแล้ว</button>
       </div>
 
       <!-- รอบ 60 ข้อ 6: ตัวกรองวันที่รับบริการ — ว่าง = ทุกวัน · กรองฝั่งเว็บ (backend pending คืนทุกวันอยู่แล้ว)
            ⚠ ต่างจาก #pendingSentDate: ห้ามเข้า ensureAutoToday_/ตัวเช็คข้ามวัน (ค่าว่างต้องเป็น "ทุกวัน" ไม่ใช่ถูกเติมเป็นวันนี้เอง)
            รอบ 75: แถวเดียวกับช่องค้นหา (flex-wrap ห่อบรรทัดบนจอแคบ) -->
       <div class="no-print pending-filter-bar" id="pendingFilterDateRow">
-        <div class="pending-filter-date">
+        <div class="pending-filter-date" id="pendingFilterDateBox"><!-- รอบ 147 (W5): ซ่อนในแท็บ ส่งออกแล้ว (ค่าเดิมคงอยู่) -->
           <label class="field-label" for="pendingFilterDate">วันที่รับบริการ</label>
           <input type="date" id="pendingFilterDate">
           <button type="button" class="btn secondary small" id="pendingFilterAll">ทุกวัน</button>
@@ -15775,7 +15779,7 @@ function loadReport() {
    (ยิง bulkSentDate kind:'pickup' → เซิร์ฟเวอร์เขียน RECEIVED_DATE) — ใช้ #pendingSentDate ตัวเดิม ป้ายเปลี่ยนเป็น "วันที่รับผล"
    ========================================================================= */
 var PENDING_RECORDS = [];
-var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic' | 'pickup' (รอบ 73) | 'lab' (รอบ 119ง)
+var PENDING_KIND = 'checkup'; // 'checkup' | 'pelvic' | 'pickup' (รอบ 73) | 'lab' (รอบ 119ง) | 'sent' (รอบ 147)
 var PENDING_SELECTED = {}; // recordId -> true — ตัดออกเองเมื่อแถวไม่อยู่ในชุดที่แสดงแล้ว (ค้นหา/สลับชนิดเปลี่ยน)
 // รอบ 75 (เจ้าของสั่ง 2026-10-08): หน้านี้ชื่อบนจอ "📮 ติดตามผล" · ตัวเลขอยู่บนแท็บ (แทนกล่องสรุป #pendingSummary ที่ถอดออกจากจอ) ·
 // chip กรองช่องทางใต้แถบกรอง (PENDING_METHOD: '' = ทั้งหมด · รีเซ็ตเมื่อสลับแท็บ) · แท็บ pickup ชื่อ-สกุลกดเปิดหน้าต่างแก้ไข ·
@@ -15784,6 +15788,17 @@ var PENDING_METHOD = '';
 // รอบ 127 (เจ้าของสั่ง 2026-11-17): กรองเป็นเดือน เลือกได้หลายเดือน — คีย์ 'yyyy-MM' -> true · อยู่ในหน่วยความจำ คงอยู่ข้ามการสลับแท็บ/โหลด pending ใหม่
 // ⚠ ห้ามให้ตัวเช็คข้ามวัน/ensureAutoToday_ แตะตัวแปรนี้ (ค่าว่าง = ทุกเดือน ไม่ใช่เดือนนี้)
 var PENDING_MONTHS = {};
+// รอบ 147 (W3): แท็บ "ส่งออกแล้ว" — ข้อมูลจาก action sentList (แยกจาก PENDING_RECORDS) · SENT_MONTHS = เดือน 'yyyy-MM' ของ "วันที่ส่งออก" (แยกจาก PENDING_MONTHS ·
+// ⚠ ห้ามให้ตัวเช็คข้ามวัน/ensureAutoToday_ แตะ) · SENT_LOADED=false ⇒ ยังไม่เคยโหลดสำเร็จ/ถูกบันทึกในแท็บอื่นทำให้ล้าสมัย (W7) ⇒ ไม่มีตัวเลขบนแท็บ
+var SENT_ITEMS = [];
+var SENT_LOADED = false;
+var SENT_LOAD_SEQ = 0;
+var SENT_MONTHS = {};
+var SENT_FAILED_ = false;    // โหลดไม่สำเร็จและยังไม่เคยมีข้อมูล ⇒ ตารางว่าง (ข้อความ error อยู่ที่ #pendingError)
+var SENT_ERR_SHOWN_ = false; // #pendingError ตอนนี้เป็นข้อความของแท็บส่งออกแล้ว ⇒ ซ่อนเมื่อสลับไปแท็บอื่น
+var SENT_KIND_ORDER_ = ['checkup', 'pelvic', 'lab', 'pickup'];
+var SENT_KIND_CHIP_LABEL_ = { checkup: 'ผลตรวจสุขภาพ', pelvic: 'มะเร็งปากมดลูก', lab: 'ผล Lab', pickup: 'รับผลเอง' };
+var SENT_ROW_CAP_ = 300;
 var PENDING_METHOD_NONE_ = '__none'; // chip "ยังไม่ระบุ" ของแท็บตรวจภายใน (pelvicMethod ว่าง) — '' สงวนไว้เป็น "ทั้งหมด"
 
 // รอบ 55: "วันที่ส่งออก" ถูกเขียนลงชีตตอนกดบันทึก ⇒ ค้างเป็นเมื่อวานเงียบ ๆ = ลงวันที่ผิด · ใช้กติกาเดียวกับ #cuDate
@@ -15849,7 +15864,17 @@ function pendingLabRows_(skipFilter) {
   return out;
 }
 
+// รอบ 147: เดือนที่เลือกอยู่ของแท็บปัจจุบัน (sent ใช้ SENT_MONTHS แยกจากแท็บอื่น)
+function pendingActiveMonths_() { return PENDING_KIND === 'sent' ? SENT_MONTHS : PENDING_MONTHS; }
+function sentMonthMatches_(item) {
+  var any = false, k;
+  for (k in SENT_MONTHS) { if (Object.prototype.hasOwnProperty.call(SENT_MONTHS, k) && SENT_MONTHS[k]) { any = true; break; } }
+  return !any || SENT_MONTHS[String((item && item.sentDate) || '').slice(0, 7)] === true;
+}
+function sentRowMatchesSearch_(item, q) { return pendingRowMatchesSearch_({ patientHn: item && item.hn, patientName: item && item.name }, q); }
+
 function pendingRowsForKind(kind, skipDateFilter) {
+  if (kind === 'sent') return SENT_LOADED ? SENT_ITEMS.filter(function (it) { return skipDateFilter || sentMonthMatches_(it); }) : []; // รอบ 147: ตัวกรองเดือน = เดือนของวันที่ส่งออก
   if (kind === 'lab') return pendingLabRows_(skipDateFilter);
   return PENDING_RECORDS.filter(function (rec) {
     var p = rec && rec.pending;
@@ -15890,11 +15915,15 @@ function pendingRowMatchesSearch_(rec, q) {
 // รอบ 75: ชุดแถวหลังตัวกรองวันที่ + ค้นหา ของชนิดนั้น (ยังไม่กรองช่องทาง) — ตัวเลขบน chip นับจากชุดนี้
 function pendingRowsForChips_(kind) {
   var q = pendingSearchQuery_();
+  if (kind === 'sent') { // รอบ 147 (W5): ค้นหาข้ามทุกเดือน — มีคำค้น ⇒ ไม่ใช้ตัวกรองเดือน
+    return pendingRowsForKind('sent', !!q).filter(function (it) { return sentRowMatchesSearch_(it, q); });
+  }
   return pendingRowsForKind(kind).filter(function (rec) { return pendingRowMatchesSearch_(rec, q); });
 }
 
 // รอบ 75: ช่องทางของแถวตามชนิดแท็บ — checkup/pickup = deliveryMethod · pelvic = pelvicMethod (ว่าง ⇒ '__none')
 function pendingMethodKey_(rec, kind) {
+  if (kind === 'sent') return (rec && rec.kind) || ''; // รอบ 147: chip แถวล่างของแท็บส่งออกแล้ว = ประเภท
   if (kind === 'lab') return (rec && rec._labMethod) ? rec._labMethod : PENDING_METHOD_NONE_; // รอบ 119ง
   if (kind === 'pelvic') return (rec && rec.pelvicMethod) ? rec.pelvicMethod : PENDING_METHOD_NONE_;
   return (rec && rec.deliveryMethod) || '';
@@ -15904,12 +15933,22 @@ function pendingShownRows() {
   var m = PENDING_METHOD;
   return pendingRowsForChips_(PENDING_KIND)
     .filter(function (rec) { return !m || pendingMethodKey_(rec, PENDING_KIND) === m; })
-    .slice().sort(comparePendingRow_);
+    .slice().sort(PENDING_KIND === 'sent' ? compareSentRow_ : comparePendingRow_);
+}
+
+// รอบ 147 (W4): เรียง วันที่ส่งออก ใหม่ → เก่า · แล้ววันที่มาตรวจ ใหม่ → เก่า · แล้ว compareByQueue
+function compareSentRow_(a, b) {
+  var sa = (a && a.sentDate) || '', sb = (b && b.sentDate) || '';
+  if (sa !== sb) return sa < sb ? 1 : -1;
+  var da = (a && a.date) || '', db = (b && b.date) || '';
+  if (da !== db) return da < db ? 1 : -1;
+  return compareByQueue(a, b);
 }
 
 // รอบ 75: ป้ายบน chip — ใช้ shortDeliveryLabel เดิม (ส่งไปรษณีย์, E-mail, Whatsapp) ยกเว้น 2 ช่องทางรับเองที่ใช้ชื่อเต็มตามสเปก
 // (shortDeliveryLabel ของ "นัดรับวันที่" ต้องมีวันที่ต่อท้าย ใช้เป็นป้าย chip ไม่ได้)
 function pendingMethodLabel_(m) {
+  if (PENDING_KIND === 'sent') return SENT_KIND_CHIP_LABEL_[m] || m; // รอบ 147
   if (m === PENDING_METHOD_NONE_) return 'ยังไม่ระบุ';
   if (m === 'รอรับด้วยตนเอง' || m === DELIVERY_PICKUP_APPOINTMENT) return m;
   return shortDeliveryLabel(m);
@@ -15918,6 +15957,7 @@ function pendingMethodLabel_(m) {
 // รอบ 75: รายการ chip ของแต่ละแท็บ (ไม่รวม "ทั้งหมด") — checkup = SEND_OUT 3 ตัว · pickup = PICKUP 2 ตัว (คงที่) ·
 // pelvic = ช่องทางที่มีอยู่ในข้อมูลจริง (เรียง ส่งออก → รับเอง → อื่น ๆ → ยังไม่ระบุ) + ช่องทางที่เลือกค้างอยู่ (กัน chip หายใต้ผู้ใช้หลังบันทึกจนเหลือ 0)
 function pendingMethodChipKeys_(kind) {
+  if (kind === 'sent') return SENT_KIND_ORDER_.slice(); // รอบ 147: ทั้งหมด · ผลตรวจสุขภาพ · มะเร็งปากมดลูก · ผล Lab · รับผลเอง (ตัวเลข 0 ก็ยังโชว์)
   if (kind === 'checkup') return SEND_OUT_METHODS.slice();
   if (kind === 'pickup') return PICKUP_METHODS.slice();
   var seen = {};
@@ -15938,21 +15978,23 @@ function renderPendingMonthChips_() {
   if (!box) return;
   var q = pendingSearchQuery_();
   var counts = {};
+  var isSent = (PENDING_KIND === 'sent'); // รอบ 147: เดือนของวันที่ส่งออก · SENT_MONTHS
+  var activeMonths = pendingActiveMonths_();
   pendingRowsForKind(PENDING_KIND, true).forEach(function (rec) {
-    if (!pendingRowMatchesSearch_(rec, q)) return;
-    var d = String((rec && rec.date) || '');
+    if (!(isSent ? sentRowMatchesSearch_(rec, q) : pendingRowMatchesSearch_(rec, q))) return;
+    var d = String((rec && (isSent ? rec.sentDate : rec.date)) || '');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
     var k = d.slice(0, 7);
     counts[k] = (counts[k] || 0) + 1;
   });
-  Object.keys(PENDING_MONTHS).forEach(function (k) { if (PENDING_MONTHS[k] && counts[k] === undefined) counts[k] = 0; });
+  Object.keys(activeMonths).forEach(function (k) { if (activeMonths[k] && counts[k] === undefined) counts[k] = 0; });
   var keys = Object.keys(counts).sort();
   if (!keys.length) { box.innerHTML = ''; box.hidden = true; return; }
   var html = '<span class="pending-chips-label">เดือน</span>'; // Opus ตรวจรับ: แถวนี้หน้าตาเหมือน chip ช่องทางทุกอย่าง ⇒ ต้องมีป้ายบอก
   keys.forEach(function (k) {
     var y = parseInt(k.slice(0, 4), 10), m = parseInt(k.slice(5, 7), 10);
     var label = (m >= 1 && m <= 12) ? THAI_MONTH_ABBR_CU[m - 1] + ' ' + String(y + 543).slice(-2) : k;
-    var on = PENDING_MONTHS[k] === true;
+    var on = activeMonths[k] === true;
     html += '<button type="button" class="pending-chip' + (on ? ' active' : '') + (counts[k] === 0 ? ' is-zero' : '') + '" data-pending-month="' + escHtml(k) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
       escHtml(label) + ' <span class="pending-chip-n">' + counts[k] + '</span></button>';
   });
@@ -15964,6 +16006,11 @@ function renderPendingMonthChips_() {
 function togglePendingMonth_(key) {
   key = String(key || '');
   if (!/^\d{4}-\d{2}$/.test(key)) return;
+  if (PENDING_KIND === 'sent') { // รอบ 147: แท็บส่งออกแล้ว — เดือนของวันที่ส่งออก (SENT_MONTHS) · ไม่แตะช่องวันที่รับบริการ/PENDING_MONTHS
+    if (SENT_MONTHS[key]) delete SENT_MONTHS[key]; else SENT_MONTHS[key] = true;
+    renderPendingTable();
+    return;
+  }
   if (PENDING_MONTHS[key]) delete PENDING_MONTHS[key]; else PENDING_MONTHS[key] = true;
   var el = qs('pendingFilterDate');
   if (el && el.value) el.value = '';
@@ -15974,6 +16021,7 @@ function togglePendingMonth_(key) {
 function renderPendingMethodChips_() {
   var box = qs('pendingMethodChips');
   if (!box) return;
+  if (PENDING_KIND === 'sent' && !SENT_LOADED) { box.innerHTML = ''; return; } // รอบ 147: ยังไม่โหลดสำเร็จ ⇒ ไม่มี chip (ห้ามโชว์ 0 ปลอม)
   var base = pendingRowsForChips_(PENDING_KIND);
   var counts = {};
   base.forEach(function (rec) { var k = pendingMethodKey_(rec, PENDING_KIND); counts[k] = (counts[k] || 0) + 1; });
@@ -15994,10 +16042,11 @@ function setPendingMethod_(key) {
 
 // รอบ 75: ตัวเลขบนแท็บ = pendingRowsForKind(kind).length (ตัวกรองวันที่ — ไม่ผ่านค้นหา/chip) · hideNumbers = ยังไม่เคยโหลดสำเร็จ ⇒ ป้ายล้วนไม่มีเลข (ห้ามโชว์ 0 ปลอม ๆ)
 function updatePendingTabCounts_(hideNumbers) {
-  [['btnPendingKindCheckup', 'checkup', 'ผลตรวจสุขภาพ'], ['btnPendingKindPelvic', 'pelvic', 'มะเร็งปากมดลูก'], ['btnPendingKindPickup', 'pickup', 'รอรับ / นัดรับ'], ['btnPendingKindLab', 'lab', 'ผล Lab']]
+  [['btnPendingKindCheckup', 'checkup', 'ผลตรวจสุขภาพ'], ['btnPendingKindPelvic', 'pelvic', 'มะเร็งปากมดลูก'], ['btnPendingKindPickup', 'pickup', 'รอรับ / นัดรับ'], ['btnPendingKindLab', 'lab', 'ผล Lab'], ['btnPendingKindSent', 'sent', 'ส่งออกแล้ว']]
     .forEach(function (d) {
       var b = qs(d[0]);
       if (!b) return;
+      if (d[1] === 'sent' && !SENT_LOADED) { b.innerHTML = d[2]; return; } // รอบ 147 (W2): ยังไม่โหลดสำเร็จ ⇒ ไม่มีตัวเลข (ห้ามโชว์ 0 ปลอม)
       b.innerHTML = hideNumbers ? d[2] : (d[2] + ' <span class="pending-tab-n">' + pendingRowsForKind(d[1]).length + '</span>');
     });
 }
@@ -16071,6 +16120,7 @@ function renderPendingTable() {
   updatePendingTabCounts_(false); // รอบ 75: ตัวเลขบนแท็บ + chip อัปเดตทุกครั้งที่วาดตาราง (ข้อมูลโหลด/ตัวกรองวันที่/ค้นหา/บันทึกสำเร็จ ผ่านที่นี่หมด)
   renderPendingMonthChips_();
   renderPendingMethodChips_();
+  if (PENDING_KIND === 'sent') { renderSentTable_(wrap); return; } // รอบ 147 (W4): แท็บส่งออกแล้วมีตารางของตัวเอง (ดูอย่างเดียว)
   var rows = pendingShownRows();
 
   // เปลี่ยนคำค้น/สลับชนิด/เปลี่ยน chip -> ล้างการเลือกของแถวที่ไม่แสดงแล้ว
@@ -16146,18 +16196,112 @@ function renderPendingTable() {
   updatePendingBulkButton();
 }
 
+// รอบ 147 (W4): ป้าย "ผล" ของแถวในแท็บส่งออกแล้ว — ผู้เรียกต้องผ่าน escHtml เอง
+function sentResultLabel_(it) {
+  var k = it && it.kind;
+  if (k === 'pelvic') {
+    var t = pelvicTypeLabel({ pelvic: it.pelvic });
+    return 'มะเร็งปากมดลูก' + (t ? (' · ' + t) : '');
+  }
+  if (k === 'lab') return 'ผล Lab · ' + labTrackLabel_({ id: it.labId, text: it.labText });
+  if (k === 'pickup') return 'รับผลเองแล้ว';
+  return 'ผลตรวจสุขภาพ' + (it && it.program ? (' · ' + programLabelForPrint(it.program)) : '');
+}
+
+// รอบ 147 (W4/W5/W6): ตารางแท็บ "ส่งออกแล้ว" — ดูอย่างเดียว (ไม่มี checkbox · ชื่อเป็นข้อความธรรมดา ไม่เปิดหน้าต่างแก้ไข) · วาดไม่เกิน SENT_ROW_CAP_ แถว
+function renderSentTable_(wrap) {
+  PENDING_SELECTED = {}; // W6: แท็บนี้ไม่มีการเลือก
+  if (!SENT_LOADED) { // ยังไม่เคยโหลดสำเร็จ ⇒ ห้ามโชว์ตารางว่าง/0 ปลอม (ข้อความ error อยู่ที่ #pendingError)
+    wrap.innerHTML = SENT_FAILED_ ? '' : '<p class="muted">กำลังโหลด...</p>';
+    return;
+  }
+  var rows = pendingShownRows();
+  if (rows.length === 0) {
+    wrap.innerHTML = '<p class="muted">ไม่มีรายการที่ส่งออกแล้ว' + (pendingSearchQuery_() ? 'ที่ค้นเจอ' : '') + '</p>';
+    return;
+  }
+  var total = rows.length;
+  var drawn = rows.slice(0, SENT_ROW_CAP_);
+  var html = '<div class="scroll-x"><table class="report-table"><thead><tr>' +
+    '<th>วันที่ส่งออก</th><th>วันที่มาตรวจ</th><th>คิว</th><th>HN</th><th class="pending-name">ชื่อ-สกุล</th><th>ผล</th><th>ช่องทาง</th>' +
+    '</tr></thead><tbody>';
+  drawn.forEach(function (it) {
+    var fullName = (it.prefix ? (String(it.prefix).trim() + ' ') : '') + (it.name || '');
+    html += '<tr>' +
+      '<td>' + escHtml(formatThaiDateShort(it.sentDate)) + '</td>' +
+      '<td>' + escHtml(formatThaiDateShort(it.date)) + '</td>' +
+      '<td>' + escHtml(it.queue || '—') + '</td>' +
+      '<td>' + escHtml(it.hn || '') + '</td>' +
+      '<td class="pending-name">' + escHtml(fullName) + '</td>' +
+      '<td>' + escHtml(sentResultLabel_(it)) + '</td>' +
+      // รอบ 147b: item ไม่มีวันนัด ⇒ นัดรับวันที่ แสดง "นัดรับ" (ห้ามขึ้น "ยังไม่ระบุวัน" ซึ่งผิดข้อเท็จจริง)
+      '<td>' + (it.method ? escHtml(it.method === DELIVERY_PICKUP_APPOINTMENT ? 'นัดรับ' : shortDeliveryLabel(it.method)) : 'ยังไม่ระบุช่องทาง') + '</td>' +
+      '</tr>';
+  });
+  html += '</tbody></table></div>';
+  if (total > SENT_ROW_CAP_) html += '<p class="muted">แสดง ' + SENT_ROW_CAP_ + ' จาก ' + total + ' รายการ — เลือกเดือนหรือค้นหาเพื่อดูส่วนที่เหลือ</p>';
+  wrap.innerHTML = html;
+}
+
+// รอบ 147 (W3): โหลดรายการส่งออกแล้ว (action sentList · อ่านอย่างเดียว) — กติกาเดียวกับ pending รอบ 72: เคยโหลดสำเร็จ ⇒ คงของเดิม + ⚠ ·
+// ยังไม่เคย ⇒ error + ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง · คำตอบเก่ากลับมาช้ากว่าคำขอใหม่ (seq) ⇒ ทิ้ง · ห้ามโชว์ 0 ปลอม · เรียกเมื่อกดแท็บ sent และตอน loadPending() ขณะแท็บ sent เปิดอยู่
+function loadSentList_() { loadSentRun_(false); }
+function loadSentRun_(isRetry) {
+  var seq = ++SENT_LOAD_SEQ;
+  var errEl = qs('pendingError');
+  // รอบ 147b: ล้างข้อความ error เฉพาะตอนอยู่แท็บ sent หรือเป็นข้อความของ sent เอง — ห้ามไปลบ error ของแท็บอื่น (retry 500ms)
+  if (errEl && (PENDING_KIND === 'sent' || SENT_ERR_SHOWN_)) { errEl.hidden = true; errEl.textContent = ''; }
+  SENT_ERR_SHOWN_ = false;
+  SENT_FAILED_ = false;
+  apiCall('sentList', { staffKey: STATE.staffKey }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+    if (seq !== SENT_LOAD_SEQ) return; // คำตอบเก่ากลับมาช้ากว่าคำขอใหม่ ⇒ ทิ้ง
+    if (isListResp_(resp, ['items'])) {
+      SENT_LOADED = true;
+      SENT_ITEMS = resp.items;
+      SENT_FAILED_ = false;
+      if (errEl && SENT_ERR_SHOWN_) { errEl.hidden = true; errEl.textContent = ''; }
+      SENT_ERR_SHOWN_ = false;
+      renderPendingTable();
+      return;
+    }
+    // ตอบ error / ไม่รู้จัก action (ยังไม่ deploy) / ผิดรูปแบบ ⇒ error บนจอ ห้าม crash ห้ามโชว์ 0 ปลอม
+    var smsg = badListRespMessage_(resp);
+    var onSentTab = (PENDING_KIND === 'sent');
+    if (SENT_LOADED) {
+      if (errEl && onSentTab) { errEl.textContent = '⚠ อัปเดตไม่สำเร็จ — แสดงรายการเดิม (' + smsg + ')'; errEl.hidden = false; SENT_ERR_SHOWN_ = true; }
+    } else {
+      SENT_ITEMS = [];
+      SENT_FAILED_ = true;
+      if (onSentTab) {
+        renderPendingTable();
+        showErrWithRetry_(errEl, 'โหลดรายการส่งออกแล้วไม่สำเร็จ (' + smsg + ')', function () { loadSentRun_(false); });
+        SENT_ERR_SHOWN_ = true;
+      }
+    }
+    if (!isRetry) {
+      setTimeout(function () {
+        if (seq !== SENT_LOAD_SEQ) return; // มีการเรียกใหม่แทรกระหว่างหน่วง
+        loadSentRun_(true);
+      }, READ_RETRY_DELAY_MS);
+    }
+  });
+}
+
 // รอบ 72 (เจ้าของสั่ง 2026-10-07): คำตอบเสีย ⇒ ห้ามเขียน PENDING_RECORDS ทับเป็น [] — เคยโหลดสำเร็จแล้ว = คงรายการเดิมบนจอ + #pendingError ⚠ ·
 // ยังไม่เคยมีข้อมูล = #pendingError "โหลดไม่สำเร็จ" + ปุ่มลองใหม่ · ลองเองอีก 1 ครั้ง (ไม่วนซ้ำ) · loadPending() คงลายเซ็นเดิม
 var PENDING_LOADED = false;
 var PENDING_LOAD_SEQ = 0;
-function loadPending() { loadPendingRun_(false); }
+function loadPending() {
+  loadPendingRun_(false);
+  if (PENDING_KIND === 'sent') loadSentList_(); // รอบ 147 (W3): เปิดหน้า/หลังแก้ไข ขณะแท็บส่งออกแล้วเปิดอยู่ ⇒ โหลดรายการส่งออกแล้วใหม่ด้วย (แท็บอื่นไม่ยิง)
+}
 function loadPendingRun_(isRetry) {
   var seq = ++PENDING_LOAD_SEQ;
   var wrap = qs('pendingTableWrap');
   var errEl = qs('pendingError');
   if (errEl) { errEl.hidden = true; errEl.textContent = ''; }
   // เคยมีข้อมูลบนจอแล้ว = ไม่ล้างตารางเป็น "กำลังโหลด..." (ถ้าคำตอบเสียต้องคงของเดิมไว้) · ยังไม่เคย = พฤติกรรมเดิม
-  if (wrap && !PENDING_LOADED) wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>';
+  if (wrap && !PENDING_LOADED && PENDING_KIND !== 'sent') wrap.innerHTML = '<p class="muted">กำลังโหลด...</p>'; // รอบ 147: แท็บส่งออกแล้วเปิดอยู่ ⇒ ไม่แตะตารางของมัน
   apiCall('pending', { staffKey: STATE.staffKey }, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
     if (isListResp_(resp)) {
       PENDING_LOADED = true;
@@ -16172,11 +16316,13 @@ function loadPendingRun_(isRetry) {
       } else {
         PENDING_RECORDS = [];
         updatePendingTabCounts_(true); // รอบ 75: ยังไม่เคยมีข้อมูล ⇒ แท็บไม่มีตัวเลข (ห้ามโชว์ 0 ปลอม) · ไม่มี chip
-        var chipBox = qs('pendingMethodChips');
-        if (chipBox) chipBox.innerHTML = '';
-        var monthBox = qs('pendingMonthChips');
-        if (monthBox) { monthBox.innerHTML = ''; monthBox.hidden = true; }
-        if (wrap) wrap.innerHTML = '';
+        if (PENDING_KIND !== 'sent') { // รอบ 147: แท็บส่งออกแล้วเปิดอยู่ ⇒ ไม่ล้าง chip/ตารางของมัน (สลับแท็บแล้ว renderPendingTable วาดใหม่เอง)
+          var chipBox = qs('pendingMethodChips');
+          if (chipBox) chipBox.innerHTML = '';
+          var monthBox = qs('pendingMonthChips');
+          if (monthBox) { monthBox.innerHTML = ''; monthBox.hidden = true; }
+          if (wrap) wrap.innerHTML = '';
+        }
         showErrWithRetry_(errEl, 'โหลดหน้าติดตามผลไม่สำเร็จ (' + pmsg + ')', function () { loadPendingRun_(false); });
       }
       if (!isRetry && seq === PENDING_LOAD_SEQ) {
@@ -16190,15 +16336,27 @@ function loadPendingRun_(isRetry) {
 }
 
 function setPendingKind(kind) {
-  PENDING_KIND = (kind === 'pelvic' || kind === 'pickup' || kind === 'lab') ? kind : 'checkup'; // รอบ 73: รับ 'pickup' เพิ่ม · รอบ 119ง: 'lab'
+  PENDING_KIND = (kind === 'pelvic' || kind === 'pickup' || kind === 'lab' || kind === 'sent') ? kind : 'checkup'; // รอบ 73: รับ 'pickup' เพิ่ม · รอบ 119ง: 'lab' · รอบ 147: 'sent'
   PENDING_SELECTED = {}; // สลับชนิด -> แถวที่แสดงเปลี่ยนชุดทั้งหมด ล้างการเลือกทิ้ง
   PENDING_METHOD = '';   // รอบ 75: สลับแท็บ ⇒ chip ช่องทางกลับเป็น "ทั้งหมด"
-  ['btnPendingKindCheckup', 'btnPendingKindPelvic', 'btnPendingKindPickup', 'btnPendingKindLab'].forEach(function (id) {
+  ['btnPendingKindCheckup', 'btnPendingKindPelvic', 'btnPendingKindPickup', 'btnPendingKindLab', 'btnPendingKindSent'].forEach(function (id) {
     var b = qs(id);
     if (!b) return;
-    var kind2 = (id === 'btnPendingKindCheckup') ? 'checkup' : (id === 'btnPendingKindPelvic' ? 'pelvic' : (id === 'btnPendingKindLab' ? 'lab' : 'pickup'));
+    var kind2 = (id === 'btnPendingKindCheckup') ? 'checkup' : (id === 'btnPendingKindPelvic' ? 'pelvic' : (id === 'btnPendingKindLab' ? 'lab' : (id === 'btnPendingKindSent' ? 'sent' : 'pickup')));
     b.className = 'btn small' + (PENDING_KIND === kind2 ? '' : ' secondary');
   });
+  // รอบ 147 (W5/W6): แท็บส่งออกแล้ว ⇒ ซ่อนช่องวันที่รับบริการ + แถบบันทึกล่างจอ/ความคืบหน้า/กล่องข้าม (สลับกลับ ⇒ คืนตามเดิม · ใช้ style.display ไม่แตะ attribute hidden ของกล่องเหล่านั้น)
+  var isSent = (PENDING_KIND === 'sent');
+  ['pendingFilterDateBox', 'pendingBulkRow', 'pendingBulkProgress', 'pendingSkippedBox'].forEach(function (id) {
+    var el = qs(id);
+    if (el) el.style.display = isSent ? 'none' : '';
+  });
+  if (!isSent && SENT_ERR_SHOWN_) { // ข้อความ error ของแท็บส่งออกแล้วไม่ติดไปแท็บอื่น
+    var se = qs('pendingError');
+    if (se) { se.hidden = true; se.textContent = ''; }
+    SENT_ERR_SHOWN_ = false;
+  }
+  if (isSent) loadSentList_(); // รอบ 147 (W3): กดแท็บ sent ⇒ โหลดทุกครั้ง
   renderPendingTable();
 }
 
@@ -16255,6 +16413,7 @@ function chunkArray_(arr, size) {
 // ถ้าชุดไหนตอบ error ⇒ หยุดทันที ไม่ยิงชุดถัดไป แต่แถวที่อัปเดตสำเร็จไปแล้วก่อนหน้ายังถูกตัดออกจากรายการเหมือนเดิม
 // (ไม่ roll back) แล้วโชว์ error พร้อมจำนวนที่บันทึกสำเร็จไปแล้วก่อนหยุด
 function onPendingBulkSave() {
+  if (PENDING_KIND === 'sent') return; // รอบ 147 (W6): แท็บส่งออกแล้วดูอย่างเดียว
   var ids = Object.keys(PENDING_SELECTED);
   var dateEl = qs('pendingSentDate');
   var date = dateEl ? dateEl.value : '';
@@ -16288,6 +16447,10 @@ function onPendingBulkSave() {
     if (el) { el.hidden = true; el.textContent = ''; }
   }
   function applyChunkResult(updated) {
+    if (updated && updated.length) {
+      SENT_LOADED = false; // รอบ 147 (W7): บันทึกวันที่ส่งออก/รับผลสำเร็จ ⇒ ครั้งหน้าที่เข้าแท็บ ส่งออกแล้ว โหลดใหม่
+      if (PENDING_KIND === 'sent') loadSentList_(); // รอบ 147b: ผู้ใช้สลับมาแท็บ sent ระหว่างบันทึกหลายชุด ⇒ โหลดเลย ไม่งั้นค้าง "กำลังโหลด..."
+    }
     if (kind === 'lab') {
       // รอบ 119ง: updated = [{recordId, labId}] — แถวคนยังอยู่ใน PENDING_RECORDS (อาจมี Lab อื่นค้าง) แค่ตั้ง sentDate ของรายการนั้น
       updated.forEach(function (u) {
@@ -20548,6 +20711,7 @@ document.addEventListener('DOMContentLoaded', function () {
   qs('btnPendingKindPelvic').addEventListener('click', function () { setPendingKind('pelvic'); });
   qs('btnPendingKindPickup').addEventListener('click', function () { setPendingKind('pickup'); }); // รอบ 73
   qs('btnPendingKindLab').addEventListener('click', function () { setPendingKind('lab'); }); // รอบ 119ง
+  qs('btnPendingKindSent').addEventListener('click', function () { setPendingKind('sent'); }); // รอบ 147
   var pendingMonthChipsEl = qs('pendingMonthChips');
   if (pendingMonthChipsEl) pendingMonthChipsEl.addEventListener('click', function (e) { // รอบ 127: ปุ่มเดือน (delegate เหมือน chip ช่องทาง)
     var mb = e.target && e.target.closest ? e.target.closest('[data-pending-month]') : null;
