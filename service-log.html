@@ -1621,6 +1621,12 @@
   #dqCloseRemindBox .dq-remind-text { flex: 1 1 0; min-width: 0; font-size: 18px; font-weight: bold; overflow-wrap: anywhere; }
   #dqCloseRemindBox .dq-remind-end { flex: 0 0 auto; min-height: 44px; min-width: 72px; font-size: 18px; box-sizing: border-box; }
   #dqCloseRemindBox .dq-remind-list { margin-top: 10px; }
+  /* รอบ 146b: กล่องเตือนคิวเปิดเกิน 45 นาที/คน (นับต่อ/ปิดคิว) — z-index 2055: เหนือกล่อง 14:45 (2050) ใต้กล่องแพทย์หมดเวลา (2060) */
+  #dqLongOpenBox { z-index: 2055; }
+  #dqLongOpenBox .dq-remind-list { margin-top: 10px; }
+  #dqLongOpenBox .dq-long-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  #dqLongOpenBox .dq-long-text { flex: 1 1 100%; min-width: 0; font-size: 17px; font-weight: bold; overflow-wrap: anywhere; }
+  #dqLongOpenBox .dq-long-row .btn { flex: 1 1 120px; min-height: 44px; font-size: 17px; box-sizing: border-box; white-space: normal; }
   #dqExpireBox { z-index: 2060; } /* รอบ 143: ซ้อนเหนือกล่องเตือน 14:45 (#dqCloseRemindBox 2050) เสมอ */
   /* รอบ 115: กล่อง #dqExpireBox (ใช้ลุคเดียวกับ .dq-rename-modal) */
   #dqExpireBox .dq-expire-hint { font-size: 15px; margin: 10px 0; overflow-wrap: anywhere; color: #8A4B00; }
@@ -2668,6 +2674,21 @@
   </div>
 </div>
 
+<!-- รอบ 146b/146c: กล่องเตือน "คิวเปิดเกิน 45 นาทีต่อคน" (จุดกัปตัน · นับต่อ / ปิดคิว) — ไม่มีชื่อ/HN · แถวใส่ด้วย textContent -->
+<div class="dq-rename-modal" id="dqLongOpenBox" role="alertdialog" aria-modal="true" aria-labelledby="dqLongOpenTitle" hidden>
+  <div class="dq-rename-modal-box">
+    <div class="dq-rename-modal-head">
+      <div class="dq-rename-modal-title" id="dqLongOpenTitle">⏳ คิวเปิดนานเกิน 45 นาที/คนแล้ว</div>
+      <button type="button" class="btn secondary small" id="dqLongOpenClose" aria-label="ภายหลัง (ซ่อน 10 นาที)" style="min-height:44px;min-width:44px;">✕</button>
+    </div>
+    <p class="dq-expire-hint" style="color:#555;">ยังตรวจอยู่ = นับเวลาตามจริงต่อไป · ลืมกดจบ = ปิดคิวตอนนี้ ไม่นับเวลาของคิวนี้เข้าค่าเฉลี่ย (ถ้าตรวจเสร็จพอดีตอนนี้ กดนับต่อ แล้วกดจบที่การ์ด)</p>
+    <div class="dq-remind-list" id="dqLongOpenList"></div>
+    <div class="dq-expire-actions">
+      <button type="button" class="btn secondary" id="dqLongOpenLater">ไว้ทีหลัง</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =========================================================================
    0. ค่าคงที่ Apps Script
@@ -3239,7 +3260,7 @@ function upperIdsInPayload_(p) {
 var NEED_POINT_STAFF_MSG_ = 'เลือกจุดบริการและชื่อผู้บันทึกที่แถบด้านบนก่อน';
 var WRITE_ACTIONS_NEED_SIGNIN_ = {
   specialStatus: 1, noteUpdate: 1, setDoctorsToday: 1, addDoctor: 1, doctorRename: 1, bulkSentDate: 1, dqSetCTotal: 1, dqSaveRooms: 1,
-  dqEnter: 1, dqEnd: 1, dqCancel: 1, dqMove: 1, dqJoin: 1, dqEditQueue: 1, dqSetDoctor: 1, preLog: 1, preEdit: 1, preCancel: 1,
+  dqEnter: 1, dqEnd: 1, dqKeepCounting: 1, dqCancel: 1, dqMove: 1, dqJoin: 1, dqEditQueue: 1, dqSetDoctor: 1, preLog: 1, preEdit: 1, preCancel: 1,
   preActivate: 1, preLink: 1, preImport: 1, qcSetNext: 1, qcVoid: 1, qcUnvoid: 1, cancel: 1
 };
 function apiCall(action, payload, opts) {
@@ -16519,6 +16540,7 @@ function dqShowView(name) {
   if (s) s.hidden = (name !== 'setup');
   if (name !== 'board') dqStopTimers();
   dqSyncCloseRemind_(); // รอบ 143: หน้าตั้งห้องเปิด ⇒ ซ่อนกล่อง · กลับมากระดาน ⇒ ขึ้นใหม่ถ้ายังมีแถวเปิด
+  if (typeof dqSyncLongOpen_ === 'function') dqSyncLongOpen_(); // รอบ 146b
   if (name === 'board') dqAlignBoard();
 }
 
@@ -16711,6 +16733,7 @@ function dqCloseOpenLocal_(opens, at) {
 // แถวที่ปิดเวลาแล้วแต่ช่องนาทีว่าง (เซิร์ฟเวอร์ตัดเพราะ > 45 นาที/คน) ⇒ ป้าย "ไม่ได้กดจบ" · แถวปิดเวลาเดียวกับที่ตัวเองเข้า (นาที 0) ไม่ใช่เคสนี้
 function dqIsForgotClosed_(l) {
   if (!l || l.status !== 'บันทึกแล้ว' || !l.timeOut || l.pending || l.localClosed) return false;
+  if (l.keepReal) return false; // รอบ 146b: ตั้ง "นับเวลาจริง" แล้ว ⇒ นับตามจริง ไม่มีป้าย
   if (l.minutes !== '' && l.minutes !== null && l.minutes !== undefined) return false;
   return !dqLogIsZeroClosed_(l);
 }
@@ -16726,8 +16749,11 @@ function dqOpenRoomGroups_() {
     if (!l || l.status !== 'บันทึกแล้ว' || l.timeOut) continue;
     var ti = new Date(l.timeIn).getTime();
     var k = String(l.room) + '|' + (isNaN(ti) ? 'x' + i : ti);
-    if (!byKey[k]) { byKey[k] = { room: l.room, queues: [], n: 0, t: ti }; order.push(k); }
+    if (!byKey[k]) { byKey[k] = { room: l.room, queues: [], ids: [], n: 0, t: ti, real: false, pending: false }; order.push(k); }
     byKey[k].queues.push(String(l.queue));
+    byKey[k].ids.push(String(l.id));
+    if (l.keepReal) byKey[k].real = true; // รอบ 146b
+    if (l.pending) byKey[k].pending = true;
     byKey[k].n++;
   }
   var roomOrder = {};
@@ -16735,6 +16761,7 @@ function dqOpenRoomGroups_() {
   var out = order.map(function (k, oi) {
     var g = byKey[k];
     g.perMin = isNaN(g.t) ? 0 : Math.max(0, Math.floor((now - g.t) / 60000 / g.n));
+    g.elapsed = isNaN(g.t) ? 0 : Math.max(0, Math.floor((now - g.t) / 60000)); // รอบ 146b: นาทีที่เปิดมาทั้งกลุ่ม (ไม่หารคน)
     g.oi = oi;
     return g;
   });
@@ -16756,7 +16783,7 @@ function dqUpdateForgotUi_() {
     c.querySelectorAll('.dq-card').forEach(function (card) {
       var room = card.getAttribute('data-room');
       var worst = null;
-      groups.forEach(function (g) { if (String(g.room) === String(room) && g.perMin > DQ_FORGOT_MAX_MIN_ && (!worst || g.perMin > worst.perMin)) worst = g; });
+      groups.forEach(function (g) { if (String(g.room) === String(room) && !g.real && g.perMin > DQ_FORGOT_MAX_MIN_ && (!worst || g.perMin > worst.perMin)) worst = g; });
       var b = card.querySelector('.dq-forgot-badge');
       if (!worst) { if (b) b.remove(); return; }
       var text = dqForgotBadgeText_(worst);
@@ -16775,6 +16802,7 @@ function dqUpdateForgotUi_() {
     });
   }
   dqSyncCloseRemind_();
+  dqSyncLongOpen_(); // รอบ 146b
 }
 var dqRemindSnooze_ = { date: '', untilMin: -1 };
 var dqRemindState_ = { open: false, sig: '' };
@@ -16793,7 +16821,7 @@ function dqSyncCloseRemind_() {
   var want = false;
   if (dqIsScreenOpen() && bv && !bv.hidden && t && t.date === todayStr() && dqNowHHMM_() >= DQ_CLOSE_REMIND_HHMM_) {
     // เจ้าของ (หลังรอบ 143): ขึ้นเฉพาะกลุ่มที่เข้าห้อง "ก่อน" 14:45 (เวลาไทย) · เข้า 14:45 ขึ้นไป ไม่นับ (ป้ายบนการ์ด E3 ไม่เกี่ยว)
-    groups = dqOpenRoomGroups_().filter(function (g) { return !isNaN(g.t) && dqFmtHM(new Date(g.t)) < DQ_CLOSE_REMIND_HHMM_; });
+    groups = dqOpenRoomGroups_().filter(function (g) { return !isNaN(g.t) && !g.real && dqFmtHM(new Date(g.t)) < DQ_CLOSE_REMIND_HHMM_; }); // รอบ 146d D3: กลุ่มที่ตั้ง "นับเวลาจริง" แล้ว ไม่อยู่ในกล่อง 14:45
     if (groups.length) {
       var sn = dqRemindSnooze_;
       want = !(sn.date === t.date && dqHHMMToMin_(dqNowHHMM_()) < sn.untilMin);
@@ -16839,6 +16867,124 @@ function dqSyncCloseRemind_() {
     if (!typing && !otherModal && laterBtn) { try { laterBtn.focus({ preventScroll: true }); } catch (e) { laterBtn.focus(); } }
   }
 }
+// ===== รอบ 146b/146c: กล่องเตือนคิวเปิดเกิน 45 นาที/คน (นับต่อ / ปิดคิว) =====
+// เงื่อนไข: จุดกัปตัน หน้ากระดานวันนี้ · กลุ่มที่ยังเปิด (ไม่มีเวลาออก) เปิดมา ต่อคน > DQ_FORGOT_MAX_MIN_ (นาทีทั้งกลุ่ม ÷ จำนวนคน · เทียบ dqNowMs_ เหมือนป้ายเปิดค้าง) และยังไม่ถูกตั้ง "นับเวลาจริง"
+// ✕/ไว้ทีหลัง = ซ่อนกล่อง 10 นาทีเฉพาะเครื่องนี้ (กลไกเดียวกับกล่อง 14:45 · ไม่เขียนเซิร์ฟเวอร์) · ซ้อนกล่อง 14:45 ได้ (z-index 2055 > 2050) · กล่องแพทย์หมดเวลา (2060) อยู่บนสุดเสมอ
+var dqLongSnooze_ = { date: '', untilMin: -1 };
+var dqLongState_ = { open: false, sig: '' };
+function dqLongGroupText_(g) {
+  return 'ห้อง ' + g.room + ' · ' + g.queues.join(' + ') + ' · เข้า ' + dqFmtHM(new Date(g.t)) + ' · เปิดมา ' + g.elapsed + ' นาที';
+}
+function dqSyncLongOpen_() {
+  var box = qs('dqLongOpenBox');
+  if (!box) return;
+  var t = dqState.today;
+  var bv = qs('dqBoardView');
+  var groups = [];
+  var want = false;
+  if (dqIsScreenOpen() && bv && !bv.hidden && t && t.date === todayStr()) {
+    groups = dqOpenRoomGroups_().filter(function (g) { return !isNaN(g.t) && !g.real && !g.pending && (g.elapsed / g.n) > DQ_FORGOT_MAX_MIN_; }); // รอบ 146c: ต่อคน > 45 (นาทีทั้งกลุ่ม ÷ จำนวนคน) · 45 พอดีไม่ขึ้น · ค่าคงที่เดียวกับเกณฑ์ตัดนาที
+    if (groups.length) {
+      var sn = dqLongSnooze_;
+      want = !(sn.date === t.date && dqHHMMToMin_(dqNowHHMM_()) < sn.untilMin);
+    }
+  }
+  if (!want) {
+    if (dqLongState_.open) { box.hidden = true; dqLongState_ = { open: false, sig: '' }; }
+    return;
+  }
+  var sig = JSON.stringify(groups.map(function (g) { return [g.room, g.ids]; }));
+  var list = qs('dqLongOpenList');
+  if (list && sig !== dqLongState_.sig) {
+    list.innerHTML = '';
+    groups.forEach(function (g) {
+      var row = document.createElement('div');
+      row.className = 'dq-long-row';
+      var tx = document.createElement('span');
+      tx.className = 'dq-long-text';
+      tx.textContent = dqLongGroupText_(g);
+      var keep = document.createElement('button');
+      keep.type = 'button'; keep.className = 'btn secondary dq-long-keep';
+      keep.setAttribute('data-id', g.ids[0]); keep.setAttribute('data-room', g.room);
+      keep.textContent = 'ยังตรวจอยู่ (นับต่อ)';
+      keep.setAttribute('aria-label', 'ยังตรวจอยู่ นับต่อ ห้อง ' + g.room);
+      var end = document.createElement('button');
+      end.type = 'button'; end.className = 'btn dq-long-forgot';
+      end.setAttribute('data-room', g.room); end.setAttribute('data-id', g.ids[0]); // รอบ 146d D2: id คิวแรกของกลุ่มที่โชว์ ⇒ ส่งเป็น expectId
+      end.textContent = 'ลืมกดจบ (ปิดคิว ไม่นับเวลา)';
+      end.setAttribute('aria-label', 'ลืมกดจบ ปิดคิว ไม่นับเวลา ห้อง ' + g.room);
+      row.appendChild(tx); row.appendChild(keep); row.appendChild(end);
+      list.appendChild(row);
+    });
+    dqLongState_.sig = sig;
+  } else if (list) { // รายการเดิม ⇒ อัปเดตข้อความนาทีในที่ (ไม่แตะ DOM ปุ่ม · ไม่ขโมยโฟกัส)
+    var spans = list.querySelectorAll('.dq-long-text');
+    groups.forEach(function (g, i) { var txt = dqLongGroupText_(g); if (spans[i] && spans[i].textContent !== txt) spans[i].textContent = txt; });
+  }
+  if (!dqLongState_.open) {
+    dqLongState_.open = true;
+    box.hidden = false;
+    var ae = document.activeElement;
+    var typing = !!(ae && ae.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) || !!(ae && ae.isContentEditable);
+    var otherModal = false;
+    Array.prototype.forEach.call(document.querySelectorAll('[aria-modal="true"]'), function (m) {
+      if (m !== box && !box.contains(m) && m.getClientRects().length > 0) otherModal = true;
+    });
+    var lb = qs('dqLongOpenLater');
+    if (!typing && !otherModal && lb) { try { lb.focus({ preventScroll: true }); } catch (e) { lb.focus(); } }
+  }
+}
+function dqLongOpenLater_() {
+  var t = dqState.today;
+  dqLongSnooze_ = { date: t ? t.date : '', untilMin: dqHHMMToMin_(dqNowHHMM_()) + DQ_CLOSE_REMIND_SNOOZE_MIN_ };
+  dqSyncLongOpen_();
+}
+function dqOnKeepCountingClick_(id, room) {
+  if (!dqCanRecord()) return;
+  var logs = (dqState.today && dqState.today.logs) || [];
+  var log = null;
+  logs.forEach(function (l) { if (!log && String(l.id) === String(id)) log = l; });
+  if (!log || log.status !== 'บันทึกแล้ว' || log.timeOut) return; // ปิดไปแล้ว ⇒ ไม่ต้องทำอะไร
+  dqEnqueueJob({ type: 'dqKeepCounting', id: id, room: room, at: new Date().toISOString() });
+  showToast('นับเวลาต่อ ' + log.queue + ' ห้อง ' + room + ' แล้ว');
+}
+// รอบ 146d D1/D2: "ลืมกดจบ" = dqEnd ไม่มีแฟล็ก (นาที > 45/คน ⇒ ไม่เข้าค่าเฉลี่ยตาม 146c) + expectId กันกดคิวที่เปลี่ยนไปแล้ว
+function dqOnForgotClick_(room, expectId) {
+  if (!dqCanRecord()) return;
+  var open = dqFindOpenLog((dqState.today && dqState.today.logs) || [], room);
+  if (!open) return;
+  var q = open.queue;
+  dqEnqueueJob({ type: 'dqEnd', room: room, expectId: expectId || '', at: new Date().toISOString() });
+  showToast('ปิดเวลา ' + q + ' ห้อง ' + room + ' แล้ว — ไม่นับเวลาของคิวนี้');
+}
+function dqLongOpenInit_() {
+  var later = qs('dqLongOpenLater'), x = qs('dqLongOpenClose');
+  if (later) later.addEventListener('click', dqLongOpenLater_);
+  if (x) x.addEventListener('click', dqLongOpenLater_);
+  var list = qs('dqLongOpenList');
+  if (list) list.addEventListener('click', function (e) {
+    var k = e.target && e.target.closest ? e.target.closest('.dq-long-keep') : null;
+    if (k) { dqOnKeepCountingClick_(k.getAttribute('data-id'), k.getAttribute('data-room')); return; }
+    var en = e.target && e.target.closest ? e.target.closest('.dq-long-forgot') : null;
+    if (en) dqOnForgotClick_(en.getAttribute('data-room'), en.getAttribute('data-id'));
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!dqLongState_.open) return;
+    var box = qs('dqLongOpenBox');
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      if (dqExpireBoxState_.open) return; // กล่องแพทย์หมดเวลาอยู่บนสุด ⇒ Esc ปิดแค่กล่องนั้น
+      e.preventDefault(); e.stopPropagation(); dqLongOpenLater_(); return;
+    }
+    if (e.key === 'Tab' && box && !dqExpireBoxState_.open) {
+      var bs = Array.prototype.slice.call(box.querySelectorAll('button'));
+      if (!bs.length) return;
+      var i = bs.indexOf(document.activeElement);
+      var nx = e.shiftKey ? (i <= 0 ? bs.length - 1 : i - 1) : (i === -1 || i === bs.length - 1 ? 0 : i + 1);
+      e.preventDefault();
+      bs[nx].focus();
+    }
+  }, true);
+}
 function dqCloseRemindLater_() {
   var t = dqState.today;
   dqRemindSnooze_ = { date: t ? t.date : '', untilMin: dqHHMMToMin_(dqNowHHMM_()) + DQ_CLOSE_REMIND_SNOOZE_MIN_ };
@@ -16854,6 +17000,7 @@ function dqCloseRemindInit_() {
   });
   document.addEventListener('keydown', function (e) {
     if (!dqRemindState_.open) return;
+    if (dqLongState_.open) return; // รอบ 146b: กล่องเตือนคิวเปิดนาน (146b) ซ้อนอยู่เหนือ ⇒ Esc/Tab เป็นของมัน
     var box = qs('dqCloseRemindBox');
     if (e.key === 'Escape' || e.key === 'Esc') {
       if (dqExpireBoxState_.open) return; // กล่องถามแพทย์หมดเวลาอยู่บนสุด ⇒ Esc ปิดแค่กล่องนั้น (ตัวมันหยุดการส่งต่อเอง)
@@ -16899,6 +17046,11 @@ function dqApplyJobLocal(st, job) {
     }
   } else if (job.type === 'dqEnd') {
     dqCloseOpenLocal_(dqOpenLogsOfRoom_(logs, job.room), job.at); // รอบ 82: ปิดทุกแถวเปิดของห้อง
+  } else if (job.type === 'dqKeepCounting') {
+    // รอบ 146b: นับต่อ (optimistic) — ตั้ง keepReal ให้ทั้งกลุ่ม (ห้อง+เวลาเข้าเท่ากัน) ของแถว id ⇒ กล่องหายทันที
+    var kc = null;
+    logs.forEach(function (l) { if (!kc && String(l.id) === String(job.id)) kc = l; });
+    if (kc) logs.forEach(function (l) { if (l.room === kc.room && l.status === 'บันทึกแล้ว' && !l.timeOut && new Date(l.timeIn).getTime() === new Date(kc.timeIn).getTime()) l.keepReal = true; });
   } else if (job.type === 'dqCancel') {
     logs.forEach(function (l) {
       if (String(l.id) !== String(job.id)) return;
@@ -16966,7 +17118,7 @@ function dqPumpSendQueue() {
   var job = dqSendQueue[0];
   var payload = job.type === 'dqEnter' ? ((Array.isArray(job.queues) && job.queues.length >= 2) ? { queues: job.queues, room: job.room } : { queue: job.queue, room: job.room }) // รอบ 82: หลายคิว ⇒ queues
     : job.type === 'dqJoin' ? { id: job.id, queue: job.queue }
-    : job.type === 'dqEnd' ? { room: job.room }
+    : job.type === 'dqEnd' ? (job.expectId ? { room: job.room, expectId: job.expectId } : { room: job.room })
     : job.type === 'dqMove' ? { id: job.id, room: job.room }
     : job.type === 'dqEditQueue' ? { id: job.id, queue: job.queue } : { id: job.id }; // รอบ 58: dqMove ส่ง { id, room } · รอบ 79: dqEditQueue ส่ง { id, queue }
   dqApi(job.type, payload).then(function (resp) {
@@ -19401,6 +19553,7 @@ function dqInit() {
   dqRenameInit_(); // รอบ 104: กล่องแก้ชื่อแพทย์
   dqExpireInit_(); // รอบ 115: กล่องเตือนแพทย์หมดเวลา
   dqCloseRemindInit_(); // รอบ 143: กล่องเตือน 14:45
+  dqLongOpenInit_(); // รอบ 146b: กล่องเตือนคิวเปิดเกิน 45 นาที/คน
   // รอบ 52 (W1/15): Enter ในช่องชื่อ/นามสกุลของฟอร์มเพิ่มแพทย์ = กด "เพิ่มแพทย์"
   ['dqAddDocFirst', 'dqAddDocLast'].forEach(function (id) {
     var el = qs(id);
@@ -19436,6 +19589,7 @@ function showScreen(name) {
   });
   if (name !== 'dq' && typeof dqStopTimers === 'function') dqStopTimers(); // ออกจากหน้าคิวพบแพทย์ ⇒ หยุดนาฬิกา
   if (name !== 'dq' && typeof dqSyncCloseRemind_ === 'function') dqSyncCloseRemind_(); // รอบ 143: ออกจากจุดกัปตัน ⇒ กล่องเตือนปิด
+  if (name !== 'dq' && typeof dqSyncLongOpen_ === 'function') dqSyncLongOpen_(); // รอบ 146b
   if (name === 'dq' && typeof dqOnShow === 'function') dqOnShow();
 
   if (name === 'log') {
