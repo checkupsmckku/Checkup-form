@@ -172,6 +172,9 @@
   #cuScrollNav[hidden] { display: none; }
   #cuScrollNav button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--primary); font-size: 18px; line-height: 1; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
   @media print { #cuScrollNav { display: none !important; } }
+  /* รอบ 151: ใบพิมพ์รายชื่อนรีเวชทั้งวันตอนมีคำค้น (gynPrintAllOn_) — จอไม่เห็น · พิมพ์เห็นเฉพาะตารางทั้งวัน */
+  @media screen { #gynPrintAll { display: none !important; } }
+  @media print { #cuGynBody.gyn-printing-all > :not(#gynPrintAll) { display: none !important; } }
   /* รอบ 82 (ก้อน B): ปุ่มกลมเลื่อนขึ้นบนสุด/ลงล่างสุด ของหน้าบันทึกที่ "จุดคีย์ order" — ขวาล่าง · bottom คำนวณจากความสูงจริงของ #panelTotals ที่ติดล่าง
      (syncLogScrollNav_) ⇒ ไม่บังกล่องยอดรวม/ปุ่มบันทึก · #saveQueuePanel ซ้อนอยู่เหนือปุ่มนี้ (syncSaveQueuePanelPos_) · ไม่พิมพ์ */
   #logScrollNav { position: fixed; right: 8px; bottom: 8px; z-index: 700; display: flex; flex-direction: row; gap: 8px; } /* แถวเดียว (แนวนอน): คอลัมน์แนวตั้งสูง ~96px ไปทับปุ่ม ▶ ของช่องคิวที่จอ 1366px */
@@ -613,6 +616,13 @@
   .cu-note-gyn-hint { display: block; font-size: 13px; color: #666; margin-top: 2px; }
   :is(#cuGynWrap, .gyn-capture) .gyn-head { margin: 14px 0 8px; font-size: 18px; }
   /* รอบ 122b: กล่องแก้ผลตรวจภายในของ "ตรวจภายในอย่างเดียว" ใต้ตารางนรีเวช (no-print · ไม่ติดรูป PNG) — ใช้ .cu-note-box/.cu-note-grid เดิม */
+  /* รอบ 148: กล่อง "มาตรวจจากวันอื่น" (no-print · ไม่ติดรูป PNG/ใบพิมพ์) — 1 บรรทัดต่อแถว · ปุ่มแตะ ≥ 44px · ไม่ล้นที่ 360px */
+  #cuGynWrap .gyn-arrived { margin-top: 16px; min-width: 0; }
+  #cuGynWrap .gyn-arrived-title { font-size: 15px; margin: 0 0 8px; }
+  #cuGynWrap .gyn-arrived-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; min-width: 0; }
+  #cuGynWrap .gyn-arrived-who { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+  #cuGynWrap .gyn-arrived-btn { flex: 0 0 auto; min-height: 44px; min-width: 96px; }
+  #cuGynWrap .gyn-arrived-btn[aria-pressed="true"] { background: #2e7d32; color: #fff; border-color: #2e7d32; }
   #cuGynWrap .gyn-edit { margin-top: 16px; min-width: 0; }
   #cuGynWrap .gyn-edit-title { font-size: 15px; margin: 0 0 8px; }
   #cuGynWrap .gyn-edit-box { margin-bottom: 10px; min-width: 0; }
@@ -2148,6 +2158,7 @@
                     <input type="number" id="labFollowup" min="0" step="1" value="0" inputmode="numeric">
                   </div>
                 </div>
+                <p class="muted" id="labOneFieldHint" hidden style="margin-top:6px;font-size:0.9em;">กรอกได้ช่องเดียว — ถ้าจะใช้อีกช่อง ให้ลบยอดในช่องที่กรอกไว้เป็น 0 ก่อน</p><!-- รอบ 149 -->
                 <!-- รอบ 108: ฟังผล Lab ที่จ่ายครบแล้ววันก่อน — กดแล้วช่อง DF/ยอด Lab เป็น 0 + ล็อก · ยังต้องมีคิว M + HN · เซิร์ฟเวอร์บังคับ 0 เอง -->
                 <button type="button" class="btn secondary small" id="btnLabFree" aria-pressed="false" style="margin-top:8px;min-height:44px;white-space:normal;">ไม่มีค่าใช้จ่าย (กรณี ชำระเงินครบแล้วนัดฟังผล)</button><!-- รอบ 112 (เจ้าของสั่ง 2026-11-01): เติมวงเล็บอธิบาย (รอบ 108 เดิมไม่มีวงเล็บ) -->
                 <!-- รอบ 70 (เจ้าของสั่ง 2026-10-07): EKG / ตรวจสายตา / ตาบอดสี ย้ายมาแผงนี้ (นับยอดอย่างเดียว) — บังคับแค่ HN · buildSpecialSendsUI() สร้างแถว -->
@@ -3265,7 +3276,8 @@ var NEED_POINT_STAFF_MSG_ = 'เลือกจุดบริการและ
 var WRITE_ACTIONS_NEED_SIGNIN_ = {
   specialStatus: 1, noteUpdate: 1, setDoctorsToday: 1, addDoctor: 1, doctorRename: 1, bulkSentDate: 1, dqSetCTotal: 1, dqSaveRooms: 1,
   dqEnter: 1, dqEnd: 1, dqKeepCounting: 1, dqCancel: 1, dqMove: 1, dqJoin: 1, dqEditQueue: 1, dqSetDoctor: 1, preLog: 1, preEdit: 1, preCancel: 1,
-  preActivate: 1, preLink: 1, preImport: 1, qcSetNext: 1, qcVoid: 1, qcUnvoid: 1, cancel: 1
+  preActivate: 1, preLink: 1, preImport: 1, qcSetNext: 1, qcVoid: 1, qcUnvoid: 1, cancel: 1,
+  gynArrived: 1 // รอบ 148: ปุ่ม "มาแล้ว" ของคนนัดตรวจภายในวันอื่น (รายชื่อนรีเวช)
 };
 function apiCall(action, payload, opts) {
   if (Object.prototype.hasOwnProperty.call(WRITE_ACTIONS_NEED_SIGNIN_, action) && (!STATE.point || !STATE.staffName)) {
@@ -3953,6 +3965,18 @@ function syncLabFreeUi_() {
     if (on && String(el.value) !== '0') el.value = '0';
     el.disabled = on;
   });
+  // รอบ 149 (เจ้าของ 2026-11-25 "ล็อกสองทาง"): ยอด Lab (รวม DF วันเดียวกัน) กับ DF อย่างเดียว กรอกได้ช่องเดียว
+  // ช่องหนึ่ง > 0 ⇒ อีกช่องปิด **เฉพาะเมื่ออีกช่องเป็น 0** (ไม่ลบเลขที่กรอกไว้) · แถวเก่าที่มีทั้งคู่ ⇒ เปิดทั้งคู่ + กล่องยืนยันเดิม (LAB_BOTH_CONFIRM_MSG)
+  var amtEl = qs('medCertLabAmount'), dfEl = qs('labFollowup'), oneHint = qs('labOneFieldHint');
+  var lockAmt = false, lockDf = false;
+  if (!on && amtEl && dfEl) {
+    var aV = Math.max(0, parseInt(amtEl.value, 10) || 0), dV = Math.max(0, parseInt(dfEl.value, 10) || 0);
+    lockDf = aV > 0 && dV === 0;
+    lockAmt = dV > 0 && aV === 0;
+    amtEl.disabled = lockAmt;
+    dfEl.disabled = lockDf;
+  }
+  if (oneHint) oneHint.hidden = !(lockAmt || lockDf);
   var b = qs('btnLabFree');
   if (b && b.setAttribute) {
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -4003,10 +4027,14 @@ function medLabSoloItem_(id) {
   for (var i = 0; i < MEDCERT_LAB_SOLO.length; i++) if (MEDCERT_LAB_SOLO[i].id === id) return MEDCERT_LAB_SOLO[i];
   return null;
 }
+// รอบ 149 ต่อ (เจ้าของสั่ง): ระบบจะเติมราคาแต่ช่องยอด Lab ถูกล็อกเพราะมี DF แพทย์อย่างเดียว ⇒ เตือน (free ล็อกเหมือนกันแต่ไม่เตือน)
+function medLabLockedByDf_() { var a = qs('medCertLabAmount'); return !!(a && a.disabled && !STATE.labFollowupFree); }
+function toastLabLockedByDf_(price) { showToast('มีค่า DF แพทย์อย่างเดียวอยู่ — ระบบไม่ใส่ราคา ' + money(price) + ' บาท ให้ ถ้าจะใช้ช่องยอด Lab ให้ลบ DF เป็น 0 แล้วเลือกใหม่'); }
 function setMedLabAmount_(n) {
   var amtEl = qs('medCertLabAmount');
   if (!amtEl) return;
   if (STATE.labFollowupFree) return; // รอบ 108: ไม่มีค่าใช้จ่าย ⇒ ช่องยอด Lab ล็อกเป็น 0
+  if (amtEl.disabled && n > 0) return; // รอบ 149: กรอก DF อย่างเดียวไว้ ⇒ ช่องยอด Lab ปิด ระบบไม่เติมราคาให้ (ไม่ให้มีทั้งสองช่อง)
   amtEl.value = String(n);
   // dispatch ทั้ง input+change ให้ยอดรวม/สรุปแผง/คิว prefix ทำงานตามเส้นเดิม
   amtEl.dispatchEvent(new Event('input', { bubbles: true }));
@@ -4074,6 +4102,7 @@ function syncMedLabSoloPrice_(opts) {
       target = item.price;
     }
   }
+  if (target !== null && target > 0 && medLabLockedByDf_()) { toastLabLockedByDf_(target); return; }
   if (toast) showToast(toast);
   if (target === null) return;
   if (target > 0) STATE.medLabAutoAmount = target;
@@ -4127,6 +4156,8 @@ function recordMatchesQuery(rec, rawQ) {
     var digitsOf = function (v) { return String(v == null ? '' : v).replace(/[^0-9]/g, ''); };
     return digitsOf(rec && rec.queue).indexOf(q) !== -1 || digitsOf(rec && rec.patientHn).indexOf(q) !== -1;
   }
+  // รอบ 151 (เจ้าของ 2026-11-25): พิมพ์ "ไม่นัด" ไม่มีเลข ⇒ คิวไม่นัดทุกคิว (เดิมตกไปค้นชื่อ ⇒ ไม่เจอ) · "ไม่นัด 3" ยังได้คิวเดียวตามเดิม
+  if (q.replace(/\s+/g, '') === 'ไม่นัด') return isWalkInQueue(rec && rec.queue);
   if (looksLikeQueueQuery_(q)) {
     return normQueueSearchQuery_(rec && rec.queue) === normQueueSearchQuery_(q);
   }
@@ -4631,6 +4662,11 @@ function sunFillRevert_(group) {
 // เติมเฉพาะเมื่อยอดว่าง/0 หรือยังเท่าค่าที่ระบบเติมครั้งก่อน · pelvicOnlyPrice_ คืน null ⇒ ไม่เติม (ห้ามเดา)
 function onMedLabPelvicChange_(group) {
   var amtEl = sunFillAmountEl_(group);
+  if (group === 'medLabPelvic' && medLabLockedByDf_() && formDayIsSunday_()) {
+    var lkEl = document.querySelector('input[name="' + group + '"]:checked'), lkCode = lkEl ? lkEl.value : '';
+    var lkPrice = isPelvicChosen_(lkCode) ? pelvicOnlyPrice_(lkCode) : null;
+    if (lkPrice !== null) toastLabLockedByDf_(lkPrice);
+  }
   if (amtEl && !amtEl.disabled && formDayIsSunday_()) {
     var sf = STATE.sunFill = STATE.sunFill || { medLabPelvic: null, abroadPelvic: null };
     var last = (typeof sf[group] === 'number') ? sf[group] : null;
@@ -12098,6 +12134,7 @@ function cuUnreceivedOnly() {
 // รอบ 31B ข้อ 3: ค่าค้นหาดิบของ #cuHnSearch (trim อย่างเดียว ไม่ normalize — recordMatchesQuery() จัดการเอง
 // ตามชนิดของคำค้น) ใช้แทน cuHnQuery()/normHnQuery() ในทั้ง 3 มุมมอง — cuHnQuery() ยังอยู่เผื่อโค้ดอื่นอ้างถึง
 function cuSearchQuery() {
+  if (CU_PRINT_MODE) return ''; // รอบ 151 (เจ้าของ 2026-11-25): ใบเซ็นรับ/รายชื่อเก็บข้อมูล พิมพ์ทั้งวันเสมอ ไม่ขึ้นกับคำค้น (จอยังกรองตามเดิม · ตัวกรอง "ยังไม่รับผล" ยังมีผล)
   var el = qs('cuHnSearch');
   return el ? el.value.trim() : '';
 }
@@ -14943,7 +14980,8 @@ function buildGynCaptureNode_() {
   box.style.cssText = 'position:fixed;left:-10000px;top:0;width:820px;background:#fff;padding:16px;color:#000;';
   var clone = wrap.cloneNode(true);
   clone.removeAttribute('hidden');
-  Array.prototype.slice.call(clone.querySelectorAll('.no-print, button, input, select, textarea')).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+  // รอบ 151: .gyn-print-all = ตารางทั้งวันของใบพิมพ์ (ค้างถ้า afterprint ไม่มา) ห้ามติดรูป
+  Array.prototype.slice.call(clone.querySelectorAll('.no-print, .gyn-print-all, button, input, select, textarea')).forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
   Array.prototype.slice.call(clone.querySelectorAll('[id]')).forEach(function (n) { n.removeAttribute('id'); });
   clone.removeAttribute('id');
   clone.style.padding = '16px'; clone.style.background = '#fff'; // ระยะขอบในรูป (ถ่าย box.firstChild)
@@ -15017,7 +15055,11 @@ function renderGynFiltered_(dateStr) {
   var q = cuSearchQuery();
   var sorted = gynFilterRows_(all); // รอบ 141: แถวที่แสดง (กรองแล้ว) — ตาราง/รูป/พิมพ์/กล่องแก้ใช้ชุดนี้
   if (!sorted.length) {
-    body.innerHTML = '<p class="muted">ไม่พบ "' + escHtml(q) + '" ในรายชื่อตรวจนรีเวช</p>'; // ไม่มีปุ่มพิมพ์/ปุ่มรูป (ห้ามทำรูป/ใบเปล่า)
+    // ไม่มีปุ่มรูป (ห้ามทำรูปเปล่า) · รอบ 151: มีปุ่มพิมพ์ — ใบพิมพ์เป็นรายชื่อทั้งวันเสมอ (gynPrintAllOn_ ตอน beforeprint)
+    body.innerHTML = '<p class="muted">ไม่พบ "' + escHtml(q) + '" ในรายชื่อตรวจนรีเวช</p>' +
+      '<div class="row no-print" style="margin-top:10px;"><button type="button" class="btn" id="btnGynPrint">🖨 พิมพ์รายชื่อตรวจนรีเวช (ทั้งวัน)</button></div>';
+    var pb0 = qs('btnGynPrint');
+    if (pb0) pb0.addEventListener('click', function () { try { window.print(); } catch (e) { /* DOM จำลอง */ } });
     return;
   }
   // รอบ 141 (N9): ปุ่มรูปอยู่แถวเดียวกับปุ่มพิมพ์ (ขวาของปุ่มพิมพ์) · วาดเฉพาะเมื่อมีแถว
@@ -15029,6 +15071,13 @@ function renderGynFiltered_(dateStr) {
   if (ib) ib.addEventListener('click', onGynImageClick_);
   var pb = qs('btnGynPrint');
   if (pb) pb.addEventListener('click', function () { try { window.print(); } catch (e) { /* ไม่มีหน้าต่างพิมพ์ (DOM จำลอง) */ } });
+  // รอบ 148: กล่อง "มาตรวจจากวันอื่น" (no-print) ต่อจากแถวปุ่ม — ตามคำค้น (ใช้ชุด sorted ที่กรองแล้ว) · ไม่มีแถววันอื่น ⇒ ไม่วาด
+  if (sorted.some(function (r) { return r && r.otherDay; })) {
+    var arrHolder = document.createElement('div');
+    arrHolder.innerHTML = '<div class="gyn-arrived no-print" id="gynArrivedBox"></div>';
+    body.appendChild(arrHolder.firstChild);
+    renderGynArrivedBox_();
+  }
   // รอบ 122b: กล่องแก้ผลตรวจภายในเฉพาะแถว pelvicsun (no-print ทั้งก้อน ⇒ ไม่ติดใบพิมพ์/รูป PNG)
   var editRecs = sorted.map(function (r) { return GYN_PELVIC_RECS_[r.recordId]; }).filter(function (x) { return !!x; });
   if (editRecs.length) {
@@ -15038,6 +15087,75 @@ function renderGynFiltered_(dateStr) {
     body.appendChild(editEl);
     bindGynPelvicEdit_(editEl);
   }
+}
+/* รอบ 151 (เจ้าของ 2026-11-25): ใบพิมพ์รายชื่อนรีเวช = ทั้งวันเสมอ ไม่ขึ้นกับคำค้น (ปุ่มพิมพ์ + Ctrl+P)
+   beforeprint: มีคำค้น ⇒ แทรกตารางทั้งวัน #gynPrintAll ต้น #cuGynBody + คลาส gyn-printing-all (CSS print ซ่อนลูกอื่น) · afterprint: เอาออก
+   ไม่วาดรายชื่อใหม่ (กล่องแก้/กล่องมาแล้วบนจอคงเดิม) · ไม่อยู่ใน DOM ตอนทำรูป ⇒ รูปยังตามคำค้น (รอบ 141) */
+function gynPrintAllOn_() {
+  if (CU_VIEW !== 'gyn' || !GYN_ROWS_READY_ || !cuSearchQuery() || qs('gynPrintAll')) return;
+  var body = qs('cuGynBody'), all = GYN_ALL_ROWS_;
+  if (!body || !all || !all.length) return;
+  var d = document.createElement('div');
+  d.id = 'gynPrintAll';
+  d.className = 'gyn-print-all';
+  d.innerHTML = gynRowsTableHtml_(all) + '<p class="gyn-total">รวม ' + all.length + ' ราย</p>';
+  body.insertBefore(d, body.firstChild);
+  body.classList.add('gyn-printing-all');
+}
+function gynPrintAllOff_() {
+  var d = qs('gynPrintAll');
+  if (d && d.parentNode) d.parentNode.removeChild(d);
+  var body = qs('cuGynBody');
+  if (body) body.classList.remove('gyn-printing-all');
+}
+try { window.addEventListener('beforeprint', gynPrintAllOn_); window.addEventListener('afterprint', gynPrintAllOff_); } catch (e) { /* DOM จำลอง */ }
+/* รอบ 148 (W2/W3): กล่อง "มาตรวจจากวันอื่น" ใต้รายชื่อนรีเวช — เฉพาะแถว otherDay ที่แสดงอยู่ (หลังกรองค้นหา) · ปุ่ม มาแล้ว / ✓ มาแล้ว (กดซ้ำ = ยกเลิก)
+   ไม่แตะ gynRowsTableHtml_/buildGynCaptureNode_ (ใบพิมพ์/รูปคงเดิม) · สำเร็จ ⇒ อัปเดตแถวใน GYN_ALL_ROWS_ แล้ววาดเฉพาะกล่อง (ไม่ยิง gynList ซ้ำ) · ล้ม ⇒ ค่าเดิม + toast */
+var GYN_ARRIVED_BUSY_ = {};
+function gynArrivedBoxHtml_(rows) {
+  var html = '<h3 class="gyn-arrived-title">มาตรวจจากวันอื่น</h3>';
+  rows.forEach(function (r) {
+    var rid = escHtml(r.recordId || '');
+    var arrived = !!r.gynArrived && r.gynArrived === GYN_SHOWN_DATE; // รีวิวรอบ 148 m1: ค่าค้างของวันนัดเดิม (แก้ วันที่ไปตรวจภายใน ทีหลัง) ไม่นับว่ามาแล้วในวันนี้
+    var busy = !!GYN_ARRIVED_BUSY_[r.recordId];
+    var who = [r.hn || '', String(r.prefix || '') + String(r.name || ''), 'ตรวจสุขภาพ ' + formatThaiDateShort(r.serviceDate)].filter(function (x) { return x; }).join(' · ');
+    html += '<div class="gyn-arrived-row" data-gyn-arrived-row="' + rid + '">' +
+      '<span class="gyn-arrived-who">' + escHtml(who) + '</span>' +
+      '<button type="button" class="btn small gyn-arrived-btn" data-gyn-arrived-id="' + rid + '" aria-pressed="' + (arrived ? 'true' : 'false') + '"' + (busy ? ' disabled' : '') + '>' +
+      (arrived ? '✓ มาแล้ว' : 'มาแล้ว') + '</button></div>';
+  });
+  return html;
+}
+function renderGynArrivedBox_() {
+  var box = qs('gynArrivedBox');
+  if (!box) return;
+  var rows = gynFilterRows_(GYN_ALL_ROWS_).filter(function (r) { return r && r.otherDay; });
+  if (!rows.length) { if (box.parentNode) box.parentNode.removeChild(box); return; }
+  box.innerHTML = gynArrivedBoxHtml_(rows);
+  Array.prototype.forEach.call(box.querySelectorAll('.gyn-arrived-btn'), function (btn) {
+    btn.addEventListener('click', function () { onGynArrivedClick_(btn.getAttribute('data-gyn-arrived-id')); });
+  });
+}
+function onGynArrivedClick_(recordId) {
+  if (!recordId || GYN_ARRIVED_BUSY_[recordId]) return;
+  var row = null;
+  GYN_ALL_ROWS_.forEach(function (r) { if (r && r.recordId === recordId) row = r; });
+  if (!row) return;
+  var dateAtClick = GYN_SHOWN_DATE;
+  var want = row.gynArrived !== dateAtClick; // m1: ค่าค้างวันอื่น ⇒ กดครั้งแรก = มาแล้ววันนี้
+  GYN_ARRIVED_BUSY_[recordId] = true;
+  renderGynArrivedBox_();
+  apiCall('gynArrived', { staffKey: STATE.staffKey, recordId: recordId, date: dateAtClick, arrived: want, staffName: STATE.staffName }).then(function (resp) {
+    delete GYN_ARRIVED_BUSY_[recordId];
+    if (resp && resp.status === 'ok') {
+      if (GYN_SHOWN_DATE === dateAtClick) {
+        GYN_ALL_ROWS_.forEach(function (r) { if (r && r.recordId === recordId) r.gynArrived = (typeof resp.gynArrived === 'string') ? resp.gynArrived : (want ? dateAtClick : ''); });
+      }
+    } else if (!resp || resp.message !== NEED_POINT_STAFF_MSG_) { // ด่าน signin ของ apiCall โชว์ toast เองแล้ว
+      showToast((resp && resp.message) ? String(resp.message) : 'บันทึกไม่สำเร็จ — ลองใหม่');
+    }
+    if (CU_VIEW === 'gyn' && GYN_ROWS_READY_ && GYN_SHOWN_DATE === dateAtClick) renderGynArrivedBox_();
+  });
 }
 /* รอบ 122 (P2/P4): แถวตรวจภายในอย่างเดียว (pelvicsun) ของวันที่รับบริการ → รูปแถวเดียวกับ gynList · ฟังก์ชันล้วน
    เอาเฉพาะ: ไม่ยกเลิก · โปรแกรม pelvicsun · เลือกชนิดตรวจภายแล้ว (isPelvicChosen_) · date ของ record (ถ้ามี) = dateStr */
