@@ -15687,7 +15687,8 @@ function renderReport(summary, period) {
       html += '<div class="line">ไม่มีข้อมูลคิวพบแพทย์ในช่วงนี้</div>';
     } else {
       html += '<div class="scroll-x"><table class="report-table doctor-time-table"><thead><tr>' +
-        '<th>แพทย์</th><th>วันที่ออกตรวจ</th><th>คิว</th><th>เฉลี่ย (นาที/ราย)</th><th>DF ไม่ได้พบแพทย์ (ราย)</th></tr></thead><tbody>';
+        // รอบ 152 (เจ้าของ 2026-11-26): หัวตารางใหม่ — เปลี่ยนแค่ข้อความหัว ค่า/ลำดับคอลัมน์เดิม
+        '<th>แพทย์</th><th>จำนวนวันที่ออกตรวจ</th><th>จำนวนเคส</th><th>เฉลี่ย (นาที/ราย)</th><th>ไม่ได้พบแพทย์</th></tr></thead><tbody>';
       dt.rows.forEach(function (r) {
         html += '<tr><td>' + escHtml(r.name) + '</td><td>' + numOr0(r.days) + '</td><td>' + numOr0(r.count) + '</td><td>' + dtAvg(r.avg) + '</td><td>' + numOr0(r.noDoctor) + '</td></tr>';
       });
@@ -15946,15 +15947,20 @@ function pendingFilterDate_() {
 // ทุกจุดที่นับ/แสดงรายการค้างส่งออก (ตาราง + ตัวเลขสรุป) ต้องผ่านตัวกรองวันที่นี้ที่เดียว — rec.date === ค่าที่เลือก
 // รอบ 127: เลือกเดือนได้หลายเดือน (PENDING_MONTHS) — วันที่ชนะเดือน (สองอย่างใช้ร่วมกันไม่ได้ ตัวคลิกล้างอีกฝั่งให้เอง) ·
 // skipFilter = ใช้นับปุ่มเดือน (ต้องเห็นยอดทุกเดือนเสมอ ไม่ผ่านตัวกรองวันที่/เดือน)
-function pendingRowMatchesDate_(rec, skipFilter) {
+// รอบ 152 (เจ้าของ 2026-11-26): แท็บมะเร็งปากมดลูกใช้ "วันที่ไปตรวจภายใน" (gynDate) · ว่าง/ไม่ใช่ yyyy-MM-dd ⇒ rec.date · แท็บอื่นใช้ rec.date
+function pendingRowDate_(rec, kind) {
+  if (kind === 'pelvic' && rec && /^\d{4}-\d{2}-\d{2}$/.test(String(rec.gynDate || ''))) return String(rec.gynDate);
+  return (rec && rec.date) || '';
+}
+function pendingRowMatchesDate_(rec, skipFilter, kind) {
   if (skipFilter) return true;
   var f = pendingFilterDate_();
-  if (f) return !!rec && rec.date === f;
+  if (f) return !!rec && pendingRowDate_(rec, kind) === f;
   var months = (typeof PENDING_MONTHS === 'undefined') ? null : PENDING_MONTHS;
   if (months) {
     var any = false, k;
     for (k in months) { if (Object.prototype.hasOwnProperty.call(months, k) && months[k]) { any = true; break; } }
-    if (any) return !!rec && months[String(rec.date || '').slice(0, 7)] === true;
+    if (any) return !!rec && months[String(pendingRowDate_(rec, kind)).slice(0, 7)] === true;
   }
   return true;
 }
@@ -15997,7 +16003,7 @@ function pendingRowsForKind(kind, skipDateFilter) {
   return PENDING_RECORDS.filter(function (rec) {
     var p = rec && rec.pending;
     if (!p) return false;
-    if (!pendingRowMatchesDate_(rec, skipDateFilter)) return false;
+    if (!pendingRowMatchesDate_(rec, skipDateFilter, kind)) return false;
     if (kind === 'pickup') return !!p.checkupPickup; // รอบ 73: รอมารับ — ตัวกรองวันที่ + ค้นหาใช้ชุดเดียวกับชนิดอื่น
     return kind === 'pelvic' ? !!p.pelvicExport : !!p.checkupExport;
   });
@@ -16012,7 +16018,7 @@ function onPendingFilterDateChange() {
 
 // เรียง วันที่มาตรวจ เก่า -> ใหม่ แล้ว compareByQueue (W5) — rec.date = 'yyyy-MM-dd' เรียงเป็นสตริงได้ตรงลำดับ
 function comparePendingRow_(a, b) {
-  var da = (a && a.date) || '', db = (b && b.date) || '';
+  var da = pendingRowDate_(a, PENDING_KIND), db = pendingRowDate_(b, PENDING_KIND); // รอบ 152: เรียงด้วยวันของแท็บปัจจุบัน
   if (da !== db) return da < db ? -1 : 1;
   return compareByQueue(a, b);
 }
@@ -16100,7 +16106,7 @@ function renderPendingMonthChips_() {
   var activeMonths = pendingActiveMonths_();
   pendingRowsForKind(PENDING_KIND, true).forEach(function (rec) {
     if (!(isSent ? sentRowMatchesSearch_(rec, q) : pendingRowMatchesSearch_(rec, q))) return;
-    var d = String((rec && (isSent ? rec.sentDate : rec.date)) || '');
+    var d = String((rec && (isSent ? rec.sentDate : pendingRowDate_(rec, PENDING_KIND))) || ''); // รอบ 152: แท็บมะเร็งปากมดลูกนับตามวันตรวจภายใน
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
     var k = d.slice(0, 7);
     counts[k] = (counts[k] || 0) + 1;
@@ -16186,9 +16192,9 @@ function pendingSummaryHtml() {
   var filterLine = '<div class="line muted">วันที่รับบริการ : ' + (filterD ? escHtml(formatThaiDateShort(filterD)) : 'ทุกวัน') + '</div>';
 
   // ใต้ 2 บรรทัดแรก: แยกตามวันที่มาตรวจ เก่า -> ใหม่ (วันที่ y-m-d เรียงเป็นสตริงได้ตรงลำดับเวลาอยู่แล้ว)
-  function byDateLines(rows) {
+  function byDateLines(rows, kind) {
     var counts = {};
-    rows.forEach(function (rec) { var d = (rec && rec.date) || ''; counts[d] = (counts[d] || 0) + 1; });
+    rows.forEach(function (rec) { var d = pendingRowDate_(rec, kind); counts[d] = (counts[d] || 0) + 1; }); // รอบ 152
     var dates = Object.keys(counts).sort();
     return dates.map(function (d) {
       return '<div class="line muted">' + escHtml(formatThaiDateShort(d)) + ' : ' + counts[d] + ' ราย</div>';
@@ -16199,7 +16205,7 @@ function pendingSummaryHtml() {
     '<div class="line">ผลตรวจสุขภาพ รอส่งออก <b>' + checkupExportRows.length + '</b> ราย</div>' +
     byDateLines(checkupExportRows) +
     '<div class="line" style="margin-top:8px;">ผลตรวจมะเร็งปากมดลูก รอส่งออก <b>' + pelvicExportRows.length + '</b> ราย</div>' +
-    byDateLines(pelvicExportRows) +
+    byDateLines(pelvicExportRows, 'pelvic') +
     '<div class="line" style="margin-top:8px;">ผลตรวจสุขภาพ รอมารับ <b>' + checkupPickupCount + '</b> ราย</div>';
 }
 
@@ -16273,9 +16279,13 @@ function renderPendingTable() {
     var nameCell = (PENDING_KIND === 'pickup')
       ? ('<button type="button" class="pending-name-link" data-pending-edit-id="' + escHtml(rec.recordId) + '">' + escHtml(fullName.trim() || rec.patientHn || '—') + '</button>')
       : escHtml(fullName);
+    // รอบ 152: แท็บมะเร็งปากมดลูกแสดงวันตรวจภายใน · ต่างจากวันตรวจสุขภาพ ⇒ ต่อท้ายบรรทัดเล็ก
+    var rowDate = pendingRowDate_(rec, PENDING_KIND);
+    var dateCell = escHtml(formatThaiDateShort(rowDate));
+    if (PENDING_KIND === 'pelvic' && rowDate !== rec.date) dateCell += '<div class="muted">ตรวจสุขภาพ ' + escHtml(formatThaiDateShort(rec.date)) + '</div>';
     html += '<tr>' +
       '<td><input type="checkbox" class="pending-row-chk no-print" data-pending-id="' + escHtml(rowKey) + '"' + checked + '></td>' +
-      '<td>' + escHtml(formatThaiDateShort(rec.date)) + '</td>' +
+      '<td>' + dateCell + '</td>' +
       '<td>' + escHtml(rec.queue || '—') + '</td>' +
       '<td>' + escHtml(rec.patientHn || '') + '</td>' +
       '<td class="pending-name">' + nameCell + '</td>' +
