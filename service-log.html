@@ -1423,6 +1423,15 @@
   #dqScreen .dq-queue-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   #dqScreen #dqQueueInput { flex: 1 1 200px; width: auto; min-width: 0; font-size: 16px; } /* 16px กัน iOS ซูมอัตโนมัติ */
   #dqScreen .dq-send-status { font-size: 14px; color: var(--accent); }
+  /* รอบ 153 (W1/W4): ดูย้อนหลังรายวัน (ดูอย่างเดียว) — ช่องวันที่ใต้วันที่หัวกระดาน · คลาส dq-past บน #dqScreen ซ่อนทุกปุ่มที่เขียนข้อมูล */
+  #dqScreen .dq-viewdate-row { display: flex; flex-wrap: nowrap; gap: 6px; align-items: center; margin-top: 4px; max-width: 100%; }
+  #dqScreen .dq-viewdate-row .thd-btn { flex: 1 1 0; width: auto; min-width: 0; min-height: 44px; padding: 4px 10px; }
+  #dqScreen .dq-viewdate-row .btn { flex: 0 0 auto; min-height: 44px; white-space: nowrap; }
+  #dqScreen .dq-past-banner { background: #FFF3CD; border: 1px solid #C9A400; color: #5C4400; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-weight: bold; font-size: 15px; overflow-wrap: anywhere; }
+  #dqScreen .dq-past-banner[hidden] { display: none; }
+  #dqScreen .dq-ds-ctotal-ro { margin: 8px 0; padding: 8px 10px; background: #fff; border: 1px solid var(--primary); border-radius: 8px; font-size: 14px; overflow-wrap: anywhere; }
+  #dqScreen.dq-past #dqQueueCard, #dqScreen.dq-past #dqBtnOpenSetup, #dqScreen.dq-past .dq-slot, #dqScreen.dq-past .dq-break-btn, #dqScreen.dq-past .dq-move-btn, #dqScreen.dq-past .dq-editq-btn,
+  #dqScreen.dq-past .dq-join-btn, #dqScreen.dq-past .dq-grp-cancel, #dqScreen.dq-past .dq-btn-cancel-log, #dqScreen.dq-past .dq-forgot-badge { display: none !important; }
   /* รอบ 42 — แถวแนะนำคิว (คิววันนี้ที่ยังไม่พบแพทย์) · เลื่อนแนวนอนในแถวเอง ห้ามให้หน้าล้น */
   #dqScreen .dq-suggest { display: flex; gap: 6px; overflow-x: auto; max-width: 100%; margin-top: 8px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
   #dqScreen .dq-suggest[hidden] { display: none; }
@@ -2565,12 +2574,18 @@
           <div>
             <h2 style="margin:0 0 2px;">🩺 กระดานคิวพบแพทย์</h2>
             <div id="dqDateText" class="muted"></div>
+            <!-- รอบ 153 (W1): เลือกวันย้อนหลัง (ปฏิทินไทย thd* · input[type=date] เป็นตัวเก็บค่า) · ห้าม ensureAutoToday_ แตะช่องนี้ -->
+            <div class="dq-viewdate-row no-print">
+              <input type="date" id="dqViewDate" aria-label="ดูย้อนหลัง — เลือกวันที่" title="ดูย้อนหลัง (ดูอย่างเดียว)">
+              <button type="button" class="btn secondary small" id="dqBtnBackToday" hidden>กลับวันนี้</button>
+            </div>
             <div id="dqSendStatus" class="dq-send-status" hidden></div>
           </div>
           <button type="button" class="btn secondary small" id="dqBtnOpenSetup">⚙ ตั้งห้อง</button>
         </div>
+        <div id="dqPastBanner" class="dq-past-banner" role="status" hidden></div>
 
-        <div class="card">
+        <div class="card" id="dqQueueCard">
           <label class="field-label" for="dqQueueInput" style="margin-top:0;">พิมพ์หรือเลือกเลขคิว แล้วแตะช่อง ＋ ของห้องที่จะเข้า</label>
           <div class="dq-queue-row">
             <input type="text" id="dqQueueInput" autocapitalize="characters" autocorrect="off" spellcheck="false" autocomplete="off" maxlength="60" title="เข้าห้องพร้อมกันหลายคิว: พิมพ์คั่นด้วยเว้นวรรคหรือจุลภาค เช่น C5 C6 (หรือกด ＋ เข้าพร้อม ที่คิวที่กำลังตรวจ)" placeholder="เช่น C1 · แตะได้หลายคิว">
@@ -8194,6 +8209,8 @@ var SP_CACHE = { key: '', records: null, json: '' };
 var CU_DOCTORS_MODE = 'loading';
 var CU_DOCTORS_TODAY = null; // {date, names:[...]} ของวันที่กำลังโหลดอยู่ · null = ยังไม่มีการเลือกของวันนั้นเลย (ต่างจาก names:[] ซึ่งคือ "เลือกแล้วว่าไม่มีใคร")
 var CU_DOCTORS_DATE_KEY = ''; // วันที่ที่ CU_DOCTORS_TODAY เป็นข้อมูลของวันนั้นจริง
+var CU_DOCTOR_RETIRED_ = []; // รอบ 154: [{name,successor,successorActive}] ชื่อที่ถูกปิดเพราะแก้ชื่อ ✏ (resp.retired)
+var CU_DOCTOR_INACTIVE_ = []; // รอบ 154: ชื่อที่ปิดใช้งานอยู่ (resp.doctors active === false) — ใช้ข้อความใต้ช่องแพทย์ประจำวัน
 var CU_DOCTOR_NAMES = []; // รอบ 52: ชื่อ active ในแท็บ "แพทย์" (suggestNames ของ action doctors) — แหล่งเดียวของ select เพิ่มแพทย์ในแถบแพทย์ประจำวัน
 var DTB_LAST_DATE = ''; // วันที่ล่าสุดที่ #doctorsTodayBar เคยวาด — เปลี่ยนวันที่ -> รีเซ็ตสถานะกาง/draft
 var DTB_EXPANDED = false; // กางแถบ #doctorsTodayBar อยู่ไหม (ผู้ใช้กด "แก้ไข"/"ย่อ" เท่านั้น — รอบ 43 เลิกกางบังคับเมื่อ CU_DOCTORS_TODAY===null)
@@ -12389,6 +12406,43 @@ function doctorFindByCore_(names, raw) {
    ⚠ ช่วงนี้ถูก test_round31c_server.js ตัดไปรันใน vm ที่ไม่มี DOM — ประกาศฟังก์ชัน/ตัวแปรเฉย ๆ ห้ามมีโค้ดระดับบนสุดที่แตะ document/window */
 var DOCTOR_NOT_IN_LIST_SHORT_ = 'ไม่อยู่ในรายชื่อ — เลือกจากรายการ หรือกด "เพิ่มแพทย์"';
 var DOCTOR_LEGACY_SHORT_ = 'ชื่อเดิม — กรุณาเลือกใหม่';
+// รอบ 154: ชื่อที่พิมพ์ตรงแถวที่ปิดใช้งานอยู่ (ช่องใช้งาน = FALSE) ⇒ บอกให้กด "เพิ่มแพทย์" เพื่อเปิดใช้งานกลับ
+var DOCTOR_INACTIVE_SHORT_ = 'ชื่อนี้ปิดใช้งานอยู่ — กรอกในช่องเพิ่มแพทย์แล้วกด "เพิ่มแพทย์" เพื่อเปิดใช้งาน';
+// รอบ 154 W6: ข้อความ 2 แบบสำหรับชื่อที่ถูกแก้ชื่อไปแล้ว (ปลายสาย active / ไม่ active)
+var DOCTOR_RETIRED_MSG_ = function (r) {
+  return r.successorActive
+    ? 'ชื่อนี้ถูกแก้เป็น "' + r.successor + '" แล้ว — เลือกชื่อนั้นแทน'
+    : 'ชื่อนี้ถูกแก้เป็น "' + r.successor + '" แล้ว — ชื่อนั้นปิดใช้งานอยู่ ให้กด "เพิ่มแพทย์" ด้วยชื่อนั้นเพื่อเปิดใช้งาน';
+};
+// รอบ 154 W5: retired จากคำตอบ (resp.retired) · ไม่มีฟิลด์ (เซิร์ฟเวอร์เก่า) ⇒ ว่าง
+function doctorRetiredFromResp_(resp) {
+  var out = [];
+  if (!resp || !Array.isArray(resp.retired)) return out;
+  resp.retired.forEach(function (r) {
+    if (!r || !r.name || !r.successor) return;
+    out.push({ name: String(r.name), successor: String(r.successor), successorActive: r.successorActive === true });
+  });
+  return out;
+}
+// เก็บ inactive + retired จากคำตอบ doctors/addDoctor/doctorRename ไว้ทั้งแถบแพทย์ประจำวันและหน้า ⚙ (ฟังก์ชันนี้ไม่แตะ document)
+function doctorStoreInactive_(resp) {
+  var inact = doctorInactiveFromResp_(resp), ret = doctorRetiredFromResp_(resp);
+  CU_DOCTOR_INACTIVE_ = inact;
+  CU_DOCTOR_RETIRED_ = ret;
+  if (typeof dqState !== 'undefined') { dqState.inactiveNames = inact.slice(); dqState.retired = ret.slice(); }
+}
+// ชื่อที่ปิดใช้งานอยู่จากคำตอบของ action 'doctors' / 'addDoctor' (resp.doctors ที่ active === false) · ตัดซ้ำด้วย core
+function doctorInactiveFromResp_(resp) {
+  var out = [];
+  if (!resp || !Array.isArray(resp.doctors)) return out;
+  resp.doctors.forEach(function (d) {
+    if (!d || d.active !== false) return;
+    var nm = String(d.name == null ? '' : d.name).trim().replace(/\s+/g, ' ');
+    if (!nm || doctorFindByCore_(out, nm)) return;
+    out.push(nm);
+  });
+  return out;
+}
 var DOCTOR_COMBO_ACTIVE_ = null; // { input, hl, list } ของช่องที่เปิดรายการอยู่ (มีได้ช่องเดียว)
 var DOCTOR_POINTER_DOWN_ = false; // ปุ่มเมาส์/นิ้วกดอยู่ไหม (ตั้งโดยตัวดักใน 11. Bootstrap)
 var DOCTOR_DEFER_ = [];           // ช่องที่ออกจากช่องตอนกดค้าง รอขึ้นสถานะ "ไม่ตรง" หลังปล่อยปุ่ม
@@ -12538,7 +12592,15 @@ function doctorComboShowStatus_(input, kind) {
   }
   input.classList.add(bad);
   input.setAttribute('aria-invalid', 'true');
-  if (msgEl) msgEl.textContent = kind === 'legacy' ? DOCTOR_LEGACY_SHORT_ : DOCTOR_NOT_IN_LIST_SHORT_;
+  var msg = kind === 'legacy' ? DOCTOR_LEGACY_SHORT_ : DOCTOR_NOT_IN_LIST_SHORT_;
+  // รอบ 154: ไม่อยู่ในรายชื่อ แต่ตรงชื่อที่ปิดใช้งานอยู่ ⇒ ข้อความบอกวิธีเปิดใช้งาน
+  if (kind === 'notinlist') {
+    var rl = cfg.getRetired ? (cfg.getRetired() || []) : [], rhit = null;
+    for (var ri = 0; ri < rl.length && !rhit; ri++) { if (doctorFindByCore_([rl[ri].name], input.value)) rhit = rl[ri]; }
+    if (rhit) msg = DOCTOR_RETIRED_MSG_(rhit);
+    else if (cfg.getInactiveNames && doctorFindByCore_(cfg.getInactiveNames() || [], input.value)) msg = DOCTOR_INACTIVE_SHORT_;
+  }
+  if (msgEl) msgEl.textContent = msg;
 }
 
 // เลือกชื่อจากรายการ (คลิก/Enter) — ใส่ชื่อเต็ม · ล้างสถานะแดง · ปิดรายการ · โฟกัสคงอยู่ที่ช่อง
@@ -12755,9 +12817,13 @@ function doctorSubmitAddForm_(idBase, names, onDone, okText) {
       if (f2) f2.value = '';
       if (l2) l2.value = '';
       doctorSetPrefix_(idBase, ''); // รอบ 77: สำเร็จ ⇒ ล้างคำนำหน้าด้วย (ก่อน onDone เพราะ onDone อาจวาดฟอร์มใหม่)
+      // รอบ 154: อัปเดตชุดชื่อที่ปิดใช้งานจาก resp.doctors (ชื่อที่เพิ่งเปิดกลับหลุดจากชุด) ก่อน onDone
+      if (Array.isArray(resp.doctors)) {
+        doctorStoreInactive_(resp);
+      }
       onDone(nm, resp);
       var msg3 = qs(idBase + 'Msg');
-      if (msg3) msg3.textContent = okText ? okText(nm) : ('เพิ่ม ' + nm + ' แล้ว — เลือกในช่องชื่อแพทย์ได้เลย');
+      if (msg3) msg3.textContent = resp.reactivated ? ('เปิดใช้งาน ' + nm + ' แล้ว — เลือกในช่องชื่อแพทย์ได้เลย') : (okText ? okText(nm) : ('เพิ่ม ' + nm + ' แล้ว — เลือกในช่องชื่อแพทย์ได้เลย'));
     } else if (msg2) {
       msg2.textContent = (resp && resp.message) ? resp.message : 'เพิ่มแพทย์ไม่สำเร็จ';
     }
@@ -14549,6 +14615,7 @@ function loadDoctorsForDate(dateStr) {
       CU_DOCTORS_MODE = 'ok';
       CU_DOCTORS_TODAY = resp.today || null;
       CU_DOCTOR_NAMES = doctorNamesFromResp_(resp); // รอบ 52: รายชื่อที่เลือกได้ = active ในแท็บ แพทย์
+      doctorStoreInactive_(resp); // รอบ 154
     } else {
       // เซิร์ฟเวอร์เก่าไม่รู้จัก action 'doctors' (ตอบ 'ไม่รู้จัก action นี้') หรือความผิดพลาดอื่นใดก็ตาม
       // (รวม network error ที่ apiCall() กลืนเป็น {status:'error',...} ให้แล้ว) -> fallback กันลงชื่อแพทย์ไม่ได้
@@ -14647,6 +14714,8 @@ function renderDoctorsTodayBar() {
       doctorComboAttach_(addSel, {
         getNames: dtbPickableNames_,
         getResolveNames: function () { return CU_DOCTOR_NAMES; },
+        getInactiveNames: function () { return CU_DOCTOR_INACTIVE_; }, // รอบ 154
+        getRetired: function () { return CU_DOCTOR_RETIRED_; },
         getMsgEl: function () { return qs('dtbAddMsg'); },
         badClass: 'doc-cb-bad',
         onEnter: function (chosen) { if (chosen || String(addSel.value || '').trim()) onDtbAddConfirmClick(); }
@@ -16726,7 +16795,8 @@ var dqState = {
   cTotalDraft: null,   // รอบ 94: ข้อความที่พิมพ์ค้างในช่องยอดตรวจสุขภาพ (null = ไม่มี · ล้างเมื่อบันทึกสำเร็จ)
   cTotalSaving: false, // รอบ 94: กำลังรอคำตอบ dqSetCTotal (กันกดซ้ำ)
   foldOpen: {},      // รอบ 115 R13: ห้อง → true เมื่อกางแถว "ช่วงเช้า" (อยู่ในหน้าอย่างเดียว หายเมื่อ reload)
-  rolloverFor: ''    // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
+  rolloverFor: '',   // รอบ 45: วันที่ (todayStr) ที่เคยสั่งโหลดใหม่เพราะข้ามวันแล้ว — กันลูปเมื่อนาฬิกาเครื่องเพี้ยน
+  viewDate: ''       // รอบ 153 (W2): วันที่ดูย้อนหลัง YYYY-MM-DD (ดูอย่างเดียว) · '' = ดูวันนี้ · dqOnShow รีเซ็ตเป็น '' เสมอ
 };
 var dqRolloverTimer = null; // รอบ 45: setInterval ตัวเดียวเช็คข้ามวัน — ห้ามเก็บใน dqState.timers (ตัวนั้นถูกล้างทุกครั้งที่ render)
 var dqSugActive = ''; // รอบ 42: คีย์คิว (dqQueueKey) ของตัวเลือกที่ไฮไลต์อยู่ · '' = ไม่มี
@@ -16794,8 +16864,8 @@ function dqBkkHM(v) {
 function dqFmtDot(v) { var t = dqBkkHM(v); return t ? (t.h + '.' + t.m) : '--'; }
 function dqFmtHM(v) { var t = dqBkkHM(v); return t ? ((t.h < 10 ? '0' : '') + t.h + ':' + t.m) : '--:--'; }
 function dqPad2(n) { return (n < 10 ? '0' : '') + n; }
-function dqThaiDateText() {
-  var p = String(todayStr()).split('-');
+function dqThaiDateText(ymd) { // รอบ 153: ไม่ส่ง ymd = วันนี้ (เดิม) · ส่ง = วันที่นั้น (ดูย้อนหลัง)
+  var p = String(ymd || todayStr()).split('-');
   var y = parseInt(p[0], 10), mo = parseInt(p[1], 10), d = parseInt(p[2], 10);
   if (!y || !mo || !d) return '';
   var days = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
@@ -16813,7 +16883,15 @@ function dqCanRecord() {
 }
 // ทุก action dq* ส่ง staffKey + staffName: STATE.staffName เสมอ
 // รอบ 72: opts (เช่น { timeoutMs }) ส่งต่อให้ apiCall ตรง ๆ — ไม่ส่ง = เหมือนเดิม (action เขียนของกัปตันทุกตัวไม่ส่ง opts ⇒ ไม่มี timeout/signal)
+// รอบ 153 (W3): ด่านกลางกันเขียนตอนดูย้อนหลัง — ทุก action ยกเว้น dqToday · ไม่ยิง · คืน Promise ที่ resolve error (ผู้เรียกเดิมไม่ crash)
+var dqPastBlockMsg_ = 'ดูย้อนหลังอยู่ — กลับวันนี้ก่อนจึงจะแก้ไขได้';
+function dqIsPast_() { return !!dqState.viewDate; }
+function dqBlockedWrite_() {
+  showToast(dqPastBlockMsg_);
+  return Promise.resolve({ status: 'error', message: dqPastBlockMsg_ });
+}
 function dqApi(action, payload, opts) {
+  if (dqState.viewDate && action !== 'dqToday') return dqBlockedWrite_();
   return apiCall(action, Object.assign({ staffKey: STATE.staffKey, staffName: STATE.staffName }, payload || {}), opts);
 }
 
@@ -16844,16 +16922,76 @@ function dqAlignBoard() {
   if (!grid || !grid.offsetParent) return; // หน้ายังซ่อนอยู่ — วัดไม่ได้
   window.scrollTo(0, Math.max(0, Math.round(grid.getBoundingClientRect().top + window.pageYOffset - 8)));
   var qi = qs('dqQueueInput');
-  if (qi) { try { qi.focus({ preventScroll: true }); } catch (e) { qi.focus(); } }
+  if (qi && !dqState.viewDate) { try { qi.focus({ preventScroll: true }); } catch (e) { qi.focus(); } }
+}
+
+/* ---- รอบ 153: ดูย้อนหลังรายวัน (ดูอย่างเดียว) ---- */
+// min/max ของช่องวัน (BACKDATE_MAX_DAYS ตัวเดียวกับบันทึกย้อนหลัง) · เรียกตอนเปิดหน้า/ข้ามวัน
+function dqSyncViewDateBounds_() {
+  var vd = qs('dqViewDate');
+  if (!vd) return;
+  vd.setAttribute('min', backdateMinDate_());
+  vd.setAttribute('max', todayStr());
+}
+// ซิงก์หน้าจอกับ dqState.viewDate: คลาส dq-past · ป้าย · ปุ่มกลับวันนี้ · ข้อความวันที่ · ค่าในช่อง
+function dqApplyPastUi_() {
+  var past = !!dqState.viewDate;
+  var scr = qs('dqScreen');
+  if (scr) scr.classList.toggle('dq-past', past);
+  var bn = qs('dqPastBanner');
+  if (bn) {
+    bn.hidden = !past;
+    bn.textContent = past ? ('ดูย้อนหลัง ' + dqThaiDateText(dqState.viewDate) + ' — ดูอย่างเดียว') : '';
+  }
+  var bt = qs('dqBtnBackToday');
+  if (bt) bt.hidden = !past;
+  var dt = qs('dqDateText');
+  if (dt) dt.textContent = dqThaiDateText(dqState.viewDate || '');
+  var vd = qs('dqViewDate');
+  var want = dqState.viewDate || todayStr();
+  if (vd && vd.value !== want) vd.value = want;
+}
+// ล้างสถานะของมุมมองเดิม (แถบเปิดค้าง · ร่าง · พับเช้า) ตอนเปลี่ยนวันที่ดู
+function dqResetViewState_() {
+  dqState.base = null;
+  dqState.cTotalDraft = null;
+  dqState.foldOpen = {};
+  dqState.moveOpenId = '';
+  dqCloseEditQueue_();
+  dqCloseJoin_();
+  dqCloseDoctorBar_();
+  dqState.doctorNotice = null;
+}
+// W2/W7: ตั้งวันที่ดู · '' หรือวันนี้ = กลับวันนี้ · นอกช่วง/รูปแบบผิด ⇒ วันนี้ + toast
+function dqSetViewDate_(raw) {
+  var v = String(raw == null ? '' : raw).trim();
+  var today = todayStr();
+  if (v !== '' && v !== today) {
+    var ok = /^\d{4}-\d{2}-\d{2}$/.test(v) && v >= backdateMinDate_() && v < today;
+    if (!ok) { v = ''; showToast('ดูย้อนหลังได้ไม่เกิน ' + BACKDATE_MAX_DAYS + ' วัน'); }
+  } else if (v === today) v = '';
+  if (v === dqState.viewDate && (dqState.base || !v)) { dqApplyPastUi_(); return; } // เลือกวันก่อนเดิมซ้ำตอนโหลดล้ม (base ว่าง) ⇒ โหลดใหม่
+  if (dqSendQueue.length > 0 || dqSendActive) { // งานเขียนของวันนี้ยังค้างส่ง — ไม่สลับวัน (ด่าน W3 จะทิ้งงานที่ส่งไม่ทัน)
+    showToast('กำลังส่งข้อมูลอยู่ — รอสักครู่แล้วเลือกวันใหม่');
+    dqApplyPastUi_();
+    return;
+  }
+  dqState.viewDate = v;
+  dqResetViewState_();
+  dqApplyPastUi_();
+  dqRerender(); // base = null ⇒ "กำลังโหลด…"
+  if (!v) { var qiBack = qs('dqQueueInput'); if (qiBack) { try { qiBack.focus({ preventScroll: true }); } catch (e) { qiBack.focus(); } } } // กลับวันนี้ ⇒ โฟกัสช่องคิวเหมือน dqAlignBoard
+  Promise.resolve(dqLoadToday()).catch(function () {});
 }
 
 // เรียกจาก showScreen('dq') ทุกครั้งที่เปิดหน้า
 function dqOnShow() {
   var tdDet = qs('dqTodayDetails'); // รอบ 115 R10: เปิดหน้าทุกครั้ง ⇒ รายการวันนี้พับอยู่
   if (tdDet) tdDet.open = false;
+  if (dqState.viewDate) { dqState.viewDate = ''; dqResetViewState_(); } // รอบ 153 (W7): เปิดหน้าใหม่ = วันนี้เสมอ (ไม่ค้างวันย้อนหลัง)
+  dqSyncViewDateBounds_();
+  dqApplyPastUi_();
   dqShowView('board');
-  var dt = qs('dqDateText');
-  if (dt) dt.textContent = dqThaiDateText();
   if (dqIsStale()) dqState.base = null; // รอบ 45: ไม่วาดของเมื่อวานแวบหนึ่งระหว่างรอโหลด
   dqRerender();
   // รอบ 53: เลื่อนให้เอง "หลังข้อมูลวาดเสร็จ" (หน้ายังว่างตอนเปิด ⇒ เอกสารสั้นเกินจะเลื่อนถึง) · ครั้งเดียวต่อการเปิดหน้า — rerender รอบต่อ ๆ ไปไม่ยุ่งกับตำแหน่งหน้า
@@ -16864,12 +17002,15 @@ function dqOnShow() {
 
 // รอบ 45: snapshot ที่ถืออยู่เป็นของวันก่อน (เปิดแท็บค้างข้ามคืน) — เทียบกับวันไทยปัจจุบัน
 function dqIsStale() {
-  return !!(dqState.base && dqState.base.date && dqState.base.date !== todayStr());
+  // รอบ 153 (W5): ดูย้อนหลังอยู่ ⇒ "ของเก่า" = base ที่ไม่ใช่วันที่กำลังดู (ไม่ใช่ ≠ วันนี้) · ดูวันนี้ = เดิมทุกประการ
+  return !!(dqState.base && dqState.base.date && dqState.base.date !== (dqState.viewDate || todayStr()));
 }
 // รอบ 45: ข้ามวันแล้วล้างกระดานเก่าแล้วโหลดใหม่เอง · ไม่ขัดตอนมีงานค้างส่ง/กำลังตั้งห้อง · กันลูปด้วย dqState.rolloverFor
 function dqCheckDayRollover() {
   if (!dqIsScreenOpen()) return;
   dqRenderDaySummary(); // รอบ 47: timer เดิม (ทุก 60 วิ) ทำให้บรรทัด "ยอดช่วงบ่าย" โผล่เองเมื่อนาฬิกาถึง 13:00 — ไม่เปลี่ยนพฤติกรรมข้ามวันด้านล่าง
+  dqSyncViewDateBounds_(); // รอบ 153: ข้ามวัน ⇒ ขอบ min/max ของช่องวันขยับตาม
+  if (dqState.viewDate) return; // รอบ 153 (W5/W6): ดูย้อนหลังอยู่ ⇒ ไม่ล้าง/ไม่โหลดวันนี้/ไม่รีเฟรชเอง
   // รอบ 64: ตัวจับเวลา 60 วิ/focus/visibilitychange/pageshow ตัวเดิมนี้ยังเป็นตัวเดียว — ต่อรีเฟรชเอง (dqAutoRefreshTick_) ไว้ท้ายด้วย try/finally
   // เพราะตรรกะข้ามวันด้านล่างมี return ก่อนเวลาหลายจุด · ข้ามวันกำลังโหลดอยู่ ⇒ dqLoadingCount > 0 / rolloverLoading ⇒ รีเฟรชเองข้ามรอบเอง ไม่ยิงซ้อน
   try {
@@ -16892,6 +17033,7 @@ function dqCheckDayRollover() {
     dqState.cTotalDraft = null; // รอบ 94: ข้ามวัน ⇒ ล้างร่างยอดที่พิมพ์ค้างของเมื่อวาน
     var dt = qs('dqDateText');
     if (dt) dt.textContent = dqThaiDateText();
+    dqApplyPastUi_(); // รอบ 153: ค่าช่องวันกลับเป็นวันนี้ใหม่
     dqRerender();
     load();
   } finally {
@@ -16907,11 +17049,14 @@ function dqLoadToday(opts) {
   dqLoadingCount++;
   dqLastLoadAt = Date.now();
   var fin = function () { dqLoadingCount = Math.max(0, dqLoadingCount - 1); };
+  var viewAtStart = dqState.viewDate; // รอบ 153 (W2): วันที่ขอ · คำตอบที่วันไม่ตรงกับที่กำลังเลือกอยู่ตอนนี้ ⇒ ทิ้ง
   // รอบ 72 (เจ้าของสั่ง 2026-10-07): dqToday เป็น action อ่าน ⇒ ตัดทิ้งที่ 20 วิ · คำตอบต้องมี rooms+logs เป็นอาร์เรย์ (isListResp_) —
   // "API is running"/หน้า HTML error เคยผ่านเช็ค status ok แล้ววาดกระดานเป็น "ยังไม่ได้ตั้งห้อง" + ยอด 0 ·
   // ไม่ผ่าน + auto (รีเฟรชเองทุกนาที) ⇒ เงียบ ไม่แตะ dqState รอรอบหน้า · ไม่ผ่าน + กดเอง ⇒ toast
-  return dqApi('dqToday', {}, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
+  return dqApi('dqToday', viewAtStart ? { date: viewAtStart } : {}, { timeoutMs: readTimeoutMs_() }).then(function (resp) {
     fin();
+    if (viewAtStart !== dqState.viewDate) return; // เลือกวันใหม่ระหว่างรอ (A แล้ว B / กลับวันนี้) ⇒ คำตอบเก่าไม่ทับ
+    if (viewAtStart && isListResp_(resp, ['rooms', 'logs']) && resp.date !== viewAtStart) return; // date ไม่ตรงวันที่ขอ ⇒ ทิ้ง
     if (!isListResp_(resp, ['rooms', 'logs'])) {
       if (!auto) showToast((resp && resp.status !== 'ok' && resp.message) ? resp.message : 'โหลดข้อมูลคิวพบแพทย์ไม่สำเร็จ');
       return;
@@ -16970,6 +17115,7 @@ function dqApplySnapshotQuiet_(snap) {
 // แถบ ⇄ เปิด / โหลดก่อนหน้ายังไม่กลับ / เพิ่งโหลดหรือเพิ่งได้ snapshot ไม่ถึง dqAutoRefreshMinGapMs
 function dqAutoRefreshTick_() {
   if (!dqIsScreenOpen()) return false;
+  if (dqState.viewDate) return false; // รอบ 153 (W6): ดูย้อนหลัง ⇒ ไม่รีเฟรชเอง
   var bv = qs('dqBoardView'), sv = qs('dqSetupView');
   if (!bv || bv.hidden) return false;
   if (sv && !sv.hidden) return false;
@@ -16985,6 +17131,7 @@ function dqApplySnapshot(snap) {
   // รอบ 72: ด่านสุดท้ายของทุกเส้นทาง (dqLoadToday + snapshot ที่มากับคำตอบ action เขียน resp.today) — snapshot ที่ไม่มี rooms+logs เป็นอาร์เรย์
   // ห้ามตั้งเป็น base (จะวาด "ยังไม่ได้ตั้งห้อง" ทับกระดานจริง) ⇒ คง base เดิม แต่ยังวาดใหม่เพื่อให้งานที่เพิ่งถอดออกจากคิวส่งสะท้อนบนจอ
   if (!isListResp_(snap, ['rooms', 'logs'])) { dqRerender(); return; }
+  if (dqState.viewDate && snap.date !== dqState.viewDate) { dqRerender(); return; } // รอบ 153 (W2): ดูย้อนหลัง ⇒ รับเฉพาะ snapshot ของวันที่ดู (snapshot วันนี้จากคำตอบเขียนไม่ทับ)
   dqSnapSeq++;
   dqLastLoadAt = Date.now(); // รอบ 64: เพิ่งได้ข้อมูลสด (รวม snapshot จากคำตอบ action) ⇒ รีเฟรชเองรอบถัดไปไม่ต้องรีบ
   dqState.base = snap;
@@ -17069,7 +17216,7 @@ function dqForgotBadgeText_(g) {
 // ป้ายบนการ์ดห้อง (E3) + กล่องเตือน (E4) · วาดในที่ ไม่ re-render การ์ด · เรียกซ้ำได้ (รอบ 30 วิ · ท้ายการวาด)
 function dqUpdateForgotUi_() {
   var c = qs('dqRoomCards');
-  if (c && dqState.today) {
+  if (c && dqState.today && !dqState.viewDate) { // รอบ 153 (W6): ดูย้อนหลัง ⇒ ไม่มีป้าย "เปิดค้าง N นาที" (นับจากนาฬิกาปัจจุบัน)
     var groups = dqOpenRoomGroups_();
     c.querySelectorAll('.dq-card').forEach(function (card) {
       var room = card.getAttribute('data-room');
@@ -17110,7 +17257,7 @@ function dqSyncCloseRemind_() {
   var bv = qs('dqBoardView');
   var groups = [];
   var want = false;
-  if (dqIsScreenOpen() && bv && !bv.hidden && t && t.date === todayStr() && dqNowHHMM_() >= DQ_CLOSE_REMIND_HHMM_) {
+  if (!dqState.viewDate && dqIsScreenOpen() && bv && !bv.hidden && t && t.date === todayStr() && dqNowHHMM_() >= DQ_CLOSE_REMIND_HHMM_) { // รอบ 153 (W6): !viewDate
     // เจ้าของ (หลังรอบ 143): ขึ้นเฉพาะกลุ่มที่เข้าห้อง "ก่อน" 14:45 (เวลาไทย) · เข้า 14:45 ขึ้นไป ไม่นับ (ป้ายบนการ์ด E3 ไม่เกี่ยว)
     groups = dqOpenRoomGroups_().filter(function (g) { return !isNaN(g.t) && !g.real && dqFmtHM(new Date(g.t)) < DQ_CLOSE_REMIND_HHMM_; }); // รอบ 146d D3: กลุ่มที่ตั้ง "นับเวลาจริง" แล้ว ไม่อยู่ในกล่อง 14:45
     if (groups.length) {
@@ -17173,7 +17320,7 @@ function dqSyncLongOpen_() {
   var bv = qs('dqBoardView');
   var groups = [];
   var want = false;
-  if (dqIsScreenOpen() && bv && !bv.hidden && t && t.date === todayStr()) {
+  if (!dqState.viewDate && dqIsScreenOpen() && bv && !bv.hidden && t && t.date === todayStr()) { // รอบ 153 (W6): !viewDate
     groups = dqOpenRoomGroups_().filter(function (g) { return !isNaN(g.t) && !g.real && !g.pending && (g.elapsed / g.n) > DQ_FORGOT_MAX_MIN_; }); // รอบ 146c: ต่อคน > 45 (นาทีทั้งกลุ่ม ÷ จำนวนคน) · 45 พอดีไม่ขึ้น · ค่าคงที่เดียวกับเกณฑ์ตัดนาที
     if (groups.length) {
       var sn = dqLongSnooze_;
@@ -17399,6 +17546,7 @@ function dqRerender() {
   dqUpdateForgotUi_(); // รอบ 143: ป้ายเปิดค้าง + กล่องเตือน 14:45 (ใช้ข้อมูลที่วาดอยู่ ไม่ยิงเซิร์ฟเวอร์เพิ่ม)
 }
 function dqEnqueueJob(job) {
+  if (dqState.viewDate) return dqBlockedWrite_(); // รอบ 153 (W3): ดูย้อนหลัง = ดูอย่างเดียว ไม่ push ไม่ pump
   dqSendQueue.push(job);
   dqRerender();
   dqPumpSendQueue();
@@ -17453,7 +17601,7 @@ function dqEntryCellHtml(item) {
   }
   var pendMark = log.pending ? '<span class="dq-pending"> ⏳ กำลังบันทึก</span>' : '';
   // รอบ 58: ปุ่ม ⇄ ย้าย — เฉพาะแถว 'บันทึกแล้ว' ที่ไม่ pending (ทั้งแถวปิดแล้วและกำลังตรวจ) · วางต่อท้ายบรรทัด .dq-entry (พี่น้องกัน ไม่ซ้อนใน .dq-entry)
-  var moveBtn = (!log.pending && String(log.id).indexOf('dq-pending-') !== 0)
+  var moveBtn = (!dqState.viewDate && !log.pending && String(log.id).indexOf('dq-pending-') !== 0) // รอบ 153 (W4): ดูย้อนหลัง ⇒ ไม่มีปุ่มย้าย/แก้/ยกเลิก/เข้าพร้อม
     ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(log.id) + '">⇄ ย้าย</button>' : '';
   // รอบ 79: ปุ่ม ✎ แก้ไข (เลขคิว) — เงื่อนไขแสดงเดียวกับปุ่มย้ายเป๊ะ · วางต่อจากปุ่มย้าย · รอบ 117: + ✕ ยกเลิก (คลาสเดียวกับปุ่มยกเลิกในกลุ่มรอบ 82 ⇒ ใช้ dqOnCancelClick เดิม)
   if (moveBtn) moveBtn += '<button type="button" class="dq-editq-btn" data-id="' + escHtml(log.id) + '">✎ แก้ไข</button>' +
@@ -17466,12 +17614,16 @@ function dqEntryCellHtml(item) {
   }
   // รอบ 47: เวลาออกลงเองเมื่อคิวถัดไปเข้าห้องเดียวกัน · รอบ 50: เพิ่มปุ่ม ☕ พัก (ชื่อใหม่ คนละตัวกับปุ่มจบของรอบ 41) สำหรับแพทย์พักเที่ยง/เลิกตรวจ
   return '<div class="dq-entry-line"><div class="dq-entry">' + seq + '. ' + escHtml(log.queue) + '&nbsp;&nbsp;' + dqFmtDot(log.timeIn) + '-' + pendMark + '</div>' + moveBtn + '</div>' +
+    (dqState.viewDate ? dqPastOpenHtml_() : // รอบ 153 (W6): ดูย้อนหลัง ⇒ ไม่มีตัวนับวิ่ง/ปุ่ม ☕ — ข้อความนิ่ง
     '<div class="dq-open"><span class="dq-timer" data-room="' + escHtml(log.room) + '">00:00</span> กำลังตรวจ' +
     '<span class="dq-auto-note">ปิดเวลาเองเมื่อคิวถัดไปเข้า</span>' +
-    '<button type="button" class="dq-break-btn" data-room="' + escHtml(log.room) + '">☕ พัก / จบคิวนี้</button></div>';
+    '<button type="button" class="dq-break-btn" data-room="' + escHtml(log.room) + '">☕ พัก / จบคิวนี้</button></div>');
 }
+// รอบ 153 (W6): แถวที่ยังไม่มีเวลาออกในวันก่อนหน้า = ไม่ได้กดจบ (ข้อความนิ่ง ไม่มีนาฬิกาวิ่ง)
+function dqPastOpenHtml_() { return '<div class="dq-open dq-open-past">⚠ ไม่ได้กดจบ (ไม่มีเวลาออก)</div>'; }
 // รอบ 82: ปุ่ม ＋ เข้าพร้อม — เฉพาะแถวที่กำลังตรวจและยืนยันแล้ว (ไม่ pending)
 function dqJoinBtnHtml_(log) {
+  if (dqState.viewDate) return ''; // รอบ 153 (W4)
   if (log.pending || String(log.id).indexOf('dq-pending-') === 0) return '';
   return '<button type="button" class="dq-join-btn" data-id="' + escHtml(log.id) + '">＋ เข้าพร้อม</button>';
 }
@@ -17564,7 +17716,8 @@ function dqGroupCellHtml_(members) {
   }
   html += '</div>';
   if (open) {
-    html += '<div class="dq-open"><span class="dq-timer" data-room="' + escHtml(first.room) + '">00:00</span> กำลังตรวจ' +
+    html += dqState.viewDate ? dqPastOpenHtml_() : // รอบ 153 (W6)
+      '<div class="dq-open"><span class="dq-timer" data-room="' + escHtml(first.room) + '">00:00</span> กำลังตรวจ' +
       '<span class="dq-auto-note">ปิดเวลาเองเมื่อคิวถัดไปเข้า</span>' +
       '<button type="button" class="dq-break-btn" data-room="' + escHtml(first.room) + '">☕ พัก / จบคิวนี้</button></div>';
   }
@@ -17573,7 +17726,7 @@ function dqGroupCellHtml_(members) {
     var l = m.log;
     var confirmed = (!l.pending && String(l.id).indexOf('dq-pending-') !== 0);
     html += '<div class="dq-group-member" data-id="' + escHtml(l.id) + '"><span class="dq-gm-q">' + escHtml(l.queue) + '</span>' + (l.pending ? '<span class="dq-pending"> ⏳</span>' : '') +
-      (confirmed ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(l.id) + '">⇄ ย้าย</button>' +
+      (confirmed && !dqState.viewDate ? '<button type="button" class="dq-move-btn" data-id="' + escHtml(l.id) + '">⇄ ย้าย</button>' +
         '<button type="button" class="dq-editq-btn" data-id="' + escHtml(l.id) + '">✎ แก้ไข</button>' +
         '<button type="button" class="dq-grp-cancel" data-id="' + escHtml(l.id) + '">✕ ยกเลิก</button>' : '') + '</div>';
   });
@@ -18219,7 +18372,12 @@ function dqRenderRoomCards() {
     head.className = 'dq-card-head';
     // รอบ 104: ห้องที่มีแพทย์ ⇒ ชื่อแพทย์เป็นปุ่ม (textContent เท่านั้น ห้าม innerHTML กับชื่อ) แตะแล้วเปิดกล่องแก้ชื่อแพทย์ทุกวัน
     head.textContent = 'ห้อง ' + rm.room + (rm.doctor ? ' ' : '');
-    if (rm.doctor) {
+    if (rm.doctor && dqState.viewDate) { // รอบ 153 (W4): ดูย้อนหลัง ⇒ ชื่อแพทย์เป็นข้อความ (ไม่มี ✏ แก้ชื่อ) · textContent เท่านั้น
+      var docTxt = document.createElement('span');
+      docTxt.className = 'dq-doc-name';
+      docTxt.textContent = rm.doctor;
+      head.appendChild(docTxt);
+    } else if (rm.doctor) {
       var docBtn = document.createElement('button');
       docBtn.type = 'button';
       docBtn.className = 'dq-doc-rename';
@@ -18320,7 +18478,7 @@ function dqRenderRoomCards() {
     var foot = document.createElement('div');
     foot.className = 'dq-card-foot';
     // รอบ 50: ห้องที่เคยมีคิวแต่ไม่มีคิวกำลังตรวจ = กด ☕ ไว้ ⇒ ป้ายพัก หายเองเมื่อคิวถัดไปเข้า
-    var breakAt = dqRoomBreakSince(allLogs, rm.room);
+    var breakAt = dqState.viewDate ? null : dqRoomBreakSince(allLogs, rm.room); // รอบ 153 (W6): ดูย้อนหลัง ⇒ ไม่มีป้าย "☕ พักตั้งแต่"
     if (breakAt) {
       var bd = document.createElement('div');
       bd.className = 'dq-break-badge';
@@ -18332,7 +18490,7 @@ function dqRenderRoomCards() {
     slot.className = 'dq-slot dq-slot-idle';
     slot.setAttribute('data-room', rm.room);
     slot.textContent = '＋ เข้าห้องนี้';
-    foot.appendChild(slot);
+    if (!dqState.viewDate) foot.appendChild(slot); // รอบ 153 (W4): ดูย้อนหลัง ⇒ ไม่มีปุ่ม ＋
 
     // รอบ 51: สถิติแยกประเภท (textContent ทั้งหมด — ชื่อแพทย์มาจากชีต)
     var stats = document.createElement('div');
@@ -18362,7 +18520,9 @@ function dqRenderRoomCards() {
         var dl = document.createElement('div');
         dl.className = 'dq-stat-line dq-stat-doc-line';
         var statText = ' · ' + dqFmtRoomStat(tot.count, tot.avg);
-        if (g.doctor) {
+        if (g.doctor && dqState.viewDate) { // รอบ 153 (W4): ดูย้อนหลัง ⇒ ชื่อแพทย์เป็นข้อความ ไม่ใช่ปุ่มแก้ชื่อ
+          dl.appendChild(document.createTextNode(g.doctor + statText));
+        } else if (g.doctor) {
           // รอบ 115 R8: ชื่อแพทย์ในกล่องสถิติเป็นปุ่ม ⇒ เปิดกล่องแก้ชื่อแพทย์ของรอบ 104 (textContent เท่านั้น · ✏ มาจาก CSS) · กลุ่ม "ไม่มีชื่อแพทย์" ไม่มีปุ่ม
           var nb = document.createElement('button');
           nb.type = 'button';
@@ -18505,6 +18665,7 @@ function dqRenderRoomCards() {
 
   dqUpdateForgotUi_(); // รอบ 143: การ์ดถูกวาดใหม่ ⇒ ใส่ป้ายเปิดค้างกลับ
   if (!dqIsScreenOpen()) return; // หน้าไม่ได้เปิดอยู่ (งานค้างส่งตอบกลับมาหลังออกจากหน้า) — ไม่ต้องเดินนาฬิกา
+  if (dqState.viewDate) return; // รอบ 153 (W6): ดูย้อนหลัง ⇒ ไม่เดินนาฬิกา/ตัวจับเวลาใด ๆ (ป้ายหมดเวลา · ตัวนับ กำลังตรวจ · ป้ายเกิน N นาที)
   dqState.timers.push(setInterval(dqUpdateExpiryBadges_, 30000)); // รอบ 115: เพิ่ม/ลบป้ายหมดเวลาในที่ เมื่อข้ามเวลา end (ไม่ re-render การ์ด)
   container.querySelectorAll('.dq-timer').forEach(function (timerEl) {
     var startTime = openTimeByRoom[timerEl.getAttribute('data-room')];
@@ -18541,9 +18702,10 @@ function dqRenderTodayList() {
   if (!container) return;
   var logs = (dqState.today && dqState.today.logs) || [];
   var sumEl = qs('dqTodaySummary'); // รอบ 115 R10: จำนวนคิวไม่ยกเลิก (เจ้าของเลือก — นับแบบเดียวกับ "ช่วงเช้า N คิว") · เรนเดอร์ตลอดแม้พับอยู่
-  if (sumEl) sumEl.textContent = 'รายการวันนี้ (' + logs.filter(function (l) { return l && l.status !== 'ยกเลิก'; }).length + ' คิว)';
+  var pastList = !!dqState.viewDate; // รอบ 153 (W4): หัวพับ "รายการวันที่ <วันไทยสั้น> (N คิว)" · ไม่มีปุ่มยกเลิก
+  if (sumEl) sumEl.textContent = (pastList ? ('รายการวันที่ ' + formatThaiDateShort(dqState.viewDate)) : 'รายการวันนี้') + ' (' + logs.filter(function (l) { return l && l.status !== 'ยกเลิก'; }).length + ' คิว)';
   if (logs.length === 0) {
-    container.innerHTML = '<p class="muted">ยังไม่มีรายการวันนี้</p>';
+    container.innerHTML = '<p class="muted">' + (pastList ? 'ไม่มีรายการของวันนั้น' : 'ยังไม่มีรายการวันนี้') + '</p>';
     return;
   }
   container.innerHTML = '';
@@ -18556,7 +18718,7 @@ function dqRenderTodayList() {
     var text = 'คิว ' + log.queue + ' · ห้อง ' + log.room + (log.doctor ? (' · ' + log.doctor) : '') +
       ' · ' + timeInStr + '–' + timeOutStr + (hasMinutes ? (' (' + log.minutes + ' นาที)') : '');
     row.innerHTML = '<span>' + escHtml(text) + (dqIsForgotClosed_(log) ? ' <span class="dq-forgot-tag">ไม่ได้กดจบ</span>' : '') + (log.pending ? ' <span class="dq-pending">⏳ กำลังบันทึก</span>' : '') + '</span>' + // รอบ 143 E2
-      (log.pending ? ''
+      (log.pending || pastList ? (pastList && log.status === 'ยกเลิก' ? '<span class="muted">ยกเลิกแล้ว</span>' : '')
         : log.status !== 'ยกเลิก'
         ? '<button type="button" class="btn small secondary dq-btn-cancel-log" data-id="' + escHtml(log.id) + '">ยกเลิก</button>'
         : '<span class="muted">ยกเลิกแล้ว</span>');
@@ -18850,7 +19012,8 @@ function dqRenderDaySummary() {
   var ciSelStart = null, ciSelEnd = null;
   if (ciHadFocus) { try { ciSelStart = prevCi.selectionStart; ciSelEnd = prevCi.selectionEnd; } catch (e0) {} }
   // m2 หลังรอบ 94: กำลังพิมพ์ยอด ⇒ คงก้อนช่องกรอกเดิมไว้ (ไม่ถอด/ย้าย node) — focus() จากโค้ดบน iOS ไม่เปิดคีย์บอร์ดคืน ⇒ วาดใหม่ทุก 60 วิ คีย์บอร์ดจะปิดเอง
-  var keepCb = (ciHadFocus && prevCi.closest) ? prevCi.closest('.dq-ds-ctotal') : null;
+  var pastSum = !!dqState.viewDate; // รอบ 153 (W4)
+  var keepCb = (!pastSum && ciHadFocus && prevCi.closest) ? prevCi.closest('.dq-ds-ctotal') : null;
   if (keepCb && keepCb.parentNode !== box) keepCb = null;
   if (keepCb) Array.prototype.slice.call(box.childNodes).forEach(function (n) { if (n !== keepCb) box.removeChild(n); });
   else box.innerHTML = '';
@@ -18860,8 +19023,8 @@ function dqRenderDaySummary() {
   if (sm.total !== null) {
     var hl = document.createElement('div');
     hl.className = 'dq-ds-headline';
-    hl.title = 'นับคิว C และไม่นัดที่บันทึกในกระดานสถิติวันนี้ ไม่รวมที่ยกเลิก'; // รอบ 60 ข้อ 9
-    hl.appendChild(document.createTextNode('วันนี้มียอดตรวจสุขภาพ '));
+    hl.title = (pastSum ? 'นับคิว C และไม่นัดที่บันทึกในกระดานสถิติของวันนั้น ไม่รวมที่ยกเลิก' : 'นับคิว C และไม่นัดที่บันทึกในกระดานสถิติวันนี้ ไม่รวมที่ยกเลิก'); // รอบ 60 ข้อ 9
+    hl.appendChild(document.createTextNode((pastSum ? ('วันที่ ' + formatThaiDateShort(dqState.viewDate) + ' ') : 'วันนี้') + 'มียอดตรวจสุขภาพ '));
     var hn = document.createElement('b'); hn.className = 'dq-ds-headline-num'; hn.textContent = String(sm.total);
     hl.appendChild(hn);
     hl.appendChild(document.createTextNode(' คิว'));
@@ -18876,7 +19039,15 @@ function dqRenderDaySummary() {
   }
   var hasCTotal = !!(dqState.today && typeof dqState.today === 'object' && 'cTotal' in dqState.today);
   if (keepCb && !hasCTotal) { box.removeChild(keepCb); keepCb = null; }
-  if (keepCb) {
+  if (pastSum) {
+    // รอบ 153 (W4): ดูย้อนหลัง ⇒ ยอดตรวจสุขภาพที่กรอกเองเป็นข้อความอ่านอย่างเดียว (ไม่มีช่อง/ปุ่มบันทึก)
+    if (hasCTotal) {
+      var ro = document.createElement('div');
+      ro.className = 'dq-ds-ctotal-ro';
+      ro.textContent = 'ยอดตรวจสุขภาพ (กรอกเอง): ' + (sm.manual ? sm.manual.value : '—');
+      box.appendChild(ro);
+    }
+  } else if (keepCb) {
     // ไม่มีร่าง (ยังไม่ได้พิมพ์ต่างจากที่บันทึก) ⇒ ตามค่าที่บันทึกล่าสุด · มีร่าง ⇒ ไม่แตะค่าที่กำลังพิมพ์
     var keepSaved = dqSavedCTotalText_();
     if ((dqState.cTotalDraft === null || dqState.cTotalDraft === undefined) && prevCi.value !== keepSaved) prevCi.value = keepSaved;
@@ -19225,6 +19396,7 @@ function dqNormHHMM_(v) {
 // ห้องของวันนี้ที่แพทย์หมดเวลา ⇒ { room, doctor, end } · ไม่เข้าเงื่อนไข ⇒ null
 function dqRoomExpiry_(roomName) {
   var t = dqState.today;
+  if (dqState.viewDate) return null; // รอบ 153 (W6): ดูย้อนหลัง ⇒ ไม่มีป้าย/กล่อง "แพทย์หมดเวลา"
   if (!t || t.date !== todayStr()) return null;
   var rm = null;
   (t.rooms || []).forEach(function (r) { if (!rm && String(r.room) === String(roomName)) rm = r; });
@@ -19424,6 +19596,8 @@ function dqAddSetupRow(item) {
   // รอบ 78: "แตะแล้ว" (data-touched) ตั้งเมื่อผู้ใช้พิมพ์/เลือกชื่อ — ห้องตั้งต้นจึงไม่ถูกเติมชื่อทับอีก
   doctorComboAttach_(sel, {
     getNames: function () { return dqState.doctorNames || []; },
+    getInactiveNames: function () { return dqState.inactiveNames || []; }, // รอบ 154
+    getRetired: function () { return dqState.retired || []; },
     getMsgEl: function () { return row.querySelector('.dq-su-doc-msg'); },
     badClass: 'dq-su-bad',
     canValidate: function () { return dqState.doctorsLoaded && !dqState.doctorsFailed; },
@@ -19469,6 +19643,7 @@ function dqLoadDoctorNames() {
     var names = [];
     if (resp && resp.status === 'ok') names = doctorNamesFromResp_(resp);
     else dqState.doctorsFailed = true;
+    doctorStoreInactive_((resp && resp.status === 'ok') ? resp : null); // รอบ 154
     dqState.doctorNames = names;
     dqState.doctorsLoaded = true;
     dqRefillAllDoctorSelects_();
@@ -19657,6 +19832,7 @@ function dqRenameConfirm_() {
         dqState.doctorsLoaded = true;
         dqState.doctorsFailed = false;
         CU_DOCTOR_NAMES = names.slice();
+        doctorStoreInactive_(resp); // รอบ 154 W5: ⚙ ที่เปิดค้างอยู่ได้ข้อความ retired ใหม่ทันที
         dqRefillAllDoctorSelects_();
       }
       dqCloseRename_();
@@ -19835,7 +20011,14 @@ function dqInit() {
       dqAfterQueueEdit_();
     });
   }
-  var map = { dqBtnWalkIn: dqOnWalkInClick, dqBtnAddQueue: dqOnAddQueueClick, dqBtnOpenSetup: dqOpenSetup, dqBtnAddRoom: function () { dqAddSetupRow(); }, dqBtnSaveRooms: dqOnSaveRoomsClick,
+  // รอบ 153 (W1): ช่องเลือกวันย้อนหลัง + ปุ่มกลับวันนี้ (ปฏิทินไทย thd* ผูกให้เองจาก thdEnhanceAll) · ไม่อยู่ใน ensureAutoToday_
+  var vdEl = qs('dqViewDate');
+  if (vdEl) {
+    dqSyncViewDateBounds_();
+    vdEl.value = todayStr();
+    vdEl.addEventListener('change', function () { dqSetViewDate_(vdEl.value); });
+  }
+  var map = { dqBtnBackToday: function () { dqSetViewDate_(''); }, dqBtnWalkIn: dqOnWalkInClick, dqBtnAddQueue: dqOnAddQueueClick, dqBtnOpenSetup: dqOpenSetup, dqBtnAddRoom: function () { dqAddSetupRow(); }, dqBtnSaveRooms: dqOnSaveRoomsClick,
     dqBtnCloseSetup: function () { dqShowView('board'); dqRerender(); }, dqAddDocBtn: dqOnAddDoctorClick };
   Object.keys(map).forEach(function (id) {
     var el = qs(id);
